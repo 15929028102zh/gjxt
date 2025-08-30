@@ -1,0 +1,322 @@
+export default [
+	{
+		"_id": "66e532b75d81875d4b53481b",
+		"creation_time": 1726296759395,
+		"name": "标准漏斗图",
+		"option": {
+			"animation": true,
+			"dataLabel": true,
+			"extra": {
+				"funnel": {
+					"activeOpacity": 0.3,
+					"activeWidth": 10,
+					"border": true,
+					"borderColor": "#FFFFFF",
+					"borderWidth": 2,
+					"fillOpacity": 1,
+					"labelAlign": "right"
+				},
+				"tooltip": {}
+			},
+			"fontSize": 13,
+			"padding": [
+				15,
+				5,
+				0,
+				15
+			],
+			"series": [
+				{
+					"data": [
+						{
+							"centerText": "50",
+							"value": 50
+						}
+					],
+					"name": "一班"
+				},
+				{
+					"data": [
+						{
+							"centerText": "30",
+							"value": 30
+						}
+					],
+					"name": "二班"
+				},
+				{
+					"data": [
+						{
+							"centerText": "20",
+							"value": 20
+						}
+					],
+					"name": "三班"
+				},
+				{
+					"data": [
+						{
+							"centerText": "18",
+							"value": 18
+						}
+					],
+					"name": "四班"
+				},
+				{
+					"data": [
+						{
+							"centerText": "8",
+							"value": 8
+						}
+					],
+					"name": "五班"
+				}
+			],
+			"type": "funnel"
+		},
+		"type": "funnel",
+		"update_time": 1726296759395,
+		"uts": true
+	},
+	{
+		"_id": "66e53299c2a0e4182da0c71c",
+		"creation_time": 1726296729068,
+		"name": "渐变色+自定义标签",
+		"option": {
+			"animation": true,
+			"dataLabel": true,
+			"extra": {
+				"funnel": {
+					"activeOpacity": 0.3,
+					"activeWidth": 10,
+					"border": true,
+					"borderColor": "#FFFFFF",
+					"borderWidth": 2,
+					"fillOpacity": 1,
+					"labelAlign": "right",
+					"linearType": "custom",
+					"minSize": 20
+				},
+				"tooltip": {}
+			},
+			"fontSize": 13,
+			"padding": [
+				15,
+				5,
+				0,
+				15
+			],
+			"series": [
+				{
+					"data": [
+						{
+							"centerText": "50",
+							"value": 50
+						}
+					],
+					"name": "一班"
+				},
+				{
+					"data": [
+						{
+							"centerText": "30",
+							"value": 30
+						}
+					],
+					"name": "二班"
+				},
+				{
+					"data": [
+						{
+							"centerText": "20",
+							"value": 20
+						}
+					],
+					"name": "三班"
+				},
+				{
+					"data": [
+						{
+							"centerText": "18",
+							"value": 18
+						}
+					],
+					"name": "四班"
+				},
+				{
+					"data": [
+						{
+							"centerText": "8",
+							"value": 8
+						}
+					],
+					"name": "五班"
+				}
+			],
+			"type": "funnel"
+		},
+		"type": "funnel",
+		"update_time": 1726296729068,
+		"uts": true
+	},
+	{
+		"_id": "66e5327c1acf244629d8b5d8",
+		"creation_time": 1726296700792,
+		"name": "倒三角形漏斗图",
+		"option": {
+			"animation": true,
+			"dataLabel": true,
+			"extra": {
+				"funnel": {
+					"activeOpacity": 0.3,
+					"activeWidth": 10,
+					"border": true,
+					"borderColor": "#FFFFFF",
+					"borderWidth": 2,
+					"fillOpacity": 1,
+					"labelAlign": "right",
+					"type": "triangle"
+				},
+				"tooltip": {}
+			},
+			"fontSize": 13,
+			"padding": [
+				15,
+				5,
+				0,
+				15
+			],
+			"series": [
+				{
+					"data": [
+						{
+							"centerText": "50",
+							"value": 50
+						}
+					],
+					"name": "一班"
+				},
+				{
+					"data": [
+						{
+							"centerText": "30",
+							"value": 30
+						}
+					],
+					"name": "二班"
+				},
+				{
+					"data": [
+						{
+							"centerText": "20",
+							"value": 20
+						}
+					],
+					"name": "三班"
+				},
+				{
+					"data": [
+						{
+							"centerText": "18",
+							"value": 18
+						}
+					],
+					"name": "四班"
+				},
+				{
+					"data": [
+						{
+							"centerText": "8",
+							"value": 8
+						}
+					],
+					"name": "五班"
+				}
+			],
+			"type": "funnel"
+		},
+		"type": "funnel",
+		"update_time": 1726296700792,
+		"uts": true
+	},
+	{
+		"_id": "66e53231b5d950c8106edce1",
+		"creation_time": 1726296625059,
+		"name": "金字塔形漏斗图",
+		"option": {
+			"animation": true,
+			"dataLabel": true,
+			"extra": {
+				"funnel": {
+					"activeOpacity": 0.3,
+					"activeWidth": 10,
+					"border": true,
+					"borderColor": "#FFFFFF",
+					"borderWidth": 2,
+					"fillOpacity": 1,
+					"labelAlign": "left",
+					"type": "pyramid"
+				},
+				"tooltip": {}
+			},
+			"fontSize": 13,
+			"padding": [
+				15,
+				5,
+				0,
+				15
+			],
+			"series": [
+				{
+					"data": [
+						{
+							"centerText": "50",
+							"value": 50
+						}
+					],
+					"name": "一班"
+				},
+				{
+					"data": [
+						{
+							"centerText": "30",
+							"value": 30
+						}
+					],
+					"name": "二班"
+				},
+				{
+					"data": [
+						{
+							"centerText": "20",
+							"value": 20
+						}
+					],
+					"name": "三班"
+				},
+				{
+					"data": [
+						{
+							"centerText": "18",
+							"value": 18
+						}
+					],
+					"name": "四班"
+				},
+				{
+					"data": [
+						{
+							"centerText": "8",
+							"value": 8
+						}
+					],
+					"name": "五班"
+				}
+			],
+			"type": "funnel"
+		},
+		"type": "funnel",
+		"update_time": 1726296625059,
+		"uts": true
+	}
+] as UTSJSONObject[]

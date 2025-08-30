@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gjxt.inspection.mapper.SysInspectionTaskMapper">
+
+    <!-- 结果映射 -->
+    <resultMap id="BaseResultMap" type="com.gjxt.inspection.entity.SysInspectionTask">
+        <id column="id" property="id" />
+        <result column="task_no" property="taskNo" />
+        <result column="task_name" property="taskName" />
+        <result column="task_description" property="taskDescription" />
+        <result column="task_type" property="taskType" />
+        <result column="priority" property="priority" />
+        <result column="status" property="status" />
+        <result column="creator_id" property="creatorId" />
+        <result column="assignee_id" property="assigneeId" />
+        <result column="planned_start_time" property="plannedStartTime" />
+        <result column="planned_end_time" property="plannedEndTime" />
+        <result column="assign_time" property="assignTime" />
+        <result column="completion_time" property="completionTime" />
+        <result column="completion_note" property="completionNote" />
+        <result column="create_time" property="createTime" />
+        <result column="update_time" property="updateTime" />
+        <result column="deleted" property="deleted" />
+    </resultMap>
+
+    <!-- 带关联信息的结果映射 -->
+    <resultMap id="TaskDetailResultMap" type="com.gjxt.inspection.entity.SysInspectionTask" extends="BaseResultMap">
+        <result column="creator_name" property="creatorName" />
+        <result column="assignee_name" property="assigneeName" />
+    </resultMap>
+
+    <!-- 基础字段 -->
+    <sql id="Base_Column_List">
+        t.id, t.task_no, t.task_name, t.task_description, t.task_type, t.priority, t.status, 
+        t.creator_id, t.assignee_id, t.planned_start_time, t.planned_end_time, t.assign_time, 
+        t.completion_time, t.completion_note, t.create_time, t.update_time, t.deleted
+    </sql>
+
+    <!-- 分页查询巡检任务列表（带关联信息） -->
+    <select id="selectTaskPage" resultMap="TaskDetailResultMap">
+        SELECT 
+            <include refid="Base_Column_List" />,
+            u1.real_name as creator_name,
+            u2.real_name as assignee_name
+        FROM sys_inspection_task t
+        LEFT JOIN sys_user u1 ON t.creator_id = u1.id AND u1.deleted = 0
+        LEFT JOIN sys_user u2 ON t.assignee_id = u2.id AND u2.deleted = 0
+        WHERE t.deleted = 0
+        <if test="taskNo != null and taskNo != ''">
+            AND t.task_no LIKE CONCAT('%', #{taskNo}, '%')
+        </if>
+        <if test="taskName != null and taskName != ''">
+            AND t.task_name LIKE CONCAT('%', #{taskName}, '%')
+        </if>
+        <if test="status != null">
+            AND t.status = #{status}
+        </if>
+        <if test="assigneeId != null">
+            AND t.assignee_id = #{assigneeId}
+        </if>
+        <if test="startDate != null and startDate != ''">
+            AND DATE(t.create_time) &gt;= #{startDate}
+        </if>
+        <if test="endDate != null and endDate != ''">
+            AND DATE(t.create_time) &lt;= #{endDate}
+        </if>
+        ORDER BY t.create_time DESC
+    </select>
+
+    <!-- 根据ID查询巡检任务详情（带关联信息） -->
+    <select id="selectTaskDetail" parameterType="long" resultMap="TaskDetailResultMap">
+        SELECT 
+            <include refid="Base_Column_List" />,
+            u1.real_name as creator_name,
+            u2.real_name as assignee_name
+        FROM sys_inspection_task t
+        LEFT JOIN sys_user u1 ON t.creator_id = u1.id AND u1.deleted = 0
+        LEFT JOIN sys_user u2 ON t.assignee_id = u2.id AND u2.deleted = 0
+        WHERE t.id = #{id} AND t.deleted = 0
+    </select>
+
+    <!-- 查询用户的巡检任务 -->
+    <select id="selectUserTasks" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List" />
+        FROM sys_inspection_task t
+        WHERE t.assignee_id = #{userId} AND t.deleted = 0
+        <if test="status != null">
+            AND t.status = #{status}
+        </if>
+        ORDER BY t.create_time DESC
+    </select>
+
+    <!-- 检查任务编号是否存在 -->
+    <select id="checkTaskNoExists" resultType="int">
+        SELECT COUNT(1)
+        FROM sys_inspection_task
+        WHERE task_no = #{taskNo} AND deleted = 0
+        <if test="excludeId != null">
+            AND id != #{excludeId}
+        </if>
+    </select>
+
+</mapper>

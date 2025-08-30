@@ -1,0 +1,64 @@
+{
+  "version": "1",
+  "env": {
+    "compiler_version": "4.76"
+  },
+  "files": {
+    "pages/index/index.kt": {
+      "md5": "fa7733f846e8e2c312408802c30a5c46ac57fe66",
+      "class": "GenPagesIndexIndex"
+    },
+    "pages/login/login.kt": {
+      "class": "GenPagesLoginLogin",
+      "md5": "a26ad630920b411bb612041664fe4e3e09745ba4"
+    },
+    "pages/home/home.kt": {
+      "class": "GenPagesHomeHome",
+      "md5": "acc0cb4a2250931da9d1ab1c784a4b433ccc611d"
+    },
+    "pages/charts-demo/charts-demo.kt": {
+      "class": "GenPagesChartsDemoChartsDemo",
+      "md5": "9f93e79ea77053127baf585528bbb7baf41cddda"
+    },
+    "pages/chart-test/chart-test.kt": {
+      "class": "GenPagesChartTestChartTest",
+      "md5": "b15e70316d3ec37837d9ece1d5d2f55822dcc972"
+    },
+    "pages/record/add.kt": {
+      "class": "GenPagesRecordAdd",
+      "md5": "90902840bac532dc782c888f0f778663756b5501"
+    },
+    "pages/record/record.kt": {
+      "md5": "3862367ab225fd587a02820f92dd040b63f3290f",
+      "class": "GenPagesRecordRecord"
+    },
+    "index.kt": {
+      "md5": "fb509999863179d974d455fc3daa44c8b4c75bf7",
+      "class": ""
+    },
+    "pages/profile/profile.kt": {
+      "class": "GenPagesProfileProfile",
+      "md5": "e3e10dde6a8f64e82599b0c9fe53a958027e8964"
+    },
+    "pages/monthly/monthly.kt": {
+      "class": "GenPagesMonthlyMonthly",
+      "md5": "f1426747e49c8e289fcf801a265d88ac952ad01d"
+    },
+    "pages/weekly/weekly.kt": {
+      "md5": "ace1ac46b8e89cfec8bbe0aa802615d75cac7f8e",
+      "class": "GenPagesWeeklyWeekly"
+    },
+    "pages/statistics/statistics.kt": {
+      "class": "GenPagesStatisticsStatistics",
+      "md5": "5033706f78eb87522f4df3caee5a4acfec208126"
+    },
+    "pages/record/detail.kt": {
+      "md5": "f07a58b8b862f18b02b26c1755a4c3fa2ed37e3b",
+      "class": "GenPagesRecordDetail"
+    },
+    "pages/record/review.kt": {
+      "class": "GenPagesRecordReview",
+      "md5": "4ad76bf1c5260d9e4c28008481257802a0e35b53"
+    }
+  }
+}

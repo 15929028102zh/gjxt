@@ -1,0 +1,394 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gjxt.inspection.mapper.SysInspectionRecordMapper">
+
+    <!-- 结果映射 -->
+    <resultMap id="BaseResultMap" type="com.gjxt.inspection.entity.SysInspectionRecord">
+        <id column="id" property="id" />
+        <result column="record_no" property="recordNo" />
+        <result column="group_leader_id" property="groupLeaderId" />
+        <result column="deputy_leader_id" property="deputyLeaderId" />
+        <result column="department_id" property="departmentId" />
+        <result column="profession_id" property="professionId" />
+        <result column="location" property="location" />
+        <result column="inspector" property="inspector" />
+        <result column="responsible_unit" property="responsibleUnit" />
+        <result column="responsible_person" property="responsiblePerson" />
+        <result column="problem_description" property="problemDescription" />
+        <result column="problem_image_urls" property="problemImageUrls" />
+        <result column="rectification_deadline" property="rectificationDeadline" />
+        <result column="rectification_effect" property="rectificationEffect" />
+        <result column="rectification_image_urls" property="rectificationImageUrls" />
+        <result column="rectification_time" property="rectificationTime" />
+        <result column="reviewer_id" property="reviewerId" />
+        <result column="review_effect" property="reviewEffect" />
+        <result column="review_image_urls" property="reviewImageUrls" />
+        <result column="review_time" property="reviewTime" />
+        <result column="nature_definition" property="natureDefinition" />
+        <result column="assessment_situation" property="assessmentSituation" />
+        <result column="safety_score" property="safetyScore" />
+
+        <result column="status" property="status" />
+        <result column="create_time" property="createTime" />
+        <result column="update_time" property="updateTime" />
+        <result column="deleted" property="deleted" />
+    </resultMap>
+
+    <!-- 带关联信息的结果映射 -->
+    <resultMap id="RecordDetailResultMap" type="com.gjxt.inspection.entity.SysInspectionRecord" extends="BaseResultMap">
+        <result column="group_leader_name" property="groupLeaderName" />
+        <result column="deputy_leader_name" property="deputyLeaderName" />
+        <result column="department_name" property="departmentName" />
+        <result column="professionName" property="professionName" />
+        <result column="inspector_name" property="inspectorName" />
+        <result column="responsible_person_name" property="responsiblePersonName" />
+        <result column="reviewer_name" property="reviewerName" />
+    </resultMap>
+
+    <!-- 基础字段 -->
+    <sql id="Base_Column_List">
+        r.id, r.record_no, r.group_leader_id, r.deputy_leader_id, r.department_id,
+        r.profession_id, r.location, r.inspector, r.responsible_unit, r.responsible_person,
+        r.problem_description, r.problem_image_urls, r.rectification_deadline, r.rectification_effect,
+        r.rectification_image_urls, r.rectification_time, r.reviewer_id, r.review_effect,
+        r.review_image_urls, r.review_time, r.nature_definition, r.assessment_situation,
+        r.safety_score, r.status, r.create_time, r.update_time, r.deleted
+    </sql>
+
+    <!-- 分页查询巡检记录列表（带关联信息） -->
+    <select id="selectRecordPage" resultMap="RecordDetailResultMap">
+        SELECT 
+            <include refid="Base_Column_List" />,
+            r.group_leader_name as group_leader_name,
+            r.deputy_leader_name as deputy_leader_name,
+            d.dept_name as department_name,
+            p.dict_value as professionName,
+            r.inspector as inspector_name,
+            r.responsible_person as responsible_person_name,
+            u5.real_name as reviewer_name
+
+        FROM sys_inspection_record r
+        LEFT JOIN sys_dept d ON r.department_id = d.id AND d.deleted = 0
+        LEFT JOIN sys_dictionary p ON r.profession_id = p.id AND p.deleted = 0
+        LEFT JOIN sys_user u5 ON r.reviewer_id = u5.id AND u5.deleted = 0
+
+        WHERE r.deleted = 0
+
+        <if test="groupLeaderId != null and groupLeaderId != ''">
+            AND r.group_leader_id = #{groupLeaderId}
+        </if>
+        <if test="deputyLeaderId != null and deputyLeaderId != ''">
+            AND r.deputy_leader_id = #{deputyLeaderId}
+        </if>
+        <if test="departmentId != null and departmentId != ''">
+            AND r.department_id = #{departmentId}
+        </if>
+        <if test="professionId != null and professionId != ''">
+            AND r.profession_id = #{professionId}
+        </if>
+        <if test="natureId != null and natureId != ''">
+            AND r.nature_definition = #{natureId}
+        </if>
+        <if test="locationId != null and locationId != ''">
+            AND r.location LIKE CONCAT('%', #{locationId}, '%')
+        </if>
+        <if test="inspectorId != null and inspectorId != ''">
+            AND r.inspector = #{inspectorId}
+        </if>
+        <if test="responsibleUnitId != null and responsibleUnitId != ''">
+            AND r.responsible_unit = #{responsibleUnitId}
+        </if>
+        <if test="responsiblePersonId != null and responsiblePersonId != ''">
+            AND r.responsible_person = #{responsiblePersonId}
+        </if>
+        <if test="reviewerId != null and reviewerId != ''">
+            AND r.reviewer_id = #{reviewerId}
+        </if>
+
+        <if test="status != null and status != ''">
+            AND r.status = #{status}
+        </if>
+        <if test="startTime != null">
+            AND r.create_time &gt;= #{startTime}
+        </if>
+        <if test="endTime != null">
+            AND r.create_time &lt;= #{endTime}
+        </if>
+        ORDER BY r.create_time DESC
+    </select>
+
+    <!-- 根据ID查询巡检记录详情（带关联信息） -->
+    <select id="selectRecordDetail" parameterType="string" resultMap="RecordDetailResultMap">
+        SELECT 
+            <include refid="Base_Column_List" />,
+            u1.real_name as group_leader_name,
+            u2.real_name as deputy_leader_name,
+            u3.real_name as inspector_name,
+            d.dept_name as department_name,
+            p.dict_value as professionName,
+            u5.real_name as reviewer_name
+        FROM sys_inspection_record r
+        LEFT JOIN sys_user u1 ON r.group_leader_id = u1.id AND u1.deleted = 0
+        LEFT JOIN sys_user u2 ON r.deputy_leader_id = u2.id AND u2.deleted = 0
+        LEFT JOIN sys_dept d ON r.department_id = d.id AND d.deleted = 0
+        LEFT JOIN sys_dictionary p ON r.profession_id = p.id AND p.deleted = 0
+        LEFT JOIN sys_user u3 ON r.inspector = u3.id AND u3.deleted = 0
+        LEFT JOIN sys_user u5 ON r.reviewer_id = u5.id AND u5.deleted = 0
+        WHERE r.id = #{id} AND r.deleted = 0
+    </select>
+
+    <!-- 查询用户巡检记录 -->
+    <select id="selectUserRecords" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List" />
+        FROM sys_inspection_record r
+        WHERE r.responsible_person = #{userId} AND r.deleted = 0
+        <if test="status != null">
+            AND r.status = #{status}
+        </if>
+        ORDER BY r.create_time DESC
+    </select>
+
+    <!-- 统计各状态问题数量 -->
+    <select id="selectStatusStatistics" resultType="map">
+        SELECT 
+            CASE 
+                WHEN status = 0 THEN '待整改'
+                WHEN status = 1 THEN '待复查'
+                WHEN status = 2 THEN '已完成'
+                ELSE '未知状态'
+            END as status_name,
+            COUNT(1) as count
+        FROM sys_inspection_record
+        WHERE deleted = 0
+        GROUP BY status
+    </select>
+
+    <!-- 统计各专业问题数量 -->
+    <select id="selectProfessionStatistics" resultType="map">
+        SELECT 
+            p.profession_name,
+            COUNT(r.id) as count
+        FROM sys_profession p
+        LEFT JOIN sys_inspection_record r ON p.id = r.profession_id AND r.deleted = 0
+        WHERE p.deleted = 0 AND p.status = 1
+        GROUP BY p.id, p.profession_name
+        HAVING count &gt; 0
+        ORDER BY count DESC
+    </select>
+
+    <!-- 统计各部位问题数量 -->
+    <select id="selectLocationStatistics" resultType="map">
+        SELECT 
+            r.location as location_name,
+            COUNT(r.id) as count
+        FROM sys_inspection_record r
+        WHERE r.deleted = 0 AND r.location IS NOT NULL AND r.location != ''
+        GROUP BY r.location
+        HAVING count > 0
+        ORDER BY count DESC
+    </select>
+
+    <!-- 统计各责任人问题数量 -->
+    <select id="selectResponsiblePersonStatistics" resultType="map">
+        SELECT 
+            u.real_name as responsible_person_name,
+            COUNT(r.id) as count
+        FROM sys_user u
+        LEFT JOIN sys_inspection_record r ON u.id = r.responsible_person_id AND r.deleted = 0
+        WHERE u.deleted = 0 AND u.status = 1
+        GROUP BY u.id, u.real_name
+        HAVING count &gt; 0
+        ORDER BY count DESC
+    </select>
+
+    <!-- 根据时间范围统计各状态问题数量 -->
+    <select id="selectStatusStatisticsByDateRange" resultType="map">
+        SELECT 
+            CASE 
+                WHEN status = 0 THEN '待整改'
+                WHEN status = 1 THEN '待复查'
+                WHEN status = 2 THEN '已完成'
+                ELSE '未知状态'
+            END as status_name,
+            COUNT(1) as count
+        FROM sys_inspection_record
+        WHERE deleted = 0
+        <if test="startDate != null and startDate != ''">
+            AND DATE(create_time) &gt;= #{startDate}
+        </if>
+        <if test="endDate != null and endDate != ''">
+            AND DATE(create_time) &lt;= #{endDate}
+        </if>
+        GROUP BY status
+    </select>
+
+    <!-- 插入前端提交的巡检记录（只插入必要字段） -->
+    <insert id="insertSubmitRecord" parameterType="com.gjxt.inspection.entity.SysInspectionRecord">
+        INSERT INTO sys_inspection_record (
+            id,
+            record_no,
+            responsible_unit,
+            responsible_person,
+            nature_definition,
+            assessment_situation,
+            safety_score,
+            profession_id,
+            problem_description,
+            location,
+            inspector,
+            group_leader_id,
+            deputy_leader_id,
+            department_id,
+            group_leader_name,
+            deputy_leader_name,
+            rectification_deadline,
+            problem_image_urls,
+            status,
+            create_time,
+            update_time,
+            deleted
+        ) VALUES (
+            #{id},
+            #{recordNo},
+            #{responsibleUnit},
+            #{responsiblePerson},
+            #{natureDefinition},
+            #{assessmentSituation},
+            #{safetyScore},
+            #{professionId},
+            #{problemDescription},
+            #{location},
+            #{inspector},
+            #{groupLeaderId},
+            #{deputyLeaderId},
+            #{departmentId},
+            #{groupLeaderNameField},
+            #{deputyLeaderNameField},
+            #{rectificationDeadline},
+            #{problemImageUrls},
+            0,
+            #{createTime},
+            #{updateTime},
+            #{deleted}
+        )
+    </insert>
+
+    <!-- 根据时间范围统计各专业问题数量 -->
+    <select id="selectProfessionStatisticsByDateRange" resultType="map">
+        SELECT 
+            p.profession_name,
+            COUNT(r.id) as count
+        FROM sys_profession p
+        LEFT JOIN sys_inspection_record r ON p.id = r.profession_id AND r.deleted = 0
+        WHERE p.deleted = 0 AND p.status = 1
+        <if test="startDate != null and startDate != ''">
+            AND DATE(r.create_time) &gt;= #{startDate}
+        </if>
+        <if test="endDate != null and endDate != ''">
+            AND DATE(r.create_time) &lt;= #{endDate}
+        </if>
+        GROUP BY p.id, p.profession_name
+        HAVING count > 0
+        ORDER BY count DESC
+    </select>
+
+    <!-- 根据时间范围统计各部位问题数量 -->
+    <select id="selectLocationStatisticsByDateRange" resultType="map">
+        SELECT 
+            r.location as location_name,
+            COUNT(r.id) as count
+        FROM sys_inspection_record r
+        WHERE r.deleted = 0 AND r.location IS NOT NULL AND r.location != ''
+        <if test="startDate != null and startDate != ''">
+            AND DATE(r.create_time) &gt;= #{startDate}
+        </if>
+        <if test="endDate != null and endDate != ''">
+            AND DATE(r.create_time) &lt;= #{endDate}
+        </if>
+        GROUP BY r.location
+        HAVING count > 0
+        ORDER BY count DESC
+    </select>
+
+    <!-- 根据时间范围统计各责任人问题数量 -->
+    <select id="selectResponsiblePersonStatisticsByDateRange" resultType="map">
+        SELECT 
+            u.real_name as responsible_person_name,
+            COUNT(r.id) as count
+        FROM sys_user u
+        LEFT JOIN sys_inspection_record r ON u.id = r.responsible_person_id AND r.deleted = 0
+        WHERE u.deleted = 0 AND u.status = 1
+        <if test="startDate != null and startDate != ''">
+            AND DATE(r.create_time) &gt;= #{startDate}
+        </if>
+        <if test="endDate != null and endDate != ''">
+            AND DATE(r.create_time) &lt;= #{endDate}
+        </if>
+        GROUP BY u.id, u.real_name
+        HAVING count &gt; 0
+        ORDER BY count DESC
+    </select>
+
+    <!-- 按用户ID和状态查询当前周记录数量 -->
+    <select id="selectWeeklyRecordCountByUserAndStatus" resultType="long">
+        SELECT COUNT(*)
+        FROM sys_inspection_record r
+        WHERE r.deleted = 0
+        
+        <if test="userId != null and userId != ''">
+            AND r.responsible_person_id = #{userId}
+        </if>
+        <if test="status != null">
+            AND r.status = #{status}
+        </if>
+    </select>
+
+    <!-- 执行自定义SQL查询（绕过MyBatis-Plus逻辑删除拦截器） -->
+    <select id="selectBySql" resultType="map">
+        ${sql}
+    </select>
+
+    <!-- 导出巡检记录数据（带关联信息） -->
+    <select id="selectExportData" resultMap="RecordDetailResultMap">
+        SELECT 
+            <include refid="Base_Column_List" />,
+            u1.real_name as group_leader_name,
+            u2.real_name as deputy_leader_name,
+            d.dept_name as department_name,
+            p.dict_value as professionName,
+            u3.real_name as inspector_name,
+            r.responsible_person as responsible_person_name,
+            u5.real_name as reviewer_name
+        FROM sys_inspection_record r
+        LEFT JOIN sys_user u1 ON r.group_leader_id = u1.id AND u1.deleted = 0
+        LEFT JOIN sys_user u2 ON r.deputy_leader_id = u2.id AND u2.deleted = 0
+        LEFT JOIN sys_dept d ON r.department_id = d.id AND d.deleted = 0
+        LEFT JOIN sys_dictionary p ON r.profession_id = p.id AND p.deleted = 0
+        LEFT JOIN sys_user u3 ON r.inspector = u3.id AND u3.deleted = 0
+        LEFT JOIN sys_user u5 ON r.reviewer_id = u5.id AND u5.deleted = 0
+        WHERE r.deleted = 0
+        <if test="status != null and status != ''">
+            AND r.status = #{status}
+        </if>
+        <if test="professionId != null">
+            AND r.profession_id = #{professionId}
+        </if>
+        <if test="locationId != null">
+            AND r.location LIKE CONCAT('%', #{locationId}, '%')
+        </if>
+        <if test="checkerId != null">
+            AND r.inspector = #{checkerId}
+        </if>
+        <if test="responsiblePerson != null and responsiblePerson != ''">
+            AND r.responsible_person LIKE CONCAT('%', #{responsiblePerson}, '%')
+        </if>
+        <if test="startTime != null">
+            AND r.create_time &gt;= #{startTime}
+        </if>
+        <if test="endTime != null">
+            AND r.create_time &lt;= #{endTime}
+        </if>
+        ORDER BY r.create_time DESC
+    </select>
+
+</mapper>

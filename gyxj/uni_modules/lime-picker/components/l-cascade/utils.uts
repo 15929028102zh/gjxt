@@ -1,0 +1,122 @@
+// @ts-nocheck
+import { clamp } from '@/uni_modules/lime-shared/clamp'
+import { PickerValue, PickerColumn, PickerColumnItem, PickerPickEvent } from '../l-picker/type';
+import { KeysType } from './type';
+// #ifndef UNI-APP-X
+import type { Ref } from '@/uni_modules/lime-shared/vue'
+type UTSJSONObject = Record<string, any>
+// #endif
+
+/**
+ * 解析键配置对象，生成用于访问选项属性的键映射。
+ *
+ * @param {UTSJSONObject|null} keys - 配置对象，包含 label、value 和 children 的键名。
+ * @returns {KeysType} 包含 label、value 和 children 键名的映射对象。
+ */
+export function parseKeys(keys : UTSJSONObject | null) : KeysType {
+	const _labelKey = `${keys?.['label'] ?? 'label'}`
+	const _valueKey = `${keys?.['value'] ?? 'value'}`
+	const _childrenKey = `${keys?.['children'] ?? 'children'}`
+
+	return {
+		label: _labelKey,
+		value: _valueKey,
+		children: _childrenKey,
+	} as KeysType
+}
+
+
+/**
+ * 获取选项数组中第一个未被禁用的选项。
+ *
+ * @param {UTSJSONObject[]} options - 选项对象数组。
+ * @returns {UTSJSONObject|null} 第一个未被禁用的选项对象，如果所有选项都被禁用则返回第一个选项。
+ */
+export const getFirstEnabledOption = (
+	options : UTSJSONObject[],
+) : UTSJSONObject | null =>
+	options.find((option) : boolean => option['disabled'] != true) ?? options[0];
+
+/**
+ * 在选项数组中查找指定索引之后或之前的第一个未被禁用的选项的索引。
+ *
+ * @param {UTSJSONObject[]} options - 选项对象数组。
+ * @param {number} index - 当前索引位置。
+ * @returns {number} 第一个未被禁用的选项的索引，如果不存在则返回 0。
+ */
+export function findIndexOfEnabledOption(
+	options : UTSJSONObject[],
+	index : number,
+) {
+	index = clamp(index, 0, options.length);
+
+	// for (let i = index; i < options.length; i++) {
+	// 	if (options[i]['disabled'] != true) return i;
+	// }
+	// for (let i = index - 1; i >= 0; i--) {
+	// 	if (options[i]['disabled'] != true) return i;
+	// }
+
+	// return 0;
+	return index
+}
+
+/**
+ * 根据指定的值在选项数组中查找对应的选项对象。
+ *
+ * @param {UTSJSONObject[]} options - 选项对象数组。
+ * @param {PickerValue} value - 要查找的值。
+ * @param {KeysType} fields - 包含 label、value 和 children 键名的映射对象。
+ * @returns {UTSJSONObject|null} 找到的选项对象，如果未找到则返回 null。
+ */
+export function findOptionByValue(
+	options : UTSJSONObject[],
+	value : PickerValue,
+	fields : KeysType,
+) : UTSJSONObject | null {
+	const index = options.findIndex((option) : boolean => option[fields.value] == value);
+	const enabledIndex = findIndexOfEnabledOption(options, index);
+	return options[enabledIndex];
+}
+
+/**
+ * 格式化级联选择器的列数据。
+ *
+ * @param {UTSJSONObject[]} columns - 初始的列数据数组。
+ * @param {KeysType} fields - 包含 label、value 和 children 键名的映射对象。
+ * @param {Ref<PickerValue[]>} selectedValues - 当前选中的值数组。
+ * @returns {PickerColumn[]} 格式化后的级联列数据数组。
+ */
+export function formatCascadeColumns(
+	columns : UTSJSONObject[],
+	fields : KeysType,
+	selectedValues : Ref<PickerValue[]>
+) {
+	const formatted : PickerColumn[] = [];
+
+	let cursor : UTSJSONObject | null = {};
+	cursor![fields.children] = columns;
+	let columnIndex = 0;
+
+	while (cursor != null && cursor[fields.children] != null) {
+		const options : UTSJSONObject[] = cursor[fields.children]! as UTSJSONObject[];
+		const value = selectedValues.value.length > columnIndex ? selectedValues.value[columnIndex] : null;
+		cursor = value != null
+			?  findOptionByValue(options, value, fields)
+			: null;
+
+		if (cursor == null && options.length > 0) {
+			const firstValue = getFirstEnabledOption(options)![fields.value]!;
+			cursor = findOptionByValue(options, firstValue, fields);
+		}
+
+		columnIndex++;
+		formatted.push(
+			options.map((option : UTSJSONObject) : PickerColumnItem => ({
+				label: `${option['label']}`,
+				value: `${option['value']}`,
+			} as PickerColumnItem))
+		);
+	}
+	return formatted;
+}

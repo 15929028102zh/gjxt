@@ -1,0 +1,124 @@
+<template>
+	<l-picker
+		v-model="innerValue"
+		:cancelBtn="cancelBtn" 
+		:cancelStyle="cancelStyle" 
+		:confirmBtn="confirmBtn"
+		:confirmStyle="confirmStyle" 
+		:title="title" 
+		:titleStyle="titleStyle" 
+		:loading="loading"
+		:loadingColor="loadingColor" 
+		:loadingMaskColor="loadingMaskColor" 
+		:loadingSize="loadingSize"
+		:itemHeight="itemHeight" 
+		:itemColor="itemColor" 
+		:itemFontSize="itemFontSize" 
+		:itemActiveColor="itemActiveColor"
+		:indicatorStyle="indicatorStyle" 
+		:bgColor="bgColor" 
+		:groupHeight="groupHeight" 
+		:radius="radius"
+		:resetIndex="resetIndex" 
+		:columns="innerColumns" 
+		@cancel="onCancel" 
+		@confirm="onConfirm" 
+		@pick="onPick">
+	</l-picker>
+</template>
+
+<script lang="ts">
+	// @ts-nocheck
+	/**
+	 * Cascade 级联选择器组件
+	 * @description 支持多层级联数据选择，适用于地址选择、分类选择等场景
+	 * <br>插件类型：LCascadeComponentPublicInstance 
+	 * @tutorial https://ext.dcloud.net.cn/plugin?name=lime-cascade
+	 * 
+	 * @property {string} cancelBtn 取消按钮文字（默认："取消"）
+	 * @property {string} cancelStyle 取消按钮样式（支持CSS字符串）
+	 * @property {string} confirmBtn 确定按钮文字（默认："确定"）
+	 * @property {string} confirmStyle] 确定按钮样式（支持CSS字符串）
+	 * @property {string} title 标题文字
+	 * @property {string} titleStyle 标题样式（支持CSS字符串）
+	 * @property {UTSJSONObject} keys 字段别名配置（参考KeysType结构）
+	 * @property {UTSJSONObject]} columns 级联数据源（必填）
+	 * @property {PickerValue]} modelValue 选中值（支持v-model）
+	 * @property {PickerValue]} defaultValue 默认选中值
+	 * @property {PickerValue]} value 选中值（兼容旧版）
+	 * @property {boolean} loading 是否显示加载状态
+	 * @property {string} loadingColor 加载图标颜色（默认：主题色）
+	 * @property {string} loadingMaskColor 加载遮罩颜色（默认：rgba(255,255,255,0.8)）
+	 * @property {string} loadingSize 加载图标尺寸（支持CSS单位）
+	 * @property {string} itemHeight 选项行高（默认：44px）
+	 * @property {string} itemColor 选项文字颜色（默认：#333）
+	 * @property {string} itemFontSize 选项文字大小（默认：16px）
+	 * @property {string} itemActiveColor 选中项高亮颜色（默认：主题色）
+	 * @property {string} indicatorStyle 指示器样式（支持CSS字符串）
+	 * @property {string} bgColor 背景颜色（默认：#ffffff）
+	 * @property {string} groupHeight 选项组高度（默认：240px）
+	 * @property {string} radius 圆角半径（支持CSS单位）
+	 * @property {boolean} resetIndex 是否重置选中索引（用于动态更新数据时）
+	 * @event {Function} change 选项变化时触发（返回当前选中路径）
+	 * @event {Function} cancel 点击关闭时触发
+	 * @event {Function} confirm 点击确定时触发（返回最终选中值）
+	 */
+	import { defineComponent, ref, computed} from '@/uni_modules/lime-shared/vue';
+	import { PickerValue, PickerColumn, PickerColumnItem, PickerPickEvent} from '../l-picker/type';
+	import { CascadeProps } from './type';
+	import { parseKeys, formatCascadeColumns } from './utils';
+	import cascadeProps from '../l-picker/props';
+	export default defineComponent({
+		name: 'l-cascade', 
+		props:cascadeProps,
+		emits: ['change', 'cancel', 'pick', 'confirm', 'update:modelValue', 'update:value', 'input'],
+		setup(props, {emit}) {
+			type UTSJSONObject = Record<string, any>
+			
+			const keys = parseKeys(props.keys)
+			const curValueArray = ref(props.value || props.modelValue || props.defaultValue||[]);
+			const innerValue = computed({
+				set(value: PickerValue[]) {
+					curValueArray.value = value;
+					emit('update:modelValue', value)
+					// #ifdef VUE2
+					emit('input', value)
+					// #endif
+				},
+				get(): PickerValue[]{
+					return props.value || props.modelValue || curValueArray.value
+				}
+			} as WritableComputedOptions<PickerValue[]>)
+			
+			
+			const innerColumns = computed((): PickerColumn[] => {
+				return formatCascadeColumns(props.columns, keys, innerValue)
+			})
+			
+			const onPick = ({values, column, index} : PickerPickEvent) => {
+				innerValue.value = values
+			}
+			
+			const onConfirm = (options: PickerConfirmEvent) => {
+				emit('confirm', options)
+			}
+			const onCancel = () => {
+				emit('cancel')
+			}
+			
+			return {
+				innerValue,
+				innerColumns,
+				onPick,
+				onConfirm,
+				onCancel
+			}
+		}
+	})
+	
+	
+</script>
+
+<style>
+
+</style>

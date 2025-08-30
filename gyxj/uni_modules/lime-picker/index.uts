@@ -1,0 +1,4 @@
+// @ts-nocheck
+export * from './components/l-picker/type'
+
+export type PickerValue = any;//string | number;

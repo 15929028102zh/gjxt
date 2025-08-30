@@ -1,0 +1,15 @@
+{
+  "name": "",
+  "attributes": [
+    {
+      "name": "[event]initFinished",
+      "description": "",
+      "type": "Event"
+    },
+    {
+      "name": "[event]select",
+      "description": "",
+      "type": "Event"
+    }
+  ]
+}

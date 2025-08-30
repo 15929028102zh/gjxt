@@ -1,0 +1,909 @@
+export default [
+	{
+		"_id": "66e51df59d9f915ad27917bd",
+		"creation_time": 1726291445433,
+		"name": "多坐标系混合图",
+		"option": {
+			"padding": [
+				15,
+				5,
+				0,
+				15
+			],
+			"yAxis": {
+				"padding": 10,
+				"data": [
+					{
+						"position": "left",
+						"title": "折线"
+					},
+					{
+						"min": 0,
+						"max": 200,
+						"textAlign": "left",
+						"position": "right",
+						"title": "柱状图"
+					},
+					{
+						"min": 0,
+						"max": 200,
+						"textAlign": "left",
+						"position": "right",
+						"title": "点"
+					}
+				],
+				"gridType": "dash",
+				"showTitle": true,
+				"dashLength": 4,
+				"gridColor": "#CCCCCC",
+				"disableGrid": false,
+				"disabled": false,
+				"splitNumber": 5
+			},
+			"xAxis": {
+				"disableGrid": true,
+				"title": "单位：年"
+			},
+			"series": [
+				{
+					"data": [
+						{
+							"value": 70
+						},
+						{
+							"value": 50
+						},
+						{
+							"value": 85
+						},
+						{
+							"value": 130
+						},
+						{
+							"value": 64
+						},
+						{
+							"value": 88
+						}
+					],
+					"name": "曲面",
+					"style": "curve",
+					"type": "area"
+				},
+				{
+					"data": [
+						{
+							"value": 40
+						},
+						{
+							"color": "#f04864",
+							"value": 30
+						},
+						{
+							"value": 55
+						},
+						{
+							"value": 110
+						},
+						{
+							"value": 24
+						},
+						{
+							"value": 58
+						}
+					],
+					"name": "柱1",
+					"index": 1,
+					"type": "column"
+				},
+				{
+					"data": [
+						{
+							"value": 50
+						},
+						{
+							"value": 20
+						},
+						{
+							"value": 75
+						},
+						{
+							"value": 60
+						},
+						{
+							"value": 34
+						},
+						{
+							"value": 38
+						}
+					],
+					"name": "柱2",
+					"index": 1,
+					"type": "column"
+				},
+				{
+					"color": "#1890ff",
+					"data": [
+						{
+							"value": 70
+						},
+						{
+							"value": 50
+						},
+						{
+							"value": 85
+						},
+						{
+							"value": 130
+						},
+						{
+							"value": 64
+						},
+						{
+							"value": 88
+						}
+					],
+					"disableLegend": true,
+					"name": "曲线",
+					"style": "curve",
+					"type": "line"
+				},
+				{
+					"color": "#2fc25b",
+					"data": [
+						{
+							"value": 120
+						},
+						{
+							"value": 140
+						},
+						{
+							"value": 105
+						},
+						{
+							"value": 170
+						},
+						{
+							"value": 95
+						},
+						{
+							"value": 100
+						}
+					],
+					"name": "折线",
+					"type": "line"
+				},
+				{
+					"color": "#f04864",
+					"data": [
+						{
+							"value": 100
+						},
+						{
+							"value": 80
+						},
+						{
+							"value": 125
+						},
+						{
+							"value": 150
+						},
+						{
+							"value": 112
+						},
+						{
+							"value": 132
+						}
+					],
+					"name": "点",
+					"index": 2,
+					"type": "point"
+				}
+			],
+			"extra": {
+				"mix": {
+					"column": {
+						"width": 20
+					}
+				},
+				"tooltip": {}
+			},
+			"dataLabel": true,
+			"fontSize": 11,
+			"categories": [
+				"2018",
+				"2019",
+				"2020",
+				"2021",
+				"2022",
+				"2023"
+			],
+			"type": "mix",
+			"animation": true
+		},
+		"type": "mix",
+		"update_time": 1726291445432,
+		"uts": true
+	}
+,
+	{
+		"_id": "66e51df59d9f915ad27917bd",
+		"creation_time": 1726291445433,
+		"name": "多坐标系混合图",
+		"option": {
+			"padding": [
+				15,
+				5,
+				0,
+				15
+			],
+			"yAxis": {
+				"padding": 10,
+				"data": [
+					{
+						"position": "left",
+						"title": "折线"
+					},
+					{
+						"min": 0,
+						"max": 200,
+						"textAlign": "left",
+						"position": "right",
+						"title": "柱状图"
+					},
+					{
+						"min": 0,
+						"max": 200,
+						"textAlign": "left",
+						"position": "right",
+						"title": "点"
+					}
+				],
+				"gridType": "dash",
+				"showTitle": true,
+				"dashLength": 4,
+				"gridColor": "#CCCCCC",
+				"disableGrid": false,
+				"disabled": false,
+				"splitNumber": 5
+			},
+			"xAxis": {
+				"disableGrid": true,
+				"title": "单位：年"
+			},
+			"series": [
+				{
+					"data": [
+						{
+							"value": 70
+						},
+						{
+							"value": 50
+						},
+						{
+							"value": 85
+						},
+						{
+							"value": 130
+						},
+						{
+							"value": 64
+						},
+						{
+							"value": 88
+						}
+					],
+					"name": "曲面",
+					"style": "curve",
+					"type": "area"
+				},
+				{
+					"data": [
+						{
+							"value": 40
+						},
+						{
+							"color": "#f04864",
+							"value": 30
+						},
+						{
+							"value": 55
+						},
+						{
+							"value": 110
+						},
+						{
+							"value": 24
+						},
+						{
+							"value": 58
+						}
+					],
+					"name": "柱1",
+					"index": 1,
+					"type": "column"
+				},
+				{
+					"data": [
+						{
+							"value": 50
+						},
+						{
+							"value": 20
+						},
+						{
+							"value": 75
+						},
+						{
+							"value": 60
+						},
+						{
+							"value": 34
+						},
+						{
+							"value": 38
+						}
+					],
+					"name": "柱2",
+					"index": 1,
+					"type": "column"
+				},
+				{
+					"color": "#1890ff",
+					"data": [
+						{
+							"value": 70
+						},
+						{
+							"value": 50
+						},
+						{
+							"value": 85
+						},
+						{
+							"value": 130
+						},
+						{
+							"value": 64
+						},
+						{
+							"value": 88
+						}
+					],
+					"disableLegend": true,
+					"name": "曲线",
+					"style": "curve",
+					"type": "line"
+				},
+				{
+					"color": "#2fc25b",
+					"data": [
+						{
+							"value": 120
+						},
+						{
+							"value": 140
+						},
+						{
+							"value": 105
+						},
+						{
+							"value": 170
+						},
+						{
+							"value": 95
+						},
+						{
+							"value": 100
+						}
+					],
+					"name": "折线",
+					"type": "line"
+				},
+				{
+					"color": "#f04864",
+					"data": [
+						{
+							"value": 100
+						},
+						{
+							"value": 80
+						},
+						{
+							"value": 125
+						},
+						{
+							"value": 150
+						},
+						{
+							"value": 112
+						},
+						{
+							"value": 132
+						}
+					],
+					"name": "点",
+					"index": 2,
+					"type": "point"
+				}
+			],
+			"extra": {
+				"mix": {
+					"column": {
+						"width": 20
+					}
+				},
+				"tooltip": {}
+			},
+			"dataLabel": true,
+			"fontSize": 11,
+			"categories": [
+				"2018",
+				"2019",
+				"2020",
+				"2021",
+				"2022",
+				"2023"
+			],
+			"type": "mix",
+			"animation": true
+		},
+		"type": "mix",
+		"update_time": 1726291445432,
+		"uts": true
+	}
+,
+	{
+		"_id": "66e51df59d9f915ad27917bd",
+		"creation_time": 1726291445433,
+		"name": "多坐标系混合图",
+		"option": {
+			"padding": [
+				15,
+				5,
+				0,
+				15
+			],
+			"yAxis": {
+				"padding": 10,
+				"data": [
+					{
+						"position": "left",
+						"title": "折线"
+					},
+					{
+						"min": 0,
+						"max": 200,
+						"textAlign": "left",
+						"position": "right",
+						"title": "柱状图"
+					},
+					{
+						"min": 0,
+						"max": 200,
+						"textAlign": "left",
+						"position": "right",
+						"title": "点"
+					}
+				],
+				"gridType": "dash",
+				"showTitle": true,
+				"dashLength": 4,
+				"gridColor": "#CCCCCC",
+				"disableGrid": false,
+				"disabled": false,
+				"splitNumber": 5
+			},
+			"xAxis": {
+				"disableGrid": true,
+				"title": "单位：年"
+			},
+			"series": [
+				{
+					"data": [
+						{
+							"value": 70
+						},
+						{
+							"value": 50
+						},
+						{
+							"value": 85
+						},
+						{
+							"value": 130
+						},
+						{
+							"value": 64
+						},
+						{
+							"value": 88
+						}
+					],
+					"name": "曲面",
+					"style": "curve",
+					"type": "area"
+				},
+				{
+					"data": [
+						{
+							"value": 40
+						},
+						{
+							"color": "#f04864",
+							"value": 30
+						},
+						{
+							"value": 55
+						},
+						{
+							"value": 110
+						},
+						{
+							"value": 24
+						},
+						{
+							"value": 58
+						}
+					],
+					"name": "柱1",
+					"index": 1,
+					"type": "column"
+				},
+				{
+					"data": [
+						{
+							"value": 50
+						},
+						{
+							"value": 20
+						},
+						{
+							"value": 75
+						},
+						{
+							"value": 60
+						},
+						{
+							"value": 34
+						},
+						{
+							"value": 38
+						}
+					],
+					"name": "柱2",
+					"index": 1,
+					"type": "column"
+				},
+				{
+					"color": "#1890ff",
+					"data": [
+						{
+							"value": 70
+						},
+						{
+							"value": 50
+						},
+						{
+							"value": 85
+						},
+						{
+							"value": 130
+						},
+						{
+							"value": 64
+						},
+						{
+							"value": 88
+						}
+					],
+					"disableLegend": true,
+					"name": "曲线",
+					"style": "curve",
+					"type": "line"
+				},
+				{
+					"color": "#2fc25b",
+					"data": [
+						{
+							"value": 120
+						},
+						{
+							"value": 140
+						},
+						{
+							"value": 105
+						},
+						{
+							"value": 170
+						},
+						{
+							"value": 95
+						},
+						{
+							"value": 100
+						}
+					],
+					"name": "折线",
+					"type": "line"
+				},
+				{
+					"color": "#f04864",
+					"data": [
+						{
+							"value": 100
+						},
+						{
+							"value": 80
+						},
+						{
+							"value": 125
+						},
+						{
+							"value": 150
+						},
+						{
+							"value": 112
+						},
+						{
+							"value": 132
+						}
+					],
+					"name": "点",
+					"index": 2,
+					"type": "point"
+				}
+			],
+			"extra": {
+				"mix": {
+					"column": {
+						"width": 20
+					}
+				},
+				"tooltip": {}
+			},
+			"dataLabel": true,
+			"fontSize": 11,
+			"categories": [
+				"2018",
+				"2019",
+				"2020",
+				"2021",
+				"2022",
+				"2023"
+			],
+			"type": "mix",
+			"animation": true
+		},
+		"type": "mix",
+		"update_time": 1726291445432,
+		"uts": true
+	}
+,
+	{
+		"_id": "66e51df59d9f915ad27917bd",
+		"creation_time": 1726291445433,
+		"name": "多坐标系混合图",
+		"option": {
+			"padding": [
+				15,
+				5,
+				0,
+				15
+			],
+			"yAxis": {
+				"padding": 10,
+				"data": [
+					{
+						"position": "left",
+						"title": "折线"
+					},
+					{
+						"min": 0,
+						"max": 200,
+						"textAlign": "left",
+						"position": "right",
+						"title": "柱状图"
+					},
+					{
+						"min": 0,
+						"max": 200,
+						"textAlign": "left",
+						"position": "right",
+						"title": "点"
+					}
+				],
+				"gridType": "dash",
+				"showTitle": true,
+				"dashLength": 4,
+				"gridColor": "#CCCCCC",
+				"disableGrid": false,
+				"disabled": false,
+				"splitNumber": 5
+			},
+			"xAxis": {
+				"disableGrid": true,
+				"title": "单位：年"
+			},
+			"series": [
+				{
+					"data": [
+						{
+							"value": 70
+						},
+						{
+							"value": 50
+						},
+						{
+							"value": 85
+						},
+						{
+							"value": 130
+						},
+						{
+							"value": 64
+						},
+						{
+							"value": 88
+						}
+					],
+					"name": "曲面",
+					"style": "curve",
+					"type": "area"
+				},
+				{
+					"data": [
+						{
+							"value": 40
+						},
+						{
+							"color": "#f04864",
+							"value": 30
+						},
+						{
+							"value": 55
+						},
+						{
+							"value": 110
+						},
+						{
+							"value": 24
+						},
+						{
+							"value": 58
+						}
+					],
+					"name": "柱1",
+					"index": 1,
+					"type": "column"
+				},
+				{
+					"data": [
+						{
+							"value": 50
+						},
+						{
+							"value": 20
+						},
+						{
+							"value": 75
+						},
+						{
+							"value": 60
+						},
+						{
+							"value": 34
+						},
+						{
+							"value": 38
+						}
+					],
+					"name": "柱2",
+					"index": 1,
+					"type": "column"
+				},
+				{
+					"color": "#1890ff",
+					"data": [
+						{
+							"value": 70
+						},
+						{
+							"value": 50
+						},
+						{
+							"value": 85
+						},
+						{
+							"value": 130
+						},
+						{
+							"value": 64
+						},
+						{
+							"value": 88
+						}
+					],
+					"disableLegend": true,
+					"name": "曲线",
+					"style": "curve",
+					"type": "line"
+				},
+				{
+					"color": "#2fc25b",
+					"data": [
+						{
+							"value": 120
+						},
+						{
+							"value": 140
+						},
+						{
+							"value": 105
+						},
+						{
+							"value": 170
+						},
+						{
+							"value": 95
+						},
+						{
+							"value": 100
+						}
+					],
+					"name": "折线",
+					"type": "line"
+				},
+				{
+					"color": "#f04864",
+					"data": [
+						{
+							"value": 100
+						},
+						{
+							"value": 80
+						},
+						{
+							"value": 125
+						},
+						{
+							"value": 150
+						},
+						{
+							"value": 112
+						},
+						{
+							"value": 132
+						}
+					],
+					"name": "点",
+					"index": 2,
+					"type": "point"
+				}
+			],
+			"extra": {
+				"mix": {
+					"column": {
+						"width": 20
+					}
+				},
+				"tooltip": {}
+			},
+			"dataLabel": true,
+			"fontSize": 11,
+			"categories": [
+				"2018",
+				"2019",
+				"2020",
+				"2021",
+				"2022",
+				"2023"
+			],
+			"type": "mix",
+			"animation": true
+		},
+		"type": "mix",
+		"update_time": 1726291445432,
+		"uts": true
+	}
+] as UTSJSONObject[]

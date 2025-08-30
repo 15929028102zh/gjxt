@@ -1,0 +1,708 @@
+<template>
+	<scroll-view 
+		class="container" 
+		scroll-y="true" 
+		:scroll-top="scrollTop" 
+		:style="{height: containerHeight + 'px'}" 
+		enable-back-to-top="true"
+		refresher-enabled="true"
+		:refresher-triggered="isRefreshing"
+		refresher-default-style="black"
+		refresher-background="#f5f5f5"
+		@refresherrefresh="onRefresh"
+		@refresherrestore="onRefreshRestore"
+	>
+		<!-- 顶部欢迎区域 -->
+		<view class="header">
+			<view class="welcome">
+				<text class="greeting">欢迎回来，{{userName}}</text>
+				<text class="app-name">{{currentDate}}</text>
+			</view>
+			<image class="avatar" :src="(userInfo.getString('avatar') ?? '') != '' ? (userInfo.getString('avatar') ?? '') : '/static/default-avatar.svg'" mode="aspectFill"></image>
+		</view>
+			<!-- 操作按钮 -->
+		<view class="action-buttons">
+			<view class="action-button" @click="goToAddRecord">
+				<view class="button-icon">➕</view>
+				<text >周检</text>
+				<text class="button-text">每周安全检查</text>
+			</view>
+			<view class="action-button delayed-button" @click="goToDelayedRecord">
+				<view class="button-icon">⏰</view>
+				<text >延迟整改</text>
+				<text class="button-text">延期问题处理</text>
+			</view>
+		</view>
+		<!-- 统计卡片 -->
+		<view class="stats-container">
+			<view class="stats-card" @click="goToPendingIssues">
+				<text class="stats-number">{{statistics.pendingIssues}}</text>
+				<text class="stats-label">待整改</text>
+				<text class="stats-icon">⚠️</text>
+			</view>
+			<view class="stats-card" @click="goToCompletedIssues">
+				<text class="stats-number">{{statistics.completedIssues}}</text>
+				<text class="stats-label">已整改</text>
+				<text class="stats-icon">✅</text>
+			</view>
+			<view class="stats-card" @click="goToWeeklyReport">
+				<text class="stats-number">{{statistics.weeklyTotal}}</text>
+				<text class="stats-label">本周记录</text>
+				<text class="stats-icon">📊</text>
+			</view>
+		</view>
+		
+	
+		
+		
+	</scroll-view>
+</template>
+
+<script lang="uts">
+	import { getApiUrl } from '@/config/api.uts'
+	
+	type RecentRecord = {
+		id: string,
+		problemDescription: string,
+		locationName: string,
+		createTime: string,
+		status: string
+	}
+
+	type StatisticsData = {
+		pendingIssues: number,
+		completedIssues: number,
+		weeklyTotal: number
+	}
+
+	export default {
+		data() {
+			return {
+				userInfo: {} as UTSJSONObject,
+				userName: '用户', // 简化的用户姓名变量
+				currentDate: '',
+				scrollTop: 0,
+				containerHeight: 0,
+				// 下拉刷新相关
+				isRefreshing: false,
+				statistics: {
+					pendingIssues: 0,
+					completedIssues: 0,
+					weeklyTotal: 0
+				} as StatisticsData,
+				recentRecords: [] as RecentRecord[]
+			}
+		},
+		onLoad() {
+			this.checkLogin()
+			this.initData()
+			this.initContainerHeight()
+			this.loadStatistics()
+			this.loadRecentRecords()
+		},
+		methods: {
+			checkLogin() {
+				const token = uni.getStorageSync('token')
+				if (token == null || token == '') {
+					uni.reLaunch({
+						url: '/pages/login/login'
+					})
+					return false
+				}
+				
+				// 加载用户信息
+				this.loadUserInfo()
+				return true
+			},
+			
+			// 加载用户信息
+			loadUserInfo() {
+				const userInfoStr = uni.getStorageSync('userInfo') as string
+				
+				if (userInfoStr != null && userInfoStr != '' && userInfoStr != 'null' && userInfoStr != 'undefined') {
+					try {
+						const parsedUserInfo = JSON.parse(userInfoStr) as UTSJSONObject
+						this.userInfo = parsedUserInfo
+						// 设置简化的用户姓名
+						const realNameValue = parsedUserInfo.getString('realName')
+						this.userName = realNameValue != null ? realNameValue : '用户'
+					} catch (error) {
+						console.error('用户信息JSON解析失败:', error)
+						this.userInfo = {} as UTSJSONObject
+						this.userName = '解析失败用户'
+					}
+				} else {
+					this.userInfo = {} as UTSJSONObject
+					this.userName = '默认用户'
+				}
+			},
+			
+			initData() {
+				const now = new Date()
+				const year = now.getFullYear()
+				const month = (now.getMonth() + 1).toString()
+				const formattedMonth = month.length == 1 ? `0${month}` : month
+				const day = now.getDate().toString()
+				const formattedDay = day.length == 1 ? `0${day}` : day
+				const weekdays = ['日', '一', '二', '三', '四', '五', '六']
+				const weekday = weekdays[now.getDay()]
+				this.currentDate = `${year}年${formattedMonth}月${formattedDay}日 星期${weekday}`
+			},
+			
+			loadStatistics() {
+				console.log('开始加载统计数据')
+				const token = uni.getStorageSync('token')
+				
+				// 获取待整改数量（状态为0）
+				const pendingUrl = getApiUrl('/inspection-record/weekly-count?status=0')
+				console.log('待整改数量请求URL:', pendingUrl)
+				uni.request({
+					url: pendingUrl,
+					method: 'GET',
+					header: {
+						'Authorization': `Bearer ${token}`
+					},
+					success: (res) => {
+						console.log('待整改数量请求成功:', res)
+						const response = res.data as UTSJSONObject
+						if (res.statusCode == 200 && (response.getNumber('code') ?? 0) == 200) {
+							this.statistics.pendingIssues = response.getNumber('data') ?? 0
+							console.log('待整改数量:', this.statistics.pendingIssues)
+						} else {
+							console.log('待整改数量请求失败:', response)
+						}
+					},
+					fail: (error) => {
+						console.log('待整改数量请求错误:', error)
+					}
+				})
+				
+				// 获取已整改数量（状态为1）
+				const completedUrl = getApiUrl('/inspection-record/weekly-count?status=1')
+				console.log('已整改数量请求URL:', completedUrl)
+				uni.request({
+					url: completedUrl,
+					method: 'GET',
+					header: {
+						'Authorization': `Bearer ${token}`
+					},
+					success: (res) => {
+						console.log('已整改数量请求成功:', res)
+						const response = res.data as UTSJSONObject
+						if (res.statusCode == 200 && (response.getNumber('code') ?? 0) == 200) {
+							this.statistics.completedIssues = response.getNumber('data') ?? 0
+							console.log('已整改数量:', this.statistics.completedIssues)
+						} else {
+							console.log('已整改数量请求失败:', response)
+						}
+					},
+					fail: (error) => {
+						console.log('已整改数量请求错误:', error)
+					}
+				})
+				
+				// 获取总记录数量（不传状态参数）
+				const totalUrl = getApiUrl('/inspection-record/weekly-count')
+				console.log('总记录数量请求URL:', totalUrl)
+				uni.request({
+					url: totalUrl,
+					method: 'GET',
+					header: {
+						'Authorization': `Bearer ${token}`
+					},
+					success: (res) => {
+						console.log('总记录数量请求成功:', res)
+						const response = res.data as UTSJSONObject
+						if (res.statusCode == 200 && (response.getNumber('code') ?? 0) == 200) {
+							this.statistics.weeklyTotal = response.getNumber('data') ?? 0
+							console.log('总记录数量:', this.statistics.weeklyTotal)
+						} else {
+							console.log('总记录数量请求失败:', response)
+						}
+					},
+					fail: (error) => {
+						console.log('总记录数量请求错误:', error)
+					}
+				})
+			},
+			
+			loadRecentRecords() {
+				const token = uni.getStorageSync('token')
+				const apiUrl = getApiUrl('/inspection-record/page?current=1&size=5&status=0')
+				console.log('请求URL:', apiUrl)
+				uni.request({
+				url: apiUrl,
+					method: 'GET',
+					header: {
+						'Authorization': `Bearer ${token}`
+					},
+					success: (res) => {
+						const response = res.data as UTSJSONObject
+						if (res.statusCode == 200 && (response.getNumber('code') ?? 0) == 200) {
+							const data = response.getJSON('data') as UTSJSONObject
+							const records = data.getArray('records') as Array<UTSJSONObject>
+							this.recentRecords = []
+							for (let i = 0; i < records.length; i++) {
+								const item = records[i]
+								const record: RecentRecord = {
+									id: item.getString('id') ?? '',
+									problemDescription: item.getString('problemDescription') ?? '',
+									locationName: item.getString('locationName') ?? '',
+									createTime: item.getString('createTime') ?? '',
+									status: item.getString('status') ?? ''
+								}
+								this.recentRecords.push(record)
+							}
+						}
+					},
+					fail: (error) => {
+						console.log('加载最近记录失败:', error)
+					}
+				})
+			},
+			
+			getStatusText(status: string): string {
+				if (status == "0") return '待整改'
+				if (status == "1") return '已整改'
+				if (status == "2") return '已复查'
+				return '未知'
+			},
+			
+			getStatusClass(status: string): string {
+				if (status == "0") return 'status-pending'
+				if (status == "1") return 'status-completed'
+				if (status == "2") return 'status-accepted'
+				return 'status-unknown'
+			},
+			
+			goToPendingIssues() {
+				uni.navigateTo({
+					url: '/pages/record/record?status=0'
+				})
+			},
+			
+			goToCompletedIssues() {
+				uni.navigateTo({
+					url: '/pages/record/record?status=1'
+				})
+			},
+			
+			goToWeeklyReport() {
+				uni.navigateTo({
+					url: '/pages/statistics/statistics'
+				})
+			},
+			
+			goToRecords() {
+				uni.switchTab({
+					url: '/pages/record/record'
+				})
+			},
+			
+			goToAddRecord() {
+				uni.navigateTo({
+					url: '/pages/record/add'
+				})
+			},
+			
+			goToDelayedRecord() {
+				// 延迟整改是指超过整改期限但仍未整改的记录
+				// 这些记录的状态是0（待整改），但已经超过了整改期限
+				uni.navigateTo({
+					url: '/pages/record/record?status=0&delayed=true'
+				})
+			},
+			
+			goToRecordDetail(recordId: string) {
+				uni.navigateTo({
+					url: `/pages/record/detail?id=${recordId}`
+				})
+			},
+			
+			// 下拉刷新事件处理
+			onRefresh() {
+				console.log('开始下拉刷新')
+				this.isRefreshing = true
+				
+				// 重新加载数据
+				this.reloadAllData()
+			},
+			
+			// 刷新恢复事件处理
+			onRefreshRestore() {
+				console.log('刷新恢复')
+				this.isRefreshing = false
+			},
+			
+			// 重新加载所有数据
+			reloadAllData() {
+				console.log('重新加载所有数据')
+				
+				try {
+					// 重新初始化时间
+					this.initData()
+					
+					// 重新加载用户信息
+					this.loadUserInfo()
+					
+					// 重新加载统计数据和记录
+					this.loadStatistics()
+					this.loadRecentRecords()
+					
+					console.log('数据加载完成')
+					
+				} catch (error) {
+					console.error('数据加载失败:', error)
+				} finally {
+					// 无论成功还是失败，都要关闭刷新动画
+					setTimeout(() => {
+						console.log('关闭刷新动画')
+						this.isRefreshing = false
+					}, 1000) // 1秒后关闭刷新动画
+				}
+			},
+			
+			initContainerHeight() {
+				const res = uni.getSystemInfoSync()
+				this.containerHeight = res.windowHeight
+			}
+		}
+	}
+</script>
+
+<style>
+	.container {
+		padding: 30rpx;
+		padding-bottom: 150rpx;
+		background: linear-gradient(180deg, #f8fafc 0%, #e2e8f0 100%);
+		box-sizing: border-box;
+		min-height: 100vh;
+	}
+	
+	.header {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		padding: 30rpx 25rpx;
+		background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+		border-radius: 24rpx;
+		margin-bottom: 30rpx;
+		box-shadow: 0 8rpx 32rpx rgba(102, 126, 234, 0.3);
+		position: relative;
+		overflow: hidden;
+	}
+	
+	.header::before {
+		content: '';
+		position: absolute;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="white" fill-opacity="0.1"/><circle cx="75" cy="75" r="1" fill="white" fill-opacity="0.1"/><circle cx="50" cy="10" r="0.5" fill="white" fill-opacity="0.1"/><circle cx="10" cy="60" r="0.5" fill="white" fill-opacity="0.1"/><circle cx="90" cy="40" r="0.5" fill="white" fill-opacity="0.1"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+		pointer-events: none;
+	}
+	
+	.welcome {
+		display: flex;
+		flex-direction: column;
+		flex: 1;
+		z-index: 2;
+		position: relative;
+	}
+	
+	.greeting {
+		color: rgba(105, 72, 72, 0.95);
+		font-size: 32rpx;
+		font-weight: 600;
+		margin-bottom: 8rpx;
+		letter-spacing: 0.5rpx;
+		text-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.1);
+	}
+	
+	.app-name {
+		color: rgba(105, 72, 72, 0.95);
+		font-size: 26rpx;
+		font-weight: 400;
+		letter-spacing: 0.3rpx;
+	}
+	
+	.avatar {
+		width: 100rpx;
+		height: 100rpx;
+		border-radius: 50rpx;
+		background-color: rgba(255, 255, 255, 0.2);
+		overflow: hidden;
+		border: 3rpx solid rgba(255, 255, 255, 0.4);
+		box-shadow: 0 6rpx 20rpx rgba(0, 0, 0, 0.15), 0 0 0 1rpx rgba(255, 255, 255, 0.1);
+		z-index: 2;
+		position: relative;
+		transition: all 0.3s ease;
+	}
+	
+	.avatar:active {
+		transform: scale(0.95);
+	}
+	
+	.stats-container {
+		display: flex;
+		justify-content: space-between;
+		margin-bottom: 30px;
+	}
+	
+	.stats-card {
+		flex: 1;
+		background: #fff;
+		border-radius: 12px;
+		padding: 20px 15px;
+		margin: 0 5px;
+		text-align: center;
+		position: relative;
+		box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+	}
+	
+	.stats-number {
+		font-size: 24px;
+		font-weight: bold;
+		color: #007AFF;
+		flex-direction: column;
+		margin-bottom: 8px;
+	}
+	
+	.stats-label {
+		font-size: 14px;
+		color: #666;
+		flex-direction: column;
+		margin-bottom: 8px;
+	}
+	
+	.stats-icon {
+		font-size: 20px;
+		position: absolute;
+		top: 15px;
+		right: 15px;
+	}
+	
+	.action-buttons {
+		margin-bottom: 30px;
+		display: flex;
+		flex-direction: row;
+		justify-content: space-between;
+		gap: 10px;
+	}
+	
+	.action-button {
+		flex: 1;
+		background: #d1ecf1;
+		border-radius: 12px;
+		padding: 15px 10px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+		min-width: 0;
+	}
+	
+	.delayed-button {
+		background: #ff4757 !important;
+	}
+	
+	.button-icon {
+		font-size: 20px;
+		margin-right: 8px;
+		color: #007AFF;
+		flex-shrink: 0;
+	}
+	
+	.button-text {
+		font-size: 14px;
+		color: #333;
+		font-weight: 500;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+	
+	.recent-records {
+		margin-bottom: 20px;
+	}
+	
+	.section-title {
+		font-size: 18px;
+		font-weight: bold;
+		color: #333;
+		margin-bottom: 15px;
+		flex-direction: column;
+	}
+	
+	.section-header {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		margin-bottom: 15px;
+	}
+	
+	.more-text {
+		font-size: 14px;
+		color: #007AFF;
+	}
+	
+	.records-list {
+		background: #fff;
+		border-radius: 12px;
+		padding: 15px;
+		box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+	}
+	
+	.record-item {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		padding: 15px 0;
+		border-bottom: 1px solid #f0f0f0;
+	}
+	
+	.record-item:last-child {
+		border-bottom: none;
+	}
+	
+	.record-info {
+		flex: 1;
+	}
+	
+	.record-title {
+		font-size: 16px;
+		color: #333;
+		flex-direction: column;
+		margin-bottom: 4px;
+	}
+	
+	.record-meta {
+		font-size: 12px;
+		color: #999;
+		flex-direction: column;
+	}
+	
+	.record-status {
+		padding: 4px 8px;
+		border-radius: 4px;
+		font-size: 12px;
+	}
+	
+	.status-pending {
+		background-color: #fff3cd;
+		color: #856404;
+	}
+	
+	.status-processing {
+		background-color: #d1ecf1;
+		color: #0c5460;
+	}
+	
+	.status-completed {
+		background-color: #d4edda;
+		color: #155724;
+	}
+	
+	.status-accepted {
+		background-color: #e2e3e5;
+		color: #383d41;
+	}
+	
+	.status-unknown {
+		background-color: #f8f9fa;
+		color: #6c757d;
+	}
+	
+	.empty-state {
+		text-align: center;
+		padding: 40px 20px;
+	}
+	
+	/* 待整改记录样式 */
+	.recent-section {
+		margin: 20px;
+	}
+	
+	.section-header {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		margin-bottom: 15px;
+	}
+	
+	.section-title {
+		font-size: 18px;
+		font-weight: 600;
+		color: #333;
+	}
+	
+	.view-all {
+		font-size: 14px;
+		color: #007AFF;
+	}
+	
+	.empty-records {
+		background: #fff;
+		border-radius: 12px;
+		padding: 40px 20px;
+		text-align: center;
+		box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+	}
+	
+	.empty-text {
+		font-size: 14px;
+		color: #999;
+	}
+	
+	.records-list .record-item {
+		background: #fff;
+		border-radius: 12px;
+		padding: 15px;
+		margin-bottom: 10px;
+		box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+		border-bottom: none;
+	}
+	
+	.record-content {
+		display: flex;
+		flex-direction: column;
+		gap: 8px;
+	}
+	
+	.problem-desc {
+		font-size: 16px;
+		color: #333;
+		font-weight: 500;
+		line-height: 1.4;
+	}
+	
+	.location-name {
+		font-size: 14px;
+		color: #666;
+	}
+	
+	.record-footer {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		margin-top: 5px;
+	}
+	
+	.create-time {
+		font-size: 12px;
+		color: #999;
+	}
+	
+	.status-tag {
+		padding: 4px 8px;
+		border-radius: 12px;
+		font-size: 12px;
+	}
+	
+	.status-text {
+		color: #fff;
+		font-weight: 500;
+	}
+
+</style>

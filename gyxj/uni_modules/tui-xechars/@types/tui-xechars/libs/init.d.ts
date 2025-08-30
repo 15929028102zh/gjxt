@@ -1,0 +1,14 @@
+import { ChartOptions, ChartOptionsLegend, ChartOptionsSeries, ChartOptionsSeriesData, ChartOptionsSubTitle, ChartOptionsTitle, ChartOptionsXAxis, ChartOptionsYAxis, ChartOptionsYAxisData, ChartOptionsMapSeriesProperties, ChartOptionsMapSeriesPropertiesParent, ChartOptionsMapSeriesGeometry } from "./type";
+export declare function seriesDataInit(e: UTSJSONObject): ChartOptionsSeriesData;
+export declare function seriesInit(e: UTSJSONObject, type?: string): ChartOptionsSeries;
+export declare function xAxisInit(e: UTSJSONObject): ChartOptionsXAxis;
+export declare function yAxisDataInit(e: UTSJSONObject): ChartOptionsYAxisData;
+export declare function yAxisInit(e: UTSJSONObject): ChartOptionsYAxis;
+export declare function legendInit(e: UTSJSONObject): ChartOptionsLegend;
+export declare function titleInit(e: UTSJSONObject): ChartOptionsTitle;
+export declare function subtitleInit(e: UTSJSONObject): ChartOptionsSubTitle;
+export declare function mapSeriesPropertiesParentInit(e: UTSJSONObject): ChartOptionsMapSeriesPropertiesParent;
+export declare function mapSeriesPropertiesInit(e: UTSJSONObject): ChartOptionsMapSeriesProperties;
+export declare function mapSeriesGeometryInit(e: UTSJSONObject): ChartOptionsMapSeriesGeometry;
+export declare function optionsInit(e: UTSJSONObject): ChartOptions;
+export declare function updateOptions(_opts: ChartOptions, e: UTSJSONObject): ChartOptions;

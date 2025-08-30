@@ -1,0 +1,30 @@
+{
+    "id": "tui-xechars",
+    "version": "2.0.2",
+    "uni_modules": {
+        "dependencies": [],
+        "artifacts": {
+            "env": {
+                "compilerVersion": "4.76"
+            },
+            "apis": [
+                "uni.createCanvasContextAsync",
+                "uni.getElementById",
+                "uni.getWindowInfo",
+                "uniCloud.importObject"
+            ],
+            "components": [],
+            "modules": [
+                "uni-canvas",
+                "uni-getElementById",
+                "uni-getSystemInfo",
+                "uni-cloud-client"
+            ],
+            "scopedSlots": [],
+            "customElements": []
+        },
+        "extends": {
+            "sn": "YKdWYJxFGoxjSsB8O1zI9yYTGGALmCLQT0HREsp6jdMBBs1YJ270u2nTCZUV/Fv4+etIhOntn7boj7ZfdoDy9Bx9woroTyCFlwzOB9V5K8NT6pf5BEIZvo/t1Ccsl4Kgc9/gFEoeFcb6Bz5Q85JMRrsyU8v8sP1yJiQBokvj0fpTNe3RnT/J9DdlcUac3bDZj3GUDX0/GRwwGYkdEXfyWdouuwgLGfwUQTtXcP8NCiS/sxYzahdQOIEl6y6zuYvkycnIHPGD/dkzjMZcI1ZTcg=="
+        }
+    }
+}

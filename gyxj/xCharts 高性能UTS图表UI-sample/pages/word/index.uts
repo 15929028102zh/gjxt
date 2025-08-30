@@ -1,0 +1,671 @@
+export default [
+	{
+		"_id": "66e533a51acf244629d8c061",
+		"creation_time": 1726296996834,
+		"name": "词云图水平排列",
+		"option": {
+			"animation": true,
+			"categories": [
+				"2016",
+				"2017",
+				"2018",
+				"2019",
+				"2020",
+				"2021"
+			],
+			"dataLabel": true,
+			"extra": {
+				"tooltip": {},
+				"word": {
+					"autoColors": false,
+					"type": "normal"
+				}
+			},
+			"fontSize": 11,
+			"padding": [
+				0,
+				0,
+				0,
+				0
+			],
+			"series": [
+				{
+					"name": "跨全端图表",
+					"textSize": 25
+				},
+				{
+					"name": "微信小程序",
+					"textSize": 20
+				},
+				{
+					"name": "支付宝小程序",
+					"textSize": 20
+				},
+				{
+					"name": "百度小程序",
+					"textSize": 20
+				},
+				{
+					"name": "QQ小程序",
+					"textSize": 20
+				},
+				{
+					"name": "头条小程序",
+					"textSize": 20
+				},
+				{
+					"name": "抖音小程序",
+					"textSize": 20
+				},
+				{
+					"name": "360小程序",
+					"textSize": 20
+				},
+				{
+					"name": "跨全端",
+					"textSize": 10
+				},
+				{
+					"name": "跨全端",
+					"textSize": 12
+				},
+				{
+					"name": "跨全端",
+					"textSize": 10
+				},
+				{
+					"name": "跨全端",
+					"textSize": 12
+				},
+				{
+					"name": "跨全端",
+					"textSize": 10
+				},
+				{
+					"name": "跨全端",
+					"textSize": 12
+				},
+				{
+					"name": "跨全端",
+					"textSize": 10
+				},
+				{
+					"name": "跨全端",
+					"textSize": 12
+				}
+			],
+			"type": "word"
+		},
+		"type": "word",
+		"update_time": 1726296996834,
+		"uts": true
+	},
+	{
+		"_id": "66e53395311c164d73c1d0fb",
+		"creation_time": 1726296981395,
+		"name": "词云图水平垂直混排",
+		"option": {
+			"animation": true,
+			"categories": [
+				"2016",
+				"2017",
+				"2018",
+				"2019",
+				"2020",
+				"2021"
+			],
+			"dataLabel": true,
+			"extra": {
+				"tooltip": {},
+				"word": {
+					"autoColors": false,
+					"type": "vertical"
+				}
+			},
+			"fontSize": 11,
+			"padding": [
+				0,
+				0,
+				0,
+				0
+			],
+			"series": [
+				{
+					"name": "跨全端图表",
+					"textSize": 25
+				},
+				{
+					"name": "微信小程序",
+					"textSize": 20
+				},
+				{
+					"name": "支付宝小程序",
+					"textSize": 20
+				},
+				{
+					"name": "百度小程序",
+					"textSize": 20
+				},
+				{
+					"name": "QQ小程序",
+					"textSize": 20
+				},
+				{
+					"name": "头条小程序",
+					"textSize": 20
+				},
+				{
+					"name": "抖音小程序",
+					"textSize": 20
+				},
+				{
+					"name": "360小程序",
+					"textSize": 20
+				},
+				{
+					"name": "跨全端",
+					"textSize": 10
+				},
+				{
+					"name": "跨全端",
+					"textSize": 12
+				},
+				{
+					"name": "跨全端",
+					"textSize": 10
+				},
+				{
+					"name": "跨全端",
+					"textSize": 12
+				},
+				{
+					"name": "跨全端",
+					"textSize": 10
+				},
+				{
+					"name": "跨全端",
+					"textSize": 12
+				},
+				{
+					"name": "跨全端",
+					"textSize": 10
+				},
+				{
+					"name": "跨全端",
+					"textSize": 12
+				}
+			],
+			"type": "word"
+		},
+		"type": "word",
+		"update_time": 1726296981395,
+		"uts": true
+	}, {
+		"_id": "66e533a51acf244629d8c061",
+		"creation_time": 1726296996834,
+		"name": "词云图水平排列",
+		"option": {
+			"animation": true,
+			"categories": [
+				"2016",
+				"2017",
+				"2018",
+				"2019",
+				"2020",
+				"2021"
+			],
+			"dataLabel": true,
+			"extra": {
+				"tooltip": {},
+				"word": {
+					"autoColors": false,
+					"type": "normal"
+				}
+			},
+			"fontSize": 11,
+			"padding": [
+				0,
+				0,
+				0,
+				0
+			],
+			"series": [
+				{
+					"name": "跨全端图表",
+					"textSize": 25
+				},
+				{
+					"name": "微信小程序",
+					"textSize": 20
+				},
+				{
+					"name": "支付宝小程序",
+					"textSize": 20
+				},
+				{
+					"name": "百度小程序",
+					"textSize": 20
+				},
+				{
+					"name": "QQ小程序",
+					"textSize": 20
+				},
+				{
+					"name": "头条小程序",
+					"textSize": 20
+				},
+				{
+					"name": "抖音小程序",
+					"textSize": 20
+				},
+				{
+					"name": "360小程序",
+					"textSize": 20
+				},
+				{
+					"name": "跨全端",
+					"textSize": 10
+				},
+				{
+					"name": "跨全端",
+					"textSize": 12
+				},
+				{
+					"name": "跨全端",
+					"textSize": 10
+				},
+				{
+					"name": "跨全端",
+					"textSize": 12
+				},
+				{
+					"name": "跨全端",
+					"textSize": 10
+				},
+				{
+					"name": "跨全端",
+					"textSize": 12
+				},
+				{
+					"name": "跨全端",
+					"textSize": 10
+				},
+				{
+					"name": "跨全端",
+					"textSize": 12
+				}
+			],
+			"type": "word"
+		},
+		"type": "word",
+		"update_time": 1726296996834,
+		"uts": true
+	},
+	
+		{
+			"_id": "66e52ea0c2a0e4182da0a4a3",
+			"creation_time": 1726295712459,
+			"name": "基本环形图",
+			"option": {
+				"animation": true,
+				"dataLabel": true,
+				"extra": {
+					"ring": {
+						"activeOpacity": 0.5,
+						"activeRadius": 10,
+						"border": false,
+						"borderColor": "#FFFFFF",
+						"borderWidth": 3,
+						"labelWidth": 15,
+						"offsetAngle": 0,
+						"ringWidth": 60
+					},
+					"tooltip": {}
+				},
+				"fontSize": 13,
+				"legend": {
+					"lineHeight": 25,
+					"position": "right",
+					"show": true
+				},
+				"padding": [
+					5,
+					5,
+					5,
+					5
+				],
+				"series": [
+					{
+						"data": [
+							{
+								"value": 50
+							}
+						],
+						"name": "一班"
+					},
+					{
+						"data": [
+							{
+								"value": 30
+							}
+						],
+						"name": "二班"
+					},
+					{
+						"data": [
+							{
+								"value": 20
+							}
+						],
+						"name": "三班"
+					},
+					{
+						"data": [
+							{
+								"value": 18
+							}
+						],
+						"name": "四班"
+					},
+					{
+						"data": [
+							{
+								"value": 8
+							}
+						],
+						"name": "五班"
+					}
+				],
+				"subtitle": {
+					"color": "#7cb5ec",
+					"fontSize": 25,
+					"name": "70%"
+				},
+				"title": {
+					"color": "#666666",
+					"fontSize": 15,
+					"name": "收益率"
+				},
+				"type": "ring"
+			},
+			"type": "ring",
+			"update_time": 1726295712459,
+			"uts": true
+		},
+		{
+			"_id": "66e52e8847b1be935d6304c4",
+			"creation_time": 1726295688150,
+			"name": "圆环图-分割线+渐变色",
+			"option": {
+				"animation": true,
+				"dataLabel": true,
+				"extra": {
+					"ring": {
+						"activeOpacity": 0.5,
+						"activeRadius": 10,
+						"border": true,
+						"borderColor": "#FFFFFF",
+						"borderWidth": 3,
+						"labelWidth": 15,
+						"linearType": "custom",
+						"offsetAngle": 0,
+						"ringWidth": 60
+					},
+					"tooltip": {}
+				},
+				"fontSize": 13,
+				"legend": {
+					"lineHeight": 25,
+					"position": "right",
+					"show": true
+				},
+				"padding": [
+					5,
+					5,
+					5,
+					5
+				],
+				"series": [
+					{
+						"data": [
+							{
+								"value": 50
+							}
+						],
+						"name": "一班"
+					},
+					{
+						"data": [
+							{
+								"value": 30
+							}
+						],
+						"name": "二班"
+					},
+					{
+						"data": [
+							{
+								"value": 20
+							}
+						],
+						"name": "三班"
+					},
+					{
+						"data": [
+							{
+								"value": 18
+							}
+						],
+						"name": "四班"
+					},
+					{
+						"data": [
+							{
+								"value": 8
+							}
+						],
+						"name": "五班"
+					}
+				],
+				"subtitle": {
+					"color": "#7cb5ec",
+					"fontSize": 25,
+					"name": "70%"
+				},
+				"title": {
+					"color": "#666666",
+					"fontSize": 15,
+					"name": "收益率"
+				},
+				"type": "ring"
+			},
+			"type": "ring",
+			"update_time": 1726295688150,
+			"uts": true
+		},
+		{
+			"_id": "66e52e61b5d950c8106ec1df",
+			"creation_time": 1726295649263,
+			"name": "圆环图-自定义标签内容",
+			"option": {
+				"animation": true,
+				"dataLabel": true,
+				"extra": {
+					"ring": {
+						"activeOpacity": 0.5,
+						"activeRadius": 10,
+						"border": true,
+						"borderColor": "#FFFFFF",
+						"borderWidth": 3,
+						"labelWidth": 15,
+						"offsetAngle": 0
+					},
+					"tooltip": {}
+				},
+				"fontSize": 13,
+				"legend": {
+					"lineHeight": 25,
+					"position": "right",
+					"show": true
+				},
+				"padding": [
+					5,
+					5,
+					5,
+					5
+				],
+				"series": [
+					{
+						"data": [
+							{
+								"value": 50
+							}
+						],
+						"name": "一班"
+					},
+					{
+						"data": [
+							{
+								"value": 30
+							}
+						],
+						"name": "二班"
+					},
+					{
+						"data": [
+							{
+								"value": 20
+							}
+						],
+						"name": "三班"
+					},
+					{
+						"data": [
+							{
+								"labelText": "四班:18人",
+								"value": 18
+							}
+						],
+						"name": "四班"
+					},
+					{
+						"data": [
+							{
+								"value": 8
+							}
+						],
+						"name": "五班"
+					}
+				],
+				"subtitle": {
+					"color": "#7cb5ec",
+					"fontSize": 25,
+					"name": "70%"
+				},
+				"title": {
+					"color": "#666666",
+					"fontSize": 15,
+					"name": "收益率"
+				},
+				"type": "ring"
+			},
+			"type": "ring",
+			"update_time": 1726295649263,
+			"uts": true
+		},
+		{
+			"_id": "66e52ac01acf244629d8639a",
+			"creation_time": 1726294720942,
+			"name": "圆环图-自定义标签隐藏",
+			"option": {
+				"animation": true,
+				"dataLabel": true,
+				"extra": {
+					"ring": {
+						"activeOpacity": 0.5,
+						"activeRadius": 10,
+						"border": true,
+						"borderColor": "#FFFFFF",
+						"borderWidth": 3,
+						"labelWidth": 15,
+						"offsetAngle": 0
+					},
+					"tooltip": {}
+				},
+				"fontSize": 13,
+				"legend": {
+					"lineHeight": 25,
+					"position": "right",
+					"show": true
+				},
+				"padding": [
+					5,
+					5,
+					5,
+					5
+				],
+				"series": [
+					{
+						"data": [
+							{
+								"labelShow": false,
+								"value": 50
+							}
+						],
+						"name": "一班"
+					},
+					{
+						"data": [
+							{
+								"labelShow": false,
+								"value": 30
+							}
+						],
+						"name": "二班"
+					},
+					{
+						"data": [
+							{
+								"labelShow": false,
+								"value": 20
+							}
+						],
+						"name": "三班"
+					},
+					{
+						"data": [
+							{
+								"labelText": "四班:18人",
+								"value": 18
+							}
+						],
+						"name": "四班"
+					},
+					{
+						"data": [
+							{
+								"labelShow": false,
+								"value": 8
+							}
+						],
+						"name": "五班"
+					}
+				],
+				"subtitle": {
+					"color": "#7cb5ec",
+					"fontSize": 25,
+					"name": "70%"
+				},
+				"title": {
+					"color": "#666666",
+					"fontSize": 15,
+					"name": "收益率"
+				},
+				"type": "ring"
+			},
+			"type": "ring",
+			"update_time": 1726294720942,
+			"uts": true
+		}
+	
+] as UTSJSONObject[]

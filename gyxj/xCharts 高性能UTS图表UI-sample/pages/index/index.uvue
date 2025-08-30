@@ -1,0 +1,69 @@
+<template>
+	<!-- #ifdef APP -->
+	<scroll-view style="flex: 1;">
+	<!-- #endif -->
+		<view style="padding: 30rpx;">
+			<text style="color: red;font-size: 20px;font-weight: bold;margin-bottom: 30rpx;">
+				重磅消息！Tui-xCharts已支持一个Canvas画布绘制多个图表，减少页面过多DOM的性能开销
+			</text>
+			<navigator class="navigator" url="/pages/column/column">
+				<button type="primary">柱形图</button>
+			</navigator>
+			<navigator class="navigator" url="/pages/mount/mount">
+				<button type="primary">山峰图</button>
+			</navigator>
+			<navigator class="navigator" url="/pages/bar/bar">
+				<button type="primary">条状图</button>
+			</navigator>
+			<navigator class="navigator" url="/pages/line/line">
+				<button type="primary">折线图</button>
+			</navigator>
+			<navigator class="navigator" url="/pages/area/area">
+				<button type="primary">区域图</button>
+			</navigator>
+			<navigator class="navigator" url="/pages/pie/pie">
+				<button type="primary">饼状图</button>
+			</navigator>
+			<navigator class="navigator" url="/pages/ring/ring">
+				<button type="primary">圆环图</button>
+			</navigator>
+			<navigator class="navigator" url="/pages/rose/rose">
+				<button type="primary">玫瑰图</button>
+			</navigator>
+			<navigator class="navigator" url="/pages/radar/radar">
+				<button type="primary">雷达图</button>
+			</navigator>
+			<navigator class="navigator" url="/pages/arcbar/arcbar">
+				<button type="primary">进度条</button>
+			</navigator>
+			<navigator class="navigator" url="/pages/gauge/gauge">
+				<button type="primary">仪表盘</button>
+			</navigator>
+			<navigator class="navigator" url="/pages/funnel/funnel">
+				<button type="primary">漏斗图</button>
+			</navigator>
+			<navigator class="navigator" url="/pages/word/word">
+				<button type="primary">词云图</button>
+			</navigator>
+			<navigator class="navigator" url="/pages/candle/candle">
+				<button type="primary">K线图</button>
+			</navigator>
+			<navigator class="navigator" url="/pages/map/map">
+				<button type="primary">地图</button>
+			</navigator>
+			<navigator class="navigator" url="/pages/scatter/scatter">
+				<button type="primary">散点图</button>
+			</navigator>
+			<navigator class="navigator" url="/pages/mix/mix">
+				<button type="primary">混合图</button>
+			</navigator>
+		</view>
+	<!-- #ifdef APP -->
+	</scroll-view>
+	<!-- #endif -->
+</template>
+<style>
+	.navigator {
+		margin-bottom: 30rpx;
+	}
+</style>

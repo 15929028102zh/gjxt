@@ -1,0 +1,346 @@
+export default [
+	{
+		"_id": "66e51f1847b1be935d628941",
+		"creation_time": 1726291736915,
+		"name": "基本饼状图",
+		"option": {
+			"animation": true,
+			"dataLabel": true,
+			"extra": {
+				"pie": {
+					"activeOpacity": 0.5,
+					"activeRadius": 10,
+					"border": false,
+					"borderColor": "#FFFFFF",
+					"borderWidth": 3,
+					"labelWidth": 15,
+					"offsetAngle": 0
+				},
+				"tooltip": {}
+			},
+			"fontSize": 13,
+			"padding": [
+				5,
+				5,
+				5,
+				5
+			],
+			"series": [
+				{
+					"data": [
+						{
+							"value": 50
+						}
+					],
+					"name": "一班"
+				},
+				{
+					"data": [
+						{
+							"value": 30
+						}
+					],
+					"name": "二班"
+				},
+				{
+					"data": [
+						{
+							"value": 20
+						}
+					],
+					"name": "三班"
+				},
+				{
+					"data": [
+						{
+							"value": 18
+						}
+					],
+					"name": "四班"
+				},
+				{
+					"data": [
+						{
+							"value": 8
+						}
+					],
+					"name": "五班"
+				}
+			],
+			"type": "pie",
+			"xAxis": {
+				"disableGrid": true
+			},
+			"yAxis": {
+				"data": [
+					{
+						"min": 0
+					}
+				]
+			}
+		},
+		"type": "pie",
+		"update_time": 1726291736915,
+		"uts": true
+	},
+	{
+		"_id": "66e51efafbdb427dfc76c4ea",
+		"creation_time": 1726291706075,
+		"name": "带分割线+渐变色",
+		"option": {
+			"animation": true,
+			"dataLabel": true,
+			"extra": {
+				"pie": {
+					"activeOpacity": 0.5,
+					"activeRadius": 10,
+					"border": true,
+					"borderColor": "#FFFFFF",
+					"borderWidth": 3,
+					"labelWidth": 15,
+					"linearType": "custom",
+					"offsetAngle": 0
+				},
+				"tooltip": {}
+			},
+			"fontSize": 13,
+			"padding": [
+				5,
+				5,
+				5,
+				5
+			],
+			"series": [
+				{
+					"data": [
+						{
+							"value": 50
+						}
+					],
+					"name": "一班"
+				},
+				{
+					"data": [
+						{
+							"value": 30
+						}
+					],
+					"name": "二班"
+				},
+				{
+					"data": [
+						{
+							"value": 20
+						}
+					],
+					"name": "三班"
+				},
+				{
+					"data": [
+						{
+							"value": 18
+						}
+					],
+					"name": "四班"
+				},
+				{
+					"data": [
+						{
+							"value": 8
+						}
+					],
+					"name": "五班"
+				}
+			],
+			"type": "pie",
+			"xAxis": {
+				"disableGrid": true
+			},
+			"yAxis": {
+				"data": [
+					{
+						"min": 0
+					}
+				]
+			}
+		},
+		"type": "pie",
+		"update_time": 1726291706075,
+		"uts": true
+	},
+	{
+		"_id": "66e51ee4fbdb427dfc76c368",
+		"creation_time": 1726291683991,
+		"name": "自定义标签内容",
+		"option": {
+			"animation": true,
+			"dataLabel": true,
+			"extra": {
+				"pie": {
+					"activeOpacity": 0.5,
+					"activeRadius": 10,
+					"border": true,
+					"borderColor": "#FFFFFF",
+					"borderWidth": 3,
+					"labelWidth": 15,
+					"offsetAngle": 0
+				},
+				"tooltip": {}
+			},
+			"fontSize": 13,
+			"padding": [
+				5,
+				5,
+				5,
+				5
+			],
+			"series": [
+				{
+					"data": [
+						{
+							"value": 50
+						}
+					],
+					"name": "一班"
+				},
+				{
+					"data": [
+						{
+							"value": 30
+						}
+					],
+					"name": "二班"
+				},
+				{
+					"data": [
+						{
+							"value": 20
+						}
+					],
+					"name": "三班"
+				},
+				{
+					"data": [
+						{
+							"labelText": "四班:18人",
+							"value": 18
+						}
+					],
+					"name": "四班"
+				},
+				{
+					"data": [
+						{
+							"value": 8
+						}
+					],
+					"name": "五班"
+				}
+			],
+			"type": "pie",
+			"xAxis": {
+				"disableGrid": true
+			},
+			"yAxis": {
+				"data": [
+					{
+						"min": 0
+					}
+				]
+			}
+		},
+		"type": "pie",
+		"update_time": 1726291683991,
+		"uts": true
+	},
+	{
+		"_id": "66e51ec19d9f915ad279281d",
+		"creation_time": 1726291649079,
+		"name": "自定义标签隐藏",
+		"option": {
+			"animation": true,
+			"dataLabel": true,
+			"extra": {
+				"pie": {
+					"activeOpacity": 0.5,
+					"activeRadius": 10,
+					"border": true,
+					"borderColor": "#FFFFFF",
+					"borderWidth": 3,
+					"labelWidth": 15,
+					"offsetAngle": 0
+				},
+				"tooltip": {}
+			},
+			"fontSize": 13,
+			"padding": [
+				5,
+				5,
+				5,
+				5
+			],
+			"series": [
+				{
+					"data": [
+						{
+							"labelShow": false,
+							"value": 50
+						}
+					],
+					"labelShow": false,
+					"name": "一班"
+				},
+				{
+					"data": [
+						{
+							"labelShow": false,
+							"value": 30
+						}
+					],
+					"name": "二班"
+				},
+				{
+					"data": [
+						{
+							"labelShow": false,
+							"value": 20
+						}
+					],
+					"name": "三班"
+				},
+				{
+					"data": [
+						{
+							"labelText": "四班:18人",
+							"value": 18
+						}
+					],
+					"name": "四班"
+				},
+				{
+					"data": [
+						{
+							"labelShow": false,
+							"value": 8
+						}
+					],
+					"name": "五班"
+				}
+			],
+			"type": "pie",
+			"xAxis": {
+				"disableGrid": true
+			},
+			"yAxis": {
+				"data": [
+					{
+						"min": 0
+					}
+				]
+			}
+		},
+		"type": "pie",
+		"update_time": 1726291649079,
+		"uts": true
+	}
+] as UTSJSONObject[]

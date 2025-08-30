@@ -1,0 +1,123 @@
+<template>
+	<view class="container">
+		<view class="title">
+			<text class="title-text">图表测试页面</text>
+		</view>
+		
+		<view class="chart-wrapper">
+			<tui-xechars 
+				ref="testChart"
+				:option="chartOption"
+				:width="350"
+				:height="300"
+				@initFinished="onChartInit"
+			/>
+		</view>
+		
+		<view class="info">
+			<text class="info-text">图表状态: {{ chartStatus }}</text>
+		</view>
+	</view>
+</template>
+
+<script setup lang="uts">
+	import { ref, onMounted, nextTick } from 'vue'
+
+	const testChart = ref(null)
+	const chartStatus = ref('正在初始化...')
+	
+	const chartOption = ref({
+		type: 'pie',
+		color: ['#ff6b6b', '#4ecdc4', '#45b7d1'],
+		title: {
+			name: '测试图表',
+			fontSize: 16,
+			color: '#333333'
+		},
+		subtitle: {
+			name: '总计: 100',
+			fontSize: 12,
+			color: '#999999'
+		},
+		extra: {
+			pie: {
+				activeOpacity: 0.5,
+				activeRadius: 10,
+				offsetAngle: 0,
+				labelWidth: 15,
+				border: true,
+				borderWidth: 2,
+				borderColor: '#FFFFFF'
+			}
+		},
+		series: [
+			{
+				name: '项目A',
+				value: 30,
+				color: '#ff6b6b'
+			},
+			{
+				name: '项目B',
+				value: 40,
+				color: '#4ecdc4'
+			},
+			{
+				name: '项目C',
+				value: 30,
+				color: '#45b7d1'
+			}
+		]
+	} as UTSJSONObject)
+	
+	const onChartInit = () : void => {
+		console.log('图表初始化完成')
+		chartStatus.value = '图表已初始化'
+	}
+	
+	onMounted(() => {
+		console.log('测试页面加载')
+		nextTick(() => {
+			console.log('开始初始化图表')
+			chartStatus.value = '图表配置已设置'
+		})
+	})
+</script>
+
+<style scoped>
+	.container {
+		padding: 20rpx;
+		background-color: #f5f5f5;
+		height: 100%;
+	}
+
+	.title {
+		text-align: center;
+		margin-bottom: 40rpx;
+	}
+
+	.title-text {
+		font-size: 36rpx;
+		font-weight: bold;
+		color: #333;
+	}
+
+	.chart-wrapper {
+		background: white;
+		border-radius: 12rpx;
+		padding: 20rpx;
+		margin-bottom: 20rpx;
+		box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
+	}
+
+	.info {
+		background: white;
+		border-radius: 12rpx;
+		padding: 20rpx;
+		text-align: center;
+	}
+
+	.info-text {
+		color: #666;
+		font-size: 28rpx;
+	}
+</style>

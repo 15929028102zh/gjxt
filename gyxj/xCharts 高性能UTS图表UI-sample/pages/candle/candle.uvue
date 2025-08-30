@@ -1,0 +1,48 @@
+<template>
+	<scroll-view style="flex: 1;">
+		<text style="color: red;margin: 30rpx;text-align: center;">一个canvas绘制多个图表,减少性能开销</text>
+		<button type="primary" style="margin: 30rpx;" @click="updatearcbar">更新第一绘制区内容示例</button>
+		<tui-xechars :style="`height:${canvasInsHeight}px;margin: 0 30rpx;`" @initFinished="initFinished"></tui-xechars>
+	</scroll-view>
+</template>
+
+<script setup>
+	const tuixcharsins = ref<ComponentPublicInstance | null>(null)
+	import opts from './index.uts'
+	import { TuiCharts, TuiDrawCharts } from '@/uni_modules/tui-xechars'
+	const itemH : number = 287
+	let charts : TuiCharts | null = null
+	const canvasInsHeight = ref<number>(opts.length * itemH)
+	function initFinished(e : TuiCharts) {
+		charts = e
+		opts.forEach((item : UTSJSONObject, index : number) => {
+			const bar = e.add(index, item.getJSON('option')!)
+			bar.setCoordinates({ height: 287, xOffset: 0, yOffset: itemH * index })
+			bar.draw()
+		})
+	}
+	function updatearcbar() {
+		const char = charts!
+		const bar = char.getDrawCharts(0)!
+		bar.update({
+			"series": [
+				{
+					"data": [
+						[2400, 2350, 2300, 2450],
+						[2350, 2300, 2250, 2400],
+						[2300, 2250, 2200, 2350],
+						[2250, 2200, 2150, 2300],
+						[2200, 2150, 2100, 2250],
+						[2150, 2100, 2050, 2200],
+						[2100, 2050, 2000, 2150],
+						[2050, 2000, 1950, 2100],
+						[2000, 1950, 1900, 2050],
+						[1950, 1900, 1850, 2000]
+					],
+					"name": "模拟指数"
+				}
+			]
+
+		})
+	}
+</script>

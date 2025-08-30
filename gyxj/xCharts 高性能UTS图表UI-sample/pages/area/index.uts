@@ -1,0 +1,353 @@
+export default [
+	{
+		"_id": "66e51cdbaa36a3f0e57114f0",
+		"creation_time": 1726291163684,
+		"name": "基本折线区域图",
+		"option": {
+			"animation": true,
+			"categories": [
+				"2016",
+				"2017",
+				"2018",
+				"2019",
+				"2020",
+				"2021"
+			],
+			"dataLabel": true,
+			"extra": {
+				"area": {
+					"activeType": "hollow",
+					"addLine": true,
+					"gradient": false,
+					"opacity": 0.2,
+					"type": "straight",
+					"width": 2
+				},
+				"tooltip": {}
+			},
+			"fontSize": 11,
+			"padding": [
+				20,
+				0,
+				0,
+				5
+			],
+			"series": [
+				{
+					"data": [
+						{
+							"value": 35
+						},
+						{
+							"value": 8
+						},
+						{
+							"value": 25
+						},
+						{
+							"value": 37
+						},
+						{
+							"value": 4
+						},
+						{
+							"value": 20
+						}
+					],
+					"name": "成交量A"
+				},
+				{
+					"data": [
+						{
+							"value": 70
+						},
+						{
+							"value": 40
+						},
+						{
+							"value": 65
+						},
+						{
+							"value": 100
+						},
+						{
+							"value": 44
+						},
+						{
+							"value": 68
+						}
+					],
+					"name": "成交量B"
+				},
+				{
+					"data": [
+						{
+							"value": 100
+						},
+						{
+							"value": 80
+						},
+						{
+							"value": 95
+						},
+						{
+							"value": 150
+						},
+						{
+							"value": 112
+						},
+						{
+							"value": 132
+						}
+					],
+					"name": "成交量C"
+				}
+			],
+			"type": "area",
+			"xAxis": {
+				"disableGrid": true
+			},
+			"yAxis": {
+				"dashLength": 2,
+				"gridType": "dash"
+			}
+		},
+		"type": "area",
+		"update_time": 1726291163684,
+		"uts": true
+	},
+	{
+		"_id": "66e51cc7c2a0e4182da004ee",
+		"creation_time": 1726291143609,
+		"name": "渐变色曲线区域图",
+		"option": {
+			"animation": true,
+			"categories": [
+				"2016",
+				"2017",
+				"2018",
+				"2019",
+				"2020",
+				"2021"
+			],
+			"dataLabel": true,
+			"extra": {
+				"area": {
+					"activeType": "hollow",
+					"addLine": true,
+					"gradient": true,
+					"opacity": 0.2,
+					"type": "curve",
+					"width": 2
+				},
+				"tooltip": {}
+			},
+			"fontSize": 11,
+			"padding": [
+				20,
+				0,
+				0,
+				5
+			],
+			"series": [
+				{
+					"data": [
+						{
+							"value": 35
+						},
+						{
+							"value": 8
+						},
+						{
+							"value": 25
+						},
+						{
+							"value": 37
+						},
+						{
+							"value": 4
+						},
+						{
+							"value": 20
+						}
+					],
+					"name": "成交量A"
+				},
+				{
+					"data": [
+						{
+							"value": 70
+						},
+						{
+							"value": 40
+						},
+						{
+							"value": 65
+						},
+						{
+							"value": 100
+						},
+						{
+							"value": 44
+						},
+						{
+							"value": 68
+						}
+					],
+					"name": "成交量B"
+				},
+				{
+					"data": [
+						{
+							"value": 100
+						},
+						{
+							"value": 80
+						},
+						{
+							"value": 95
+						},
+						{
+							"value": 150
+						},
+						{
+							"value": 112
+						},
+						{
+							"value": 132
+						}
+					],
+					"name": "成交量C"
+				}
+			],
+			"type": "area",
+			"xAxis": {
+				"disableGrid": true
+			},
+			"yAxis": {
+				"dashLength": 2,
+				"gridType": "dash"
+			}
+		},
+		"type": "area",
+		"update_time": 1726291143609,
+		"uts": true
+	},
+	{
+		"_id": "66e51cb2fbdb427dfc769f19",
+		"creation_time": 1726291122468,
+		"name": "渐变色时序区域图",
+		"option": {
+			"animation": true,
+			"categories": [
+				"2016",
+				"2017",
+				"2018",
+				"2019",
+				"2020",
+				"2021"
+			],
+			"dataLabel": true,
+			"extra": {
+				"area": {
+					"activeType": "hollow",
+					"addLine": true,
+					"gradient": true,
+					"opacity": 0.2,
+					"type": "step",
+					"width": 2
+				},
+				"tooltip": {}
+			},
+			"fontSize": 11,
+			"padding": [
+				20,
+				0,
+				0,
+				5
+			],
+			"series": [
+				{
+					"data": [
+						{
+							"value": 35
+						},
+						{
+							"value": 8
+						},
+						{
+							"value": 25
+						},
+						{
+							"value": 37
+						},
+						{
+							"value": 4
+						},
+						{
+							"value": 20
+						}
+					],
+					"name": "成交量A"
+				},
+				{
+					"data": [
+						{
+							"value": 70
+						},
+						{
+							"value": 40
+						},
+						{
+							"value": 65
+						},
+						{
+							"value": 100
+						},
+						{
+							"value": 44
+						},
+						{
+							"value": 68
+						}
+					],
+					"name": "成交量B"
+				},
+				{
+					"data": [
+						{
+							"value": 100
+						},
+						{
+							"value": 80
+						},
+						{
+							"value": 95
+						},
+						{
+							"value": 150
+						},
+						{
+							"value": 112
+						},
+						{
+							"value": 132
+						}
+					],
+					"name": "成交量C"
+				}
+			],
+			"type": "area",
+			"xAxis": {
+				"disableGrid": true
+			},
+			"yAxis": {
+				"dashLength": 2,
+				"gridType": "dash"
+			}
+		},
+		"type": "area",
+		"update_time": 1726291122468,
+		"uts": true
+	}
+] as UTSJSONObject[]

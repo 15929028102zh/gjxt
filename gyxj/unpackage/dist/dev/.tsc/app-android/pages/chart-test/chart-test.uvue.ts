@@ -1,0 +1,98 @@
+import { GenUniModulesTuiXecharsComponentsTuiXecharsTuiXecharsClass } from '@/uni_modules/tui-xechars?uts-proxy';
+import { ref, onMounted, nextTick } from 'vue'
+
+	
+const __sfc__ = defineComponent({
+  __name: 'chart-test',
+  setup(__props) {
+const __ins = getCurrentInstance()!;
+const _ctx = __ins.proxy as InstanceType<typeof __sfc__>;
+const _cache = __ins.renderCache;
+
+	const testChart = ref(null)
+	const chartStatus = ref('正在初始化...')
+	
+	const chartOption = ref({
+		type: 'pie',
+		color: ['#ff6b6b', '#4ecdc4', '#45b7d1'],
+		title: {
+			name: '测试图表',
+			fontSize: 16,
+			color: '#333333'
+		},
+		subtitle: {
+			name: '总计: 100',
+			fontSize: 12,
+			color: '#999999'
+		},
+		extra: {
+			pie: {
+				activeOpacity: 0.5,
+				activeRadius: 10,
+				offsetAngle: 0,
+				labelWidth: 15,
+				border: true,
+				borderWidth: 2,
+				borderColor: '#FFFFFF'
+			}
+		},
+		series: [
+			{
+				name: '项目A',
+				value: 30,
+				color: '#ff6b6b'
+			},
+			{
+				name: '项目B',
+				value: 40,
+				color: '#4ecdc4'
+			},
+			{
+				name: '项目C',
+				value: 30,
+				color: '#45b7d1'
+			}
+		]
+	} as UTSJSONObject)
+	
+	const onChartInit = () : void => {
+		console.log('图表初始化完成', " at pages/chart-test/chart-test.uvue:73")
+		chartStatus.value = '图表已初始化'
+	}
+	
+	onMounted(() => {
+		console.log('测试页面加载', " at pages/chart-test/chart-test.uvue:78")
+		nextTick(() => {
+			console.log('开始初始化图表', " at pages/chart-test/chart-test.uvue:80")
+			chartStatus.value = '图表配置已设置'
+		})
+	})
+
+return (): any | null => {
+
+const _component_tui_xechars = resolveEasyComponent("tui-xechars",GenUniModulesTuiXecharsComponentsTuiXecharsTuiXecharsClass)
+
+  return _cE("view", _uM({ class: "container" }), [
+    _cE("view", _uM({ class: "title" }), [
+      _cE("text", _uM({ class: "title-text" }), "图表测试页面")
+    ]),
+    _cE("view", _uM({ class: "chart-wrapper" }), [
+      _cV(_component_tui_xechars, _uM({
+        ref_key: "testChart",
+        ref: testChart,
+        option: chartOption.value,
+        width: 350,
+        height: 300,
+        onInitFinished: onChartInit
+      }), null, 8 /* PROPS */, ["option"])
+    ]),
+    _cE("view", _uM({ class: "info" }), [
+      _cE("text", _uM({ class: "info-text" }), "图表状态: " + _tD(chartStatus.value), 1 /* TEXT */)
+    ])
+  ])
+}
+}
+
+})
+export default __sfc__
+const GenPagesChartTestChartTestStyles = [_uM([["container", _pS(_uM([["paddingTop", "20rpx"], ["paddingRight", "20rpx"], ["paddingBottom", "20rpx"], ["paddingLeft", "20rpx"], ["backgroundColor", "#f5f5f5"], ["height", "100%"]]))], ["title", _pS(_uM([["textAlign", "center"], ["marginBottom", "40rpx"]]))], ["title-text", _pS(_uM([["fontSize", "36rpx"], ["fontWeight", "bold"], ["color", "#333333"]]))], ["chart-wrapper", _pS(_uM([["backgroundImage", "none"], ["backgroundColor", "#FFFFFF"], ["borderTopLeftRadius", "12rpx"], ["borderTopRightRadius", "12rpx"], ["borderBottomRightRadius", "12rpx"], ["borderBottomLeftRadius", "12rpx"], ["paddingTop", "20rpx"], ["paddingRight", "20rpx"], ["paddingBottom", "20rpx"], ["paddingLeft", "20rpx"], ["marginBottom", "20rpx"], ["boxShadow", "0 2rpx 8rpx rgba(0, 0, 0, 0.1)"]]))], ["info", _pS(_uM([["backgroundImage", "none"], ["backgroundColor", "#FFFFFF"], ["borderTopLeftRadius", "12rpx"], ["borderTopRightRadius", "12rpx"], ["borderBottomRightRadius", "12rpx"], ["borderBottomLeftRadius", "12rpx"], ["paddingTop", "20rpx"], ["paddingRight", "20rpx"], ["paddingBottom", "20rpx"], ["paddingLeft", "20rpx"], ["textAlign", "center"]]))], ["info-text", _pS(_uM([["color", "#666666"], ["fontSize", "28rpx"]]))]])]

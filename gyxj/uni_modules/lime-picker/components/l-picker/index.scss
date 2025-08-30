@@ -1,0 +1,121 @@
+@import '~@/uni_modules/lime-style/index.scss';
+$prefix: l !default;
+$picker: #{$prefix}-picker;
+
+$picker-border-radius: create-var(picker-border-radius, 24rpx);
+$picker-bg-color: create-var(picker-bg-color, $bg-color-container);
+$picker-toolbar-height: create-var(picker-toolbar-height, 116rpx);
+
+$picker-cancel-color: create-var(picker-cancel-color, $text-color-2);
+$picker-confirm-color: create-var(picker-confirm-color, $primary-color);
+$picker-button-font-size: create-var(picker-button-font-size, 16px);
+
+$picker-title-font-size: create-var(picker-title-font-size, 18px);
+$picker-title-font-weight: create-var(picker-title-font-weight, 700);
+$picker-title-line-height: create-var(picker-title-line-height, 52rpx);
+$picker-title-color: create-var(picker-title-color, $text-color-1);
+
+
+$picker-group-height: create-var(picker-group-height, 400rpx);
+$picker-indicator-bg-color: create-var(picker-indicator-bg-color, $fill-4);
+$picker-indicator-border-radius: create-var(picker-indicator-border-radius, 12rpx);
+
+$picker-item-height: create-var(picker-item-height, 50px);
+$picker-item-active-color: create-var(picker-item-active-color, $text-color-1);
+
+
+$picker-loading-mask-color: create-var(picker-loading-mask-color, rgba(255,255,255,.9));
+$picker-loading-color: create-var(picker-loading-color, $primary-color);
+
+.#{$picker} {
+	position: relative;
+	background-color: $picker-bg-color;
+	border-top-left-radius: $picker-border-radius;
+	border-top-right-radius: $picker-border-radius;
+	
+	 &__toolbar {
+		display: flex;
+	    align-items: center;
+	    justify-content: space-between;
+	    overflow: hidden;
+	    height: $picker-toolbar-height;
+		flex-direction: row;
+		position: relative;
+	}
+	&__title {
+		position: absolute;
+		left: 50%;
+		top: 50%;
+		transform: translateX(-50%) translateY(-50%);
+		// flex: 1;
+		// width: 100%;
+		text-align: center;
+		overflow: hidden;
+		white-space: nowrap;
+		text-overflow: ellipsis;
+		color: $picker-title-color;
+		// line-height: $picker-toolbar-height;
+		line-height: $picker-title-line-height;
+		font-weight: $picker-title-font-weight;
+		font-size: $picker-title-font-size;
+	}
+
+	&__cancel,
+	&__confirm {
+		/* #ifndef APP-ANDROID || APP-IOS || APP-HARMONY */
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		user-select: none;
+		/* #endif */
+		font-size: $picker-button-font-size;
+		line-height: $picker-toolbar-height;
+		height: 100%;
+		padding: 0 $spacer;
+	}
+
+	&__cancel {
+		color: $picker-cancel-color;
+	}
+
+	&__confirm {
+		color: $picker-confirm-color;
+	}
+
+
+	&__main {
+		display: flex;
+		height: $picker-group-height;
+		flex-direction: row;
+		padding: 0 $spacer-xs;
+	}
+	&__mask {
+		
+	}
+	&__empty {
+		pointer-events: none;
+		justify-content: center;
+		align-items: center;
+		display: flex;
+		position: absolute;
+		top: 0;
+		bottom: 0;
+		left: 0;
+		right: 0;
+		z-index: 3;
+	}
+	&__loading {
+		z-index: 3;
+		// color: $picker-loading-color;
+		background: $picker-loading-mask-color;
+		// background-color: red;
+		justify-content: center;
+		align-items: center;
+		display: flex;
+		position: absolute;
+		top: 0;
+		bottom: 0;
+		left: 0;
+		right: 0
+	}
+}

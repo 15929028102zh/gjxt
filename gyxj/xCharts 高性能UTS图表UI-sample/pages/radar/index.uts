@@ -1,0 +1,357 @@
+export default [
+    {
+        "_id": "66e5300a58a280277d882208",
+        "creation_time": 1726296073343,
+        "name": "多边形雷达图",
+        "option": {
+            "animation": true,
+            "categories": [
+                "维度1",
+                "维度2",
+                "维度3",
+                "维度4",
+                "维度5",
+                "维度6"
+            ],
+            "dataLabel": false,
+            "enableScroll": false,
+            "extra": {
+                "radar": {
+                    "border": true,
+                    "gridColor": "#CCCCCC",
+                    "gridCount": 3,
+                    "gridType": "radar",
+                    "labelShow": true,
+                    "max": 200,
+                    "opacity": 0.2
+                },
+                "tooltip": {}
+            },
+            "fontSize": 11,
+            "legend": {
+                "lineHeight": 25,
+                "position": "right",
+                "show": true
+            },
+            "padding": [
+                5,
+                5,
+                5,
+                5
+            ],
+            "series": [
+                {
+                    "data": [
+                        {
+                            "value": 90
+                        },
+                        {
+                            "value": 110
+                        },
+                        {
+                            "value": 165
+                        },
+                        {
+                            "value": 195
+                        },
+                        {
+                            "value": 187
+                        },
+                        {
+                            "value": 172
+                        }
+                    ],
+                    "name": "成交量1"
+                },
+                {
+                    "data": [
+                        {
+                            "value": 190
+                        },
+                        {
+                            "value": 210
+                        },
+                        {
+                            "value": 105
+                        },
+                        {
+                            "value": 35
+                        },
+                        {
+                            "value": 27
+                        },
+                        {
+                            "value": 102
+                        }
+                    ],
+                    "name": "成交量2"
+                }
+            ],
+            "type": "radar"
+        },
+        "type": "radar",
+        "update_time": 1726296073343,
+        "uts": true
+    },
+    {
+        "_id": "66e52fed311c164d73c1a766",
+        "creation_time": 1726296045799,
+        "name": "圆形雷达图",
+        "option": {
+            "animation": true,
+            "categories": [
+                "维度1",
+                "维度2",
+                "维度3",
+                "维度4",
+                "维度5",
+                "维度6"
+            ],
+            "dataLabel": false,
+            "enableScroll": false,
+            "extra": {
+                "radar": {
+                    "gridColor": "#CCCCCC",
+                    "gridCount": 3,
+                    "gridType": "circle",
+                    "labelShow": true,
+                    "max": 200,
+                    "opacity": 0.2
+                },
+                "tooltip": {}
+            },
+            "fontSize": 11,
+            "legend": {
+                "lineHeight": 25,
+                "position": "right",
+                "show": true
+            },
+            "padding": [
+                5,
+                5,
+                5,
+                5
+            ],
+            "series": [
+                {
+                    "data": [
+                        {
+                            "value": 90
+                        },
+                        {
+                            "value": 110
+                        },
+                        {
+                            "value": 165
+                        },
+                        {
+                            "value": 195
+                        },
+                        {
+                            "value": 187
+                        },
+                        {
+                            "value": 172
+                        }
+                    ],
+                    "name": "成交量1"
+                },
+                {
+                    "data": [
+                        {
+                            "value": 190
+                        },
+                        {
+                            "value": 210
+                        },
+                        {
+                            "value": 105
+                        },
+                        {
+                            "value": 35
+                        },
+                        {
+                            "value": 27
+                        },
+                        {
+                            "value": 102
+                        }
+                    ],
+                    "name": "成交量2"
+                }
+            ],
+            "type": "radar"
+        },
+        "type": "radar",
+        "update_time": 1726296045799,
+        "uts": true
+    },
+    {
+        "_id": "66e52fd4311c164d73c1a620",
+        "creation_time": 1726296020614,
+        "name": "刻度标签+网格抽稀",
+        "option": {
+            "animation": true,
+            "categories": [
+                "维度1",
+                "维度2",
+                "维度3",
+                "维度4",
+                "维度5",
+                "维度6"
+            ],
+            "dataLabel": false,
+            "enableScroll": false,
+            "extra": {
+                "radar": {
+                    "axisLabel": true,
+                    "border": true,
+                    "gridColor": "#CCCCCC",
+                    "gridCount": 3,
+                    "gridEval": 2,
+                    "gridType": "circle",
+                    "labelShow": true,
+                    "max": 200,
+                    "opacity": 0.2
+                },
+                "tooltip": {}
+            },
+            "fontSize": 11,
+            "legend": {
+                "lineHeight": 25,
+                "position": "right",
+                "show": true
+            },
+            "padding": [
+                5,
+                5,
+                5,
+                5
+            ],
+            "series": [
+                {
+                    "data": [
+                        {
+                            "value": 90
+                        },
+                        {
+                            "value": 110
+                        },
+                        {
+                            "value": 165
+                        },
+                        {
+                            "value": 195
+                        },
+                        {
+                            "value": 187
+                        },
+                        {
+                            "value": 172
+                        }
+                    ],
+                    "name": "成交量1"
+                },
+                {
+                    "data": [
+                        {
+                            "value": 190
+                        },
+                        {
+                            "value": 210
+                        },
+                        {
+                            "value": 105
+                        },
+                        {
+                            "value": 35
+                        },
+                        {
+                            "value": 27
+                        },
+                        {
+                            "value": 102
+                        }
+                    ],
+                    "name": "成交量2"
+                }
+            ],
+            "type": "radar"
+        },
+        "type": "radar",
+        "update_time": 1726296020614,
+        "uts": true
+    },
+    {
+        "_id": "66e52fb20b9a11185f7dcbe3",
+        "creation_time": 1726295986220,
+        "name": "渐变色雷达图",
+        "option": {
+            "animation": true,
+            "categories": [
+                "维度1",
+                "维度2",
+                "维度3",
+                "维度4",
+                "维度5",
+                "维度6"
+            ],
+            "dataLabel": true,
+            "enableScroll": false,
+            "extra": {
+                "radar": {
+                    "border": false,
+                    "gridColor": "#CCCCCC",
+                    "gridCount": 3,
+                    "gridType": "circle",
+                    "labelShow": true,
+                    "linearType": "custom",
+                    "max": 240,
+                    "opacity": 1
+                },
+                "tooltip": {}
+            },
+            "fontSize": 13,
+            "legend": {
+                "lineHeight": 25,
+                "position": "right",
+                "show": true
+            },
+            "padding": [
+                5,
+                5,
+                5,
+                5
+            ],
+            "series": [
+                {
+                    "data": [
+                        {
+                            "value": 90
+                        },
+                        {
+                            "value": 110
+                        },
+                        {
+                            "value": 165
+                        },
+                        {
+                            "value": 195
+                        },
+                        {
+                            "value": 187
+                        },
+                        {
+                            "value": 172
+                        }
+                    ],
+                    "name": "成交量1"
+                }
+            ],
+            "type": "radar"
+        },
+        "type": "radar",
+        "update_time": 1726295986220,
+        "uts": true
+    }
+] as UTSJSONObject[]

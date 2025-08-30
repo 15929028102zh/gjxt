@@ -1,0 +1,333 @@
+export default [
+    {
+        "_id": "66e52f60c2a0e4182da0a98c",
+        "creation_time": 1726295904378,
+        "name": "面积玫瑰图",
+        "option": {
+            "animation": true,
+            "dataLabel": true,
+            "extra": {
+                "rose": {
+                    "activeOpacity": 0.5,
+                    "activeRadius": 10,
+                    "border": false,
+                    "borderColor": "#FFFFFF",
+                    "borderWidth": 2,
+                    "labelWidth": 15,
+                    "minRadius": 50,
+                    "offsetAngle": 0,
+                    "type": "area"
+                },
+                "tooltip": {}
+            },
+            "fontSize": 13,
+            "legend": {
+                "lineHeight": 25,
+                "position": "left",
+                "show": true
+            },
+            "padding": [
+                5,
+                5,
+                5,
+                5
+            ],
+            "series": [
+                {
+                    "data": [
+                        {
+                            "value": 50
+                        }
+                    ],
+                    "name": "一班"
+                },
+                {
+                    "data": [
+                        {
+                            "value": 30
+                        }
+                    ],
+                    "name": "二班"
+                },
+                {
+                    "data": [
+                        {
+                            "value": 20
+                        }
+                    ],
+                    "name": "三班"
+                },
+                {
+                    "data": [
+                        {
+                            "value": 18
+                        }
+                    ],
+                    "name": "四班"
+                },
+                {
+                    "data": [
+                        {
+                            "value": 8
+                        }
+                    ],
+                    "name": "五班"
+                }
+            ],
+            "type": "rose"
+        },
+        "type": "rose",
+        "update_time": 1726295904378,
+        "uts": true
+    },
+    {
+        "_id": "66e52f4e47b1be935d630974",
+        "creation_time": 1726295886566,
+        "name": "半径玫瑰图+分割线+渐变色",
+        "option": {
+            "animation": true,
+            "dataLabel": true,
+            "extra": {
+                "rose": {
+                    "activeOpacity": 0.5,
+                    "activeRadius": 10,
+                    "border": true,
+                    "borderColor": "#FFFFFF",
+                    "borderWidth": 2,
+                    "labelWidth": 15,
+                    "linearType": "custom",
+                    "minRadius": 50,
+                    "offsetAngle": 0,
+                    "type": "radius"
+                },
+                "tooltip": {}
+            },
+            "fontSize": 13,
+            "legend": {
+                "lineHeight": 25,
+                "position": "left",
+                "show": true
+            },
+            "padding": [
+                5,
+                5,
+                5,
+                5
+            ],
+            "series": [
+                {
+                    "data": [
+                        {
+                            "value": 50
+                        }
+                    ],
+                    "name": "一班"
+                },
+                {
+                    "data": [
+                        {
+                            "value": 30
+                        }
+                    ],
+                    "name": "二班"
+                },
+                {
+                    "data": [
+                        {
+                            "value": 20
+                        }
+                    ],
+                    "name": "三班"
+                },
+                {
+                    "data": [
+                        {
+                            "value": 18
+                        }
+                    ],
+                    "name": "四班"
+                },
+                {
+                    "data": [
+                        {
+                            "value": 8
+                        }
+                    ],
+                    "name": "五班"
+                }
+            ],
+            "type": "rose"
+        },
+        "type": "rose",
+        "update_time": 1726295886566,
+        "uts": true
+    },
+    {
+        "_id": "66e52f3bb5d950c8106ec676",
+        "creation_time": 1726295867521,
+        "name": "玫瑰图-自定义标签内容",
+        "option": {
+            "animation": true,
+            "dataLabel": true,
+            "extra": {
+                "rose": {
+                    "activeOpacity": 0.5,
+                    "activeRadius": 10,
+                    "border": false,
+                    "borderColor": "#FFFFFF",
+                    "borderWidth": 2,
+                    "labelWidth": 15,
+                    "minRadius": 50,
+                    "offsetAngle": 0,
+                    "type": "area"
+                },
+                "tooltip": {}
+            },
+            "fontSize": 13,
+            "legend": {
+                "lineHeight": 25,
+                "position": "left",
+                "show": true
+            },
+            "padding": [
+                5,
+                5,
+                5,
+                5
+            ],
+            "series": [
+                {
+                    "data": [
+                        {
+                            "value": 50
+                        }
+                    ],
+                    "name": "一班"
+                },
+                {
+                    "data": [
+                        {
+                            "value": 30
+                        }
+                    ],
+                    "name": "二班"
+                },
+                {
+                    "data": [
+                        {
+                            "value": 20
+                        }
+                    ],
+                    "name": "三班"
+                },
+                {
+                    "data": [
+                        {
+                            "labelText": "四班:18人",
+                            "value": 18
+                        }
+                    ],
+                    "name": "四班"
+                },
+                {
+                    "data": [
+                        {
+                            "value": 8
+                        }
+                    ],
+                    "name": "五班"
+                }
+            ],
+            "type": "rose"
+        },
+        "type": "rose",
+        "update_time": 1726295867521,
+        "uts": true
+    },
+    {
+        "_id": "66e52f11456f5a84dc0ab4d5",
+        "creation_time": 1726295825359,
+        "name": "玫瑰图-自定义标签隐藏",
+        "option": {
+            "animation": true,
+            "dataLabel": true,
+            "extra": {
+                "rose": {
+                    "activeOpacity": 0.5,
+                    "activeRadius": 10,
+                    "border": false,
+                    "borderColor": "#FFFFFF",
+                    "borderWidth": 2,
+                    "labelWidth": 15,
+                    "minRadius": 50,
+                    "offsetAngle": 0,
+                    "type": "area"
+                },
+                "tooltip": {}
+            },
+            "fontSize": 13,
+            "legend": {
+                "lineHeight": 25,
+                "position": "left",
+                "show": true
+            },
+            "padding": [
+                5,
+                5,
+                5,
+                5
+            ],
+            "series": [
+                {
+                    "data": [
+                        {
+                            "labelShow": false,
+                            "value": 50
+                        }
+                    ],
+                    "name": "一班"
+                },
+                {
+                    "data": [
+                        {
+                            "labelShow": false,
+                            "value": 30
+                        }
+                    ],
+                    "name": "二班"
+                },
+                {
+                    "data": [
+                        {
+                            "labelShow": false,
+                            "value": 20
+                        }
+                    ],
+                    "name": "三班"
+                },
+                {
+                    "data": [
+                        {
+                            "labelText": "四班:18人",
+                            "value": 18
+                        }
+                    ],
+                    "name": "四班"
+                },
+                {
+                    "data": [
+                        {
+                            "labelShow": false,
+                            "value": 8
+                        }
+                    ],
+                    "name": "五班"
+                }
+            ],
+            "type": "rose"
+        },
+        "type": "rose",
+        "update_time": 1726295825359,
+        "uts": true
+    }
+] as UTSJSONObject[]

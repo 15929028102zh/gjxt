@@ -1,0 +1,286 @@
+
+	import { getApiUrl } from '@/config/api.uts'
+	type MonthlyRecord = { __$originalPosition?: UTSSourceMapPosition<"MonthlyRecord", "pages/monthly/monthly.uvue", 91, 7>;
+		id: string,
+		problemDescription: string,
+		locationName: string,
+		createTime: string,
+		status: string
+	}
+
+	type MonthlyStatistics = { __$originalPosition?: UTSSourceMapPosition<"MonthlyStatistics", "pages/monthly/monthly.uvue", 99, 7>;
+		monthlyPending: number,
+		monthlyCompleted: number,
+		monthlyTotal: number
+	}
+
+	const __sfc__ = defineComponent({
+		data() {
+			return {
+				userInfo: {} as UTSJSONObject,
+				currentDate: '',
+				statistics: {
+					monthlyPending: 0,
+					monthlyCompleted: 0,
+					monthlyTotal: 0
+				} as MonthlyStatistics,
+				monthlyRecords: [] as MonthlyRecord[]
+			}
+		},
+		onLoad(options: OnLoadOptions) {
+			this.checkLogin()
+			this.initData()
+			this.loadStatistics()
+			this.loadMonthlyRecords()
+		},
+		methods: {
+			checkLogin() {
+				const token = uni.getStorageSync('token')
+				if (token == null || token == '') {
+					uni.reLaunch({
+						url: '/pages/login/login'
+					})
+					return
+				}
+				const userInfoStr = uni.getStorageSync('userInfo') as string
+				if (userInfoStr != null && userInfoStr != '') {
+					this.userInfo = UTSAndroid.consoleDebugError(JSON.parse(userInfoStr), " at pages/monthly/monthly.uvue:135") as UTSJSONObject
+				} else {
+					this.userInfo = {} as UTSJSONObject
+				}
+			},
+			
+			initData() {
+				const now = new Date()
+				const year = now.getFullYear()
+				const month = (now.getMonth() + 1).toString()
+				const formattedMonth = month.length == 1 ? `0${month}` : month
+				this.currentDate = `${year}年${formattedMonth}月`
+			},
+			
+			loadStatistics() {
+				const token = uni.getStorageSync('token')
+				uni.request({
+					url: getApiUrl('/statistics/overview'),
+					method: 'GET',
+					header: {
+						'Authorization': `Bearer ${token}`
+					},
+					success: (res) => {
+						const response = res.data as UTSJSONObject
+						if (res.statusCode == 200 && (response.getNumber('code') ?? 0) == 200) {
+							const data = response.getJSON('data') as UTSJSONObject
+							// 暂时使用原有接口数据，后续可调整
+							this.statistics = {
+								monthlyPending: data.getNumber('totalTasks') ?? 0,
+								monthlyCompleted: data.getNumber('todayRecords') ?? 0,
+								monthlyTotal: data.getNumber('monthRecords') ?? 0
+							}
+						}
+					},
+					fail: (error) => {
+						console.log('加载统计数据失败:', error, " at pages/monthly/monthly.uvue:170")
+					}
+				})
+			},
+			
+			loadMonthlyRecords() {
+				const token = uni.getStorageSync('token')
+				uni.request({
+					url: getApiUrl('/inspection-record/page?pageNum=1&pageSize=10'),
+					method: 'GET',
+					header: {
+						'Authorization': `Bearer ${token}`
+					},
+					success: (res) => {
+						const response = res.data as UTSJSONObject
+						if (res.statusCode == 200 && (response.getNumber('code') ?? 0) == 200) {
+							const data = response.getJSON('data') as UTSJSONObject
+							const records = data.getArray('records') as Array<UTSJSONObject>
+							this.monthlyRecords = []
+							for (let i = 0; i < records.length; i++) {
+								const item = records[i]
+								const record: MonthlyRecord = {
+									id: item.getString('id') ?? '',
+									problemDescription: item.getString('problemDescription') ?? '',
+									locationName: item.getString('locationName') ?? '',
+									createTime: item.getString('createTime') ?? '',
+									status: item.getString('status') ?? ''
+								}
+								this.monthlyRecords.push(record)
+							}
+						}
+					},
+					fail: (error) => {
+						console.log('加载月度记录失败:', error, " at pages/monthly/monthly.uvue:203")
+					}
+				})
+			},
+			
+			getStatusText(status: string): string {
+				if (status == "0") return '待整改'
+				if (status == "1") return '已整改'
+				if (status == "2") return '已复查'
+				return '未知'
+			},
+			
+			getStatusClass(status: string): string {
+				if (status == "0") return 'status-pending'
+				if (status == "1") return 'status-completed'
+				if (status == "2") return 'status-accepted'
+				return 'status-unknown'
+			},
+			
+			goToPendingIssues() {
+				uni.navigateTo({
+					url: '/pages/record/record?status=0'
+				})
+			},
+			
+			goToCompletedIssues() {
+				uni.navigateTo({
+					url: '/pages/record/record?status=1'
+				})
+			},
+			
+			goToMonthlyReport() {
+				uni.navigateTo({
+					url: '/pages/statistics/statistics'
+				})
+			},
+			
+			goToRecords() {
+				uni.switchTab({
+					url: '/pages/record/record'
+				})
+			},
+			
+			goToAddRecord() {
+				uni.navigateTo({
+					url: '/pages/record/add'
+				})
+			}
+		}
+	})
+
+export default __sfc__
+function GenPagesMonthlyMonthlyRender(this: InstanceType<typeof __sfc__>): any | null {
+const _ctx = this
+const _cache = this.$.renderCache
+  return _cE("view", _uM({ class: "container" }), [
+    _cE("view", _uM({ class: "header" }), [
+      _cE("view", _uM({ class: "welcome" }), [
+        _cE("text", _uM({ class: "welcome-text" }), "月检统计"),
+        _cE("text", _uM({ class: "date-text" }), _tD(_ctx.currentDate), 1 /* TEXT */)
+      ]),
+      _cE("image", _uM({
+        class: "avatar",
+        src: "/static/avatar.png"
+      }))
+    ]),
+    _cE("view", _uM({ class: "stats-container" }), [
+      _cE("view", _uM({
+        class: "stats-card",
+        onClick: _ctx.goToPendingIssues
+      }), [
+        _cE("text", _uM({ class: "stats-number" }), _tD(_ctx.statistics.monthlyPending), 1 /* TEXT */),
+        _cE("text", _uM({ class: "stats-label" }), "本月待整改"),
+        _cE("text", _uM({ class: "stats-icon" }), "⚠️")
+      ], 8 /* PROPS */, ["onClick"]),
+      _cE("view", _uM({
+        class: "stats-card",
+        onClick: _ctx.goToCompletedIssues
+      }), [
+        _cE("text", _uM({ class: "stats-number" }), _tD(_ctx.statistics.monthlyCompleted), 1 /* TEXT */),
+        _cE("text", _uM({ class: "stats-label" }), "本月已整改"),
+        _cE("text", _uM({ class: "stats-icon" }), "✅")
+      ], 8 /* PROPS */, ["onClick"]),
+      _cE("view", _uM({
+        class: "stats-card",
+        onClick: _ctx.goToMonthlyReport
+      }), [
+        _cE("text", _uM({ class: "stats-number" }), _tD(_ctx.statistics.monthlyTotal), 1 /* TEXT */),
+        _cE("text", _uM({ class: "stats-label" }), "本月总记录"),
+        _cE("text", _uM({ class: "stats-icon" }), "📊")
+      ], 8 /* PROPS */, ["onClick"])
+    ]),
+    _cE("view", _uM({ class: "trend-section" }), [
+      _cE("text", _uM({ class: "section-title" }), "月度趋势"),
+      _cE("view", _uM({ class: "trend-chart" }), [
+        _cE("view", _uM({ class: "chart-placeholder" }), [
+          _cE("text", _uM({ class: "placeholder-text" }), "月度趋势图"),
+          _cE("text", _uM({ class: "placeholder-desc" }), "显示本月问题发现与整改趋势")
+        ])
+      ])
+    ]),
+    _cE("view", _uM({ class: "quick-actions" }), [
+      _cE("text", _uM({ class: "section-title" }), "快捷功能"),
+      _cE("view", _uM({ class: "actions-grid" }), [
+        _cE("view", _uM({
+          class: "action-item",
+          onClick: _ctx.goToAddRecord
+        }), [
+          _cE("view", _uM({ class: "action-icon" }), "➕"),
+          _cE("text", _uM({ class: "action-text" }), "新增记录")
+        ], 8 /* PROPS */, ["onClick"]),
+        _cE("view", _uM({
+          class: "action-item",
+          onClick: _ctx.goToMonthlyReport
+        }), [
+          _cE("view", _uM({ class: "action-icon" }), "📊"),
+          _cE("text", _uM({ class: "action-text" }), "月度报告")
+        ], 8 /* PROPS */, ["onClick"]),
+        _cE("view", _uM({
+          class: "action-item",
+          onClick: _ctx.goToPendingIssues
+        }), [
+          _cE("view", _uM({ class: "action-icon" }), "⚠️"),
+          _cE("text", _uM({ class: "action-text" }), "待整改问题")
+        ], 8 /* PROPS */, ["onClick"]),
+        _cE("view", _uM({
+          class: "action-item",
+          onClick: _ctx.goToCompletedIssues
+        }), [
+          _cE("view", _uM({ class: "action-icon" }), "✅"),
+          _cE("text", _uM({ class: "action-text" }), "已整改问题")
+        ], 8 /* PROPS */, ["onClick"])
+      ])
+    ]),
+    _cE("view", _uM({ class: "recent-records" }), [
+      _cE("view", _uM({ class: "section-header" }), [
+        _cE("text", _uM({ class: "section-title" }), "本月记录"),
+        _cE("text", _uM({
+          class: "more-text",
+          onClick: _ctx.goToRecords
+        }), "查看更多", 8 /* PROPS */, ["onClick"])
+      ]),
+      _cE("view", _uM({ class: "records-list" }), [
+        _cE(Fragment, null, RenderHelpers.renderList(_ctx.monthlyRecords, (record, __key, __index, _cached): any => {
+          return _cE("view", _uM({
+            class: "record-item",
+            key: record.id
+          }), [
+            _cE("view", _uM({ class: "record-info" }), [
+              _cE("text", _uM({ class: "record-title" }), _tD(record.problemDescription), 1 /* TEXT */),
+              _cE("text", _uM({ class: "record-meta" }), _tD(record.locationName) + " · " + _tD(record.createTime), 1 /* TEXT */)
+            ]),
+            _cE("view", _uM({
+              class: _nC(["record-status", _ctx.getStatusClass(record.status)])
+            }), [
+              _cE("text", null, _tD(_ctx.getStatusText(record.status)), 1 /* TEXT */)
+            ], 2 /* CLASS */)
+          ])
+        }), 128 /* KEYED_FRAGMENT */),
+        _ctx.monthlyRecords.length === 0
+          ? _cE("view", _uM({
+              key: 0,
+              class: "empty-state"
+            }), [
+              _cE("text", _uM({ class: "empty-text" }), "本月暂无记录")
+            ])
+          : _cC("v-if", true)
+      ])
+    ])
+  ])
+}
+const GenPagesMonthlyMonthlyStyles = [_uM([["container", _pS(_uM([["paddingTop", 20], ["paddingRight", 20], ["paddingBottom", 20], ["paddingLeft", 20], ["backgroundColor", "#f5f5f5"], ["minHeight", 800]]))], ["header", _pS(_uM([["display", "flex"], ["justifyContent", "space-between"], ["alignItems", "center"], ["marginBottom", 20]]))], ["welcome", _pS(_uM([["flex", 1]]))], ["welcome-text", _pS(_uM([["fontSize", 20], ["fontWeight", "bold"], ["color", "#333333"], ["marginBottom", 4]]))], ["date-text", _pS(_uM([["fontSize", 14], ["color", "#666666"]]))], ["avatar", _pS(_uM([["width", 50], ["height", 50], ["borderTopLeftRadius", 25], ["borderTopRightRadius", 25], ["borderBottomRightRadius", 25], ["borderBottomLeftRadius", 25], ["backgroundColor", "#dddddd"]]))], ["stats-container", _pS(_uM([["display", "flex"], ["justifyContent", "space-between"], ["marginBottom", 30]]))], ["stats-card", _pS(_uM([["flex", 1], ["backgroundImage", "none"], ["backgroundColor", "#ffffff"], ["borderTopLeftRadius", 12], ["borderTopRightRadius", 12], ["borderBottomRightRadius", 12], ["borderBottomLeftRadius", 12], ["paddingTop", 20], ["paddingRight", 15], ["paddingBottom", 20], ["paddingLeft", 15], ["marginTop", 0], ["marginRight", 5], ["marginBottom", 0], ["marginLeft", 5], ["textAlign", "center"], ["position", "relative"], ["boxShadow", "0 2px 8px rgba(0,0,0,0.1)"]]))], ["stats-number", _pS(_uM([["fontSize", 24], ["fontWeight", "bold"], ["color", "#007AFF"], ["marginBottom", 8]]))], ["stats-label", _pS(_uM([["fontSize", 14], ["color", "#666666"], ["marginBottom", 8]]))], ["stats-icon", _pS(_uM([["fontSize", 20], ["position", "absolute"], ["top", 15], ["right", 15]]))], ["trend-section", _pS(_uM([["marginBottom", 30]]))], ["trend-chart", _pS(_uM([["backgroundImage", "none"], ["backgroundColor", "#ffffff"], ["borderTopLeftRadius", 12], ["borderTopRightRadius", 12], ["borderBottomRightRadius", 12], ["borderBottomLeftRadius", 12], ["paddingTop", 20], ["paddingRight", 20], ["paddingBottom", 20], ["paddingLeft", 20], ["boxShadow", "0 2px 8px rgba(0,0,0,0.1)"]]))], ["chart-placeholder", _pS(_uM([["height", 200], ["display", "flex"], ["flexDirection", "column"], ["justifyContent", "center"], ["alignItems", "center"], ["backgroundColor", "#f8f9fa"], ["borderTopLeftRadius", 8], ["borderTopRightRadius", 8], ["borderBottomRightRadius", 8], ["borderBottomLeftRadius", 8], ["borderTopWidth", 2], ["borderRightWidth", 2], ["borderBottomWidth", 2], ["borderLeftWidth", 2], ["borderTopStyle", "dashed"], ["borderRightStyle", "dashed"], ["borderBottomStyle", "dashed"], ["borderLeftStyle", "dashed"], ["borderTopColor", "#dee2e6"], ["borderRightColor", "#dee2e6"], ["borderBottomColor", "#dee2e6"], ["borderLeftColor", "#dee2e6"]]))], ["placeholder-text", _pS(_uM([["fontSize", 18], ["color", "#6c757d"], ["marginBottom", 8]]))], ["placeholder-desc", _pS(_uM([["fontSize", 14], ["color", "#adb5bd"]]))], ["quick-actions", _pS(_uM([["marginBottom", 30]]))], ["section-title", _pS(_uM([["fontSize", 18], ["fontWeight", "bold"], ["color", "#333333"], ["marginBottom", 15]]))], ["actions-grid", _pS(_uM([["display", "flex"], ["flexWrap", "wrap"], ["justifyContent", "space-between"]]))], ["action-item", _pS(_uM([["width", "48%"], ["backgroundImage", "none"], ["backgroundColor", "#ffffff"], ["borderTopLeftRadius", 12], ["borderTopRightRadius", 12], ["borderBottomRightRadius", 12], ["borderBottomLeftRadius", 12], ["paddingTop", 20], ["paddingRight", 20], ["paddingBottom", 20], ["paddingLeft", 20], ["marginBottom", 15], ["textAlign", "center"], ["boxShadow", "0 2px 8px rgba(0,0,0,0.1)"]]))], ["action-icon", _pS(_uM([["fontSize", 24], ["marginBottom", 8]]))], ["action-text", _pS(_uM([["fontSize", 14], ["color", "#333333"]]))], ["recent-records", _pS(_uM([["marginBottom", 20]]))], ["section-header", _pS(_uM([["display", "flex"], ["justifyContent", "space-between"], ["alignItems", "center"], ["marginBottom", 15]]))], ["more-text", _pS(_uM([["fontSize", 14], ["color", "#007AFF"]]))], ["records-list", _pS(_uM([["backgroundImage", "none"], ["backgroundColor", "#ffffff"], ["borderTopLeftRadius", 12], ["borderTopRightRadius", 12], ["borderBottomRightRadius", 12], ["borderBottomLeftRadius", 12], ["paddingTop", 15], ["paddingRight", 15], ["paddingBottom", 15], ["paddingLeft", 15], ["boxShadow", "0 2px 8px rgba(0,0,0,0.1)"]]))], ["record-item", _pS(_uM([["display", "flex"], ["justifyContent", "space-between"], ["alignItems", "center"], ["paddingTop", 15], ["paddingRight", 0], ["paddingBottom", 15], ["paddingLeft", 0], ["borderBottomWidth", 1], ["borderBottomStyle", "solid"], ["borderBottomColor", "#f0f0f0"], ["borderBottomWidth:last-child", "medium"], ["borderBottomStyle:last-child", "none"], ["borderBottomColor:last-child", "#000000"]]))], ["record-info", _pS(_uM([["flex", 1]]))], ["record-title", _pS(_uM([["fontSize", 16], ["color", "#333333"], ["marginBottom", 4]]))], ["record-meta", _pS(_uM([["fontSize", 12], ["color", "#999999"]]))], ["record-status", _pS(_uM([["paddingTop", 4], ["paddingRight", 8], ["paddingBottom", 4], ["paddingLeft", 8], ["borderTopLeftRadius", 4], ["borderTopRightRadius", 4], ["borderBottomRightRadius", 4], ["borderBottomLeftRadius", 4], ["fontSize", 12]]))], ["status-pending", _pS(_uM([["backgroundColor", "#fff3cd"], ["color", "#856404"]]))], ["status-processing", _pS(_uM([["backgroundColor", "#d1ecf1"], ["color", "#0c5460"]]))], ["status-completed", _pS(_uM([["backgroundColor", "#d4edda"], ["color", "#155724"]]))], ["status-accepted", _pS(_uM([["backgroundColor", "#e2e3e5"], ["color", "#383d41"]]))], ["status-unknown", _pS(_uM([["backgroundColor", "#f8f9fa"], ["color", "#6c757d"]]))], ["empty-state", _pS(_uM([["textAlign", "center"], ["paddingTop", 40], ["paddingRight", 20], ["paddingBottom", 40], ["paddingLeft", 20]]))], ["empty-text", _pS(_uM([["fontSize", 14], ["color", "#999999"]]))]])]

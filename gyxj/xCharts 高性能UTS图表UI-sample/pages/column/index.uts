@@ -1,0 +1,707 @@
+export default [
+	{
+		"_id": "66e4676b456f5a84dc021d1b",
+		"creation_time": 1726244715894,
+		"name": "全圆角柱状图+标记线",
+		"option": {
+			"animation": true,
+			"categories": [
+				"2016",
+				"2017",
+				"2018",
+				"2019",
+				"2020",
+				"2021"
+			],
+			"dataLabel": true,
+			"enableMarkLine": true,
+			"extra": {
+				"column": {
+					"activeBgColor": "#000000",
+					"activeBgOpacity": 0.08,
+					"barBorderRadius": [
+						6,
+						6,
+						6,
+						6
+					],
+					"seriesGap": 5,
+					"type": "group",
+					"width": 20
+				},
+				"markLine": {
+					"data": [
+						{
+							"showLabel": true,
+							"value": 21
+						}
+					]
+				},
+				"tooltip": {}
+			},
+			"fontSize": 11,
+			"padding": [
+				15,
+				5,
+				0,
+				15
+			],
+			"series": [
+				{
+					"data": [
+						{
+							"value": 35
+						},
+						{
+							"value": 36
+						},
+						{
+							"value": 34
+						},
+						{
+							"value": 33
+						},
+						{
+							"value": 13
+						},
+						{
+							"value": 34
+						}
+					],
+					"name": "目标值"
+				},
+				{
+					"data": [
+						{
+							"value": 18
+						},
+						{
+							"value": 27
+						},
+						{
+							"value": 21
+						},
+						{
+							"color": "#f56c6c",
+							"value": 24
+						},
+						{
+							"value": 6
+						},
+						{
+							"value": 28
+						}
+					],
+					"name": "完成量"
+				}
+			],
+			"type": "column",
+			"xAxis": {
+				"disableGrid": true
+			},
+			"yAxis": {
+				"data": [
+					{
+						"min": 0
+					}
+				]
+			}
+		},
+		"type": "column",
+		"update_time": 1726244715894,
+		"uts": true
+	},
+	{
+		"_id": "66e46745311c164d73b7ec6e",
+		"creation_time": 1726244677004,
+		"name": "柱状图滚动条",
+		"option": {
+			"animation": true,
+			"categories": [
+				"2016",
+				"2017",
+				"2018",
+				"2019",
+				"2020",
+				"2021"
+			],
+			"dataLabel": true,
+			"enableScroll": true,
+			"extra": {
+				"column": {
+					"activeBgColor": "#000000",
+					"activeBgOpacity": 0.08,
+					"type": "group",
+					"width": 30
+				}
+			},
+			"fontSize": 11,
+			"padding": [
+				15,
+				5,
+				0,
+				15
+			],
+			"series": [
+				{
+					"data": [
+						{
+							"value": 35
+						},
+						{
+							"value": 36
+						},
+						{
+							"value": 34
+						},
+						{
+							"value": 33
+						},
+						{
+							"value": 13
+						},
+						{
+							"value": 34
+						}
+					],
+					"name": "目标值"
+				},
+				{
+					"data": [
+						{
+							"value": 18
+						},
+						{
+							"value": 27
+						},
+						{
+							"value": 21
+						},
+						{
+							"value": 24
+						},
+						{
+							"value": 6
+						},
+						{
+							"value": 28
+						}
+					],
+					"name": "完成量"
+				}
+			],
+			"touchMoveLimit": 24,
+			"type": "column",
+			"xAxis": {
+				"disableGrid": true,
+				"itemCount": 4,
+				"scrollShow": true
+			},
+			"yAxis": {
+				"data": [
+					{
+						"min": 0
+					}
+				]
+			}
+		},
+		"type": "column",
+		"update_time": 1726244677004,
+		"uts": true
+	},
+	{
+		"_id": "66e4671d9d9f915ad270cafd",
+		"creation_time": 1726244637291,
+		"name": "正负柱状图",
+		"option": {
+			"animation": true,
+			"categories": [
+				"2016",
+				"2017",
+				"2018",
+				"2019",
+				"2020",
+				"2021"
+			],
+			"dataLabel": true,
+			"extra": {
+				"column": {
+					"activeBgColor": "#000000",
+					"activeBgOpacity": 0.08,
+					"barBorderCircle": true,
+					"linearType": "custom",
+					"type": "group",
+					"width": 30
+				},
+				"tooltip": {}
+			},
+			"fontSize": 11,
+			"padding": [
+				15,
+				5,
+				0,
+				5
+			],
+			"series": [
+				{
+					"data": [
+						{
+							"value": 35
+						},
+						{
+							"value": -36
+						},
+						{
+							"value": 34
+						},
+						{
+							"value": -33
+						},
+						{
+							"value": 13
+						},
+						{
+							"value": -34
+						}
+					],
+					"name": "目标值"
+				},
+				{
+					"data": [
+						{
+							"value": 18
+						},
+						{
+							"value": -27
+						},
+						{
+							"value": 21
+						},
+						{
+							"value": -24
+						},
+						{
+							"value": 6
+						},
+						{
+							"value": -28
+						}
+					],
+					"name": "完成量"
+				}
+			],
+			"type": "column",
+			"xAxis": {
+				"disableGrid": true
+			},
+			"yAxis": {
+				"data": [
+					{
+						"max": 40,
+						"min": -40
+					}
+				],
+				"splitNumber": 4
+			}
+		},
+		"type": "column",
+		"update_time": 1726244637291,
+		"uts": true
+	},
+	{
+		"_id": "66e466d89d9f915ad270c77b",
+		"creation_time": 1726244568904,
+		"name": "温度计图表",
+		"option": {
+			"animation": true,
+			"categories": [
+				"2016",
+				"2017",
+				"2018",
+				"2019",
+				"2020",
+				"2021"
+			],
+			"dataLabel": true,
+			"extra": {
+				"column": {
+					"activeBgColor": "#000000",
+					"activeBgOpacity": 0.08,
+					"meterBorder": 3,
+					"meterFillColor": "#ffffff",
+					"type": "meter",
+					"width": 20
+				},
+				"tooltip": {}
+			},
+			"fontSize": 11,
+			"padding": [
+				15,
+				5,
+				0,
+				5
+			],
+			"series": [
+				{
+					"data": [
+						{
+							"value": 35
+						},
+						{
+							"value": 36
+						},
+						{
+							"value": 34
+						},
+						{
+							"value": 33
+						},
+						{
+							"value": 13
+						},
+						{
+							"value": 34
+						}
+					],
+					"name": "目标值"
+				},
+				{
+					"data": [
+						{
+							"value": 18
+						},
+						{
+							"value": 27
+						},
+						{
+							"value": 21
+						},
+						{
+							"value": 24
+						},
+						{
+							"value": 6
+						},
+						{
+							"value": 28
+						}
+					],
+					"name": "完成量"
+				}
+			],
+			"type": "column",
+			"xAxis": {
+				"disableGrid": true
+			},
+			"yAxis": {
+				"data": [
+					{
+						"min": 0
+					}
+				]
+			}
+		},
+		"type": "column",
+		"update_time": 1726244568904,
+		"uts": true
+	},
+	{
+		"_id": "66e4665faa36a3f0e568bb7f",
+		"creation_time": 1726244447372,
+		"name": "圆角+渐变+半透明柱状图",
+		"option": {
+			"padding": [
+				15,
+				5,
+				0,
+				5
+			],
+			"yAxis": {
+				"data": [
+					{
+						"min": 0,
+						"axisLine": true,
+						"position": "left"
+					}
+				]
+			},
+			"xAxis": {
+				"disableGrid": true
+			},
+			"color": [
+				"#FAC858",
+				"#EE6666"
+			],
+			"series": [
+				{
+					"data": [
+						{
+							"value": 35
+						},
+						{
+							"value": 36
+						},
+						{
+							"value": 34
+						},
+						{
+							"value": 33
+						},
+						{
+							"value": 13
+						},
+						{
+							"value": 34
+						}
+					],
+					"name": "目标值"
+				},
+				{
+					"data": [
+						{
+							"value": 18
+						},
+						{
+							"value": 27
+						},
+						{
+							"value": 21
+						},
+						{
+							"value": 24
+						},
+						{
+							"value": 6
+						},
+						{
+							"value": 28
+						}
+					],
+					"name": "完成量"
+				}
+			],
+			"extra": {
+				"column": {
+					"linearOpacity": 0.5,
+					"customColor": [
+						"#FA7D8D",
+						"#EB88E2"
+					],
+					"seriesGap": 5,
+					"activeBgColor": "#000000",
+					"activeBgOpacity": 0.08,
+					"linearType": "custom",
+					"width": 20,
+					"barBorderCircle": true,
+					"type": "group"
+				},
+				"tooltip": {}
+			},
+			"dataLabel": true,
+			"fontSize": 11,
+			"categories": [
+				"2016",
+				"2017",
+				"2018",
+				"2019",
+				"2020",
+				"2021"
+			],
+			"type": "column",
+			"animation": true
+		},
+		"type": "column",
+		"update_time": 1726244447372,
+		"uts": true
+	},
+	{
+		"_id": "66e451420b9a11185f72765f",
+		"creation_time": 1726239042868,
+		"name": "堆叠柱状图",
+		"option": {
+			"padding": [
+				15,
+				5,
+				0,
+				5
+			],
+			"yAxis": {
+				"data": [
+					{
+						"axisLine": true,
+						"position": "left"
+					}
+				]
+			},
+			"xAxis": {
+				"disableGrid": true
+			},
+			"series": [
+				{
+					"data": [
+						{
+							"value": 35
+						},
+						{
+							"value": 36
+						},
+						{
+							"value": 34
+						},
+						{
+							"value": 33
+						},
+						{
+							"value": 13
+						},
+						{
+							"value": 34
+						}
+					],
+					"name": "目标值"
+				},
+				{
+					"data": [
+						{
+							"value": 18
+						},
+						{
+							"value": 27
+						},
+						{
+							"value": 21
+						},
+						{
+							"value": 24
+						},
+						{
+							"value": 6
+						},
+						{
+							"value": 28
+						}
+					],
+					"name": "完成量"
+				}
+			],
+			"extra": {
+				"column": {
+					"width": 20,
+					"type": "stack"
+				},
+				"tooltip": {}
+			},
+			"pixelRatio": 1,
+			"dataLabel": true,
+			"fontSize": 11,
+			"categories": [
+				"2016",
+				"2017",
+				"2018",
+				"2019",
+				"2020",
+				"2021"
+			],
+			"type": "column",
+			"animation": true
+		},
+		"type": "column",
+		"update_time": 1726239042868,
+		"uts": true
+	},
+	{
+		"_id": "66e44f89311c164d73b4cd40",
+		"creation_time": 1726238601917,
+		"name": "基本柱状图",
+		"option": {
+			"padding": [
+				15,
+				5,
+				0,
+				5
+			],
+			"yAxis": {
+				"data": [
+					{
+						"min": 0,
+						"axisLine": true,
+						"position": "left"
+					}
+				]
+			},
+			"xAxis": {
+				"disableGrid": true
+			},
+			"series": [
+				{
+					"data": [
+						{
+							"value": 35
+						},
+						{
+							"value": 36
+						},
+						{
+							"value": 34
+						},
+						{
+							"value": 33
+						},
+						{
+							"value": 13
+						},
+						{
+							"value": 34
+						}
+					],
+					"name": "目标值"
+				},
+				{
+					"data": [
+						{
+							"value": 18
+						},
+						{
+							"value": 27
+						},
+						{
+							"value": 21
+						},
+						{
+							"value": 24
+						},
+						{
+							"value": 6
+						},
+						{
+							"value": 28
+						}
+					],
+					"name": "完成量"
+				}
+			],
+			"extra": {
+				"column": {
+					"width": 20,
+					"type": "group"
+				},
+				"tooltip": {}
+			},
+			"dataLabel": true,
+			"fontSize": 11,
+			"categories": [
+				"2016",
+				"2017",
+				"2018",
+				"2019",
+				"2020",
+				"2021"
+			],
+			"type": "column",
+			"animation": true
+		},
+		"type": "column",
+		"update_time": 1726238601917,
+		"uts": true
+	}
+] as UTSJSONObject[]

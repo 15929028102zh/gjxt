@@ -1,0 +1,671 @@
+export default [
+	{
+		"_id": "66e51a01456f5a84dc09ee0e",
+		"creation_time": 1726290432949,
+		"name": "三角山峰图",
+		"option": {
+			"animation": true,
+			"dataLabel": true,
+			"extra": {
+				"mount": {
+					"type": "triangle",
+					"widthRatio": 1.5
+				},
+				"tooltip": {}
+			},
+			"fontSize": 11,
+			"padding": [
+				15,
+				5,
+				0,
+				15
+			],
+			"series": [
+				{
+					"data": [
+						{
+							"value": 82
+						}
+					],
+					"name": "一班"
+				},
+				{
+					"data": [
+						{
+							"value": 63
+						}
+					],
+					"name": "二班"
+				},
+				{
+					"data": [
+						{
+							"value": 86
+						}
+					],
+					"name": "三班"
+				},
+				{
+					"data": [
+						{
+							"value": 65
+						}
+					],
+					"name": "四班"
+				},
+				{
+					"data": [
+						{
+							"value": 79
+						}
+					],
+					"name": "五班"
+				}
+			],
+			"type": "mount",
+			"xAxis": {
+				"disableGrid": true
+			},
+			"yAxis": {
+				"data": [
+					{
+						"min": 0
+					}
+				]
+			}
+		},
+		"type": "mount",
+		"update_time": 1726290432949,
+		"uts": true
+	},
+	{
+		"_id": "66e519dd311c164d73c08473",
+		"creation_time": 1726290397256,
+		"name": "直角山峰图",
+		"option": {
+			"animation": true,
+			"dataLabel": true,
+			"extra": {
+				"mount": {
+					"type": "bar",
+					"widthRatio": 1.5
+				},
+				"tooltip": {}
+			},
+			"fontSize": 11,
+			"padding": [
+				15,
+				5,
+				0,
+				15
+			],
+			"series": [
+				{
+					"data": [
+						{
+							"value": 82
+						}
+					],
+					"name": "一班"
+				},
+				{
+					"data": [
+						{
+							"value": 63
+						}
+					],
+					"name": "二班"
+				},
+				{
+					"data": [
+						{
+							"value": 86
+						}
+					],
+					"name": "三班"
+				},
+				{
+					"data": [
+						{
+							"value": 65
+						}
+					],
+					"name": "四班"
+				},
+				{
+					"data": [
+						{
+							"value": 79
+						}
+					],
+					"name": "五班"
+				}
+			],
+			"type": "mount",
+			"xAxis": {
+				"disableGrid": true
+			},
+			"yAxis": {
+				"data": [
+					{
+						"min": 0
+					}
+				]
+			}
+		},
+		"type": "mount",
+		"update_time": 1726290397256,
+		"uts": true
+	},
+	{
+		"_id": "66e519c27e7617545868ada8",
+		"creation_time": 1726290370006,
+		"name": "正负山峰图无边渐变色",
+		"option": {
+			"animation": true,
+			"dataLabel": true,
+			"extra": {
+				"mount": {
+					"borderWidth": 0,
+					"linearType": "custom",
+					"type": "mount",
+					"widthRatio": 1.5
+				},
+				"tooltip": {}
+			},
+			"fontSize": 11,
+			"padding": [
+				15,
+				5,
+				0,
+				15
+			],
+			"series": [
+				{
+					"data": [
+						{
+							"value": 82
+						}
+					],
+					"name": "一班"
+				},
+				{
+					"data": [
+						{
+							"value": -63
+						}
+					],
+					"name": "二班"
+				},
+				{
+					"data": [
+						{
+							"value": 86
+						}
+					],
+					"name": "三班"
+				},
+				{
+					"data": [
+						{
+							"value": -65
+						}
+					],
+					"name": "四班"
+				},
+				{
+					"data": [
+						{
+							"value": 79
+						}
+					],
+					"name": "五班"
+				}
+			],
+			"type": "mount",
+			"xAxis": {
+				"disableGrid": true
+			},
+			"yAxis": {
+				"data": [
+					{
+						"max": 100,
+						"min": -100
+					}
+				]
+			}
+		},
+		"type": "mount",
+		"update_time": 1726290370006,
+		"uts": true
+	},
+	{
+		"_id": "66e51998aa36a3f0e570f36e",
+		"creation_time": 1726290328824,
+		"name": "山峰图有边透明渐变+滚动条",
+		"option": {
+			"animation": true,
+			"dataLabel": true,
+			"enableScroll": true,
+			"extra": {
+				"mount": {
+					"borderWidth": 2,
+					"linearOpacity": 0.1,
+					"linearType": "opacity",
+					"type": "sharp",
+					"widthRatio": 1.5
+				}
+			},
+			"fontSize": 11,
+			"padding": [
+				15,
+				5,
+				0,
+				15
+			],
+			"series": [
+				{
+					"data": [
+						{
+							"value": 82
+						}
+					],
+					"name": "一班"
+				},
+				{
+					"data": [
+						{
+							"value": 63
+						}
+					],
+					"name": "二班"
+				},
+				{
+					"data": [
+						{
+							"value": 86
+						}
+					],
+					"name": "三班"
+				},
+				{
+					"data": [
+						{
+							"value": 65
+						}
+					],
+					"name": "四班"
+				},
+				{
+					"data": [
+						{
+							"value": 79
+						}
+					],
+					"name": "五班"
+				}
+			],
+			"type": "mount",
+			"xAxis": {
+				"disableGrid": true,
+				"itemCount": 4,
+				"scrollShow": true
+			},
+			"yAxis": {
+				"data": [
+					{
+						"min": 0
+					}
+				]
+			}
+		},
+		"type": "mount",
+		"update_time": 1726290328824,
+		"uts": true
+	},
+	{
+		"_id": "66e5197cc390b34a06a3f453",
+		"creation_time": 1726290300896,
+		"name": "山峰图有边渐变+标记线",
+		"option": {
+			"animation": true,
+			"dataLabel": true,
+			"enableMarkLine": true,
+			"extra": {
+				"markLine": {
+					"dashLength": 4,
+					"data": [
+						{
+							"labelAlign": "left",
+							"labelBgColor": "#DFE8FF",
+							"labelBgOpacity": 0.8,
+							"labelFontColor": "#666666",
+							"labelOffsetX": 0,
+							"labelOffsetY": 0,
+							"labelText": "均值",
+							"lineColor": "#DE4A42",
+							"showLabel": true,
+							"value": 45
+						}
+					],
+					"type": "solid"
+				},
+				"mount": {
+					"borderWidth": 2,
+					"linearType": "custom",
+					"type": "triangle",
+					"widthRatio": 1
+				},
+				"tooltip": {}
+			},
+			"fontSize": 11,
+			"padding": [
+				15,
+				5,
+				0,
+				15
+			],
+			"series": [
+				{
+					"data": [
+						{
+							"value": 82
+						}
+					],
+					"name": "一班"
+				},
+				{
+					"data": [
+						{
+							"value": 63
+						}
+					],
+					"name": "二班"
+				},
+				{
+					"data": [
+						{
+							"value": 86
+						}
+					],
+					"name": "三班"
+				},
+				{
+					"data": [
+						{
+							"value": 65
+						}
+					],
+					"name": "四班"
+				},
+				{
+					"data": [
+						{
+							"value": 79
+						}
+					],
+					"name": "五班"
+				}
+			],
+			"type": "mount",
+			"xAxis": {
+				"disableGrid": true
+			},
+			"yAxis": {
+				"data": [
+					{
+						"min": 0
+					}
+				]
+			}
+		},
+		"type": "mount",
+		"update_time": 1726290300896,
+		"uts": true
+	},
+	{
+		"_id": "66e51959fbdb427dfc765b53",
+		"creation_time": 1726290265941,
+		"name": "山峰图圆角渐变色柱状图",
+		"option": {
+			"animation": true,
+			"dataLabel": true,
+			"extra": {
+				"mount": {
+					"barBorderRadius": [
+						50,
+						50,
+						50,
+						50
+					],
+					"borderWidth": 0,
+					"linearType": "custom",
+					"type": "bar",
+					"widthRatio": 0.3
+				},
+				"tooltip": {}
+			},
+			"fontSize": 11,
+			"padding": [
+				15,
+				5,
+				0,
+				15
+			],
+			"series": [
+				{
+					"data": [
+						{
+							"value": 82
+						}
+					],
+					"name": "一班"
+				},
+				{
+					"data": [
+						{
+							"value": 63
+						}
+					],
+					"name": "二班"
+				},
+				{
+					"data": [
+						{
+							"value": 86
+						}
+					],
+					"name": "三班"
+				},
+				{
+					"data": [
+						{
+							"value": 65
+						}
+					],
+					"name": "四班"
+				},
+				{
+					"data": [
+						{
+							"value": 79
+						}
+					],
+					"name": "五班"
+				}
+			],
+			"type": "mount",
+			"xAxis": {
+				"disableGrid": true
+			},
+			"yAxis": {
+				"data": [
+					{
+						"min": 0
+					}
+				]
+			}
+		},
+		"type": "mount",
+		"update_time": 1726290265941,
+		"uts": true
+	},
+	{
+		"_id": "66e51938456f5a84dc09e3a1",
+		"creation_time": 1726290232850,
+		"name": "尖角山峰图",
+		"option": {
+			"animation": true,
+			"dataLabel": true,
+			"extra": {
+				"mount": {
+					"type": "sharp",
+					"widthRatio": 1.5
+				},
+				"tooltip": {}
+			},
+			"fontSize": 11,
+			"padding": [
+				15,
+				5,
+				0,
+				15
+			],
+			"series": [
+				{
+					"data": [
+						{
+							"value": 82
+						}
+					],
+					"name": "一班"
+				},
+				{
+					"data": [
+						{
+							"value": 63
+						}
+					],
+					"name": "二班"
+				},
+				{
+					"data": [
+						{
+							"value": 86
+						}
+					],
+					"name": "三班"
+				},
+				{
+					"data": [
+						{
+							"value": 65
+						}
+					],
+					"name": "四班"
+				},
+				{
+					"data": [
+						{
+							"value": 79
+						}
+					],
+					"name": "五班"
+				}
+			],
+			"type": "mount",
+			"xAxis": {
+				"disableGrid": true
+			},
+			"yAxis": {
+				"data": [
+					{
+						"min": 0
+					}
+				]
+			}
+		},
+		"type": "mount",
+		"update_time": 1726290232850,
+		"uts": true
+	},
+	{
+		"_id": "66e51654456f5a84dc09c01b",
+		"creation_time": 1726289492243,
+		"name": "圆角山峰图",
+		"option": {
+			"animation": true,
+			"dataLabel": true,
+			"extra": {
+				"mount": {
+					"type": "mount",
+					"widthRatio": 1.5
+				},
+				"tooltip": {}
+			},
+			"fontSize": 11,
+			"padding": [
+				15,
+				5,
+				0,
+				15
+			],
+			"series": [
+				{
+					"data": [
+						{
+							"value": 82
+						}
+					],
+					"name": "一班"
+				},
+				{
+					"data": [
+						{
+							"value": 63
+						}
+					],
+					"name": "二班"
+				},
+				{
+					"data": [
+						{
+							"value": 86
+						}
+					],
+					"name": "三班"
+				},
+				{
+					"data": [
+						{
+							"value": 65
+						}
+					],
+					"name": "四班"
+				},
+				{
+					"data": [
+						{
+							"value": 79
+						}
+					],
+					"name": "五班"
+				}
+			],
+			"type": "mount",
+			"xAxis": {
+				"disableGrid": true
+			},
+			"yAxis": {
+				"data": [
+					{
+						"min": 0
+					}
+				]
+			}
+		},
+		"type": "mount",
+		"update_time": 1726289492243,
+		"uts": true
+	}
+] as UTSJSONObject[]

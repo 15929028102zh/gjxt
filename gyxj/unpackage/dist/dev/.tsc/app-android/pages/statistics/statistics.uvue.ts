@@ -1,0 +1,516 @@
+
+	import { getApiUrl } from '@/config/api.uts'
+	type PeriodTab = { __$originalPosition?: UTSSourceMapPosition<"PeriodTab", "pages/statistics/statistics.uvue", 148, 7>;
+		label: string
+		value: string
+	}
+	
+	type OverviewData = { __$originalPosition?: UTSSourceMapPosition<"OverviewData", "pages/statistics/statistics.uvue", 153, 7>;
+		totalRecords: number
+		completedTasks: number
+		pendingRecords: number
+		completionRate: number
+	}
+	
+	type StatusDistributionItem = { __$originalPosition?: UTSSourceMapPosition<"StatusDistributionItem", "pages/statistics/statistics.uvue", 160, 7>;
+		status: string
+		count: number
+		percentage: number
+	}
+	
+	type SeverityDistributionItem = { __$originalPosition?: UTSSourceMapPosition<"SeverityDistributionItem", "pages/statistics/statistics.uvue", 166, 7>;
+		severity: string
+		count: number
+		percentage: number
+	}
+	
+	type TrendDataItem = { __$originalPosition?: UTSSourceMapPosition<"TrendDataItem", "pages/statistics/statistics.uvue", 172, 7>;
+		date: string
+		newCount: number
+		completedCount: number
+	}
+	
+	type LocationStatsItem = { __$originalPosition?: UTSSourceMapPosition<"LocationStatsItem", "pages/statistics/statistics.uvue", 178, 7>;
+		locationId: string
+		locationName: string
+		recordCount: number
+	}
+	
+	const __sfc__ = defineComponent({
+		data(): {
+			currentPeriod: string,
+			periodTabs: PeriodTab[],
+			overview: OverviewData,
+			statusDistribution: StatusDistributionItem[],
+			severityDistribution: SeverityDistributionItem[],
+			trendData: TrendDataItem[],
+			locationStats: LocationStatsItem[],
+			loading: boolean
+		} {
+			return {
+				currentPeriod: 'month',
+				periodTabs: [
+					{ label: '本周', value: 'week' },
+					{ label: '本月', value: 'month' },
+					{ label: '本季', value: 'quarter' },
+					{ label: '本年', value: 'year' }
+				] as PeriodTab[],
+				overview: {
+				totalRecords: 0,
+				completedTasks: 0,
+				pendingRecords: 0,
+				completionRate: 0
+			} as OverviewData,
+				statusDistribution: [] as StatusDistributionItem[],
+				severityDistribution: [] as SeverityDistributionItem[],
+				trendData: [] as TrendDataItem[],
+				locationStats: [] as LocationStatsItem[],
+				loading: false
+			}
+		},
+		onLoad() {
+			this.checkLogin()
+			this.loadStatistics()
+		},
+		methods: {
+			checkLogin() {
+				const token = uni.getStorageSync('token') as string
+				if (token == null || token == '') {
+					uni.reLaunch({
+						url: '/pages/login/login'
+					})
+				}
+			},
+			
+			changePeriod(period: string) {
+				this.currentPeriod = period
+				this.loadStatistics()
+			},
+			
+			getPeriodText(): string {
+				if (this.currentPeriod == 'week') return '本周'
+				if (this.currentPeriod == 'month') return '本月'
+				if (this.currentPeriod == 'quarter') return '本季度'
+				if (this.currentPeriod == 'year') return '本年'
+				return '本月'
+			},
+			
+			async loadStatistics() {
+				if (this.loading) return
+				
+				this.loading = true
+				
+				try {
+					const token = uni.getStorageSync('token') as string
+					
+					// 加载概览数据
+					await this.loadOverview(token)
+					
+					// 加载状态分布
+					await this.loadStatusDistribution(token)
+					
+					// 加载严重程度分布
+					await this.loadSeverityDistribution(token)
+					
+					// 加载趋势数据
+					await this.loadTrendData(token)
+					
+					// 加载位置统计
+					await this.loadLocationStats(token)
+					
+				} catch (error) {
+					console.error('加载统计数据失败:', error, " at pages/statistics/statistics.uvue:267")
+					uni.showToast({
+						title: '加载失败',
+						icon: 'none'
+					})
+				} finally {
+					this.loading = false
+				}
+			},
+			
+			loadOverview(token: string) {
+				uni.request({
+					url: getApiUrl(`/statistics/overview?period=${this.currentPeriod}`),
+					method: 'GET',
+					header: {
+						'Authorization': `Bearer ${token}`
+					},
+					success: (res) => {
+						const data = res.data as UTSJSONObject
+						if (res.statusCode === 200 && (data.getNumber('code') ?? 0) === 200) {
+							const overviewData = data.getJSON('data') as UTSJSONObject
+							this.overview = {
+								totalRecords: overviewData.getNumber('totalRecords') ?? 0,
+								completedTasks: overviewData.getNumber('completedTasks') ?? 0,
+								pendingRecords: overviewData.getNumber('pendingRecords') ?? 0,
+								completionRate: overviewData.getNumber('completionRate') ?? 0
+							}
+						}
+					},
+					fail: (error) => {
+						console.error('加载概览数据失败:', error, " at pages/statistics/statistics.uvue:297")
+					}
+				})
+			},
+			
+			loadStatusDistribution(token: string) {
+				uni.request({
+					url: getApiUrl(`/statistics/status-distribution?period=${this.currentPeriod}`),
+					method: 'GET',
+					header: {
+						'Authorization': `Bearer ${token}`
+					},
+					success: (res) => {
+						const data = res.data as UTSJSONObject
+						if (res.statusCode === 200 && (data.getNumber('code') ?? 0) === 200) {
+							const dataArray = data.getArray('data') as Array<UTSJSONObject>
+							this.statusDistribution = []
+							for (let i = 0; i < dataArray.length; i++) {
+								const item = dataArray[i]
+								this.statusDistribution.push({
+									status: item.getString('status') ?? '',
+									count: item.getNumber('count') ?? 0,
+									percentage: item.getNumber('percentage') ?? 0
+								})
+							}
+						}
+					},
+					fail: (error) => {
+						console.error('加载状态分布失败:', error, " at pages/statistics/statistics.uvue:325")
+					}
+				})
+			},
+			
+			loadSeverityDistribution(token: string) {
+				uni.request({
+					url: getApiUrl(`/statistics/severity-distribution?period=${this.currentPeriod}`),
+					method: 'GET',
+					header: {
+						'Authorization': `Bearer ${token}`
+					},
+					success: (res) => {
+						const data = res.data as UTSJSONObject
+						if (res.statusCode === 200 && (data.getNumber('code') ?? 0) === 200) {
+							const dataArray = data.getArray('data') as Array<UTSJSONObject>
+							this.severityDistribution = []
+							for (let i = 0; i < dataArray.length; i++) {
+								const item = dataArray[i]
+								this.severityDistribution.push({
+									severity: item.getString('severity') ?? '',
+									count: item.getNumber('count') ?? 0,
+									percentage: item.getNumber('percentage') ?? 0
+								})
+							}
+						}
+					},
+					fail: (error) => {
+						console.error('加载严重程度分布失败:', error, " at pages/statistics/statistics.uvue:353")
+					}
+				})
+			},
+			
+			loadTrendData(token: string) {
+				uni.request({
+					url: getApiUrl(`/statistics/trends?period=${this.currentPeriod}`),
+					method: 'GET',
+					header: {
+						'Authorization': `Bearer ${token}`
+					},
+					success: (res) => {
+						const data = res.data as UTSJSONObject
+						if (res.statusCode === 200 && (data.getNumber('code') ?? 0) === 200) {
+							const dataArray = data.getArray('data') as Array<UTSJSONObject>
+							this.trendData = []
+							for (let i = 0; i < dataArray.length; i++) {
+								const item = dataArray[i]
+								this.trendData.push({
+									date: item.getString('date') ?? '',
+									newCount: item.getNumber('newCount') ?? 0,
+									completedCount: item.getNumber('completedCount') ?? 0
+								})
+							}
+						}
+					},
+					fail: (error) => {
+						console.error('加载趋势数据失败:', error, " at pages/statistics/statistics.uvue:381")
+					}
+				})
+			},
+			
+			loadLocationStats(token: string) {
+				uni.request({
+					url: getApiUrl(`/statistics/location-stats?period=${this.currentPeriod}&limit=5`),
+					method: 'GET',
+					header: {
+						'Authorization': `Bearer ${token}`
+					},
+					success: (res) => {
+						const data = res.data as UTSJSONObject
+						if (res.statusCode === 200 && (data.getNumber('code') ?? 0) === 200) {
+							const dataArray = data.getArray('data') as Array<UTSJSONObject>
+							this.locationStats = []
+							for (let i = 0; i < dataArray.length; i++) {
+								const item = dataArray[i]
+								this.locationStats.push({
+							locationId: item.getString('locationId') ?? '',
+							locationName: item.getString('locationName') ?? '',
+							recordCount: item.getNumber('count') ?? 0
+						})
+							}
+						}
+					},
+					fail: (error) => {
+						console.error('加载位置统计失败:', error, " at pages/statistics/statistics.uvue:409")
+					}
+				})
+			},
+			
+			getStatusText(status: string): string {
+				if (status == "0") return '待整改'
+				if (status == "1") return '已整改'
+				if (status == "2") return '已复查'
+				return '未知'
+			},
+			
+			getStatusDotClass(status: string): string {
+				if (status == '0') return 'dot-pending'
+				if (status == '1') return 'dot-processing'
+				if (status == '2') return 'dot-completed'
+				if (status == '3') return 'dot-accepted'
+				return 'dot-unknown'
+			},
+			
+			getSeverityText(severity: string): string {
+				if (severity == '1') return '低'
+				if (severity == '2') return '中'
+				if (severity == '3') return '高'
+				if (severity == '4') return '紧急'
+				return '未知'
+			},
+			
+			getSeverityDotClass(severity: string): string {
+				if (severity == '1') return 'dot-low'
+				if (severity == '2') return 'dot-medium'
+				if (severity == '3') return 'dot-high'
+				if (severity == '4') return 'dot-urgent'
+				return 'dot-unknown'
+			},
+			
+			formatTrendDate(date: string): string {
+				if (date == null || date == '') return ''
+				const d = new Date(date)
+				return `${d.getMonth() + 1}/${d.getDate()}`
+			},
+			
+			getTrendWidth(count: number, type: string): number {
+				if (this.trendData.length == 0) return 0
+				
+				let maxCount = 0
+				for (let i = 0; i < this.trendData.length; i++) {
+					const item = this.trendData[i]
+					const currentCount = type === 'new' ? item.newCount : item.completedCount
+					if (currentCount > maxCount) {
+						maxCount = currentCount
+					}
+				}
+				
+				return maxCount > 0 ? (count / maxCount) * 100 : 0
+			},
+			
+			getLocationWidth(count: number): number {
+				if (this.locationStats.length == 0) return 0
+				
+				let maxCount = 0
+				for (let i = 0; i < this.locationStats.length; i++) {
+				const item = this.locationStats[i]
+				if (item.recordCount > maxCount) {
+					maxCount = item.recordCount
+				}
+			}
+				return maxCount > 0 ? (count / maxCount) * 100 : 0
+			}
+		}
+	})
+
+export default __sfc__
+function GenPagesStatisticsStatisticsRender(this: InstanceType<typeof __sfc__>): any | null {
+const _ctx = this
+const _cache = this.$.renderCache
+  return _cE("view", _uM({ class: "container" }), [
+    _cE("view", _uM({ class: "filter-section" }), [
+      _cE("view", _uM({ class: "time-filter" }), [
+        _cE(Fragment, null, RenderHelpers.renderList(_ctx.periodTabs, (item, __key, __index, _cached): any => {
+          return _cE("view", _uM({
+            class: _nC(["time-tab", _uM({active: _ctx.currentPeriod === item.value})]),
+            key: item.value,
+            onClick: () => {_ctx.changePeriod(item.value)}
+          }), [
+            _cE("text", null, _tD(item.label), 1 /* TEXT */)
+          ], 10 /* CLASS, PROPS */, ["onClick"])
+        }), 128 /* KEYED_FRAGMENT */)
+      ])
+    ]),
+    _cE("view", _uM({ class: "overview-section" }), [
+      _cE("view", _uM({ class: "overview-title" }), [
+        _cE("text", null, "数据概览"),
+        _cE("text", _uM({ class: "period-text" }), _tD(_ctx.getPeriodText()), 1 /* TEXT */)
+      ]),
+      _cE("view", _uM({ class: "stats-grid" }), [
+        _cE("view", _uM({ class: "stats-item" }), [
+          _cE("text", _uM({ class: "stats-number" }), _tD(_ctx.overview.totalRecords), 1 /* TEXT */),
+          _cE("text", _uM({ class: "stats-label" }), "总记录数"),
+          _cE("text", _uM({ class: "stats-icon" }), "📝")
+        ]),
+        _cE("view", _uM({ class: "stats-item" }), [
+          _cE("text", _uM({ class: "stats-number" }), _tD(_ctx.overview.completedTasks), 1 /* TEXT */),
+          _cE("text", _uM({ class: "stats-label" }), "完成任务"),
+          _cE("text", _uM({ class: "stats-icon" }), "✅")
+        ]),
+        _cE("view", _uM({ class: "stats-item" }), [
+          _cE("text", _uM({ class: "stats-number" }), _tD(_ctx.overview.pendingRecords), 1 /* TEXT */),
+          _cE("text", _uM({ class: "stats-label" }), "待整改"),
+          _cE("text", _uM({ class: "stats-icon" }), "⏳")
+        ]),
+        _cE("view", _uM({ class: "stats-item" }), [
+          _cE("text", _uM({ class: "stats-number" }), _tD(_ctx.overview.completionRate) + "%", 1 /* TEXT */),
+          _cE("text", _uM({ class: "stats-label" }), "完成率"),
+          _cE("text", _uM({ class: "stats-icon" }), "📊")
+        ])
+      ])
+    ]),
+    _cE("view", _uM({ class: "chart-section" }), [
+      _cE("view", _uM({ class: "chart-header" }), [
+        _cE("text", _uM({ class: "chart-title" }), "记录状态分布")
+      ]),
+      _cE("view", _uM({ class: "status-chart" }), [
+        _cE(Fragment, null, RenderHelpers.renderList(_ctx.statusDistribution, (item, __key, __index, _cached): any => {
+          return _cE("view", _uM({
+            class: "status-item",
+            key: item.status
+          }), [
+            _cE("view", _uM({ class: "status-info" }), [
+              _cE("view", _uM({
+                class: _nC(["status-dot", _ctx.getStatusDotClass(item.status)])
+              }), null, 2 /* CLASS */),
+              _cE("text", _uM({ class: "status-name" }), _tD(_ctx.getStatusText(item.status)), 1 /* TEXT */)
+            ]),
+            _cE("view", _uM({ class: "status-data" }), [
+              _cE("text", _uM({ class: "status-count" }), _tD(item.count), 1 /* TEXT */),
+              _cE("text", _uM({ class: "status-percent" }), _tD(item.percentage) + "%", 1 /* TEXT */)
+            ]),
+            _cE("view", _uM({ class: "status-bar" }), [
+              _cE("view", _uM({
+                class: _nC(["status-progress", _ctx.getStatusDotClass(item.status)]),
+                style: _nS(_uM({width: item.percentage + '%'}))
+              }), null, 6 /* CLASS, STYLE */)
+            ])
+          ])
+        }), 128 /* KEYED_FRAGMENT */)
+      ])
+    ]),
+    _cE("view", _uM({ class: "chart-section" }), [
+      _cE("view", _uM({ class: "chart-header" }), [
+        _cE("text", _uM({ class: "chart-title" }), "严重程度分布")
+      ]),
+      _cE("view", _uM({ class: "severity-chart" }), [
+        _cE(Fragment, null, RenderHelpers.renderList(_ctx.severityDistribution, (item, __key, __index, _cached): any => {
+          return _cE("view", _uM({
+            class: "severity-item",
+            key: item.severity
+          }), [
+            _cE("view", _uM({ class: "severity-info" }), [
+              _cE("view", _uM({
+                class: _nC(["severity-dot", _ctx.getSeverityDotClass(item.severity)])
+              }), null, 2 /* CLASS */),
+              _cE("text", _uM({ class: "severity-name" }), _tD(_ctx.getSeverityText(item.severity)), 1 /* TEXT */)
+            ]),
+            _cE("view", _uM({ class: "severity-data" }), [
+              _cE("text", _uM({ class: "severity-count" }), _tD(item.count), 1 /* TEXT */),
+              _cE("text", _uM({ class: "severity-percent" }), _tD(item.percentage) + "%", 1 /* TEXT */)
+            ]),
+            _cE("view", _uM({ class: "severity-bar" }), [
+              _cE("view", _uM({
+                class: _nC(["severity-progress", _ctx.getSeverityDotClass(item.severity)]),
+                style: _nS(_uM({width: item.percentage + '%'}))
+              }), null, 6 /* CLASS, STYLE */)
+            ])
+          ])
+        }), 128 /* KEYED_FRAGMENT */)
+      ])
+    ]),
+    _cE("view", _uM({ class: "chart-section" }), [
+      _cE("view", _uM({ class: "chart-header" }), [
+        _cE("text", _uM({ class: "chart-title" }), "趋势分析")
+      ]),
+      _cE("view", _uM({ class: "trend-chart" }), [
+        _cE(Fragment, null, RenderHelpers.renderList(_ctx.trendData, (item, __key, __index, _cached): any => {
+          return _cE("view", _uM({
+            class: "trend-item",
+            key: item.date
+          }), [
+            _cE("view", _uM({ class: "trend-date" }), [
+              _cE("text", null, _tD(_ctx.formatTrendDate(item.date)), 1 /* TEXT */)
+            ]),
+            _cE("view", _uM({ class: "trend-bars" }), [
+              _cE("view", _uM({ class: "trend-bar" }), [
+                _cE("text", _uM({ class: "trend-label" }), "新增"),
+                _cE("view", _uM({
+                  class: "trend-progress new",
+                  style: _nS(_uM({width: _ctx.getTrendWidth(item.newCount, 'new') + '%'}))
+                }), null, 4 /* STYLE */),
+                _cE("text", _uM({ class: "trend-count" }), _tD(item.newCount), 1 /* TEXT */)
+              ]),
+              _cE("view", _uM({ class: "trend-bar" }), [
+                _cE("text", _uM({ class: "trend-label" }), "完成"),
+                _cE("view", _uM({
+                  class: "trend-progress completed",
+                  style: _nS(_uM({width: _ctx.getTrendWidth(item.completedCount, 'completed') + '%'}))
+                }), null, 4 /* STYLE */),
+                _cE("text", _uM({ class: "trend-count" }), _tD(item.completedCount), 1 /* TEXT */)
+              ])
+            ])
+          ])
+        }), 128 /* KEYED_FRAGMENT */)
+      ])
+    ]),
+    _cE("view", _uM({ class: "chart-section" }), [
+      _cE("view", _uM({ class: "chart-header" }), [
+        _cE("text", _uM({ class: "chart-title" }), "位置统计 TOP5")
+      ]),
+      _cE("view", _uM({ class: "location-chart" }), [
+        _cE(Fragment, null, RenderHelpers.renderList(_ctx.locationStats, (item, index, __index, _cached): any => {
+          return _cE("view", _uM({
+            class: "location-item",
+            key: item.locationId
+          }), [
+            _cE("view", _uM({ class: "location-rank" }), [
+              _cE("text", null, _tD(index + 1), 1 /* TEXT */)
+            ]),
+            _cE("view", _uM({ class: "location-info" }), [
+              _cE("text", _uM({ class: "location-name" }), _tD(item.locationName), 1 /* TEXT */),
+              _cE("view", _uM({ class: "location-bar" }), [
+                _cE("view", _uM({
+                  class: "location-progress",
+                  style: _nS(_uM({width: _ctx.getLocationWidth(item.recordCount) + '%'}))
+                }), null, 4 /* STYLE */)
+              ])
+            ]),
+            _cE("view", _uM({ class: "location-count" }), [
+              _cE("text", null, _tD(item.recordCount), 1 /* TEXT */)
+            ])
+          ])
+        }), 128 /* KEYED_FRAGMENT */),
+        _ctx.locationStats.length === 0
+          ? _cE("view", _uM({
+              key: 0,
+              class: "empty-chart"
+            }), [
+              _cE("text", null, "暂无数据")
+            ])
+          : _cC("v-if", true)
+      ])
+    ])
+  ])
+}
+const GenPagesStatisticsStatisticsStyles = [_uM([["container", _pS(_uM([["paddingTop", 20], ["paddingRight", 20], ["paddingBottom", 20], ["paddingLeft", 20], ["backgroundColor", "#f5f5f5"]]))], ["filter-section", _pS(_uM([["marginBottom", 20]]))], ["time-filter", _pS(_uM([["display", "flex"], ["backgroundImage", "none"], ["backgroundColor", "#ffffff"], ["borderTopLeftRadius", 8], ["borderTopRightRadius", 8], ["borderBottomRightRadius", 8], ["borderBottomLeftRadius", 8], ["paddingTop", 4], ["paddingRight", 4], ["paddingBottom", 4], ["paddingLeft", 4], ["boxShadow", "0 2px 8px rgba(0,0,0,0.1)"]]))], ["time-tab", _uM([["", _uM([["flex", 1], ["paddingTop", 10], ["paddingRight", 15], ["paddingBottom", 10], ["paddingLeft", 15], ["textAlign", "center"], ["borderTopLeftRadius", 6], ["borderTopRightRadius", 6], ["borderBottomRightRadius", 6], ["borderBottomLeftRadius", 6], ["transitionProperty", "all"], ["transitionDuration", "0.3s"]])], [".active", _uM([["backgroundImage", "none"], ["backgroundColor", "#007AFF"], ["color", "#ffffff"]])]])], ["overview-section", _pS(_uM([["backgroundImage", "none"], ["backgroundColor", "#ffffff"], ["borderTopLeftRadius", 12], ["borderTopRightRadius", 12], ["borderBottomRightRadius", 12], ["borderBottomLeftRadius", 12], ["paddingTop", 20], ["paddingRight", 20], ["paddingBottom", 20], ["paddingLeft", 20], ["marginBottom", 20], ["boxShadow", "0 2px 8px rgba(0,0,0,0.1)"]]))], ["overview-title", _pS(_uM([["display", "flex"], ["justifyContent", "space-between"], ["alignItems", "center"], ["marginBottom", 20], ["paddingBottom", 15], ["borderBottomWidth", 1], ["borderBottomStyle", "solid"], ["borderBottomColor", "#f0f0f0"]]))], ["period-text", _pS(_uM([["fontSize", 14], ["color", "#666666"]]))], ["stats-grid", _pS(_uM([["display", "flex"], ["flexWrap", "wrap"]]))], ["stats-item", _pS(_uM([["flex", 1], ["minWidth", 150], ["backgroundImage", "none"], ["backgroundColor", "#f8f9fa"], ["borderTopLeftRadius", 8], ["borderTopRightRadius", 8], ["borderBottomRightRadius", 8], ["borderBottomLeftRadius", 8], ["paddingTop", 20], ["paddingRight", 15], ["paddingBottom", 20], ["paddingLeft", 15], ["textAlign", "center"], ["position", "relative"]]))], ["stats-number", _pS(_uM([["fontSize", 20], ["fontWeight", "bold"], ["color", "#007AFF"], ["marginBottom", 5]]))], ["stats-label", _pS(_uM([["fontSize", 12], ["color", "#666666"]]))], ["stats-icon", _pS(_uM([["position", "absolute"], ["top", 15], ["right", 15], ["fontSize", 20], ["opacity", 0.3]]))], ["chart-section", _pS(_uM([["backgroundImage", "none"], ["backgroundColor", "#ffffff"], ["borderTopLeftRadius", 12], ["borderTopRightRadius", 12], ["borderBottomRightRadius", 12], ["borderBottomLeftRadius", 12], ["paddingTop", 20], ["paddingRight", 20], ["paddingBottom", 20], ["paddingLeft", 20], ["marginBottom", 20], ["boxShadow", "0 2px 8px rgba(0,0,0,0.1)"]]))], ["chart-header", _pS(_uM([["marginBottom", 20], ["paddingBottom", 15], ["borderBottomWidth", 1], ["borderBottomStyle", "solid"], ["borderBottomColor", "#f0f0f0"]]))], ["chart-title", _pS(_uM([["fontSize", 18], ["fontWeight", "bold"], ["color", "#333333"]]))], ["status-item", _pS(_uM([["marginBottom", 15], ["marginBottom:last-child", 0]]))], ["severity-item", _pS(_uM([["marginBottom", 15], ["marginBottom:last-child:last-child", 0]]))], ["status-info", _pS(_uM([["display", "flex"], ["alignItems", "center"], ["marginBottom", 8]]))], ["severity-info", _pS(_uM([["display", "flex"], ["alignItems", "center"], ["marginBottom", 8]]))], ["status-dot", _pS(_uM([["width", 12], ["height", 12], ["borderTopLeftRadius", 6], ["borderTopRightRadius", 6], ["borderBottomRightRadius", 6], ["borderBottomLeftRadius", 6], ["marginRight", 10]]))], ["severity-dot", _pS(_uM([["width", 12], ["height", 12], ["borderTopLeftRadius", 6], ["borderTopRightRadius", 6], ["borderBottomRightRadius", 6], ["borderBottomLeftRadius", 6], ["marginRight", 10]]))], ["dot-pending", _pS(_uM([["backgroundImage", "none"], ["backgroundColor", "#ffc107"]]))], ["dot-processing", _pS(_uM([["backgroundImage", "none"], ["backgroundColor", "#17a2b8"]]))], ["dot-completed", _pS(_uM([["backgroundImage", "none"], ["backgroundColor", "#28a745"]]))], ["dot-accepted", _pS(_uM([["backgroundImage", "none"], ["backgroundColor", "#6c757d"]]))], ["dot-low", _pS(_uM([["backgroundImage", "none"], ["backgroundColor", "#28a745"]]))], ["dot-medium", _pS(_uM([["backgroundImage", "none"], ["backgroundColor", "#ffc107"]]))], ["dot-high", _pS(_uM([["backgroundImage", "none"], ["backgroundColor", "#fd7e14"]]))], ["dot-urgent", _pS(_uM([["backgroundImage", "none"], ["backgroundColor", "#dc3545"]]))], ["status-name", _pS(_uM([["fontSize", 14], ["color", "#333333"], ["flex", 1]]))], ["severity-name", _pS(_uM([["fontSize", 14], ["color", "#333333"], ["flex", 1]]))], ["status-data", _pS(_uM([["display", "flex"], ["justifyContent", "space-between"], ["marginBottom", 5]]))], ["severity-data", _pS(_uM([["display", "flex"], ["justifyContent", "space-between"], ["marginBottom", 5]]))], ["status-count", _pS(_uM([["fontSize", 16], ["fontWeight", "bold"], ["color", "#333333"]]))], ["severity-count", _pS(_uM([["fontSize", 16], ["fontWeight", "bold"], ["color", "#333333"]]))], ["status-percent", _pS(_uM([["fontSize", 14], ["color", "#666666"]]))], ["severity-percent", _pS(_uM([["fontSize", 14], ["color", "#666666"]]))], ["status-bar", _pS(_uM([["height", 6], ["backgroundImage", "none"], ["backgroundColor", "#f0f0f0"], ["borderTopLeftRadius", 3], ["borderTopRightRadius", 3], ["borderBottomRightRadius", 3], ["borderBottomLeftRadius", 3], ["overflow", "hidden"]]))], ["severity-bar", _pS(_uM([["height", 6], ["backgroundImage", "none"], ["backgroundColor", "#f0f0f0"], ["borderTopLeftRadius", 3], ["borderTopRightRadius", 3], ["borderBottomRightRadius", 3], ["borderBottomLeftRadius", 3], ["overflow", "hidden"]]))], ["status-progress", _pS(_uM([["height", "100%"], ["borderTopLeftRadius", 3], ["borderTopRightRadius", 3], ["borderBottomRightRadius", 3], ["borderBottomLeftRadius", 3], ["transitionProperty", "width"], ["transitionDuration", "0.3s"]]))], ["severity-progress", _pS(_uM([["height", "100%"], ["borderTopLeftRadius", 3], ["borderTopRightRadius", 3], ["borderBottomRightRadius", 3], ["borderBottomLeftRadius", 3], ["transitionProperty", "width"], ["transitionDuration", "0.3s"]]))], ["trend-item", _pS(_uM([["marginBottom", 20], ["marginBottom:last-child", 0]]))], ["trend-date", _pS(_uM([["marginBottom", 10]]))], ["trend-bar", _pS(_uM([["display", "flex"], ["alignItems", "center"], ["marginBottom", 8]]))], ["trend-label", _pS(_uM([["fontSize", 12], ["color", "#666666"], ["minWidth", 40], ["marginRight", 10]]))], ["trend-progress", _uM([["", _uM([["height", 20], ["borderTopLeftRadius", 10], ["borderTopRightRadius", 10], ["borderBottomRightRadius", 10], ["borderBottomLeftRadius", 10], ["marginRight", 10], ["transitionProperty", "width"], ["transitionDuration", "0.3s"], ["flex", 1], ["maxWidth", 200]])], [".new", _uM([["backgroundImage", "none"], ["backgroundColor", "#007AFF"]])], [".completed", _uM([["backgroundImage", "none"], ["backgroundColor", "#28a745"]])]])], ["trend-count", _pS(_uM([["fontSize", 12], ["color", "#333333"], ["minWidth", 30], ["textAlign", "right"]]))], ["location-item", _pS(_uM([["display", "flex"], ["alignItems", "center"], ["marginBottom", 15], ["marginBottom:last-child", 0]]))], ["location-rank", _pS(_uM([["width", 24], ["height", 24], ["borderTopLeftRadius", 12], ["borderTopRightRadius", 12], ["borderBottomRightRadius", 12], ["borderBottomLeftRadius", 12], ["backgroundImage", "none"], ["backgroundColor", "#007AFF"], ["display", "flex"], ["alignItems", "center"], ["justifyContent", "center"], ["marginRight", 15]]))], ["location-info", _pS(_uM([["flex", 1], ["marginRight", 15]]))], ["location-name", _pS(_uM([["fontSize", 14], ["color", "#333333"], ["marginBottom", 5]]))], ["location-bar", _pS(_uM([["height", 6], ["backgroundImage", "none"], ["backgroundColor", "#f0f0f0"], ["borderTopLeftRadius", 3], ["borderTopRightRadius", 3], ["borderBottomRightRadius", 3], ["borderBottomLeftRadius", 3], ["overflow", "hidden"]]))], ["location-progress", _pS(_uM([["height", "100%"], ["backgroundImage", "none"], ["backgroundColor", "#007AFF"], ["borderTopLeftRadius", 3], ["borderTopRightRadius", 3], ["borderBottomRightRadius", 3], ["borderBottomLeftRadius", 3], ["transitionProperty", "width"], ["transitionDuration", "0.3s"]]))], ["location-count", _pS(_uM([["minWidth", 30], ["textAlign", "right"]]))], ["empty-chart", _pS(_uM([["textAlign", "center"], ["paddingTop", 40], ["paddingRight", 0], ["paddingBottom", 40], ["paddingLeft", 0]]))], ["@TRANSITION", _uM([["time-tab", _uM([["property", "all"], ["duration", "0.3s"]])], ["status-progress", _uM([["property", "width"], ["duration", "0.3s"]])], ["severity-progress", _uM([["property", "width"], ["duration", "0.3s"]])], ["trend-progress", _uM([["property", "width"], ["duration", "0.3s"]])], ["location-progress", _uM([["property", "width"], ["duration", "0.3s"]])]])]])]

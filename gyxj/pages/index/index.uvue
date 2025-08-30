@@ -1,0 +1,446 @@
+<template>
+	<view class="container">
+		<!-- 顶部欢迎区域 -->
+		<view class="header">
+			<view class="welcome">
+				<text class="welcome-text">欢迎回来，{{(userInfo as UTSJSONObject).getString('realName') ?? '用户'}}</text>
+				<text class="date-text">{{currentDate}}</text>
+			</view>
+			<image class="avatar" src="/static/avatar.png"></image>
+		</view>
+		
+		<!-- 统计卡片 -->
+		<view class="stats-container">
+			<view class="stats-card" @click="goToPendingIssues">
+				<text class="stats-number">{{statistics.pendingIssues}}</text>
+				<text class="stats-label">待整改</text>
+				<text class="stats-icon">⚠️</text>
+			</view>
+			<view class="stats-card" @click="goToCompletedIssues">
+				<text class="stats-number">{{statistics.completedIssues}}</text>
+				<text class="stats-label">已整改问题记录数</text>
+				<text class="stats-icon">✅</text>
+			</view>
+			<view class="stats-card" @click="goToStatistics">
+				<text class="stats-number">{{statistics.monthRecords}}</text>
+				<text class="stats-label">本月记录</text>
+				<text class="stats-icon">📊</text>
+			</view>
+		</view>
+		
+		<!-- 快捷功能 -->
+		<view class="quick-actions">
+			<text class="section-title">快捷功能</text>
+			<view class="actions-grid">
+				<view class="action-item" @click="goToAddRecord">
+					<view class="action-icon">➕</view>
+					<text class="action-text">新增记录</text>
+				</view>
+				<view class="action-item" @click="goToPendingIssues">
+					<view class="action-icon">⚠️</view>
+					<text class="action-text">待整改问题</text>
+				</view>
+				<view class="action-item" @click="goToRecords">
+					<view class="action-icon">📝</view>
+					<text class="action-text">巡检记录</text>
+				</view>
+				<view class="action-item" @click="goToCompletedIssues">
+					<view class="action-icon">✅</view>
+					<text class="action-text">已整改问题</text>
+				</view>
+				<view class="action-item" @click="goToStatistics">
+					<view class="action-icon">📊</view>
+					<text class="action-text">统计分析</text>
+				</view>
+			</view>
+		</view>
+		
+		<!-- 最近记录 -->
+		<view class="recent-records">
+			<view class="section-header">
+				<text class="section-title">最近记录</text>
+				<text class="more-text" @click="goToRecords">查看更多</text>
+			</view>
+			<view class="records-list">
+				<view class="record-item" v-for="record in recentRecords" :key="record.id">
+					<view class="record-info">
+						<text class="record-title">{{record.problemDescription}}</text>
+						<text class="record-meta">{{record.locationName}} · {{record.createTime}}</text>
+					</view>
+					<view class="record-status" :class="getStatusClass(record.status)">
+						<text>{{getStatusText(record.status)}}</text>
+					</view>
+				</view>
+				<view v-if="recentRecords.length === 0" class="empty-state">
+					<text class="empty-text">暂无记录</text>
+				</view>
+			</view>
+		</view>
+	</view>
+</template>
+
+<script lang="uts">
+	import { getApiUrl } from '@/config/api.uts'
+	type RecentRecord = {
+		id: string,
+		problemDescription: string,
+		locationName: string,
+		createTime: string,
+		status: string
+	}
+
+	type StatisticsData = {
+		pendingIssues: number,
+		completedIssues: number,
+		monthRecords: number
+	}
+
+	export default {
+		data() {
+			return {
+				userInfo: {} as UTSJSONObject,
+				currentDate: '',
+				statistics: {
+			pendingIssues: 0,
+			completedIssues: 0,
+			monthRecords: 0
+		} as StatisticsData,
+				recentRecords: [] as RecentRecord[]
+			}
+		},
+		onLoad(options: OnLoadOptions) {
+			this.checkLogin()
+			this.initData()
+			this.loadStatistics()
+			this.loadRecentRecords()
+		},
+		methods: {
+			checkLogin() {
+			const token = uni.getStorageSync('token')
+			if (token == null || token == '') {
+				uni.reLaunch({
+					url: '/pages/login/login'
+				})
+				return
+			}
+			const userInfoStr = uni.getStorageSync('userInfo') as string
+			if (userInfoStr != null && userInfoStr != '') {
+				this.userInfo = JSON.parse(userInfoStr) as UTSJSONObject
+			} else {
+				this.userInfo = {} as UTSJSONObject
+			}
+		},
+			
+			initData() {
+				const now = new Date()
+				const year = now.getFullYear()
+				const month = (now.getMonth() + 1).toString()
+				const formattedMonth = month.length == 1 ? `0${month}` : month
+				const day = now.getDate().toString()
+				const formattedDay = day.length == 1 ? `0${day}` : day
+				const weekdays = ['日', '一', '二', '三', '四', '五', '六']
+				const weekday = weekdays[now.getDay()]
+				this.currentDate = `${year}年${formattedMonth}月${formattedDay}日 星期${weekday}`
+			},
+			
+			loadStatistics() {
+				const token = uni.getStorageSync('token')
+				uni.request({
+					url: getApiUrl('/statistics/overview'),
+					method: 'GET',
+					header: {
+						'Authorization': `Bearer ${token}`
+					},
+					success: (res) => {
+						const response = res.data as UTSJSONObject
+						if (res.statusCode == 200 && (response.getNumber('code') ?? 0) == 200) {
+							const data = response.getJSON('data') as UTSJSONObject
+					// 暂时使用原有接口数据，后续可调整
+					this.statistics = {
+						pendingIssues: data.getNumber('totalTasks') ?? 0,
+						completedIssues: data.getNumber('todayRecords') ?? 0,
+						monthRecords: data.getNumber('monthRecords') ?? 0
+					}
+						}
+					},
+					fail: (error) => {
+						console.log('加载统计数据失败:', error)
+					}
+				})
+			},
+			
+			loadRecentRecords() {
+				const token = uni.getStorageSync('token')
+				uni.request({
+					url: getApiUrl('/inspection-record/page?pageNum=1&pageSize=5'),
+					method: 'GET',
+					header: {
+						'Authorization': `Bearer ${token}`
+					},
+					success: (res) => {
+						const response = res.data as UTSJSONObject
+						if (res.statusCode == 200 && (response.getNumber('code') ?? 0) == 200) {
+							const data = response.getJSON('data') as UTSJSONObject
+							const records = data.getArray('records') as Array<UTSJSONObject>
+							this.recentRecords = []
+							for (let i = 0; i < records.length; i++) {
+								const item = records[i]
+								const record: RecentRecord = {
+									id: item.getString('id') ?? '',
+									problemDescription: item.getString('problemDescription') ?? '',
+									locationName: item.getString('locationName') ?? '',
+									createTime: item.getString('createTime') ?? '',
+									status: item.getString('status') ?? ''
+								}
+								this.recentRecords.push(record)
+							}
+						}
+					},
+					fail: (error) => {
+						console.log('加载最近记录失败:', error)
+					}
+				})
+			},
+			getStatusText(status: string): string {
+			if (status == "0") return '待整改'
+			if (status == "1") return '已整改'
+			if (status == "2") return '已复查'
+			return '未知'
+		},
+		
+		getStatusClass(status: string): string {
+			if (status == "0") return 'status-pending'
+			if (status == "1") return 'status-completed'
+			if (status == "2") return 'status-accepted'
+			return 'status-unknown'
+		},
+			
+			goToPendingIssues() {
+				uni.navigateTo({
+					url: '/pages/record/record?status=0'
+				})
+			},
+			
+			goToCompletedIssues() {
+				uni.navigateTo({
+					url: '/pages/record/record?status=1'
+				})
+			},
+			
+			goToRecords() {
+				uni.switchTab({
+					url: '/pages/record/record'
+				})
+			},
+			
+			goToStatistics() {
+				uni.navigateTo({
+					url: '/pages/statistics/statistics'
+				})
+			},
+			
+			goToAddRecord() {
+				uni.navigateTo({
+					url: '/pages/record/add'
+				})
+			}
+		}
+	}
+</script>
+
+<style>
+	.container {
+		padding: 20px;
+		background-color: #f5f5f5;
+	}
+	
+	.header {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		margin-bottom: 20px;
+	}
+	
+	.welcome {
+		flex: 1;
+	}
+	
+	.welcome-text .greeting {
+		font-size: 20px;
+		font-weight: bold;
+		color: #333;
+		margin-bottom: 4px;
+	}
+	
+	.date-text {
+		font-size: 14px;
+		color: #666;
+	}
+	
+	.avatar {
+		width: 50px;
+		height: 50px;
+		border-radius: 25px;
+		background-color: #ddd;
+	}
+	
+	.stats-container {
+		display: flex;
+		justify-content: space-between;
+		margin-bottom: 30px;
+	}
+	
+	.stats-card {
+		flex: 1;
+		background: #fff;
+		border-radius: 12px;
+		padding: 20px 15px;
+		margin: 0 5px;
+		text-align: center;
+		position: relative;
+		box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+	}
+	
+	.stats-number {
+		font-size: 24px;
+		font-weight: bold;
+		color: #007AFF;
+		margin-bottom: 5px;
+	}
+	
+	.stats-label {
+		font-size: 12px;
+		color: #666;
+	}
+	
+	.stats-icon {
+		position: absolute;
+		top: 15px;
+		right: 15px;
+		font-size: 20px;
+		opacity: 0.3;
+	}
+	
+	.quick-actions {
+		margin-bottom: 30px;
+	}
+	
+	.section-title {
+		font-size: 18px;
+		font-weight: bold;
+		color: #333;
+		margin-bottom: 15px;
+	}
+	
+	.actions-grid {
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: space-between;
+	}
+	
+	.action-item {
+		width: 48%;
+		background: #fff;
+		border-radius: 12px;
+		padding: 20px;
+		margin-bottom: 10px;
+		text-align: center;
+		box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+	}
+	
+	.action-icon {
+		font-size: 32px;
+		margin-bottom: 10px;
+	}
+	
+	.action-text {
+		font-size: 14px;
+		color: #333;
+	}
+	
+	.recent-records {
+		background: #fff;
+		border-radius: 12px;
+		padding: 20px;
+		box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+	}
+	
+	.section-header {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		margin-bottom: 15px;
+	}
+	
+	.more-text {
+		font-size: 14px;
+		color: #007AFF;
+	}
+	
+	.records-list {
+		
+	}
+	
+	.record-item {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		padding: 15px 0;
+		border-bottom: 1px solid #f0f0f0;
+	}
+	
+	.record-item:last-child {
+		border-bottom: none;
+	}
+	
+	.record-info {
+		flex: 1;
+	}
+	
+	.record-title {
+		font-size: 16px;
+		color: #333;
+		margin-bottom: 5px;
+	}
+	
+	.record-meta {
+		font-size: 12px;
+		color: #999;
+	}
+	
+	.record-status {
+		padding: 4px 8px;
+		border-radius: 4px;
+		font-size: 12px;
+	}
+	
+	.status-pending {
+		background: #fff3cd;
+		color: #856404;
+	}
+	
+	.status-processing {
+		background: #d1ecf1;
+		color: #0c5460;
+	}
+	
+	.status-completed {
+		background: #d4edda;
+		color: #155724;
+	}
+	
+	.status-accepted {
+		background: #e2e3e5;
+		color: #383d41;
+	}
+	
+	.empty-state {
+		text-align: center;
+		padding: 40px 0;
+	}
+	
+	.empty-text {
+		font-size: 14px;
+		color: #999;
+	}
+</style>

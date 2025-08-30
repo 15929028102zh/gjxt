@@ -1,0 +1,360 @@
+import { getApiUrl } from '@/config/api.uts';
+type RecordStatusTab = {
+    __$originalPosition?: UTSSourceMapPosition<"RecordStatusTab", "pages/record/record.uvue", 56, 7>;
+    key: string;
+    label: string;
+    value: string;
+};
+type InspectionRecord = {
+    __$originalPosition?: UTSSourceMapPosition<"InspectionRecord", "pages/record/record.uvue", 62, 7>;
+    id: string;
+    problemDescription: string;
+    responsiblePerson: string;
+    inspectorName: string;
+    createDate: string;
+    status: number;
+};
+const __sfc__ = defineComponent({
+    data() {
+        return {
+            recordList: [] as InspectionRecord[],
+            loading: false,
+            loadingMore: false,
+            hasMore: true,
+            totalCount: 0,
+            pageNum: 1,
+            pageSize: 20,
+            status: '0',
+            isDelayed: false // 是否是延迟整改
+        };
+    },
+    onLoad(options: OnLoadOptions) {
+        this.checkLogin();
+        // 从URL参数获取status值
+        if (options['status'] != null) {
+            this.status = options['status'] as string;
+        }
+        // 检查是否是延迟整改
+        if (options['delayed'] != null && options['delayed'] == 'true') {
+            this.isDelayed = true;
+        }
+        this.loadRecords();
+        // 监听全局事件，当记录更新时刷新数据
+        uni.$on('recordUpdated', this.handleRecordUpdated);
+    },
+    onShow() {
+        // 页面显示时刷新数据，以便及时反映数据变化
+        this.refreshRecords();
+    },
+    onUnload() {
+        // 页面卸载时移除事件监听
+        uni.$off('recordUpdated', this.handleRecordUpdated);
+    },
+    onPullDownRefresh() {
+        this.refreshRecords();
+    },
+    onReachBottom() {
+        if (this.hasMore && !this.loadingMore) {
+            this.loadMore();
+        }
+    },
+    methods: {
+        checkLogin() {
+            const token = uni.getStorageSync('token') as string;
+            if (token == null || token == '') {
+                uni.reLaunch({
+                    url: '/pages/login/login'
+                });
+            }
+        },
+        // 处理记录更新事件
+        handleRecordUpdated() {
+            console.log('接收到记录更新事件，开始刷新数据', " at pages/record/record.uvue:128");
+            this.refreshRecords();
+        },
+        async loadRecords(): Promise<void> {
+            if (this.pageNum === 1) {
+                this.loading = true;
+            }
+            else {
+                this.loadingMore = true;
+            }
+            const token = uni.getStorageSync('token');
+            uni.request({
+                url: getApiUrl(`/inspection-record/page?current=${this.pageNum}&size=${this.pageSize}&status=${this.status}`),
+                method: 'GET',
+                header: {
+                    'Authorization': `Bearer ${token}`
+                },
+                success: (res) => {
+                    const responseData = res.data as UTSJSONObject;
+                    if (res.statusCode === 200 && responseData.getNumber('code') === 200) {
+                        const dataObj = responseData.getJSON('data') as UTSJSONObject;
+                        const records = dataObj?.getArray('records') as Array<UTSJSONObject>;
+                        const newRecords: InspectionRecord[] = [];
+                        if (records != null) {
+                            for (let i = 0; i < records.length; i++) {
+                                const item = records[i];
+                                // 打印原始数据对象，检查字段内容
+                                console.log('原始数据对象:', item, " at pages/record/record.uvue:160");
+                                console.log('problemDescription字段:', item.getString('problemDescription'), " at pages/record/record.uvue:161");
+                                const createTime = item.getString('createTime') ?? '';
+                                const record: InspectionRecord = {
+                                    id: item.getString('id') ?? '',
+                                    problemDescription: item.getString('problemDescription') ?? '',
+                                    responsiblePerson: item.getString('responsiblePerson') ?? '',
+                                    inspectorName: item.getString('inspector') ?? '',
+                                    createDate: this.formatDate(createTime),
+                                    status: item.getNumber('status') ?? 0
+                                };
+                                // 打印处理后的记录对象
+                                console.log('处理后的记录对象:', record, " at pages/record/record.uvue:173");
+                                newRecords.push(record);
+                            }
+                        }
+                        if (this.pageNum === 1) {
+                            this.recordList = newRecords;
+                        }
+                        else {
+                            this.recordList = this.recordList.concat(newRecords);
+                        }
+                        this.totalCount = dataObj?.getNumber('total') ?? newRecords.length;
+                        this.hasMore = newRecords.length >= this.pageSize;
+                    }
+                    else {
+                        const errorMessage = responseData.getString('message') ?? '';
+                        uni.showToast({
+                            title: errorMessage != '' ? errorMessage : '加载失败',
+                            icon: 'none'
+                        });
+                    }
+                    this.loading = false;
+                    this.loadingMore = false;
+                },
+                fail: (error) => {
+                    console.error('加载记录失败:', error, " at pages/record/record.uvue:197");
+                    uni.showToast({
+                        title: '网络错误',
+                        icon: 'none'
+                    });
+                    this.loading = false;
+                    this.loadingMore = false;
+                }
+            });
+        },
+        getStatusText(status: number): string {
+            const statusMap: UTSJSONObject = { __$originalPosition: new UTSSourceMapPosition("statusMap", "pages/record/record.uvue", 209, 10),
+                "0": '待整改',
+                "1": '已整改',
+                "2": '已复查'
+            };
+            const statusText = statusMap[status.toString(10)] as string;
+            return statusText != null ? statusText : '未知';
+        },
+        formatDate(dateTimeStr: string): string {
+            if (dateTimeStr == null || dateTimeStr == '')
+                return '';
+            // 如果是完整的日期时间格式，只取日期部分
+            if (dateTimeStr.includes(' ')) {
+                return dateTimeStr.split(' ')[0];
+            }
+            return dateTimeStr;
+        },
+        getStatusClass(status: number): string {
+            const classMap: UTSJSONObject = { __$originalPosition: new UTSSourceMapPosition("classMap", "pages/record/record.uvue", 228, 11),
+                "0": 'status-pending',
+                "1": 'status-completed',
+                "2": 'status-accepted'
+            };
+            const statusClass = classMap[status.toString(10)] as string;
+            return statusClass != null ? statusClass : 'status-unknown';
+        },
+        getStatusTitle(): string {
+            if (this.isDelayed)
+                return '延迟整改';
+            if (this.status == '0')
+                return '待整改';
+            if (this.status == '1')
+                return '已整改';
+            if (this.status == '2')
+                return '已复查';
+            return '';
+        },
+        goToDetail(recordId: string) {
+            // 根据记录状态决定跳转页面
+            const record = this.recordList.find((r): boolean => r.id === recordId);
+            if (record != null) {
+                if (record.status === 0) {
+                    // 待整改，跳转到detail页面
+                    uni.navigateTo({
+                        url: `/pages/record/detail?id=${recordId}`
+                    });
+                }
+                else if (record.status === 1) {
+                    // 已整改，跳转到review页面
+                    uni.navigateTo({
+                        url: `/pages/record/review?id=${recordId}`
+                    });
+                }
+                else if (record.status === 2) {
+                    // 已复查，跳转到detail页面（只读模式）
+                    uni.navigateTo({
+                        url: `/pages/record/detail?id=${recordId}`
+                    });
+                }
+            }
+            else {
+                // 如果找不到记录，默认跳转到detail页面
+                uni.navigateTo({
+                    url: `/pages/record/detail?id=${recordId}`
+                });
+            }
+        },
+        refreshRecords() {
+            this.pageNum = 1;
+            this.recordList = [];
+            this.hasMore = true;
+            this.loadRecords();
+            uni.stopPullDownRefresh();
+        },
+        loadMore() {
+            if (this.loadingMore || !this.hasMore) {
+                return;
+            }
+            this.pageNum++;
+            this.loadRecords();
+        },
+        handleScrollToLower() {
+            if (this.hasMore && !this.loadingMore) {
+                this.loadMore();
+            }
+        },
+        showDeleteConfirm(recordId: string, problemDescription: string) {
+            uni.showModal({
+                title: '确认删除',
+                content: `确定要删除问题"${problemDescription}"吗？此操作不可恢复。`,
+                confirmText: '删除',
+                cancelText: '取消',
+                confirmColor: '#ff4757',
+                success: (res) => {
+                    if (res.confirm) {
+                        this.deleteRecord(recordId);
+                    }
+                }
+            });
+        },
+        deleteRecord(recordId: string) {
+            const token = uni.getStorageSync('token');
+            uni.showLoading({
+                title: '删除中...'
+            });
+            uni.request({
+                url: getApiUrl(`/inspection-record/${recordId}`),
+                method: 'DELETE',
+                header: {
+                    'Authorization': `Bearer ${token}`
+                },
+                success: (res) => {
+                    uni.hideLoading();
+                    const responseData = res.data as UTSJSONObject;
+                    if (res.statusCode === 200 && responseData.getNumber('code') === 200) {
+                        // 删除成功，从本地列表中移除该记录
+                        this.recordList = this.recordList.filter((record): boolean => record.id !== recordId);
+                        this.totalCount = Math.max(0, this.totalCount - 1);
+                        uni.showToast({
+                            title: '删除成功',
+                            icon: 'success'
+                        });
+                    }
+                    else {
+                        const errorMessage = responseData.getString('message') ?? '删除失败';
+                        uni.showToast({
+                            title: errorMessage,
+                            icon: 'none'
+                        });
+                    }
+                },
+                fail: (error) => {
+                    uni.hideLoading();
+                    console.error('删除记录失败:', error, " at pages/record/record.uvue:345");
+                    uni.showToast({
+                        title: '网络错误',
+                        icon: 'none'
+                    });
+                }
+            });
+        }
+    }
+});
+export default __sfc__;
+function GenPagesRecordRecordRender(this: InstanceType<typeof __sfc__>): any | null {
+    const _ctx = this;
+    const _cache = this.$.renderCache;
+    return _cE("view", _uM({ class: "container" }), [
+        _cE("view", _uM({ class: "header" }), [
+            _cE("text", _uM({ class: "title" }), "问题列表"),
+            _cE("text", _uM({ class: "subtitle" }), "共 " + _tD(_ctx.totalCount) + " 条" + _tD(_ctx.getStatusTitle()) + "问题", 1 /* TEXT */)
+        ]),
+        _cE("scroll-view", _uM({
+            class: "record-list",
+            "scroll-y": "true",
+            "enable-back-to-top": "true",
+            onScrolltolower: _ctx.handleScrollToLower
+        }), [
+            _cE(Fragment, null, RenderHelpers.renderList(_ctx.recordList, (record, __key, __index, _cached): any => {
+                return _cE("view", _uM({
+                    class: "record-item",
+                    key: record.id,
+                    onClick: () => { _ctx.goToDetail(record.id); },
+                    onLongpress: () => { _ctx.showDeleteConfirm(record.id, record.problemDescription); }
+                }), [
+                    _cE("view", _uM({ class: "record-content" }), [
+                        _cE("view", _uM({ class: "left-content" }), [
+                            _cE("view", _uM({ class: "name-problem-row" }), [
+                                _cE("text", _uM({ class: "responsible-name" }), _tD(record.responsiblePerson), 1 /* TEXT */)
+                            ])
+                        ]),
+                        _cE("view", _uM({ class: "right-info" }), [
+                            _cE("text", _uM({ class: "inspector-info" }), "检查人：" + _tD(record.inspectorName), 1 /* TEXT */),
+                            _cE("text", _uM({ class: "date-text" }), _tD(record.createDate), 1 /* TEXT */),
+                            _cE("view", _uM({
+                                class: _nC(["status-tag", _ctx.getStatusClass(record.status)])
+                            }), [
+                                _cE("text", _uM({ class: "status-text" }), _tD(_ctx.getStatusText(record.status)), 1 /* TEXT */)
+                            ], 2 /* CLASS */)
+                        ]),
+                        _cE("text", _uM({ class: "problem-text" }), _tD(record.problemDescription), 1 /* TEXT */)
+                    ])
+                ], 40 /* PROPS, NEED_HYDRATION */, ["onClick", "onLongpress"]);
+            }), 128 /* KEYED_FRAGMENT */),
+            isTrue(_ctx.recordList.length === 0 && !_ctx.loading)
+                ? _cE("view", _uM({
+                    key: 0,
+                    class: "empty-state"
+                }), [
+                    _cE("text", _uM({ class: "empty-icon" }), "📝"),
+                    _cE("text", _uM({ class: "empty-text" }), "暂无记录")
+                ])
+                : _cC("v-if", true),
+            isTrue(_ctx.loading)
+                ? _cE("view", _uM({
+                    key: 1,
+                    class: "loading-state"
+                }), [
+                    _cE("text", _uM({ class: "loading-text" }), "加载中...")
+                ])
+                : _cC("v-if", true),
+            isTrue(_ctx.hasMore && _ctx.recordList.length > 0)
+                ? _cE("view", _uM({
+                    key: 2,
+                    class: "load-more",
+                    onClick: _ctx.loadMore
+                }), [
+                    _cE("text", _uM({ class: "load-more-text" }), _tD(_ctx.loadingMore ? '加载中...' : '加载更多'), 1 /* TEXT */)
+                ], 8 /* PROPS */, ["onClick"])
+                : _cC("v-if", true)
+        ], 40 /* PROPS, NEED_HYDRATION */, ["onScrolltolower"])
+    ]);
+}
+const GenPagesRecordRecordStyles = [_uM([["container", _pS(_uM([["paddingTop", 0], ["paddingRight", 0], ["paddingBottom", 0], ["paddingLeft", 0], ["backgroundColor", "#f5f5f5"], ["display", "flex"], ["flexDirection", "column"]]))], ["header", _pS(_uM([["paddingTop", 20], ["paddingRight", 20], ["paddingBottom", 20], ["paddingLeft", 20], ["backgroundImage", "none"], ["backgroundColor", "#ffffff"], ["borderBottomWidth", 1], ["borderBottomStyle", "solid"], ["borderBottomColor", "#e0e0e0"]]))], ["title", _pS(_uM([["fontSize", 18], ["fontWeight", "bold"], ["color", "#333333"], ["marginBottom", 5]]))], ["subtitle", _pS(_uM([["fontSize", 14], ["color", "#666666"]]))], ["record-list", _pS(_uM([["flex", 2], ["paddingTop", 10], ["paddingRight", 10], ["paddingBottom", 280], ["paddingLeft", 10]]))], ["record-item", _pS(_uM([["backgroundImage", "none"], ["backgroundColor", "#ffffff"], ["marginBottom", 1], ["paddingTop", 15], ["paddingRight", 20], ["paddingBottom", 15], ["paddingLeft", 20], ["borderBottomWidth", 1], ["borderBottomStyle", "solid"], ["borderBottomColor", "#f0f0f0"]]))], ["record-content", _pS(_uM([["display", "flex"], ["justifyContent", "space-between"], ["alignItems", "flex-start"], ["marginBottom", 10], ["width", "100%"]]))], ["left-content", _pS(_uM([["flex", 1], ["marginRight", 15], ["display", "flex"], ["flexDirection", "column"], ["gap", "2px"]]))], ["problem-text", _pS(_uM([["fontSize", 15], ["color", "#666666"], ["lineHeight", 1.3], ["fontWeight", "400"], ["marginTop", 2]]))], ["right-info", _pS(_uM([["flexShrink", 0], ["textAlign", "right"], ["display", "flex"], ["flexDirection", "column"], ["alignItems", "flex-end"], ["justifyContent", "flex-start"], ["minWidth", 120], ["maxWidth", 150], ["gap", "6px"], ["marginLeft", "auto"]]))], ["inspector-info", _pS(_uM([["fontSize", 13], ["color", "#333333"], ["textAlign", "right"]]))], ["date-text", _pS(_uM([["fontSize", 13], ["color", "#666666"]]))], ["status-row", _pS(_uM([["marginTop", 8]]))], ["status-tag", _pS(_uM([["paddingTop", 3], ["paddingRight", 10], ["paddingBottom", 3], ["paddingLeft", 10], ["borderTopLeftRadius", 12], ["borderTopRightRadius", 12], ["borderBottomRightRadius", 12], ["borderBottomLeftRadius", 12], ["fontSize", 12], ["alignSelf", "flex-end"]]))], ["status-text", _pS(_uM([["color", "#ffffff"], ["fontSize", 12]]))], ["status-pending", _pS(_uM([["backgroundImage", "none"], ["backgroundColor", "#ff6b6b"]]))], ["status-processing", _pS(_uM([["backgroundImage", "none"], ["backgroundColor", "#ffa726"]]))], ["status-completed", _pS(_uM([["backgroundImage", "none"], ["backgroundColor", "#66bb6a"]]))], ["status-accepted", _pS(_uM([["backgroundImage", "none"], ["backgroundColor", "#42a5f5"]]))], ["name-problem-row", _pS(_uM([["display", "flex"], ["alignItems", "center"], ["marginBottom", 2]]))], ["responsible-name", _pS(_uM([["fontSize", 16], ["color", "#333333"], ["fontWeight", "700"], ["marginTop", 0], ["marginRight", 0], ["marginBottom", 0], ["marginLeft", 0]]))], ["empty-state", _pS(_uM([["textAlign", "center"], ["paddingTop", 60], ["paddingRight", 20], ["paddingBottom", 60], ["paddingLeft", 20]]))], ["empty-icon", _pS(_uM([["fontSize", 48], ["marginBottom", 15], ["color", "#cccccc"]]))], ["empty-text", _pS(_uM([["fontSize", 16], ["color", "#999999"]]))], ["loading-state", _pS(_uM([["textAlign", "center"], ["paddingTop", 40], ["paddingRight", 20], ["paddingBottom", 40], ["paddingLeft", 20]]))], ["loading-text", _pS(_uM([["fontSize", 14], ["color", "#999999"]]))], ["load-more", _pS(_uM([["textAlign", "center"], ["paddingTop", 20], ["paddingRight", 20], ["paddingBottom", 20], ["paddingLeft", 20], ["backgroundImage", "none"], ["backgroundColor", "#ffffff"], ["borderTopWidth", 1], ["borderTopStyle", "solid"], ["borderTopColor", "#f0f0f0"]]))], ["load-more-text", _pS(_uM([["fontSize", 14], ["color", "#666666"]]))]])];
+//# sourceMappingURL=record.uvue.map

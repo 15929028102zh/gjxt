@@ -1,0 +1,1244 @@
+<template>
+	<scroll-view 
+		class="container" 
+		scroll-y="true" 
+		:scroll-top="scrollTop" 
+		:style="{height: containerHeight + 'px'}" 
+		enable-back-to-top="true"
+		refresher-enabled="true"
+		:refresher-triggered="isRefreshing"
+		refresher-default-style="black"
+		refresher-background="#f5f5f5"
+		@refresherrefresh="onRefresh"
+		@refresherrestore="onRefreshRestore"
+	>
+		<!-- 顶部欢迎区域 -->
+		<view class="header">
+			<view class="welcome">
+				<text class="greeting">欢迎回来，{{userName}}</text>
+				<text class="app-name">{{currentDate}}</text>
+			</view>
+			<image class="avatar" :src="(userInfo.getString('avatar') ?? '') != '' ? (userInfo.getString('avatar') ?? '') : '/static/default-avatar.svg'" mode="aspectFill"></image>
+		</view>
+
+		<!-- 周检统计区域 -->
+		<view class="section">
+			<view class="section-title">
+				<text class="title-text">周检统计</text>
+			</view>
+			
+			<!-- 周检统计卡片 -->
+			<view class="stats-container">
+				<view class="stat-card" @click="goToWeeklyPending">
+					<text class="stat-number">{{ weeklyStats.pending }}</text>
+					<text class="stat-label">待整改数</text>
+				</view>
+				<view class="stat-card" @click="goToWeeklyCompleted">
+					<text class="stat-number">{{ weeklyStats.completed }}</text>
+					<text class="stat-label">已整改数</text>
+				</view>
+				<view class="stat-card" @click="goToWeeklyReviewed">
+					<text class="stat-number">{{ weeklyStats.reviewed }}</text>
+					<text class="stat-label">已复查数</text>
+				</view>
+			</view>
+
+			<!-- 周检饼图 -->
+			<view class="chart-container">
+				<view class="chart-title">
+					<text class="chart-title-text">周检记录总数: {{ weeklyStats.total }}</text>
+				</view>
+				<view class="chart-wrapper">
+					<tui-xechars 
+						ref="weeklyChart"
+						style="height:350px;width:100%;min-width:280px;"
+						class="chart-canvas"
+						@initFinished="onWeeklyChartInit"
+					/>
+				</view>
+			</view>
+		</view>
+
+		<!-- 月检统计区域 -->
+		<view class="section">
+			<view class="section-title">
+				<text class="title-text">月检统计</text>
+			</view>
+			
+			<!-- 月检统计卡片 -->
+			<view class="stats-container">
+				<view class="stat-card" @click="goToMonthlyPending">
+					<text class="stat-number">{{ monthlyStats.pending }}</text>
+					<text class="stat-label">待整改数</text>
+				</view>
+				<view class="stat-card" @click="goToMonthlyCompleted">
+					<text class="stat-number">{{ monthlyStats.completed }}</text>
+					<text class="stat-label">已整改数</text>
+				</view>
+				<view class="stat-card" @click="goToMonthlyReviewed">
+					<text class="stat-number">{{ monthlyStats.reviewed }}</text>
+					<text class="stat-label">已复查数</text>
+				</view>
+			</view>
+
+			<!-- 月检饼图 -->
+			<view class="chart-container">
+				<view class="chart-title">
+					<text class="chart-title-text">月检记录总数: {{ monthlyStats.total }}</text>
+				</view>
+				<view class="chart-wrapper">
+					<tui-xechars 
+						ref="monthlyChart"
+						style="height:350px;width:100%;min-width:280px;"
+						class="chart-canvas"
+						@initFinished="onMonthlyChartInit"
+					/>
+				</view>
+			</view>
+		</view>
+		
+		<!-- 月度趋势图表 -->
+		<view class="section">
+			<view class="section-title">
+				<text class="title-text">月度巡检趋势</text>
+			</view>
+			<!-- 月度趋势柱状图 -->
+			<view class="chart-container">
+				<view class="chart-wrapper">
+					<tui-xechars 
+						ref="trendChart"
+						style="height:350px;width:100%;min-width:280px;"
+						class="chart-canvas"
+						@initFinished="onTrendChartInit"
+					/>
+				</view>
+			</view>
+		</view>
+
+		<!-- 额外的内容区域 -->
+		<view class="extra-content">
+			<view class="info-card">
+				<text class="info-title">系统提示</text>
+				<text class="info-text">定期进行巡检工作，确保设备正常运行</text>
+			</view>
+			<view class="info-card">
+				<text class="info-title">操作指南</text>
+				<text class="info-text">点击上方统计卡片可查看详细记录</text>
+			</view>
+			<view class="info-card">
+				<text class="info-title">数据更新</text>
+				<text class="info-text">数据每小时自动更新一次</text>
+			</view>
+		</view>
+	</scroll-view>
+</template>
+
+<script setup lang="uts">
+	import { ref, onMounted, onUnmounted, nextTick, reactive } from 'vue'
+	import { getApiUrl } from '@/config/api.uts'
+	import { TuiCharts, TuiDrawCharts } from '@/uni_modules/tui-xechars'
+
+	// 定义统计数据类型
+	type StatsData = {
+		total: number
+		pending: number
+		completed: number
+		reviewed: number
+	}
+
+	// 定义uni.request响应类型
+	type UniRequestResponse = {
+		statusCode: number
+		data: any
+		header: any
+		cookies?: string[]
+	}
+
+
+	
+	// 用户信息
+	const userInfo = ref({} as UTSJSONObject)
+	const userName = ref('用户') // 简化的用户姓名变量
+	const currentDate = ref('加载中...')
+
+	// 统计数据
+	const weeklyStats = ref({
+		total: 45,
+		pending: 12,
+		completed: 28,
+		reviewed: 5
+	} as StatsData)
+
+	const monthlyStats = ref({
+		total: 156,
+		pending: 23,
+		completed: 108,
+		reviewed: 25
+	} as StatsData)
+
+	// 图表实例
+	let weeklyChartInstance : TuiCharts | null = null
+	let monthlyChartInstance : TuiCharts | null = null
+	let trendChartInstance : TuiCharts | null = null
+	
+	// 图表配置选项
+	const weeklyChartOption = ref({} as UTSJSONObject)
+	const monthlyChartOption = ref({} as UTSJSONObject)
+	const trendChartOption = ref({} as UTSJSONObject)
+	
+	// 图表引用
+	const weeklyChart = ref(null)
+	const monthlyChart = ref(null)
+	const trendChart = ref(null)
+	
+	// 趋势图表数据类型
+	type TrendData = {
+		months: string[]
+		values: number[]
+	}
+	
+	// 趋势图表数据
+	const trendData = ref({
+		months: ['1月', '2月', '3月', '4月', '5月', '6月'],
+		values: [120, 132, 101, 134, 90, 230]
+	} as TrendData)
+	
+	// 滚动相关
+	const scrollTop = ref(0)
+	const containerHeight = ref(0)
+	
+	// 下拉刷新相关
+	const isRefreshing = ref(false)
+
+
+
+
+	// 更新周检图表数据
+	const updateWeeklyChart = () : void => {
+		if (weeklyChartInstance != null) {
+			const weeklyPieChart = weeklyChartInstance!.getDrawCharts(0)
+			if (weeklyPieChart != null) {
+				weeklyPieChart.update({
+					series: [
+						{
+							name: '待整改',
+							data: [
+								{
+									value: weeklyStats.value.pending
+								}
+							]
+						},
+						{
+							name: '已整改',
+							data: [
+								{
+									value: weeklyStats.value.completed
+								}
+							]
+						},
+						{
+							name: '已复查',
+							data: [
+								{
+									value: weeklyStats.value.reviewed
+								}
+							]
+						}
+					]
+				})
+			}
+		}
+	}
+
+	// 更新月检图表数据
+	const updateMonthlyChart = () : void => {
+		if (monthlyChartInstance != null) {
+			const monthlyPieChart = monthlyChartInstance!.getDrawCharts(0)
+			if (monthlyPieChart != null) {
+				monthlyPieChart.update({
+					series: [
+						{
+							name: '待整改',
+							data: [
+								{
+									value: monthlyStats.value.pending
+								}
+							]
+						},
+						{
+							name: '已整改',
+							data: [
+								{
+									value: monthlyStats.value.completed
+								}
+							]
+						},
+						{
+							name: '已复查',
+							data: [
+								{
+									value: monthlyStats.value.reviewed
+								}
+							]
+						}
+					]
+				})
+			}
+		}
+	}
+
+	// 加载周检统计数据
+	const loadWeeklyStats = async () : Promise<void> => {
+		try {
+			const token = uni.getStorageSync('token')
+			
+			// 解析响应数据
+			let pending = 0, completed = 0, reviewed = 0, total = 0
+			let completedRequests = 0
+			const totalRequests = 4
+			
+			// 更新统计数据
+			const updateWeeklyStats = () => {
+				weeklyStats.value = {
+					total: total,
+					pending: pending,
+					completed: completed,
+					reviewed: reviewed
+				} as StatsData
+				
+				// 在数据更新后重新更新图表
+				updateWeeklyChart()
+			}
+			
+			// 如果没有token，使用模拟数据
+			if (token == null || token == '') {
+				weeklyStats.value = {
+					total: 45,
+					pending: 12,
+					completed: 28,
+					reviewed: 5
+				} as StatsData
+				updateWeeklyChart()
+				return
+			}
+			
+			// 获取待整改数量（状态为0）
+			uni.request({
+				url: getApiUrl('/inspection-record/weekly-count?status=0'),
+				method: 'GET',
+				header: {
+					'Authorization': `Bearer ${token}`
+				},
+				success: (res) => {
+					if (res.statusCode === 200 && res.data != null) {
+						const pendingData = res.data as UTSJSONObject
+						if ((pendingData.getNumber('code') ?? 0) === 200) {
+							pending = pendingData.getNumber('data') ?? 0
+						}
+					}
+					completedRequests++
+					if (completedRequests === totalRequests) {
+						updateWeeklyStats()
+					}
+				},
+				fail: (error) => {
+					console.error('获取待整改数量失败:', error)
+					completedRequests++
+					if (completedRequests === totalRequests) {
+						updateWeeklyStats()
+					}
+				}
+			})
+			
+			// 获取已整改数量（状态为1）
+			uni.request({
+				url: getApiUrl('/inspection-record/weekly-count?status=1'),
+				method: 'GET',
+				header: {
+					'Authorization': `Bearer ${token}`
+				},
+				success: (res) => {
+					if (res.statusCode === 200 && res.data != null) {
+						const completedData = res.data as UTSJSONObject
+						if ((completedData.getNumber('code') ?? 0) === 200) {
+							completed = completedData.getNumber('data') ?? 0
+						}
+					}
+					completedRequests++
+					if (completedRequests === totalRequests) {
+						updateWeeklyStats()
+					}
+				},
+				fail: (error) => {
+					console.error('获取已整改数量失败:', error)
+					completedRequests++
+					if (completedRequests === totalRequests) {
+						updateWeeklyStats()
+					}
+				}
+			})
+			
+			// 获取已复查数量（状态为2）
+			uni.request({
+				url: getApiUrl('/inspection-record/weekly-count?status=2'),
+				method: 'GET',
+				header: {
+					'Authorization': `Bearer ${token}`
+				},
+				success: (res) => {
+					if (res.statusCode === 200 && res.data != null) {
+						const reviewedData = res.data as UTSJSONObject
+						if ((reviewedData.getNumber('code') ?? 0) === 200) {
+							reviewed = reviewedData.getNumber('data') ?? 0
+						}
+					}
+					completedRequests++
+					if (completedRequests === totalRequests) {
+						updateWeeklyStats()
+					}
+				},
+				fail: (error) => {
+					console.error('获取已复查数量失败:', error)
+					completedRequests++
+					if (completedRequests === totalRequests) {
+						updateWeeklyStats()
+					}
+				}
+			})
+			
+			// 获取总记录数量
+			uni.request({
+				url: getApiUrl('/inspection-record/weekly-count'),
+				method: 'GET',
+				header: {
+					'Authorization': `Bearer ${token}`
+				},
+				success: (res) => {
+					if (res.statusCode === 200 && res.data != null) {
+						const totalData = res.data as UTSJSONObject
+						if ((totalData.getNumber('code') ?? 0) === 200) {
+							total = totalData.getNumber('data') ?? 0
+						}
+					}
+					completedRequests++
+					if (completedRequests === totalRequests) {
+						updateWeeklyStats()
+					}
+				},
+				fail: (error) => {
+					console.error('获取总记录数量失败:', error)
+					completedRequests++
+					if (completedRequests === totalRequests) {
+						updateWeeklyStats()
+					}
+				}
+			})
+			
+		} catch (error) {
+			console.error('加载周检统计数据失败:', error)
+			// 使用模拟数据作为后备
+			weeklyStats.value = {
+				total: 45,
+				pending: 12,
+				completed: 28,
+				reviewed: 5
+			} as StatsData
+			updateWeeklyChart()
+		}
+	}
+
+	// 加载月检统计数据
+	const loadMonthlyStats = () : void => {
+		const token = uni.getStorageSync('token')
+		uni.request({
+			url: getApiUrl('/statistics/monthly'),
+			method: 'GET',
+			header: {
+				'Content-Type': 'application/json',
+				'Authorization': `Bearer ${token}`
+			},
+			success: (res) => {
+				if (res.statusCode === 200 && res.data != null) {
+					const data = res.data as StatsData
+					monthlyStats.value = data
+				} else {
+					// 如果API调用失败，使用模拟数据
+					monthlyStats.value = {
+						total: 156,
+						pending: 23,
+						completed: 108,
+						reviewed: 25
+					} as StatsData
+				}
+				updateMonthlyChart()
+			},
+			fail: (error) => {
+				console.error('加载月检统计数据失败:', error)
+				// 使用模拟数据作为后备
+				monthlyStats.value = {
+					total: 156,
+					pending: 23,
+					completed: 108,
+					reviewed: 25
+				} as StatsData
+				updateMonthlyChart()
+			}
+		})
+	}
+
+
+
+	// 检查登录状态
+	const checkLogin = () : boolean => {
+		const token = uni.getStorageSync('token')
+		if (token == null || token == '') {
+			console.log('未登录，跳转到登录页面')
+			uni.reLaunch({
+				url: '/pages/login/login'
+			})
+			return false
+		}
+		return true
+	}
+	
+	// 加载用户信息
+	const loadUserInfo = () : void => {
+		console.log('=== 开始加载用户信息 ===')
+		
+		// 检查本地存储
+		const userInfoStr = uni.getStorageSync('userInfo') as string
+		console.log('本地存储原始数据:', userInfoStr)
+		
+		if (userInfoStr != null && userInfoStr != '' && userInfoStr != 'null' && userInfoStr != 'undefined') {
+			try {
+				const parsedUserInfo = JSON.parse(userInfoStr) as UTSJSONObject
+				console.log('解析后的对象:', parsedUserInfo)
+				
+				// 检查realName字段
+				const realName = parsedUserInfo.getString('realName')
+				console.log('realName字段值:', realName)
+				console.log('realName类型:', typeof realName)
+				
+				// 设置用户信息
+				userInfo.value = parsedUserInfo
+				// 同时设置简化的用户姓名
+				const realNameValue = parsedUserInfo.getString('realName')
+				userName.value = realNameValue != null ? realNameValue : '用户'
+				console.log('设置后的 userInfo.value:', userInfo.value)
+				console.log('设置后的 userName.value:', userName.value)
+				
+				// 验证设置结果
+				const testRealName = userInfo.value.getString('realName')
+				console.log('验证: 设置后的realName:', testRealName)
+				
+				// 强制触发界面更新
+				nextTick(() => {
+					console.log('界面更新后检查:', userInfo.value.getString('realName'))
+					// 强制触发响应式更新
+					userInfo.value = {...userInfo.value}
+				})
+				
+			} catch (error) {
+				console.error('用户信息JSON解析失败:', error)
+				userInfo.value = {
+					realName: '解析失败用户'
+				} as UTSJSONObject
+			}
+		} else {
+			console.log('本地存储中没有有效的用户信息')
+			// 设置默认用户信息
+			userInfo.value = {
+				realName: '默认用户',
+				avatar: ''
+			} as UTSJSONObject
+			userName.value = '默认用户'
+		}
+		
+		console.log('=== 用户信息加载完成 ===')
+	}
+	
+	// 初始化当前日期
+	const initCurrentDate = () : void => {
+		const now = new Date()
+		const year = now.getFullYear()
+		const month = (now.getMonth() + 1).toString().padStart(2, '0')
+		const day = now.getDate().toString().padStart(2, '0')
+		const hours = now.getHours().toString().padStart(2, '0')
+		const minutes = now.getMinutes().toString().padStart(2, '0')
+		currentDate.value = `${year}-${month}-${day} ${hours}:${minutes}`
+	}
+	
+	// 定时器ID
+	const timeInterval = ref<number | null>(null)
+	
+	// 开始时间更新定时器
+	const startTimeUpdate = () : void => {
+		initCurrentDate()
+		timeInterval.value = setInterval(() => {
+			initCurrentDate()
+		}, 60000) // 每分钟更新一次
+	}
+	
+	// 停止时间更新定时器
+	const stopTimeUpdate = () : void => {
+		const intervalId = timeInterval.value
+		if (intervalId !== null) {
+			clearInterval(intervalId)
+			timeInterval.value = null
+		}
+	}
+
+	// 初始化容器高度
+	const initContainerHeight = () : void => {
+		uni.getSystemInfo({
+			success: (res) => {
+				containerHeight.value = res.windowHeight
+			}
+		})
+	}
+	
+	// 重新加载所有数据
+	const reloadAllData = async () : Promise<void> => {
+		console.log('重新加载所有数据')
+		
+		try {
+			// 重新初始化时间
+			initCurrentDate()
+			
+			// 重新加载用户信息
+			loadUserInfo()
+			
+			// 并发加载统计数据
+			await Promise.all([
+				loadWeeklyStats(),
+				new Promise<void>((resolve) => {
+					loadMonthlyStats()
+					// 给月检数据加载一个短暂的延时
+					setTimeout(() => {
+						resolve()
+					}, 800)
+				})
+			])
+			
+			console.log('所有数据加载完成')
+			
+		} catch (error) {
+			console.error('数据加载失败:', error)
+		} finally {
+			// 无论成功还是失败，都要关闭刷新动画
+			setTimeout(() => {
+				console.log('关闭刷新动画')
+				isRefreshing.value = false
+			}, 500) // 稍微延迟一下，让用户看到加载效果
+		}
+	}
+	
+	// 下拉刷新事件处理
+	const onRefresh = () : void => {
+		console.log('开始下拉刷新')
+		isRefreshing.value = true
+		
+		// 重新加载数据
+		reloadAllData()
+	}
+	
+	// 刷新恢复事件处理
+	const onRefreshRestore = () : void => {
+		console.log('刷新恢复')
+		isRefreshing.value = false
+	}
+	
+	// 页面挂载时初始化
+	onMounted(() => {
+		// 检查登录状态
+		const loginStatus = checkLogin()
+		if (loginStatus == false) {
+			return
+		}
+		
+		// 立即初始化日期显示
+		initCurrentDate()
+		
+		// 加载用户信息
+		loadUserInfo()
+		
+		// 启动时间更新
+		startTimeUpdate()
+		
+		// 初始化容器高度
+		initContainerHeight()
+		
+		// 等待DOM渲染完成后加载数据
+		nextTick(() => {
+			// 加载数据，图表会在initFinished回调中初始化
+			loadWeeklyStats()
+			loadMonthlyStats()
+		})
+	})
+	
+	// 页面卸载时清理
+	onUnmounted(() => {
+		stopTimeUpdate()
+	})
+
+
+
+
+
+	// 图表初始化回调函数
+	const onWeeklyChartInit = (chartInstance : TuiCharts) : void => {
+		weeklyChartInstance = chartInstance
+		
+		// 创建饼图
+		const pieOption = {
+			type: 'pie',
+			animation: true,
+			dataLabel: true,
+			fontSize: 12,
+			padding: [15, 15, 15, 15],
+			title: {
+				name: '周检统计分布',
+				fontSize: 14,
+				color: '#2c3e50',
+				offsetY: 5
+			},
+			extra: {
+				pie: {
+					activeOpacity: 0.5,
+					activeRadius: 8,
+					offsetAngle: 0,
+					labelWidth: 15,
+					border: true,
+					borderWidth: 2,
+					borderColor: '#FFFFFF',
+					linearType: 'custom'
+				},
+				tooltip: {
+					show: true
+				}
+			},
+			series: [
+				{
+					name: '待整改',
+					data: [
+						{
+							value: weeklyStats.value.pending
+						}
+					]
+				},
+				{
+					name: '已整改',
+					data: [
+						{
+							value: weeklyStats.value.completed
+						}
+					]
+				},
+				{
+					name: '已复查',
+					data: [
+						{
+							value: weeklyStats.value.reviewed
+						}
+					]
+				}
+			],
+			xAxis: {
+				disableGrid: true
+			},
+			yAxis: {
+				data: [
+					{
+						min: 0
+					}
+				]
+			}
+		} as UTSJSONObject
+		
+		const weeklyPieChart = chartInstance.add(0, pieOption)
+		weeklyPieChart.setCoordinates({ height: 280, width: 260, xOffset: 15, yOffset: 35 })
+		weeklyPieChart.draw()
+	}
+	
+	const onMonthlyChartInit = (chartInstance : TuiCharts) : void => {
+		monthlyChartInstance = chartInstance
+		
+		// 创建饼图
+		const pieOption = {
+			type: 'pie',
+			animation: true,
+			dataLabel: true,
+			fontSize: 12,
+			padding: [15, 15, 15, 15],
+			title: {
+				name: '月检统计分布',
+				fontSize: 14,
+				color: '#2c3e50',
+				offsetY: 5
+			},
+			extra: {
+				pie: {
+					activeOpacity: 0.5,
+					activeRadius: 8,
+					offsetAngle: 0,
+					labelWidth: 15,
+					border: true,
+					borderWidth: 2,
+					borderColor: '#FFFFFF',
+					linearType: 'custom'
+				},
+				tooltip: {
+					show: true
+				}
+			},
+			series: [
+				{
+					name: '待整改',
+					data: [
+						{
+							value: monthlyStats.value.pending
+						}
+					]
+				},
+				{
+					name: '已整改',
+					data: [
+						{
+							value: monthlyStats.value.completed
+						}
+					]
+				},
+				{
+					name: '已复查',
+					data: [
+						{
+							value: monthlyStats.value.reviewed
+						}
+					]
+				}
+			],
+			xAxis: {
+				disableGrid: true
+			},
+			yAxis: {
+				data: [
+					{
+						min: 0
+					}
+				]
+			}
+		} as UTSJSONObject
+		
+		const monthlyPieChart = chartInstance.add(0, pieOption)
+		monthlyPieChart.setCoordinates({ height: 280, width: 260, xOffset: 15, yOffset: 35 })
+		monthlyPieChart.draw()
+	}
+	
+	const onTrendChartInit = (chartInstance : TuiCharts) : void => {
+		trendChartInstance = chartInstance
+		
+		// 创建柱状图
+		const columnOption = {
+			type: 'column',
+			animation: true,
+			dataLabel: true,
+			fontSize: 11,
+			padding: [20, 20, 25, 20],
+			categories: trendData.value.months,
+			title: {
+				name: '月度巡检趋势',
+				fontSize: 14,
+				color: '#2c3e50',
+				offsetY: 5
+			},
+			extra: {
+				column: {
+					type: 'group',
+					width: 25,
+					activeBgColor: '#000000',
+					activeBgOpacity: 0.08,
+					barBorderRadius: [4, 4, 0, 0],
+					seriesGap: 5
+				},
+				tooltip: {
+					show: true
+				}
+			},
+			series: [
+				{
+					name: '巡检记录数',
+					data: trendData.value.values.map((item: number) => {
+						return { value: item }
+					})
+				}
+			],
+			xAxis: {
+				disableGrid: true
+			},
+			yAxis: {
+				data: [
+					{
+						min: 0
+					}
+				]
+			}
+		} as UTSJSONObject
+		
+		const trendColumnChart = chartInstance.add(0, columnOption)
+		trendColumnChart.setCoordinates({ height: 280, width: 260, xOffset: 15, yOffset: 35 })
+		trendColumnChart.draw()
+	}
+
+	// 最终的跳转方法
+	const goToWeeklyPending = () : void => {
+		uni.navigateTo({
+			url: '/pages/weekly/weekly?status=pending'
+		})
+	}
+
+	const goToWeeklyCompleted = () : void => {
+		uni.navigateTo({
+			url: '/pages/weekly/weekly?status=completed'
+		})
+	}
+
+	const goToWeeklyReviewed = () : void => {
+		uni.navigateTo({
+			url: '/pages/weekly/weekly?status=reviewed'
+		})
+	}
+
+	const goToMonthlyPending = () : void => {
+		uni.navigateTo({
+			url: '/pages/monthly/monthly?status=pending'
+		})
+	}
+
+	const goToMonthlyCompleted = () : void => {
+		uni.navigateTo({
+			url: '/pages/monthly/monthly?status=completed'
+		})
+	}
+
+	const goToMonthlyReviewed = () : void => {
+		uni.navigateTo({
+			url: '/pages/monthly/monthly?status=reviewed'
+		})
+	}
+</script>
+
+<style scoped>
+	.container {
+		padding: 30rpx;
+		padding-bottom: 150rpx;
+		background: linear-gradient(180deg, #f8fafc 0%, #e2e8f0 100%);
+		box-sizing: border-box;
+		min-height: 100vh;
+	}
+
+	.header {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		padding: 30rpx 25rpx;
+		background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+		border-radius: 24rpx;
+		margin-bottom: 30rpx;
+		box-shadow: 0 8rpx 32rpx rgba(102, 126, 234, 0.3);
+		position: relative;
+		overflow: hidden;
+	}
+	
+	.header::before {
+		content: '';
+		position: absolute;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="white" fill-opacity="0.1"/><circle cx="75" cy="75" r="1" fill="white" fill-opacity="0.1"/><circle cx="50" cy="10" r="0.5" fill="white" fill-opacity="0.1"/><circle cx="10" cy="60" r="0.5" fill="white" fill-opacity="0.1"/><circle cx="90" cy="40" r="0.5" fill="white" fill-opacity="0.1"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+		pointer-events: none;
+	}
+
+	.welcome {
+		display: flex;
+		flex-direction: column;
+		flex: 1;
+		z-index: 2;
+		position: relative;
+	}
+
+	.greeting {
+		color: rgba(105, 72, 72, 0.95);
+		font-size: 32rpx;
+		font-weight: 600;
+		margin-bottom: 8rpx;
+		letter-spacing: 0.5rpx;
+		text-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.1);
+	}
+
+	.app-name {
+		color:  rgba(105, 72, 72, 0.95);
+		font-size: 26rpx;
+		font-weight: 400;
+		letter-spacing: 0.3rpx;
+	}
+
+	.avatar {
+		width: 100rpx;
+		height: 100rpx;
+		border-radius: 50rpx;
+		background-color: rgba(255, 255, 255, 0.2);
+		overflow: hidden;
+		border: 3rpx solid rgba(255, 255, 255, 0.4);
+		box-shadow: 0 6rpx 20rpx rgba(0, 0, 0, 0.15), 0 0 0 1rpx rgba(255, 255, 255, 0.1);
+		z-index: 2;
+		position: relative;
+		transition: all 0.3s ease;
+	}
+	
+	.avatar:active {
+		transform: scale(0.95);
+	}
+
+	.section {
+		margin-bottom: 40rpx;
+		padding: 0 30rpx;
+	}
+
+	.section-title {
+		margin-bottom: 25rpx;
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		position: relative;
+	}
+
+	.section-title::after {
+		content: '';
+		position: absolute;
+		bottom: -8rpx;
+		left: 0;
+		width: 80rpx;
+		height: 4rpx;
+		background: linear-gradient(90deg, #4ecdc4, #45b7d1);
+		border-radius: 2rpx;
+	}
+
+	.title-text {
+		font-size: 36rpx;
+		font-weight: 700;
+		color: #1e293b;
+		letter-spacing: 0.8rpx;
+		text-shadow: 0 1rpx 2rpx rgba(0, 0, 0, 0.05);
+	}
+
+	.stats-container {
+		display: flex;
+		justify-content: space-between;
+		margin-bottom: 30rpx;
+	}
+
+	.stat-card {
+		flex: 1;
+		background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+		border-radius: 20rpx;
+		padding: 35rpx 20rpx;
+		margin: 0 8rpx;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		box-shadow: 0 8rpx 25rpx rgba(0, 0, 0, 0.08), 0 3rpx 6rpx rgba(0, 0, 0, 0.06);
+		transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+		border: 1rpx solid rgba(255, 255, 255, 0.8);
+		position: relative;
+		overflow: hidden;
+	}
+
+	.stat-card::before {
+		content: '';
+		position: absolute;
+		top: 0;
+		left: 0;
+		right: 0;
+		height: 4rpx;
+		background: linear-gradient(90deg, #667eea, #764ba2);
+		transform: scaleX(0);
+		transition: transform 0.3s ease;
+	}
+	
+	.stat-card:active {
+		transform: translateY(-4rpx) scale(0.98);
+		box-shadow: 0 12rpx 35rpx rgba(0, 0, 0, 0.12), 0 6rpx 12rpx rgba(0, 0, 0, 0.08);
+	}
+	
+	.stat-card:active::before {
+		transform: scaleX(1);
+	}
+
+	.stat-number {
+		font-size: 52rpx;
+		font-weight: 700;
+		color: #667eea;
+		margin-bottom: 12rpx;
+		text-shadow: 0 2rpx 4rpx rgba(102, 126, 234, 0.1);
+		letter-spacing: -1rpx;
+	}
+
+	.stat-label {
+		font-size: 22rpx;
+		color: #64748b;
+		text-align: center;
+		font-weight: 500;
+		letter-spacing: 0.3rpx;
+	}
+
+	.chart-container {
+		margin-top: 25rpx;
+		padding: 35rpx 25rpx;
+		background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+		border-radius: 24rpx;
+		box-shadow: 0 12rpx 40rpx rgba(0, 0, 0, 0.06), 0 4rpx 12rpx rgba(0, 0, 0, 0.04);
+		border: 1rpx solid rgba(255, 255, 255, 0.8);
+		position: relative;
+		overflow: hidden;
+	}
+	
+	.chart-container::before {
+		content: '';
+		position: absolute;
+		top: 0;
+		left: 0;
+		right: 0;
+		height: 2rpx;
+		background: linear-gradient(90deg, #667eea, #764ba2, #f093fb);
+	}
+
+	.chart-title {
+		margin-bottom: 25rpx;
+		text-align: center;
+		position: relative;
+	}
+
+	.chart-title::after {
+		content: '';
+		position: absolute;
+		bottom: -10rpx;
+		left: 50%;
+		transform: translateX(-50%);
+		width: 60rpx;
+		height: 3rpx;
+		background: linear-gradient(90deg, #4ecdc4, #45b7d1);
+		border-radius: 2rpx;
+	}
+
+	.chart-title-text {
+		font-size: 32rpx;
+		font-weight: 600;
+		color: #1e293b;
+		letter-spacing: 0.5rpx;
+		text-shadow: 0 1rpx 2rpx rgba(0, 0, 0, 0.05);
+	}
+
+	.chart-wrapper {
+		height: 500rpx;
+		width: 100%;
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		background-color: #ffffff;
+		border-radius: 12rpx;
+		box-shadow: inset 0 2rpx 8rpx rgba(0, 0, 0, 0.03);
+		padding: 15rpx;
+		min-height: 400rpx;
+		overflow: hidden;
+	}
+
+	.chart-canvas {
+		width: 100%;
+		height: 100%;
+		border-radius: 8rpx;
+		transition: all 0.3s ease;
+		min-height: 350px;
+		max-width: 100%;
+	}
+
+	.chart-canvas:hover {
+		transform: scale(1.01);
+	}
+
+	/* 响应式设计 */
+	@media screen and (max-width: 750px) {
+		.chart-wrapper {
+			height: 450rpx;
+			padding: 10rpx;
+		}
+		
+		.chart-canvas {
+			min-height: 300px;
+		}
+	}
+
+	@media screen and (min-width: 751px) {
+		.chart-wrapper {
+			height: 600rpx;
+			padding: 20rpx;
+		}
+		
+		.chart-canvas {
+			min-height: 400px;
+		}
+	}
+
+
+
+
+
+
+
+	.extra-content {
+		margin-top: 40rpx;
+	}
+
+	.info-card {
+		background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+		border-radius: 20rpx;
+		padding: 35rpx 30rpx;
+		margin-bottom: 25rpx;
+		box-shadow: 0 8rpx 25rpx rgba(0, 0, 0, 0.06), 0 3rpx 8rpx rgba(0, 0, 0, 0.04);
+		border: 1rpx solid rgba(255, 255, 255, 0.8);
+		position: relative;
+		overflow: hidden;
+		transition: all 0.3s ease;
+	}
+	
+	.info-card::before {
+		content: '';
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 6rpx;
+		height: 100%;
+		background: linear-gradient(180deg, #667eea, #764ba2);
+	}
+	
+	.info-card:active {
+		transform: translateY(-2rpx);
+		box-shadow: 0 12rpx 35rpx rgba(0, 0, 0, 0.08), 0 6rpx 12rpx rgba(0, 0, 0, 0.06);
+	}
+
+	.info-title {
+		font-size: 30rpx;
+		font-weight: 600;
+		color: #1e293b;
+		margin-bottom: 18rpx;
+		letter-spacing: 0.5rpx;
+	}
+
+	.info-text {
+		font-size: 28rpx;
+		color: #64748b;
+		line-height: 1.6;
+		letter-spacing: 0.3rpx;
+	}
+</style>

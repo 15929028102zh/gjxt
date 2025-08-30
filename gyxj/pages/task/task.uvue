@@ -1,0 +1,492 @@
+<template>
+	<view class="container">
+		<!-- 搜索和筛选 -->
+		<view class="search-section">
+			<view class="search-box">
+				<input class="search-input" v-model="searchKeyword" placeholder="搜索任务名称或位置" @input="onSearch" />
+				<text class="search-icon">🔍</text>
+			</view>
+			<view class="filter-tabs">
+				<view 
+					class="filter-tab" 
+					:class="{active: currentStatus === item.value}" 
+					v-for="item in statusTabs" 
+					:key="item.value"
+					@click="changeStatus(item.value)"
+				>
+					<text>{{item.label}}</text>
+				</view>
+			</view>
+		</view>
+		
+		<!-- 任务列表 -->
+		<view class="task-list">
+			<view class="task-item" v-for="task in taskList" :key="task.id" @click="goToDetail(task.id)">
+				<view class="task-header">
+					<text class="task-title">{{task.taskName}}</text>
+					<view class="task-status" :class="getStatusClass(task.status)">
+						<text>{{getStatusText(task.status)}}</text>
+					</view>
+				</view>
+				<view class="task-info">
+					<view class="info-item">
+						<text class="info-label">位置：</text>
+						<text class="info-value">{{task.locationName}}</text>
+					</view>
+					<view class="info-item">
+						<text class="info-label">计划时间：</text>
+						<text class="info-value">{{task.plannedTime}}</text>
+					</view>
+					<view class="info-item" v-if="task.assigneeName">
+						<text class="info-label">负责人：</text>
+						<text class="info-value">{{task.assigneeName}}</text>
+					</view>
+				</view>
+				<view class="task-description" v-if="task.description">
+					<text>{{task.description}}</text>
+				</view>
+				<view class="task-footer">
+					<text class="create-time">创建时间：{{task.createTime}}</text>
+					<text class="arrow">></text>
+				</view>
+			</view>
+			
+			<!-- 空状态 -->
+			<view v-if="taskList.length === 0 && !loading" class="empty-state">
+				<text class="empty-icon">📋</text>
+				<text class="empty-text">暂无任务</text>
+			</view>
+			
+			<!-- 加载状态 -->
+			<view v-if="loading" class="loading-state">
+				<text class="loading-text">加载中...</text>
+			</view>
+		</view>
+		
+		<!-- 加载更多 -->
+		<view v-if="hasMore && taskList.length > 0" class="load-more" @click="loadMore">
+			<text class="load-more-text">{{loadingMore ? '加载中...' : '加载更多'}}</text>
+		</view>
+	</view>
+</template>
+
+<script lang="uts">
+	import { getApiUrl } from '@/config/api.uts'
+	type TaskStatusTab = {
+		key: string
+		label: string
+		value: string
+	}
+
+	type InspectionTask = {
+		id: string
+		taskName: string
+		locationName: string
+		plannedTime: string
+		assigneeName: string
+		status: string
+		createTime: string
+		description: string
+	}
+	
+	export default {
+		data(): {
+			searchKeyword: string,
+			currentStatus: string,
+			taskList: InspectionTask[],
+			loading: boolean,
+			loadingMore: boolean,
+			hasMore: boolean,
+			pageNum: number,
+			pageSize: number,
+			statusTabs: TaskStatusTab[],
+			searchTimer: number | null
+		} {
+			return {
+				searchKeyword: '',
+				currentStatus: '',
+				taskList: [] as InspectionTask[],
+				loading: false,
+				loadingMore: false,
+				hasMore: true,
+				pageNum: 1,
+				pageSize: 10,
+				statusTabs: [
+					{ key: 'all', label: '全部', value: '' },
+					{ key: 'pending', label: '待执行', value: '0' },
+					{ key: 'processing', label: '执行中', value: '1' },
+					{ key: 'completed', label: '已完成', value: '2' },
+					{ key: 'cancelled', label: '已取消', value: '3' }
+				] as TaskStatusTab[],
+				searchTimer: null as number | null
+			}
+		},
+		onLoad() {
+			this.checkLogin()
+			this.loadTasks()
+		},
+		onPullDownRefresh() {
+			this.refreshTasks()
+		},
+		onReachBottom() {
+			if (this.hasMore && !this.loadingMore) {
+				this.loadMore()
+			}
+		},
+		methods: {
+			checkLogin() {
+			const token = uni.getStorageSync('token')
+			if (token == null || token == '') {
+				uni.reLaunch({
+					url: '/pages/login/login'
+				})
+			}
+		},
+			
+			loadTasks(isRefresh: boolean = false) {
+				if (isRefresh) {
+					this.pageNum = 1
+					this.hasMore = true
+					this.taskList = []
+				}
+				
+				this.loading = true
+			
+			const token = uni.getStorageSync('token')
+					const params: UTSJSONObject = {
+						pageNum: this.pageNum,
+						pageSize: this.pageSize
+					} as UTSJSONObject
+					
+					if (this.currentStatus !== '') {
+						params['status'] = this.currentStatus
+					}
+					
+					if (this.searchKeyword.trim() != '') {
+					params['keyword'] = this.searchKeyword.trim()
+				}
+				
+				const keys = ['pageNum', 'pageSize', 'status', 'keyword']
+				const queryParts: string[] = []
+				for (const key of keys) {
+				if (params[key] != null) {
+					queryParts.push(`${key}=${encodeURIComponent(params[key].toString())}`)
+				}
+			}
+				const queryString = queryParts.join('&')
+					
+					uni.request({
+					url: getApiUrl(`/inspection-task/page?${queryString}`),
+					method: 'GET',
+					header: {
+						'Authorization': `Bearer ${token}`
+					},
+					success: (res) => {
+							const responseData = res.data as UTSJSONObject
+				if (res.statusCode === 200 && responseData.getNumber('code') === 200) {
+					const data = responseData.getJSON('data')
+					if (data != null) {
+						const records = data.getArray('records') as Array<UTSJSONObject>
+						const newTasks: InspectionTask[] = []
+						
+						if (records != null) {
+							for (let i = 0; i < records.length; i++) {
+								const item = records[i]
+								newTasks.push({
+									id: item.getString('id') ?? '',
+									taskName: item.getString('taskName') ?? '',
+									locationName: item.getString('locationName') ?? '',
+									plannedTime: item.getString('plannedTime') ?? '',
+									assigneeName: item.getString('assigneeName') ?? '',
+									description: item.getString('description') ?? '',
+									createTime: item.getString('createTime') ?? '',
+									status: item.getString('status') ?? ''
+								})
+							}
+						}
+						
+						if (isRefresh) {
+							this.taskList = newTasks
+						} else {
+							this.taskList = this.taskList.concat(newTasks)
+						}
+						
+						this.hasMore = (data.getNumber('current') ?? 0) < (data.getNumber('pages') ?? 0)
+						this.pageNum = (data.getNumber('current') ?? 0) + 1
+					}
+				} else {
+					uni.showToast({
+					title: responseData.getString('message') ?? '加载失败',
+					icon: 'none'
+				})
+				}
+				this.loading = false
+			this.loadingMore = false
+			if (isRefresh) {
+				uni.stopPullDownRefresh()
+			}
+				},
+				fail: (error) => {
+					console.error('加载任务失败:', error)
+					uni.showToast({
+						title: '网络错误',
+						icon: 'none'
+					})
+					this.loading = false
+					this.loadingMore = false
+					if (isRefresh) {
+						uni.stopPullDownRefresh()
+					}
+					}
+				})
+			},
+			
+			refreshTasks() {
+				this.loadTasks(true)
+			},
+			
+			loadMore() {
+			if (this.loadingMore || !this.hasMore) return
+			
+			this.loadingMore = true
+			this.loadTasks()
+		},
+			
+			changeStatus(status: string) {
+				this.currentStatus = status
+				this.loadTasks(true)
+			},
+			
+			onSearch(event: UniInputEvent) {
+			if (this.searchTimer != null) {
+				clearTimeout(this.searchTimer as number)
+			}
+			this.searchTimer = setTimeout(() => {
+				this.loadTasks(true)
+			}, 500) as number
+		},
+			
+			getStatusText(status: string): string {
+				if (status == '0') return '待执行'
+				if (status == '1') return '执行中'
+				if (status == '2') return '已完成'
+				if (status == '3') return '已取消'
+				return '未知'
+			},
+			
+			getStatusClass(status: string): string {
+				if (status == "0") return 'status-pending'
+				if (status == "1") return 'status-completed'
+				if (status == "2") return 'status-accepted'
+				return 'status-unknown'
+			},
+			
+			goToDetail(taskId: string) {
+				uni.navigateTo({
+					url: `/pages/task/detail?id=${taskId}`
+				})
+			}
+		}
+	}
+</script>
+
+<style>
+	.container {
+		padding: 20px;
+		background-color: #f5f5f5;
+	}
+	
+	.search-section {
+		margin-bottom: 20px;
+	}
+	
+	.search-box {
+		position: relative;
+		margin-bottom: 15px;
+	}
+	
+	.search-input {
+		width: 100%;
+		height: 40px;
+		padding: 0 40px 0 15px;
+		background: #fff;
+		border-radius: 20px;
+		border: 1px solid #e0e0e0;
+		font-size: 14px;
+		box-sizing: border-box;
+	}
+	
+	.search-icon {
+		position: absolute;
+		right: 15px;
+		top: 50%;
+		transform: translateY(-50%);
+		color: #999;
+		font-size: 16px;
+	}
+	
+	.filter-tabs {
+		display: flex;
+		background: #fff;
+		border-radius: 8px;
+		padding: 4px;
+		box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+	}
+	
+	.filter-tab {
+		flex: 1;
+		padding: 8px 12px;
+		text-align: center;
+		border-radius: 6px;
+		transition: all 0.3s;
+	}
+	
+	.filter-tab.active {
+		background: #007AFF;
+		color: #fff;
+	}
+	
+	.filter-tab text {
+		font-size: 14px;
+		color: inherit;
+	}
+	
+	.task-list {
+		
+	}
+	
+	.task-item {
+		background: #fff;
+		border-radius: 12px;
+		padding: 20px;
+		margin-bottom: 15px;
+		box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+	}
+	
+	.task-header {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		margin-bottom: 15px;
+	}
+	
+	.task-title {
+		font-size: 18px;
+		font-weight: bold;
+		color: #333;
+		flex: 1;
+		margin-right: 10px;
+	}
+	
+	.task-status {
+		padding: 4px 8px;
+		border-radius: 4px;
+		font-size: 12px;
+	}
+	
+	.status-pending {
+		background: #fff3cd;
+		color: #856404;
+	}
+	
+	.status-processing {
+		background: #d1ecf1;
+		color: #0c5460;
+	}
+	
+	.status-completed {
+		background: #d4edda;
+		color: #155724;
+	}
+	
+	.status-cancelled {
+		background: #f8d7da;
+		color: #721c24;
+	}
+	
+	.task-info {
+		margin-bottom: 15px;
+	}
+	
+	.info-item {
+		display: flex;
+		margin-bottom: 8px;
+	}
+	
+	.info-label {
+		font-size: 14px;
+		color: #666;
+		min-width: 80px;
+	}
+	
+	.info-value {
+		font-size: 14px;
+		color: #333;
+		flex: 1;
+	}
+	
+	.task-description {
+		padding: 10px;
+		background: #f8f9fa;
+		border-radius: 6px;
+		margin-bottom: 15px;
+	}
+	
+	.task-description text {
+		font-size: 14px;
+		color: #666;
+		line-height: 1.5;
+	}
+	
+	.task-footer {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+	}
+	
+	.create-time {
+		font-size: 12px;
+		color: #999;
+	}
+	
+	.arrow {
+		font-size: 16px;
+		color: #ccc;
+	}
+	
+	.empty-state {
+		text-align: center;
+		padding: 60px 0;
+	}
+	
+	.empty-icon {
+		font-size: 48px;
+		margin-bottom: 15px;
+		opacity: 0.3;
+	}
+	
+	.empty-text {
+		font-size: 16px;
+		color: #999;
+	}
+	
+	.loading-state {
+		text-align: center;
+		padding: 40px 0;
+	}
+	
+	.loading-text {
+		font-size: 14px;
+		color: #666;
+	}
+	
+	.load-more {
+		text-align: center;
+		padding: 20px 0;
+	}
+	
+	.load-more-text {
+		font-size: 14px;
+		color: #007AFF;
+	}
+</style>

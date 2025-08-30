@@ -1,0 +1,532 @@
+<template>
+	<view class="container">
+		<!-- 页面标题 -->
+		<view class="header">
+			<text class="title">问题列表</text>
+			<text class="subtitle">共 {{totalCount}} 条{{getStatusTitle()}}问题</text>
+		</view>
+		
+		<!-- 记录列表 -->
+		<scroll-view class="record-list" scroll-y="true" enable-back-to-top="true" @scrolltolower="handleScrollToLower">
+			<view class="record-item" v-for="record in recordList" :key="record.id" @click="goToDetail(record.id)" @longpress="showDeleteConfirm(record.id, record.problemDescription)">
+				<view class="record-content">
+					<!-- 左侧内容区域 -->
+					<view class="left-content">
+						<view class="name-problem-row">
+							<text class="responsible-name">{{record.responsiblePerson}}</text>
+						</view>
+						
+					</view>
+					
+					<!-- 右侧信息区域 -->
+					<view class="right-info">
+						<text class="inspector-info">检查人：{{record.inspectorName}}</text>
+						<text class="date-text">{{record.createDate}}</text>
+						<view class="status-tag" :class="getStatusClass(record.status)">
+							<text class="status-text">{{getStatusText(record.status)}}</text>
+						</view>
+					</view>
+					<text class="problem-text">{{record.problemDescription}}</text>
+				</view>
+			</view>
+			
+			<!-- 空状态 -->
+			<view v-if="recordList.length === 0 && !loading" class="empty-state">
+				<text class="empty-icon">📝</text>
+				<text class="empty-text">暂无记录</text>
+			</view>
+			
+			<!-- 加载状态 -->
+			<view v-if="loading" class="loading-state">
+				<text class="loading-text">加载中...</text>
+			</view>
+			
+			<!-- 加载更多 -->
+			<view v-if="hasMore && recordList.length > 0" class="load-more" @click="loadMore">
+				<text class="load-more-text">{{loadingMore ? '加载中...' : '加载更多'}}</text>
+			</view>
+		</scroll-view>
+		
+
+	</view>
+</template>
+
+<script lang="uts">
+	import { getApiUrl } from '@/config/api.uts'
+	type RecordStatusTab = {
+		key: string
+		label: string
+		value: string
+	}
+
+	type InspectionRecord = {
+		id: string
+		problemDescription: string
+		responsiblePerson: string
+		inspectorName: string
+		createDate: string
+		status: number
+	}
+	
+	export default {
+		data() {
+			return {
+				recordList: [] as InspectionRecord[],
+				loading: false,
+				loadingMore: false,
+				hasMore: true,
+				totalCount: 0,
+				pageNum: 1,
+				pageSize: 20,
+				status: '0', // 默认显示待整改记录
+				isDelayed: false // 是否是延迟整改
+			}
+		},
+		onLoad(options: OnLoadOptions) {
+			this.checkLogin()
+			// 从URL参数获取status值
+			if (options['status'] != null) {
+				this.status = options['status'] as string
+			}
+			// 检查是否是延迟整改
+			if (options['delayed'] != null && options['delayed'] == 'true') {
+				this.isDelayed = true
+			}
+			this.loadRecords()
+			
+			// 监听全局事件，当记录更新时刷新数据
+			uni.$on('recordUpdated', this.handleRecordUpdated)
+		},
+		onShow() {
+			// 页面显示时刷新数据，以便及时反映数据变化
+			this.refreshRecords()
+		},
+		onUnload() {
+			// 页面卸载时移除事件监听
+			uni.$off('recordUpdated', this.handleRecordUpdated)
+		},
+		onPullDownRefresh() {
+			this.refreshRecords()
+		},
+		onReachBottom() {
+			if (this.hasMore && !this.loadingMore) {
+				this.loadMore()
+			}
+		},
+			methods: {
+			checkLogin() {
+				const token = uni.getStorageSync('token') as string
+				if (token == null || token == '') {
+					uni.reLaunch({
+						url: '/pages/login/login'
+					})
+				}
+			},
+			
+			// 处理记录更新事件
+			handleRecordUpdated() {
+				console.log('接收到记录更新事件，开始刷新数据')
+				this.refreshRecords()
+			},
+			
+
+			
+			async loadRecords() {
+				if (this.pageNum === 1) {
+					this.loading = true
+				} else {
+					this.loadingMore = true
+				}
+			
+				const token = uni.getStorageSync('token')
+				
+				uni.request({
+					url: getApiUrl(`/inspection-record/page?current=${this.pageNum}&size=${this.pageSize}&status=${this.status}`),
+					method: 'GET',
+					header: {
+						'Authorization': `Bearer ${token}`
+					},
+					success: (res) => {
+						const responseData = res.data as UTSJSONObject
+						if (res.statusCode === 200 && responseData.getNumber('code') === 200) {
+							const dataObj = responseData.getJSON('data') as UTSJSONObject
+							const records = dataObj?.getArray('records') as Array<UTSJSONObject>
+							const newRecords: InspectionRecord[] = []
+							
+							if (records != null) {
+								for (let i = 0; i < records.length; i++) {
+									const item = records[i]
+									// 打印原始数据对象，检查字段内容
+									console.log('原始数据对象:', item)
+									console.log('problemDescription字段:', item.getString('problemDescription'))
+									
+									const createTime = item.getString('createTime') ?? ''
+									const record: InspectionRecord = {
+										id: item.getString('id') ?? '',
+										problemDescription: item.getString('problemDescription') ?? '',
+										responsiblePerson: item.getString('responsiblePerson') ?? '',
+										inspectorName: item.getString('inspector') ?? '',
+										createDate: this.formatDate(createTime),
+										status: item.getNumber('status') ?? 0
+									}
+									// 打印处理后的记录对象
+									console.log('处理后的记录对象:', record)
+									newRecords.push(record)
+								}
+							}
+							
+							if (this.pageNum === 1) {
+								this.recordList = newRecords
+							} else {
+								this.recordList = this.recordList.concat(newRecords)
+							}
+							
+							this.totalCount = dataObj?.getNumber('total') ?? newRecords.length
+							this.hasMore = newRecords.length >= this.pageSize
+				} else {
+					const errorMessage = responseData.getString('message') ?? ''
+					uni.showToast({
+						title: errorMessage != '' ? errorMessage : '加载失败',
+						icon: 'none'
+					})
+				}
+					this.loading = false
+					this.loadingMore = false
+				},
+				fail: (error) => {
+					console.error('加载记录失败:', error)
+					uni.showToast({
+						title: '网络错误',
+						icon: 'none'
+					})
+					this.loading = false
+					this.loadingMore = false
+				}
+		})
+	},
+			
+		getStatusText(status: number): string {
+			const statusMap: UTSJSONObject = {
+				"0": '待整改',
+				"1": '已整改',
+				"2": '已复查'
+			}
+			const statusText = statusMap[status.toString()] as string
+			return statusText != null ? statusText : '未知'
+		},
+		
+		formatDate(dateTimeStr: string): string {
+			if (dateTimeStr == null || dateTimeStr == '') return ''
+			// 如果是完整的日期时间格式，只取日期部分
+			if (dateTimeStr.includes(' ')) {
+				return dateTimeStr.split(' ')[0]
+			}
+			return dateTimeStr
+		},
+			
+		getStatusClass(status: number): string {
+				const classMap: UTSJSONObject = {
+					"0": 'status-pending',
+					"1": 'status-completed',
+					"2": 'status-accepted'
+				}
+				const statusClass = classMap[status.toString()] as string
+				return statusClass != null ? statusClass : 'status-unknown'
+			},
+			
+			getStatusTitle(): string {
+				if (this.isDelayed) return '延迟整改'
+				if (this.status == '0') return '待整改'
+				if (this.status == '1') return '已整改'
+				if (this.status == '2') return '已复查'
+				return ''
+			},
+			
+			goToDetail(recordId: string) {
+				// 根据记录状态决定跳转页面
+				const record = this.recordList.find(r => r.id === recordId)
+				if (record != null) {
+					if (record.status === 0) {
+						// 待整改，跳转到detail页面
+						uni.navigateTo({
+							url: `/pages/record/detail?id=${recordId}`
+						})
+					} else if (record.status === 1) {
+						// 已整改，跳转到review页面
+						uni.navigateTo({
+							url: `/pages/record/review?id=${recordId}`
+						})
+					} else if (record.status === 2) {
+						// 已复查，跳转到detail页面（只读模式）
+						uni.navigateTo({
+							url: `/pages/record/detail?id=${recordId}`
+						})
+					}
+				} else {
+					// 如果找不到记录，默认跳转到detail页面
+					uni.navigateTo({
+						url: `/pages/record/detail?id=${recordId}`
+					})
+				}
+			},
+			
+			refreshRecords() {
+				this.pageNum = 1
+				this.recordList = []
+				this.hasMore = true
+				this.loadRecords()
+				uni.stopPullDownRefresh()
+			},
+			
+			loadMore() {
+				if (this.loadingMore || !this.hasMore) {
+					return
+				}
+				this.pageNum++
+				this.loadRecords()
+			},
+			
+			handleScrollToLower() {
+				if (this.hasMore && !this.loadingMore) {
+					this.loadMore()
+				}
+			},
+			
+			showDeleteConfirm(recordId: string, problemDescription: string) {
+				uni.showModal({
+					title: '确认删除',
+					content: `确定要删除问题"${problemDescription}"吗？此操作不可恢复。`,
+					confirmText: '删除',
+					cancelText: '取消',
+					confirmColor: '#ff4757',
+					success: (res) => {
+						if (res.confirm) {
+							this.deleteRecord(recordId)
+						}
+					}
+				})
+			},
+			
+			deleteRecord(recordId: string) {
+				const token = uni.getStorageSync('token')
+				
+				uni.showLoading({
+					title: '删除中...'
+				})
+				
+				uni.request({
+					url: getApiUrl(`/inspection-record/${recordId}`),
+					method: 'DELETE',
+					header: {
+						'Authorization': `Bearer ${token}`
+					},
+					success: (res) => {
+						uni.hideLoading()
+						const responseData = res.data as UTSJSONObject
+						if (res.statusCode === 200 && responseData.getNumber('code') === 200) {
+							// 删除成功，从本地列表中移除该记录
+							this.recordList = this.recordList.filter(record => record.id !== recordId)
+							this.totalCount = Math.max(0, this.totalCount - 1)
+							
+							uni.showToast({
+								title: '删除成功',
+								icon: 'success'
+							})
+						} else {
+							const errorMessage = responseData.getString('message') ?? '删除失败'
+							uni.showToast({
+								title: errorMessage,
+								icon: 'none'
+							})
+						}
+					},
+					fail: (error) => {
+						uni.hideLoading()
+						console.error('删除记录失败:', error)
+						uni.showToast({
+							title: '网络错误',
+							icon: 'none'
+						})
+					}
+				})
+			}
+		}
+	}
+</script>
+
+<style>
+	.container {
+		padding: 0;
+		background-color: #f5f5f5;
+		height: 100vh;
+		display: flex;
+		flex-direction: column;
+	}
+	
+	.header {
+		padding: 20px;
+		background: #fff;
+		border-bottom: 1px solid #e0e0e0;
+	}
+	
+	.title {
+		font-size: 18px;
+		font-weight: bold;
+		color: #333;
+		margin-bottom: 5px;
+	}
+	
+	.subtitle {
+		font-size: 14px;
+		color: #666;
+	}
+	
+	.record-list {
+		flex: 2;
+		padding: 10px;
+		padding-bottom: 280px;
+	}
+	
+	.record-item {
+		background: #fff;
+		margin-bottom: 1px;
+		padding: 15px 20px;
+		border-bottom: 1px solid #f0f0f0;
+	}
+	
+	.record-content {
+		display: flex;
+		justify-content: space-between;
+		align-items: flex-start;
+		margin-bottom: 10px;
+		width: 100%;
+	}
+	
+	.left-content {
+		flex: 1;
+		margin-right: 15px;
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+	}
+	
+	.problem-text {
+		font-size: 15px;
+		color: #666;
+		line-height: 1.3;
+		font-weight: 400;
+		margin-top: 2px;
+	}
+	
+	.right-info {
+		flex-shrink: 0;
+		text-align: right;
+		display: flex;
+		flex-direction: column;
+		align-items: flex-end;
+		justify-content: flex-start;
+		min-width: 120px;
+		max-width: 150px;
+		gap: 6px;
+		margin-left: auto;
+	}
+	
+	.inspector-info {
+		font-size: 13px;
+		color: #333;
+		font-weight: 500;
+		text-align: right;
+	}
+	
+	.date-text {
+		font-size: 13px;
+		color: #666;
+	}
+	
+	.status-row {
+		margin-top: 8px;
+	}
+	
+	.status-tag {
+		padding: 3px 10px;
+		border-radius: 12px;
+		font-size: 12px;
+		align-self: flex-end;
+	}
+	
+	.status-text {
+		color: #fff;
+		font-size: 12px;
+		font-weight: 500;
+	}
+	
+	.status-pending {
+		background: #ff6b6b;
+	}
+	
+	.status-processing {
+		background: #ffa726;
+	}
+	
+	.status-completed {
+		background: #66bb6a;
+	}
+	
+	.status-accepted {
+		background: #42a5f5;
+	}
+	
+	.name-problem-row {
+		display: flex;
+		align-items: center;
+		margin-bottom: 2px;
+	}
+	
+	.responsible-name {
+		font-size: 16px;
+		color: #333;
+		font-weight: 700;
+		margin: 0;
+	}
+	
+	.empty-state {
+		text-align: center;
+		padding: 60px 20px;
+	}
+	
+	.empty-icon {
+		font-size: 48px;
+		margin-bottom: 15px;
+		color: #ccc;
+	}
+	
+	.empty-text {
+		font-size: 16px;
+		color: #999;
+	}
+	
+	.loading-state {
+		text-align: center;
+		padding: 40px 20px;
+	}
+	
+	.loading-text {
+		font-size: 14px;
+		color: #999;
+	}
+	
+	.load-more {
+		text-align: center;
+		padding: 20px;
+		background: #fff;
+		border-top: 1px solid #f0f0f0;
+	}
+	
+	.load-more-text {
+		font-size: 14px;
+		color: #666;
+	}
+	
+
+
+</style>

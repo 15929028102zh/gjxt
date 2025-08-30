@@ -1,0 +1,375 @@
+export default [
+	{
+		"_id": "66e53159c390b34a06a513bc",
+		"creation_time": 1726296409345,
+		"name": "圆弧进度条+渐变色",
+		"option": {
+			"animation": true,
+			"dataLabel": true,
+			"extra": {
+				"arcbar": {
+					"backgroundColor": "#E9E9E9",
+					"endAngle": 0.25,
+					"gap": 2,
+					"linearType": "custom",
+					"startAngle": 0.75,
+					"type": "default",
+					"width": 12
+				}
+			},
+			"fontSize": 13,
+			"padding": [
+				0,
+				0,
+				0,
+				0
+			],
+			"series": [
+				{
+					"color": "#2fc25b",
+					"data": [
+						{
+							"value": 0.8
+						}
+					],
+					"name": "正确率"
+				}
+			],
+			"subtitle": {
+				"color": "#666666",
+				"fontSize": 25,
+				"name": "正确率"
+			},
+			"title": {
+				"color": "#2fc25b",
+				"fontSize": 35,
+				"name": "80%"
+			},
+			"type": "arcbar"
+		},
+		"type": "arcbar",
+		"update_time": 1726296409345,
+		"uts": true
+	},
+	{
+		"_id": "66e531259d9f915ad27a7281",
+		"creation_time": 1726296357694,
+		"name": "多重整圆进度条",
+		"option": {
+			"animation": true,
+			"dataLabel": true,
+			"extra": {
+				"arcbar": {
+					"backgroundColor": "#E9E9E9",
+					"endAngle": 0.25,
+					"gap": 2,
+					"startAngle": 1.5,
+					"type": "circle",
+					"width": 12
+				}
+			},
+			"fontSize": 13,
+			"padding": [
+				0,
+				0,
+				0,
+				0
+			],
+			"series": [
+				{
+					"data": [
+						{
+							"value": 0.8
+						}
+					],
+					"name": "一班"
+				},
+				{
+					"data": [
+						{
+							"value": 0.6
+						}
+					],
+					"name": "二班"
+				},
+				{
+					"data": [
+						{
+							"value": 0.45
+						}
+					],
+					"name": "三班"
+				},
+				{
+					"data": [
+						{
+							"value": 0.3
+						}
+					],
+					"name": "四班"
+				},
+				{
+					"data": [
+						{
+							"value": 0.15
+						}
+					],
+					"name": "五班"
+				}
+			],
+			"subtitle": {
+				"color": "#666666",
+				"fontSize": 15,
+				"name": "默认标题"
+			},
+			"title": {
+				"color": "#1890ff",
+				"fontSize": 35,
+				"name": "指标"
+			},
+			"type": "arcbar"
+		},
+		"type": "arcbar",
+		"update_time": 1726296357694,
+		"uts": true
+	},
+	{
+		"_id": "66e531090b9a11185f7dd9c6",
+		"creation_time": 1726296329498,
+		"name": "逆时针+圆弧进度条",
+		"option": {
+			"animation": true,
+			"dataLabel": true,
+			"extra": {
+				"arcbar": {
+					"backgroundColor": "#E9E9E9",
+					"direction": "ccw",
+					"endAngle": 0.75,
+					"gap": 2,
+					"linearType": "custom",
+					"startAngle": 0.25,
+					"type": "default",
+					"width": 12
+				}
+			},
+			"fontSize": 13,
+			"padding": [
+				0,
+				0,
+				0,
+				0
+			],
+			"series": [
+				{
+					"color": "#2fc25b",
+					"data": [
+						{
+							"value": 0.8
+						}
+					],
+					"name": "正确率"
+				}
+			],
+			"subtitle": {
+				"color": "#666666",
+				"fontSize": 25,
+				"name": "正确率"
+			},
+			"title": {
+				"color": "#2fc25b",
+				"fontSize": 35,
+				"name": "80%"
+			},
+			"type": "arcbar"
+		},
+		"type": "arcbar",
+		"update_time": 1726296329498,
+		"uts": true
+	},
+	{
+		"_id": "66e530d3aa36a3f0e571e369",
+		"creation_time": 1726296275179,
+		"name": "逆时针+多重整圆进度条",
+		"option": {
+			"animation": true,
+			"dataLabel": true,
+			"extra": {
+				"arcbar": {
+					"backgroundColor": "#E9E9E9",
+					"direction": "ccw",
+					"endAngle": 0.25,
+					"gap": 2,
+					"startAngle": 1.5,
+					"type": "circle",
+					"width": 12
+				}
+			},
+			"fontSize": 13,
+			"padding": [
+				0,
+				0,
+				0,
+				0
+			],
+			"series": [
+				{
+					"data": [
+						{
+							"value": 0.8
+						}
+					],
+					"name": "一班"
+				},
+				{
+					"data": [
+						{
+							"value": 0.6
+						}
+					],
+					"name": "二班"
+				},
+				{
+					"data": [
+						{
+							"value": 0.45
+						}
+					],
+					"name": "三班"
+				},
+				{
+					"data": [
+						{
+							"value": 0.3
+						}
+					],
+					"name": "四班"
+				},
+				{
+					"data": [
+						{
+							"value": 0.15
+						}
+					],
+					"name": "五班"
+				}
+			],
+			"subtitle": {
+				"color": "#666666",
+				"fontSize": 15,
+				"name": "默认标题"
+			},
+			"title": {
+				"color": "#1890ff",
+				"fontSize": 35,
+				"name": "指标"
+			},
+			"type": "arcbar"
+		},
+		"type": "arcbar",
+		"update_time": 1726296275179,
+		"uts": true
+	},
+	{
+		"_id": "66e530a90b9a11185f7dd6aa",
+		"creation_time": 1726296233321,
+		"name": "圆角整圆进度条",
+		"option": {
+			"animation": true,
+			"dataLabel": true,
+			"extra": {
+				"arcbar": {
+					"backgroundColor": "#E9E9E9",
+					"endAngle": 0.25,
+					"gap": 2,
+					"startAngle": 1.5,
+					"type": "circle",
+					"width": 12
+				}
+			},
+			"fontSize": 13,
+			"padding": [
+				0,
+				0,
+				0,
+				0
+			],
+			"series": [
+				{
+					"color": "#2fc25b",
+					"data": [
+						{
+							"value": 0.8
+						}
+					],
+					"name": "正确率"
+				}
+			],
+			"subtitle": {
+				"color": "#666666",
+				"fontSize": 25,
+				"name": "正确率"
+			},
+			"title": {
+				"color": "#2fc25b",
+				"fontSize": 35,
+				"name": "80%"
+			},
+			"type": "arcbar"
+		},
+		"type": "arcbar",
+		"update_time": 1726296233321,
+		"uts": true
+	},
+	{
+		"_id": "66e53089c390b34a06a50b5b",
+		"creation_time": 1726296201476,
+		"name": "平角整圆进度条",
+		"option": {
+			"animation": true,
+			"dataLabel": true,
+			"extra": {
+				"arcbar": {
+					"backgroundColor": "#E9E9E9",
+					"endAngle": 0.25,
+					"gap": 2,
+					"lineCap": "butt",
+					"startAngle": 1.5,
+					"type": "circle",
+					"width": 12
+				}
+			},
+			"fontSize": 13,
+			"padding": [
+				0,
+				0,
+				0,
+				0
+			],
+			"series": [
+				{
+					"color": "#2fc25b",
+					"data": [
+						{
+							"value": 0.8
+						}
+					],
+					"name": "正确率"
+				}
+			],
+			"subtitle": {
+				"color": "#666666",
+				"fontSize": 25,
+				"name": "正确率"
+			},
+			"title": {
+				"color": "#2fc25b",
+				"fontSize": 35,
+				"name": "80%"
+			},
+			"type": "arcbar"
+		},
+		"type": "arcbar",
+		"update_time": 1726296201476,
+		"uts": true
+	}
+] as UTSJSONObject[]

@@ -1,0 +1,128 @@
+{
+	"easycom": {
+		"autoscan": true,
+		"custom": {
+			"^u-(.*)$": "uview-plus/components/u-$1/u-$1.vue",
+			"^up-(.*)$": "uview-plus/components/u-$1/u-$1.vue",
+			"^uni-(.*)$": "@dcloudio/uni-ui/lib/uni-$1/uni-$1.vue",
+			"^tui-(.*)$": "@/uni_modules/tui-$1/components/tui-$1/tui-$1.uvue"
+		}
+	},
+	"pages": [
+		{
+			"path": "pages/home/home",
+			"style": {
+				"navigationBarTitleText": "首页",
+				"enablePullDownRefresh": true,
+				"disableScroll": false
+			}
+		},
+		{
+			"path": "pages/weekly/weekly",
+			"style": {
+				"navigationBarTitleText": "周检"
+			}
+		},
+		{
+			"path": "pages/monthly/monthly",
+			"style": {
+				"navigationBarTitleText": "月检"
+			}
+		},
+		{
+				"path": "pages/profile/profile",
+				"style": {
+					"navigationBarTitleText": "我的"
+				}
+			},
+			{
+				"path": "pages/index/index",
+				"style": {
+					"navigationBarTitleText": "首页"
+				}
+			},
+			{
+				"path": "pages/login/login",
+				"style": {
+					"navigationBarTitleText": "登录",
+					"navigationStyle": "custom"
+				}
+			},
+			{
+				"path": "pages/record/record",
+				"style": {
+					"navigationBarTitleText": "记录"
+				}
+			},
+			{
+				"path": "pages/record/add",
+				"style": {
+					"navigationBarTitleText": "新增记录"
+				}
+			},
+			{
+				"path": "pages/record/detail",
+				"style": {
+					"navigationBarTitleText": "记录详情"
+				}
+			},
+			{
+				"path": "pages/record/review",
+				"style": {
+					"navigationBarTitleText": "复查记录"
+				}
+			},
+			{
+				"path": "pages/statistics/statistics",
+				"style": {
+					"navigationBarTitleText": "统计"
+				}
+			},
+			{
+				"path": "pages/chart-test/chart-test",
+				"style": {
+					"navigationBarTitleText": "图表测试"
+				}
+			}
+
+	],
+	"globalStyle": {
+		"navigationBarTextStyle": "white",
+		"navigationBarTitleText": "石油工业园区设备巡检系统",
+		"navigationBarBackgroundColor": "#007AFF",
+		"backgroundColor": "#F5F5F5"
+	},
+	"tabBar": {
+		"color": "#7A7E83",
+		"selectedColor": "#3cc51f",
+		"borderStyle": "black",
+		"backgroundColor": "#ffffff",
+		"list": [
+			{
+				"pagePath": "pages/home/home",
+				"iconPath": "static/home.png",
+				"selectedIconPath": "static/home-active.png",
+				"text": "首页"
+			},
+			{
+				"pagePath": "pages/weekly/weekly",
+				"iconPath": "static/category.png",
+				"selectedIconPath": "static/category-active.png",
+				"text": "周检"
+			},
+			{
+				"pagePath": "pages/monthly/monthly",
+				"iconPath": "static/date.png",
+				"selectedIconPath": "static/date-active.png",
+				"text": "月检"
+			},
+			{
+				"pagePath": "pages/profile/profile",
+				"iconPath": "static/profile.png",
+				"selectedIconPath": "static/profile-active.png",
+				"text": "我的"
+			}
+		]
+	},
+	"uniIdRouter": {}
+}

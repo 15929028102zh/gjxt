@@ -1,0 +1,162 @@
+export default [
+    {
+        "_id": "66e531d347b1be935d632140",
+        "creation_time": 1726296531455,
+        "name": "基本仪表盘",
+        "option": {
+            "animation": true,
+            "categories": [
+                {
+                    "color": "#1890ff",
+                    "value": 0.2
+                },
+                {
+                    "color": "#2fc25b",
+                    "value": 0.8
+                },
+                {
+                    "color": "#f04864",
+                    "value": 1
+                }
+            ],
+            "dataLabel": true,
+            "extra": {
+                "gauge": {
+                    "endAngle": 0.25,
+                    "endNumber": 100,
+                    "labelColor": "#666666",
+                    "labelFormat": "",
+                    "pointer": {
+                        "color": "auto",
+                        "width": 24
+                    },
+                    "splitLine": {
+                        "childNumber": 5,
+                        "childWidth": 12,
+                        "color": "#FFFFFF",
+                        "fixRadius": 0,
+                        "splitNumber": 10,
+                        "width": 30
+                    },
+                    "startAngle": 0.75,
+                    "startNumber": 0,
+                    "type": "default",
+                    "width": 30
+                }
+            },
+            "fontSize": 11,
+            "padding": [
+                0,
+                0,
+                0,
+                0
+            ],
+            "series": [
+                {
+                    "data": [
+                        {
+                            "value": 0.66
+                        }
+                    ],
+                    "name": "完成率"
+                }
+            ],
+            "subtitle": {
+                "color": "#666666",
+                "fontSize": 15,
+                "name": "实时速度",
+                "offsetY": -50
+            },
+            "title": {
+                "color": "#2fc25b",
+                "fontSize": 25,
+                "name": "60Km/H",
+                "offsetY": 50
+            },
+            "type": "gauge"
+        },
+        "type": "gauge",
+        "update_time": 1726296531455,
+        "uts": true
+    },
+    {
+        "_id": "66e531b4c2a0e4182da0c040",
+        "creation_time": 1726296500774,
+        "name": "其他仪表盘",
+        "option": {
+            "animation": true,
+            "categories": [
+                {
+                    "color": "#1890ff",
+                    "value": 0.2
+                },
+                {
+                    "color": "#2fc25b",
+                    "value": 0.8
+                },
+                {
+                    "color": "#f04864",
+                    "value": 1
+                }
+            ],
+            "dataLabel": true,
+            "extra": {
+                "gauge": {
+                    "endAngle": 0.25,
+                    "endNumber": 100,
+                    "labelColor": "#666666",
+                    "labelFormat": "",
+                    "pointer": {
+                        "color": "auto",
+                        "width": 24
+                    },
+                    "splitLine": {
+                        "childNumber": 5,
+                        "childWidth": 12,
+                        "color": "#FFFFFF",
+                        "fixRadius": -10,
+                        "splitNumber": 10,
+                        "width": 15
+                    },
+                    "startAngle": 0.75,
+                    "startNumber": 0,
+                    "type": "progress",
+                    "width": 20
+                }
+            },
+            "fontSize": 11,
+            "padding": [
+                0,
+                0,
+                0,
+                0
+            ],
+            "series": [
+                {
+                    "data": [
+                        {
+                            "value": 0.66
+                        }
+                    ],
+                    "name": "完成率"
+                }
+            ],
+            "subtitle": {
+                "color": "#1890ff",
+                "fontSize": 15,
+                "name": "实时速度",
+                "offsetY": 0
+            },
+            "title": {
+                "color": "#2fc25b",
+                "fontSize": 25,
+                "name": "66Km/H",
+                "offsetY": 0
+            },
+            "type": "gauge"
+        },
+        "type": "gauge",
+        "update_time": 1726296500774,
+        "uts": true
+    }
+] as UTSJSONObject[]

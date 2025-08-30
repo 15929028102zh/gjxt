@@ -1,0 +1,197 @@
+export default [
+	{
+		"_id": "66e51aa658a280277d8781c3",
+		"creation_time": 1726290598097,
+		"name": "圆角条状图+渐变色",
+		"option": {
+			"animation": true,
+			"categories": [
+				"2016",
+				"2017",
+				"2018",
+				"2019",
+				"2020",
+				"2021"
+			],
+			"dataLabel": true,
+			"extra": {
+				"bar": {
+					"activeBgColor": "#000000",
+					"activeBgOpacity": 0.08,
+					"barBorderCircle": true,
+					"categoryGap": 2,
+					"linearType": "custom",
+					"meterBorde": 1,
+					"meterFillColor": "#FFFFFF",
+					"seriesGap": 2,
+					"type": "group",
+					"width": 30
+				},
+				"tooltip": {}
+			},
+			"fontSize": 11,
+			"padding": [
+				15,
+				30,
+				0,
+				5
+			],
+			"series": [
+				{
+					"data": [
+						{
+							"value": 35
+						},
+						{
+							"value": 36
+						},
+						{
+							"value": 34
+						},
+						{
+							"value": 33
+						},
+						{
+							"value": 13
+						},
+						{
+							"value": 34
+						}
+					],
+					"name": "目标值"
+				},
+				{
+					"data": [
+						{
+							"value": 18
+						},
+						{
+							"value": 27
+						},
+						{
+							"value": 21
+						},
+						{
+							"value": 24
+						},
+						{
+							"value": 6
+						},
+						{
+							"value": 28
+						}
+					],
+					"name": "完成量"
+				}
+			],
+			"type": "bar",
+			"xAxis": {
+				"axisLine": false,
+				"boundaryGap": "justify",
+				"disableGrid": false,
+				"max": 40,
+				"min": 0
+			},
+			"yAxis": {}
+		},
+		"type": "bar",
+		"update_time": 1726290598097,
+		"uts": true
+	},
+	{
+		"_id": "66e51a92b5d950c8106e4108",
+		"creation_time": 1726290578954,
+		"name": "堆叠条状图",
+		"option": {
+			"animation": true,
+			"categories": [
+				"2016",
+				"2017",
+				"2018",
+				"2019",
+				"2020",
+				"2021"
+			],
+			"dataLabel": true,
+			"extra": {
+				"bar": {
+					"activeBgColor": "#000000",
+					"activeBgOpacity": 0.08,
+					"categoryGap": 2,
+					"meterBorde": 1,
+					"meterFillColor": "#FFFFFF",
+					"type": "stack",
+					"width": 30
+				},
+				"tooltip": {}
+			},
+			"fontSize": 11,
+			"padding": [
+				15,
+				30,
+				0,
+				5
+			],
+			"series": [
+				{
+					"data": [
+						{
+							"value": 35
+						},
+						{
+							"value": 36
+						},
+						{
+							"value": 34
+						},
+						{
+							"value": 33
+						},
+						{
+							"value": 13
+						},
+						{
+							"value": 34
+						}
+					],
+					"name": "目标值"
+				},
+				{
+					"data": [
+						{
+							"value": 18
+						},
+						{
+							"value": 27
+						},
+						{
+							"value": 21
+						},
+						{
+							"value": 24
+						},
+						{
+							"value": 6
+						},
+						{
+							"value": 28
+						}
+					],
+					"name": "完成量"
+				}
+			],
+			"type": "bar",
+			"xAxis": {
+				"axisLine": false,
+				"boundaryGap": "justify",
+				"disableGrid": false,
+				"max": 70,
+				"min": 0
+			},
+			"yAxis": {}
+		},
+		"type": "bar",
+		"update_time": 1726290578954,
+		"uts": true
+	}
+] as UTSJSONObject[]

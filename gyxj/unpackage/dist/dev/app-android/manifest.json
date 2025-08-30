@@ -1,0 +1,31 @@
+{
+  "id": "__UNI__630A075",
+  "name": "工业巡检",
+  "description": "",
+  "version": {
+    "name": "1.0.0",
+    "code": "100"
+  },
+  "uni-app-x": {
+    "compilerVersion": "4.76"
+  },
+  "app-android": {
+    "distribute": {
+      "modules": {},
+      "icons": {
+        "hdpi": "",
+        "xhdpi": "",
+        "xxhdpi": "",
+        "xxxhdpi": ""
+      },
+      "splashScreens": {
+        "default": {}
+      }
+    },
+    "permissions": [
+      "<uses-permission android:name=\"android.permission.INTERNET\" />",
+      "<uses-permission android:name=\"android.permission.ACCESS_NETWORK_STATE\" />",
+      "<uses-permission android:name=\"android.permission.ACCESS_WIFI_STATE\" />"
+    ]
+  }
+}

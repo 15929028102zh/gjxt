@@ -1,0 +1,54 @@
+<template>
+	<scroll-view style="flex: 1;">
+		<text style="color: red;margin: 30rpx;text-align: center;">一个canvas绘制多个图表,减少性能开销</text>
+		<button type="primary" style="margin: 30rpx;" @click="updatearcbar">更新第一绘制区内容示例</button>
+		<tui-xechars :style="`height:${canvasInsHeight}px;margin: 0 30rpx;`" @initFinished="initFinished"></tui-xechars>
+	</scroll-view>
+</template>
+
+<script setup>
+	const tuixcharsins = ref<ComponentPublicInstance | null>(null)
+	import opts from './index.uts'
+	import { TuiCharts, TuiDrawCharts } from '@/uni_modules/tui-xechars'
+	const itemH : number = 287
+	let charts : TuiCharts | null = null
+	const canvasInsHeight = ref<number>(opts.length * itemH)
+	function initFinished(e : TuiCharts) {
+		charts = e
+		opts.forEach((item : UTSJSONObject, index : number) => {
+			const bar = e.add(index, item.getJSON('option')!)
+			bar.setCoordinates({ height: 287, xOffset: 0, yOffset: itemH * index })
+			bar.draw()
+		})
+	}
+	function updatearcbar() {
+		const char = charts!
+		const bar = char.getDrawCharts(0)!
+		bar.update({
+			"series": [
+			  {
+			    "data": [
+			      {"value": 50},
+			      {"value": 60},
+			      {"value": 55},
+			      {"value": 65},
+			      {"value": 45},
+			      {"value": 70}
+			    ],
+			    "name": "目标值"
+			  },
+			  {
+			    "data": [
+			      {"value": 10},
+			      {"value": 20},
+			      {"value": 15},
+			      {"value": 25},
+			      {"value": 5},
+			      {"value": 30}
+			    ],
+			    "name": "完成量"
+			  }
+			]
+		})
+	}
+</script>

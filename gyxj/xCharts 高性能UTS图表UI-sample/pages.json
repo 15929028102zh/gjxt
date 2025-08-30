@@ -1,0 +1,118 @@
+{
+	"pages": [{
+			"path": "pages/index/index",
+			"style": {
+				"navigationBarTitleText": "uni-app x"
+			}
+		},
+		{
+			"path": "pages/bar/bar",
+			"style": {
+				"navigationBarTitleText": "条状图"
+			}
+		},
+		{
+			"path": "pages/mount/mount",
+			"style": {
+				"navigationBarTitleText": "山峰图"
+			}
+		},
+		{
+			"path": "pages/column/column",
+			"style": {
+				"navigationBarTitleText": "柱形图"
+			}
+		},
+		{
+			"path": "pages/line/line",
+			"style": {
+				"navigationBarTitleText": "折线图"
+			}
+		},
+		{
+			"path": "pages/area/area",
+			"style": {
+				"navigationBarTitleText": "区域图"
+			}
+		},
+		{
+			"path": "pages/scatter/scatter",
+			"style": {
+				"navigationBarTitleText": "散点图"
+			}
+		},
+		{
+			"path": "pages/pie/pie",
+			"style": {
+				"navigationBarTitleText": "饼图"
+			}
+		},
+		{
+			"path": "pages/ring/ring",
+			"style": {
+				"navigationBarTitleText": "圆环图"
+			}
+		},
+		{
+			"path": "pages/rose/rose",
+			"style": {
+				"navigationBarTitleText": "玫瑰图"
+			}
+		},
+		{
+			"path": "pages/radar/radar",
+			"style": {
+				"navigationBarTitleText": "雷达图"
+			}
+		},
+		{
+			"path": "pages/arcbar/arcbar",
+			"style": {
+				"navigationBarTitleText": "进度条"
+			}
+		},
+		{
+			"path": "pages/gauge/gauge",
+			"style": {
+				"navigationBarTitleText": "仪表盘"
+			}
+		},
+		{
+			"path": "pages/funnel/funnel",
+			"style": {
+				"navigationBarTitleText": "漏斗图"
+			}
+		},
+		{
+			"path": "pages/word/word",
+			"style": {
+				"navigationBarTitleText": "词云图"
+			}
+		},
+		{
+			"path": "pages/candle/candle",
+			"style": {
+				"navigationBarTitleText": "K线图"
+			}
+		},
+		{
+			"path": "pages/map/map",
+			"style": {
+				"navigationBarTitleText": "地图"
+			}
+		},
+		{
+			"path": "pages/mix/mix",
+			"style": {
+				"navigationBarTitleText": "混合图"
+			}
+		}
+	],
+	"globalStyle": {
+		"navigationBarTextStyle": "black",
+		"navigationBarTitleText": "uni-app x",
+		"navigationBarBackgroundColor": "#F8F8F8",
+		"backgroundColor": "#F8F8F8"
+	},
+	"uniIdRouter": {}
+}
