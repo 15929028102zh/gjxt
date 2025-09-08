@@ -47,7 +47,7 @@
 </template>
 
 <script lang="uts">
-	import { getApiUrl } from '@/config/api.uts'
+	import { getApiUrl, apiConfig } from '@/config/api.uts'
 	type LoginFormData = {
 		username: string
 		password: string
@@ -113,6 +113,9 @@
 						if (userInfo != null) {
 							console.log('保存用户信息到本地存储:', JSON.stringify(userInfo))
 							uni.setStorageSync('userInfo', JSON.stringify(userInfo))
+							
+							// 设置用户头像
+							this.updateUserAvatar(userInfo)
 						}
 					} else {
 						console.log('获取用户信息失败，使用基本信息')
@@ -188,7 +191,36 @@
 					this.loading = false
 				}
 			})
-		}
+		},
+		
+		updateUserAvatar(userInfo: UTSJSONObject) {
+			const imageUrl = userInfo.getString('imageUrl')
+			if (imageUrl != null && imageUrl != '') {
+				console.log('用户已有头像，设置头像:', imageUrl)
+				// 将物理路径转换为HTTP访问路径
+				const httpImageUrl = this.convertToHttpUrl(imageUrl)
+				// 更新本地用户信息中的头像
+				userInfo.set('avatar', httpImageUrl)
+				uni.setStorageSync('userInfo', JSON.stringify(userInfo))
+				console.log('头像已更新到本地存储:', httpImageUrl)
+			} else {
+				console.log('用户暂无头像')
+			}
+		},
+		
+		// 将相对路径转换为HTTP访问路径
+		convertToHttpUrl(relativePath: string): string {
+			console.log('相对路径:', relativePath)
+			// 如果已经是HTTP路径，直接返回
+			if (relativePath.startsWith('http://') || relativePath.startsWith('https://')) {
+				return relativePath
+			}
+			
+			// 直接拼接完整的HTTP URL
+			// 后端已返回相对路径，如: /files/images/20250818/xxx.jpg
+			const httpUrl = `${apiConfig.baseUrl}/api${relativePath}`
+			console.log('转换后的HTTP URL:', httpUrl)
+			return httpUrl
 		},
 		
 		onLoad() {
@@ -200,6 +232,7 @@
 				})
 			}
 		}
+	}
 	}
 </script>
 

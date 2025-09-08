@@ -29,7 +29,7 @@
     </select>
 
     <!-- 根据父部门ID查询子部门 -->
-    <select id="selectByParentId" parameterType="long" resultMap="BaseResultMap">
+    <select id="selectByParentId" parameterType="string" resultMap="BaseResultMap">
         SELECT <include refid="Base_Column_List" />
         FROM sys_dept
         WHERE parent_id = #{parentId} AND deleted = 0
@@ -47,7 +47,7 @@
     </select>
 
     <!-- 查询部门是否有子部门 -->
-    <select id="hasChildByDeptId" parameterType="long" resultType="int">
+    <select id="hasChildByDeptId" parameterType="string" resultType="int">
         SELECT COUNT(1)
         FROM sys_dept
         WHERE parent_id = #{deptId} AND deleted = 0

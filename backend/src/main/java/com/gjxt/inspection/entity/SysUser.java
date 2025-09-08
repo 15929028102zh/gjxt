@@ -54,7 +54,7 @@ public class SysUser extends BaseEntity {
      * 部门ID
      */
     @TableField("dept_id")
-    private Long deptId;
+    private String deptId;
 
     /**
      * 部门名称（非数据库字段，用于显示）
@@ -158,11 +158,11 @@ public class SysUser extends BaseEntity {
         this.status = status;
     }
 
-    public Long getDeptId() {
+    public String getDeptId() {
         return deptId;
     }
 
-    public void setDeptId(Long deptId) {
+    public void setDeptId(String deptId) {
         this.deptId = deptId;
     }
 

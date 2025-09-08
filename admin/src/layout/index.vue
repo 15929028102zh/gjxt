@@ -54,7 +54,7 @@
             <el-tag
               v-for="(item, index) in visitedViews"
               :key="item.path"
-              :type="item.path === route.path ? '' : 'info'"
+              :type="item.path === route.path ? 'primary' : 'info'"
               :effect="item.path === route.path ? 'dark' : 'plain'"
               closable
               @close="closeTag(index)"
@@ -69,8 +69,8 @@
         <div class="header-right">
           <el-dropdown @command="handleCommand">
             <span class="user-info">
-              <el-avatar :size="32" src="/default-avatar.svg" />
-              <span class="username">管理员</span>
+              <el-avatar :size="32" :src="convertToHttpUrl(userInfo.imageUrl) || '/default-avatar.svg'" />
+              <span class="username">{{ userInfo.realName || userInfo.username || '用户' }}</span>
               <el-icon><ArrowDown /></el-icon>
             </span>
             <template #dropdown>
@@ -92,16 +92,19 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { logout } from '@/api/auth'
+import { userApi } from '@/api/system'
+import { getToken } from '@/utils/token'
 
 const route = useRoute()
 const router = useRouter()
 
 const isCollapse = ref(false)
 const visitedViews = ref([])
+const userInfo = ref({})
 
 // 菜单路由 - 过滤掉登录页和标记为hideInMenu的页面
 const menuRoutes = computed(() => {
@@ -154,10 +157,76 @@ const goToView = (view) => {
   }
 }
 
+// 获取用户信息
+const getUserInfo = async () => {
+  try {
+    console.log('Layout组件开始获取用户信息')
+    const token = getToken()
+    console.log('Layout组件检查token:', token ? '存在' : '不存在')
+    if (!token) {
+      console.log('Layout组件: token不存在，跳转到登录页')
+      router.push('/login')
+      return
+    }
+    
+    // 从token中解析用户名或从localStorage获取
+    const userInfoStr = localStorage.getItem('userInfo')
+    console.log('Layout组件检查本地用户信息:', userInfoStr ? '存在' : '不存在')
+    if (userInfoStr) {
+      const storedUserInfo = JSON.parse(userInfoStr)
+      userInfo.value = storedUserInfo
+      console.log('Layout组件使用本地用户信息:', storedUserInfo)
+      return
+    }
+    
+    // 如果没有存储的用户信息，尝试从token解析用户名
+    const payload = JSON.parse(atob(token.split('.')[1]))
+    const username = payload.sub || payload.username
+    console.log('Layout组件从token解析用户名:', username)
+    
+    if (username) {
+      console.log('Layout组件开始调用API获取用户信息')
+      const response = await userApi.getUserInfo(username)
+      console.log('Layout组件API调用结果:', response)
+      if (response.code === 200) {
+        userInfo.value = response.data
+        localStorage.setItem('userInfo', JSON.stringify(response.data))
+        console.log('Layout组件用户信息设置完成:', response.data)
+      }
+    }
+  } catch (error) {
+    console.error('Layout组件获取用户信息失败:', error)
+    console.log('Layout组件发生异常，但不会跳转到登录页')
+  }
+}
+
 // 监听路由变化，添加到访问历史
 watch(route, (newRoute) => {
   addVisitedView(newRoute)
 }, { immediate: true })
+
+// 将相对路径转换为HTTP访问路径
+const convertToHttpUrl = (relativePath) => {
+  if (!relativePath || relativePath.trim() === '') {
+    return ''
+  }
+  
+  // 如果已经是完整的HTTP/HTTPS URL，直接返回
+  if (relativePath.startsWith('http://') || relativePath.startsWith('https://')) {
+    return relativePath
+  }
+  
+  // 直接拼接完整的HTTP URL
+  // 后端返回相对路径，如: /files/images/20250831/xxx.jpg
+  const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://192.168.244.128:8080'
+  const fullUrl = `${baseUrl}/api${relativePath}`
+  return fullUrl
+}
+
+// 组件挂载时获取用户信息
+onMounted(() => {
+  getUserInfo()
+})
 
 // 切换侧边栏折叠
 const toggleCollapse = () => {
@@ -168,7 +237,7 @@ const toggleCollapse = () => {
 const handleCommand = async (command) => {
   switch (command) {
     case 'profile':
-      ElMessage.info('个人中心功能待开发')
+      router.push('/profile')
       break
     case 'logout':
       try {

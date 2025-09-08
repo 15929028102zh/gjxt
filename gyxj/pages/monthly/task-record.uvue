@@ -1,0 +1,2034 @@
+<template>
+	<scroll-view class="container" scroll-y="true" :scroll-top="scrollTop" :style="{height: containerHeight + 'px'}" enable-back-to-top="true">
+		<!-- 头部 -->
+		<view class="header">
+			<view class="header-left" @click="goBack">
+				
+			</view>
+			<text class="header-title">月检任务录入</text>
+			<view class="header-right">
+				<!-- 保存按钮已移至页面底部 -->
+			</view>
+		</view>
+		
+		<!-- 任务信息 -->
+		<view class="task-info">
+			<view class="info-item">
+				<text class="info-label">任务编号:</text>
+				<text class="info-value">{{taskInfo != null ? taskInfo.taskNumber : ''}}</text>
+			</view>
+			<view class="info-item">
+				<text class="info-label">月检时间:</text>
+				<text class="info-value">{{taskInfo != null ? taskInfo.inspectionDate : ''}}</text>
+			</view>
+			<view class="info-item">
+				<text class="info-label">检查部门:</text>
+				<text class="info-value">{{taskInfo != null ? taskInfo.department : ''}}</text>
+			</view>
+			<view class="info-item">
+				<text class="info-label">检查专业:</text>
+				<text class="info-value">{{taskInfo != null ? taskInfo.profession : ''}}</text>
+			</view>
+			<view class="info-item">
+				<text class="info-label">检查组长:</text>
+				<text class="info-value">{{taskInfo != null ? taskInfo.groupLeader : ''}}</text>
+			</view>
+			<view class="info-item">
+				<text class="info-label">检查副组长:</text>
+				<text class="info-value">{{taskInfo.deputyLeader}}</text>
+			</view>
+		</view>
+		
+		<!-- 问题录入表单 -->
+		<view class="form-section">
+			<view class="section-title">
+				<text class="title-text">问题录入</text>
+				<text class="required-mark">*</text>
+			</view>
+			
+			<!-- 专业类别（第1级联选择框） -->
+			<view class="form-item-inline">
+				<text class="form-label-inline">专业类别</text>
+				<view class="picker-wrapper-inline" @click="showTypePicker" :class="{disabled: typeOptions.length === 0}">
+					<text class="picker-text" :class="{placeholder: selectedTypeIndex === -1}">
+						{{selectedTypeIndex === -1 ? '请选择专业类别' : (selectedTypeIndex < typeOptions.length ? (typeOptions[selectedTypeIndex] as OptionItem).name : '请选择专业类别')}}
+					</text>
+					<text class="picker-arrow">›</text>
+				</view>
+			</view>
+			
+			<!-- 模块（第2级联选择框） -->
+			<view class="form-item-inline">
+				<text class="form-label-inline">模块</text>
+				<view class="picker-wrapper-inline" @click="showModulePicker" :class="{disabled: moduleOptions.length === 0}">
+					<text class="picker-text" :class="{placeholder: selectedModuleIndex === -1}">
+						{{selectedModuleIndex === -1 ? '请选择模块' : (selectedModuleIndex < moduleOptions.length ? (moduleOptions[selectedModuleIndex] as OptionItem).name : '请选择模块')}}
+					</text>
+					<text class="picker-arrow">›</text>
+				</view>
+			</view>
+			
+			<!-- 责任（第3级联选择框） -->
+			<view class="form-item-inline">
+				<text class="form-label-inline">责任</text>
+				<view class="picker-wrapper-inline" @click="showResponsibilityPicker" :class="{disabled: responsibilityOptions.length === 0}">
+					<text class="picker-text" :class="{placeholder: selectedResponsibilityIndex === -1}">
+						{{selectedResponsibilityIndex === -1 ? '请选择责任' : (selectedResponsibilityIndex < responsibilityOptions.length ? (responsibilityOptions[selectedResponsibilityIndex] as OptionItem).name : '请选择责任')}}
+					</text>
+					<text class="picker-arrow">›</text>
+				</view>
+			</view>
+			
+			<!-- 问题（第4级联选择框） -->
+			<view class="form-item-inline">
+				<text class="form-label-inline">问题</text>
+				<view class="picker-wrapper-inline" @click="showIssuePicker" :class="{disabled: issueOptions.length === 0}">
+					<text class="picker-text" :class="{placeholder: selectedIssueIndex === -1}">
+						{{selectedIssueIndex === -1 ? '请选择问题' : (selectedIssueIndex < issueOptions.length ? (issueOptions[selectedIssueIndex] as OptionItem).name : '请选择问题')}}
+					</text>
+					<text class="picker-arrow">›</text>
+				</view>
+			</view>
+			
+			<!-- 性质界定 -->
+			<view class="form-item-inline">
+				<text class="form-label-inline">性质界定</text>
+				<view class="picker-wrapper-inline" @click="showQualityPicker" :class="{disabled: qualityOptions.length === 0}">
+					<text class="picker-text" :class="{placeholder: selectedQualityIndex === -1}">
+						{{selectedQualityIndex === -1 ? '请选择性质界定' : (selectedQualityIndex < qualityOptions.length ? (qualityOptions[selectedQualityIndex] as OptionItem).name : '请选择性质界定')}}
+					</text>
+					<text class="picker-arrow">›</text>
+				</view>
+			</view>
+			
+			<!-- 扣分值 -->
+			<view class="form-item-inline">
+				<text class="form-label-inline">扣分值</text>
+				<input class="text-input-inline" 
+					   v-model="formData.deductionScore" 
+					   placeholder="自动带出扣分值"
+					   readonly />
+			</view>
+			
+			<!-- 安全记分关联项 -->
+			<view class="form-item-inline">
+				<text class="form-label-inline">安全记分关联项</text>
+				<input class="text-input-inline" 
+					   v-model="formData.safetyScoreItem" 
+					   placeholder="自动带出安全记分关联项"
+					   readonly />
+			</view>
+			
+			<!-- 问题等级 -->
+			<view class="form-item-inline">
+				<text class="form-label-inline">问题等级</text>
+				<view class="picker-wrapper-inline" @click="showProblemLevelPicker">
+				<text class="picker-text" :class="{placeholder: formData.problemLevel === ''}">{{formData.problemLevel !== '' ? formData.problemLevel : '请选择问题等级'}}</text>
+				<text class="picker-arrow">›</text>
+			</view>
+			</view>
+			
+			<!-- 问题描述 -->
+			<view class="form-item">
+				<text class="form-label">问题描述</text>
+				<textarea class="textarea-input" 
+						  v-model="formData.problemDescription" 
+						  placeholder="请详细描述发现的问题"
+						  maxlength="500"></textarea>
+				<text class="char-count">{{formData.problemDescription.length}}/500</text>
+			</view>
+			
+			<!-- 发现位置 -->
+			<view class="form-item-inline">
+				<text class="form-label-inline">发现位置</text>
+				<input class="text-input-inline" 
+					   v-model="formData.location" 
+					   placeholder="请输入问题发现的具体位置" />
+			</view>
+			
+			<!-- 整改建议 -->
+			<view class="form-item">
+				<text class="form-label">整改建议</text>
+				<textarea class="textarea-input" 
+						  v-model="formData.suggestion" 
+						  placeholder="请提出整改建议"
+						  maxlength="300"></textarea>
+				<text class="char-count">{{formData.suggestion.length}}/300</text>
+			</view>
+			
+			<!-- 整改期限 -->
+			<view class="form-item-inline">
+				<text class="form-label-inline">整改期限</text>
+				<input class="text-input-inline" 
+					   type="date" 
+					   v-model="formData.rectificationDate" 
+					   placeholder="请选择整改期限" />
+			</view>
+			
+			<!-- 照片上传 -->
+			<view class="form-item">
+				<text class="form-label">问题照片</text>
+				<view class="photo-upload">
+					<view v-for="(photo, index) in formData.photos" :key="index" class="photo-item">
+						<image :src="photo" class="photo-preview" @click="previewPhoto(photo)"></image>
+						<view class="photo-delete" @click="deletePhoto(index)">
+							<text class="delete-icon">×</text>
+						</view>
+					</view>
+					<view v-if="formData.photos.length < 3" class="photo-add" @click="addPhoto">
+						<text class="add-icon">+</text>
+						<text class="add-text">添加照片</text>
+					</view>
+				</view>
+				<text class="photo-tip">最多可上传3张照片</text>
+			</view>
+		</view>
+		
+		<!-- 底部保存按钮 -->
+		<view class="bottom-save-container">
+			<view class="bottom-save-btn" @click="saveRecord">
+				<text class="bottom-save-text">保存</text>
+			</view>
+		</view>
+		
+		<!-- 问题类型选择器 -->
+		<view v-if="showProblemTypeModal" class="picker-modal" @click="hideProblemTypePicker">
+			<view class="picker-content" @click.stop>
+				<view class="picker-header">
+					<text class="picker-cancel" @click="hideProblemTypePicker">取消</text>
+					<text class="picker-title">选择问题类型</text>
+					<text class="picker-confirm" @click="confirmProblemType">确定</text>
+				</view>
+				<view class="picker-list">
+					<view v-for="(type, index) in problemTypes" :key="index" 
+						  class="picker-item" 
+						  :class="{selected: selectedProblemType === type}"
+						  @click="selectProblemType(type)">
+						<text class="picker-item-text">{{type}}</text>
+						<text v-if="selectedProblemType === type" class="picker-check">✓</text>
+					</view>
+				</view>
+			</view>
+		</view>
+		
+		<!-- 问题等级选择器 -->
+		<view v-if="showProblemLevelModal" class="picker-modal" @click="hideProblemLevelPicker">
+			<view class="picker-content" @click.stop>
+				<view class="picker-header">
+					<text class="picker-cancel" @click="hideProblemLevelPicker">取消</text>
+					<text class="picker-title">选择问题等级</text>
+					<text class="picker-confirm" @click="confirmProblemLevel">确定</text>
+				</view>
+				<view class="picker-list">
+              <view v-for="(level, index) in problemLevels" :key="index" 
+            class="picker-item" 
+            :class="{selected: selectedProblemLevel === (level as UTSJSONObject)['value']}"
+            @click="selectProblemLevel((level as UTSJSONObject)['value'] as string)">
+                <view class="level-item">
+                  <text class="level-name">{{(level as UTSJSONObject)['name']}}</text>
+                  <text class="level-desc">{{(level as UTSJSONObject)['desc']}}</text>
+            </view>
+            <text v-if="selectedProblemLevel === (level as UTSJSONObject)['value']" class="picker-check">✓</text>
+          </view>
+				</view>
+			</view>
+		</view>
+		
+		<!-- 专业类别选择弹窗 -->
+		<view v-if="showTypePopup" class="popup-overlay" @click="hideTypePicker">
+			<view class="popup-content" @click.stop>
+				<view class="popup-header">
+					<text class="popup-title">选择专业类别</text>
+					<text class="popup-close" @click="hideTypePicker">×</text>
+				</view>
+				<view class="popup-search">
+					<input class="search-input" v-model="typeSearchKeyword" placeholder="搜索专业类别..." />
+				</view>
+				<scroll-view class="popup-list" scroll-y="true">
+					<view v-if="filteredTypeOptions.length === 0" class="popup-empty">
+						<text class="empty-text">暂无匹配的专业类别</text>
+					</view>
+					<view v-else v-for="(item, index) in filteredTypeOptions" :key="(item as OptionItem).id" 
+					  :class="['popup-item', selectedTypeIndex >= 0 && typeOptions[selectedTypeIndex] != null && typeOptions[selectedTypeIndex].id === (item as OptionItem).id ? 'popup-item-selected' : '']" 
+					  @click="selectTypeFromFiltered(item)">
+						<text class="popup-item-text">{{(item as OptionItem).name}}</text>
+        <text v-if="selectedTypeIndex >= 0 && typeOptions[selectedTypeIndex] != null && typeOptions[selectedTypeIndex].id === (item as OptionItem).id" class="popup-item-check">✓</text>
+					</view>
+				</scroll-view>
+			</view>
+		</view>
+		
+		<!-- 模块选择弹窗 -->
+		<view v-if="showModulePopup" class="popup-overlay" @click="hideModulePicker">
+			<view class="popup-content" @click.stop>
+				<view class="popup-header">
+					<text class="popup-title">选择模块</text>
+					<text class="popup-close" @click="hideModulePicker">×</text>
+				</view>
+				<view class="popup-search">
+					<input class="search-input" v-model="moduleSearchKeyword" placeholder="搜索模块..." />
+				</view>
+				<scroll-view class="popup-list" scroll-y="true">
+					<view v-if="moduleOptions.length === 0" class="popup-loading">
+						<text class="loading-text">加载中...</text>
+					</view>
+					<view v-else-if="filteredModuleOptions.length === 0" class="popup-empty">
+						<text class="empty-text">暂无匹配的模块</text>
+					</view>
+					<view v-else v-for="(item, index) in filteredModuleOptions" :key="(item as OptionItem).id" 
+         :class="['popup-item', selectedModuleIndex >= 0 && moduleOptions[selectedModuleIndex] != null && moduleOptions[selectedModuleIndex].id === (item as OptionItem).id ? 'popup-item-selected' : '']" 
+					  @click="selectModuleFromFiltered(item)">
+					<text class="popup-item-text">{{(item as OptionItem).name}}</text>
+       <text v-if="selectedModuleIndex >= 0 && moduleOptions[selectedModuleIndex] != null && moduleOptions[selectedModuleIndex].id === (item as OptionItem).id" class="popup-item-check">✓</text>
+				</view>
+				</scroll-view>
+			</view>
+		</view>
+		
+		<!-- 责任选择弹窗 -->
+		<view v-if="showResponsibilityPopup" class="popup-overlay" @click="hideResponsibilityPicker">
+			<view class="popup-content" @click.stop>
+				<view class="popup-header">
+					<text class="popup-title">选择责任</text>
+					<text class="popup-close" @click="hideResponsibilityPicker">×</text>
+				</view>
+				<view class="popup-search">
+					<input class="search-input" v-model="responsibilitySearchKeyword" placeholder="搜索责任部门..." />
+				</view>
+				<scroll-view class="popup-list" scroll-y="true">
+					<view v-if="responsibilityOptions.length === 0" class="popup-loading">
+						<text class="loading-text">加载中...</text>
+					</view>
+					<view v-else-if="filteredResponsibilityOptions.length === 0" class="popup-empty">
+						<text class="empty-text">暂无匹配的责任部门</text>
+					</view>
+					<view v-else v-for="(item, index) in filteredResponsibilityOptions" :key="(item as OptionItem).id" 
+         :class="['popup-item', selectedResponsibilityIndex >= 0 && responsibilityOptions[selectedResponsibilityIndex] != null && responsibilityOptions[selectedResponsibilityIndex].id === (item as OptionItem).id ? 'popup-item-selected' : '']" 
+					  @click="selectResponsibilityFromFiltered(item)">
+					<text class="popup-item-text">{{(item as OptionItem).name}}</text>
+       <text v-if="selectedResponsibilityIndex >= 0 && responsibilityOptions[selectedResponsibilityIndex] != null && responsibilityOptions[selectedResponsibilityIndex].id === (item as OptionItem).id" class="popup-item-check">✓</text>
+				</view>
+				</scroll-view>
+			</view>
+		</view>
+		
+		<!-- 问题选择弹窗 -->
+		<view v-if="showIssuePopup" class="popup-overlay" @click="hideIssuePicker">
+			<view class="popup-content" @click.stop>
+				<view class="popup-header">
+					<text class="popup-title">选择问题</text>
+					<text class="popup-close" @click="hideIssuePicker">×</text>
+				</view>
+				<view class="popup-search">
+					<input class="search-input" v-model="issueSearchKeyword" placeholder="搜索问题..." />
+				</view>
+				<scroll-view class="popup-list" scroll-y="true">
+					<view v-if="issueOptions.length === 0" class="popup-loading">
+						<text class="loading-text">加载中...</text>
+					</view>
+					<view v-else-if="filteredIssueOptions.length === 0" class="popup-empty">
+						<text class="empty-text">暂无匹配的问题</text>
+					</view>
+      <view v-else v-for="(item, index) in filteredIssueOptions" :key="(item as OptionItem).id" 
+        :class="['popup-item', selectedIssueIndex !== -1 && issueOptions[selectedIssueIndex] != null && issueOptions[selectedIssueIndex].id === (item as OptionItem).id ? 'popup-item-selected' : '']" 
+        @click="selectIssueFromFiltered(item)">
+      <text class="popup-item-text">{{(item as OptionItem).name}}</text>
+      <text v-if="selectedIssueIndex !== -1 && issueOptions[selectedIssueIndex] != null && issueOptions[selectedIssueIndex].id === (item as OptionItem).id" class="popup-item-check">✓</text>
+				</view>
+				</scroll-view>
+			</view>
+		</view>
+		
+		<!-- 性质界定选择弹窗 -->
+		<view v-if="showQualityPopup" class="popup-overlay" @click="hideQualityPicker">
+			<view class="popup-content" @click.stop>
+				<view class="popup-header">
+					<text class="popup-title">选择性质界定</text>
+					<text class="popup-close" @click="hideQualityPicker">×</text>
+				</view>
+				<view class="popup-search">
+					<input class="search-input" v-model="qualitySearchKeyword" placeholder="搜索性质界定..." />
+				</view>
+				<scroll-view class="popup-list" scroll-y="true">
+					<view v-if="qualityOptions.length === 0" class="popup-loading">
+						<text class="loading-text">加载中...</text>
+					</view>
+					<view v-else-if="filteredQualityOptions.length === 0" class="popup-empty">
+						<text class="empty-text">暂无匹配的性质界定</text>
+					</view>
+      <view v-else v-for="(item, index) in filteredQualityOptions" :key="(item as OptionItem).id" 
+        :class="['popup-item', selectedQualityIndex !== -1 && qualityOptions[selectedQualityIndex] != null && qualityOptions[selectedQualityIndex].id === (item as OptionItem).id ? 'popup-item-selected' : '']" 
+        @click="selectQualityFromFiltered(item)">
+      <text class="popup-item-text">{{(item as OptionItem).name}}</text>
+      <text v-if="selectedQualityIndex !== -1 && qualityOptions[selectedQualityIndex] != null && qualityOptions[selectedQualityIndex].id === (item as OptionItem).id" class="popup-item-check">✓</text>
+				</view>
+				</scroll-view>
+			</view>
+		</view>
+	</scroll-view>
+</template>
+
+<script lang="uts">
+	import { getApiUrl } from '@/config/api.uts'
+	
+	type TaskInfo = {
+		taskNumber: string
+		inspectionDate: string
+		department: string
+		profession: string
+		groupLeader: string
+		deputyLeader: string
+	}
+	
+	type FormData = {
+		problemType: string
+		problemLevel: string
+		problemDescription: string
+		location: string
+		suggestion: string
+		photos: string[]
+		deductionScore: string
+		safetyScoreItem: string
+		rectificationDate: string
+		module: string
+		responsibility: string
+		issue: string
+		quality: string
+	}
+	
+	type OptionItem = {
+		id: string
+		name: string
+		value?: string
+	}
+	
+	export default {
+		data(): {
+			taskInfo: TaskInfo
+			formData: FormData
+			containerHeight: number
+			scrollTop: number
+			showProblemTypeModal: boolean
+			showProblemLevelModal: boolean
+			selectedProblemType: string
+			selectedProblemLevel: string
+			problemTypes: any[]
+			problemLevels: any[]
+			// 级联选择器相关
+			showTypePopup: boolean
+			showModulePopup: boolean
+			showResponsibilityPopup: boolean
+			showIssuePopup: boolean
+			showQualityPopup: boolean
+			typeOptions: OptionItem[]
+			moduleOptions: OptionItem[]
+			responsibilityOptions: OptionItem[]
+			issueOptions: OptionItem[]
+			qualityOptions: OptionItem[]
+			selectedTypeIndex: number
+			selectedModuleIndex: number
+			selectedResponsibilityIndex: number
+			selectedIssueIndex: number
+			selectedQualityIndex: number
+			// 搜索关键字
+			typeSearchKeyword: string
+			moduleSearchKeyword: string
+			responsibilitySearchKeyword: string
+			issueSearchKeyword: string
+			qualitySearchKeyword: string
+		} {
+			return {
+				taskInfo: {
+					taskNumber: '',
+					inspectionDate: '',
+					department: '',
+					profession: '',
+					groupLeader: '',
+					deputyLeader: ''
+				} as TaskInfo,
+				formData: {
+			problemType: '',
+			problemLevel: '',
+			problemDescription: '',
+			location: '',
+			suggestion: '',
+			photos: [],
+			deductionScore: '',
+			safetyScoreItem: '',
+			rectificationDate: '',
+			module: '',
+			responsibility: '',
+			issue: '',
+			quality: ''
+		} as FormData,
+				containerHeight: 0,
+				scrollTop: 0,
+				showProblemTypeModal: false,
+				showProblemLevelModal: false,
+				selectedProblemType: '',
+				selectedProblemLevel: '',
+				problemTypes: [
+					'安全隐患',
+					'设备故障',
+					'环境问题',
+					'操作违规',
+					'制度缺失',
+					'其他问题'
+				],
+				problemLevels: [] as any[],
+				// 级联选择器相关
+				showTypePopup: false,
+				showModulePopup: false,
+				showResponsibilityPopup: false,
+				showIssuePopup: false,
+				showQualityPopup: false,
+				typeOptions: [] as OptionItem[],
+				moduleOptions: [] as OptionItem[],
+				responsibilityOptions: [] as OptionItem[],
+				issueOptions: [] as OptionItem[],
+				qualityOptions: [] as OptionItem[],
+				selectedTypeIndex: -1,
+				selectedModuleIndex: -1,
+				selectedResponsibilityIndex: -1,
+				selectedIssueIndex: -1,
+				selectedQualityIndex: -1,
+				// 搜索关键字初始值
+				typeSearchKeyword: '',
+				moduleSearchKeyword: '',
+				responsibilitySearchKeyword: '',
+				issueSearchKeyword: '',
+				qualitySearchKeyword: ''
+			}
+		},
+		onLoad(options : UTSJSONObject) {
+			const taskId = options.getString('taskNo')
+			console.log(taskId)
+			
+			if (taskId != null && taskId != '') {
+				this.loadTaskInfo(taskId)
+			}
+			// 初始化级联选择器数据
+			this.loadTypeOptions()
+			// 初始化问题等级数据
+			this.loadProblemLevels()
+			// 初始化整改期限默认值
+			this.formData.rectificationDate = this.getDefaultRectificationDate()
+		},
+		onReady() {
+			this.initContainerHeight()
+		},
+		computed: {
+			// 过滤后的专业类别选项
+			filteredTypeOptions(): OptionItem[] {
+     if (this.typeSearchKeyword == '') {
+					return this.typeOptions
+				}
+				return this.typeOptions.filter(item => 
+					item.name.toLowerCase().includes(this.typeSearchKeyword.toLowerCase())
+				)
+			},
+			// 过滤后的模块选项
+     filteredModuleOptions(): OptionItem[] {
+      if (this.moduleSearchKeyword == '') {
+       return this.moduleOptions
+      }
+				return this.moduleOptions.filter(item => 
+					item.name.toLowerCase().includes(this.moduleSearchKeyword.toLowerCase())
+				)
+			},
+			// 过滤后的责任选项
+     filteredResponsibilityOptions(): OptionItem[] {
+      if (this.responsibilitySearchKeyword == '') {
+       return this.responsibilityOptions
+      }
+				return this.responsibilityOptions.filter(item => 
+					item.name.toLowerCase().includes(this.responsibilitySearchKeyword.toLowerCase())
+				)
+			},
+			// 过滤后的问题选项
+     filteredIssueOptions(): OptionItem[] {
+      if (this.issueSearchKeyword == '') {
+       return this.issueOptions
+      }
+				return this.issueOptions.filter(item => 
+					item.name.toLowerCase().includes(this.issueSearchKeyword.toLowerCase())
+				)
+			},
+			// 过滤后的性质界定选项
+     filteredQualityOptions(): OptionItem[] {
+      if (this.qualitySearchKeyword == '') {
+       return this.qualityOptions
+      }
+				return this.qualityOptions.filter(item => 
+					item.name.toLowerCase().includes(this.qualitySearchKeyword.toLowerCase())
+				)
+			}
+		},
+		methods: {
+			// 获取默认整改期限（当前日期往后推三个月）
+			getDefaultRectificationDate(): string {
+				const now = new Date()
+				// 往后推三个月
+				now.setMonth(now.getMonth() + 3)
+				const year = now.getFullYear()
+				const month = (now.getMonth() + 1).toString()
+				const day = now.getDate().toString()
+				// 手动补零
+				const padZero = (num: string): string => {
+					return num.length < 2 ? `0${num}` : num
+				}
+				return `${year}-${padZero(month)}-${padZero(day)}`
+			},
+			
+			// 初始化容器高度
+			initContainerHeight() {
+				const systemInfo = uni.getSystemInfoSync()
+				this.containerHeight = systemInfo.windowHeight
+			},
+			
+			// 加载任务信息
+			loadTaskInfo(taskId: string) {
+				try {
+					const token = uni.getStorageSync('token')
+					console.log(taskId)
+					uni.request({
+						url: getApiUrl(`/monthly-inspection-task/${taskId}`),
+						method: 'GET',
+						header: {
+							'Authorization': `Bearer ${token}`
+						},
+						success: (res) => {
+							const respdata=res.data as UTSJSONObject;
+							if ( respdata.getNumber('code')=== 200) {
+								const taskInfo = respdata.getJSON('data')
+								console.log("获取到的数据:",taskInfo)
+								if (taskInfo != null) {
+									this.taskInfo = {
+										taskNumber: taskInfo.getString('taskNo') ?? '',
+										inspectionDate: taskInfo.getString('inspectionTime') ?? '',
+										department: taskInfo.getString('departmentName') ?? '',
+										profession: taskInfo.getString('professionId') ?? '',
+										groupLeader: taskInfo.getString('groupLeaderName') ?? '',
+										deputyLeader: taskInfo.getString('deputyLeaderName') ?? ''
+									}
+									// 自动填充性质界定
+									this.autoFillProfession()
+								}
+							}
+						},
+						fail: (error) => {
+							console.error('加载任务信息失败:', error)
+							// 模拟数据
+							this.taskInfo = {
+								taskNumber: 'YJ202401001',
+								inspectionDate: '2024年1月',
+								department: '生产部',
+								profession: '违法违规',
+								groupLeader: '张三',
+								deputyLeader: '李四'
+							}
+							// 自动填充性质界定
+						this.autoFillProfession()
+						}
+					})
+				} catch (error) {
+					console.error('加载任务信息失败:', error)
+					// 模拟数据
+					this.taskInfo = {
+						taskNumber: 'YJ202401001',
+						inspectionDate: '2024年1月',
+						department: '生产部',
+						profession: '违法违规',
+						groupLeader: '张三',
+						deputyLeader: '李四'
+					}
+					// 自动填充性质界定
+					this.autoFillProfession()
+				}
+			},
+			
+			// 返回上一页
+			goBack() {
+				uni.navigateBack()
+			},
+			
+			// 显示问题类型选择器
+			showProblemTypePicker() {
+				this.selectedProblemType = this.formData.problemType
+				this.showProblemTypeModal = true
+			},
+			
+			// 隐藏问题类型选择器
+			hideProblemTypePicker() {
+				this.showProblemTypeModal = false
+			},
+			
+			// 选择问题类型
+			selectProblemType(type: string) {
+				this.selectedProblemType = type
+			},
+			
+			// 自动填充性质界定
+			autoFillProfession() {
+				console.log('开始自动填充性质界定')
+				console.log('taskInfo:', this.taskInfo)
+				console.log('typeOptions:', this.typeOptions)
+				
+				if (this.taskInfo != null && this.taskInfo.profession != '' && this.typeOptions.length > 0) {
+					console.log('查找性质界定:', this.taskInfo.profession)
+					const index = this.typeOptions.findIndex((item: OptionItem) => item.name === this.taskInfo.profession)
+					console.log('找到的性质界定索引:', index)
+					
+					if (index !== -1) {
+						this.selectedTypeIndex = index
+						console.log('已设置性质界定索引:', this.selectedTypeIndex)
+						// 自动加载模块选项
+						this.loadModuleOptions((this.typeOptions[index] as OptionItem).id)
+					} else {
+						console.warn('未找到匹配的性质界定:', this.taskInfo.profession)
+						// 尝试模糊匹配
+						const fuzzyIndex = this.typeOptions.findIndex((item: OptionItem) => 
+							item.name.includes(this.taskInfo.profession) || this.taskInfo.profession.includes(item.name)
+						)
+						if (fuzzyIndex !== -1) {
+							this.selectedTypeIndex = fuzzyIndex
+							console.log('模糊匹配到性质界定索引:', this.selectedTypeIndex)
+							this.loadModuleOptions((this.typeOptions[fuzzyIndex] as OptionItem).id)
+						}
+					}
+				} else {
+					if (this.taskInfo == null) {
+						console.log('taskInfo为空，等待任务信息加载')
+					} else if (this.taskInfo.profession == '') {
+						console.log('专业信息为空')
+					} else if (this.typeOptions.length === 0) {
+						console.log('性质界定选项未加载，等待加载完成')
+					}
+				}
+				
+				// 自动加载对应性质界定的岗检标准项
+				this.loadGjbzDataByProfession()
+			},
+			
+			// 加载专业类别选项
+			loadTypeOptions() {
+				const token = uni.getStorageSync('token')
+				uni.request({
+					url: getApiUrl('/gjbz-data/options/types'),
+					method: 'GET',
+					header: {
+						'Authorization': `Bearer ${token}`
+					},
+					success: (res) => {
+						const respdata = res.data as UTSJSONObject
+						if (respdata.getNumber('code') === 200) {
+							const data = respdata.getArray('data')
+							console.log("获取到的专业类别数据",data)
+							if (data != null) {
+								const options: OptionItem[] = []
+								for (let i = 0; i < data.length; i++) {
+           const item = data[i] as string
+           options.push({
+            id: (i + 1).toString(),
+            name: item
+           } as OptionItem)
+								}
+								this.typeOptions = options
+								console.log("专业类别选项已加载:", this.typeOptions)
+								// 自动填充专业类别
+								this.autoFillProfession()
+							}
+						} else {
+						console.error('加载专业类别失败:', respdata.getString('message'))
+						this.loadFallbackTypeOptions()
+					}
+				},
+				fail: (error) => {
+					console.error('加载专业类别失败:', error)
+					this.loadFallbackTypeOptions()
+				}
+			})
+		},
+		
+		// 加载备用专业类别数据
+		loadFallbackTypeOptions() {
+			this.typeOptions = [
+				{ id: '1', name: '电气专业' },
+				{ id: '2', name: '机械专业' },
+				{ id: '3', name: '仪表专业' },
+				{ id: '4', name: '安全专业' },
+				{ id: '5', name: '环保专业' }
+			]
+			console.log("使用备用专业类别数据:", this.typeOptions)
+			// 自动填充专业类别
+		this.autoFillProfession()
+		},
+		
+		// 加载问题等级选项
+		loadProblemLevels() {
+			const token = uni.getStorageSync('token')
+			uni.request({
+				url: getApiUrl('/dictionary/items/问题等级'),
+				method: 'GET',
+				header: {
+					'Authorization': `Bearer ${token}`
+				},
+				success: (res) => {
+					const respdata = res.data as UTSJSONObject
+					if (respdata.getNumber('code') === 200) {
+						const data = respdata.getArray('data')
+						console.log("获取到的问题等级数据", data)
+						if (data != null) {
+							const levels: any[] = []
+							for (let i = 0; i < data.length; i++) {
+								const item = data[i] as UTSJSONObject
+							const desc = item.getString('description')
+							levels.push({
+								value: item.getString('value'),
+								name: item.getString('label'),
+								desc: desc != null ? desc : ''
+							} as UTSJSONObject)
+							}
+							this.problemLevels = levels
+							console.log("问题等级选项已加载:", this.problemLevels)
+						}
+					} else {
+						console.error('加载问题等级失败:', respdata.getString('message'))
+						this.loadFallbackProblemLevels()
+					}
+				},
+				fail: (error) => {
+					console.error('加载问题等级失败:', error)
+					this.loadFallbackProblemLevels()
+				}
+			})
+		},
+		
+		// 加载备用问题等级数据
+		loadFallbackProblemLevels() {
+			this.problemLevels = [
+				{ value: 'critical', name: '严重', desc: '可能造成重大安全事故' },
+				{ value: 'major', name: '重要', desc: '可能造成一般安全事故' },
+				{ value: 'minor', name: '一般', desc: '需要及时整改' },
+				{ value: 'suggestion', name: '建议', desc: '改进建议' }
+			]
+			console.log("使用备用问题等级数据:", this.problemLevels)
+		},
+		
+		// 根据专业信息加载岗检标准项
+			loadGjbzDataByProfession() {
+				if (this.taskInfo == null || this.taskInfo.profession === '') {
+					return
+				}
+				
+				const token = uni.getStorageSync('token')
+				uni.request({
+					url: getApiUrl(`/gjbz-data/by-profession/${encodeURIComponent(this.taskInfo.profession)}`),
+					method: 'GET',
+					header: {
+						'Authorization': `Bearer ${token}`
+					},
+					success: (res) => {
+						const respdata = res.data as UTSJSONObject
+						if (respdata.getNumber('code') === 200) {
+							const data = respdata.getArray('data')
+							if (data != null && data.length > 0) {
+								console.log(`找到${data.length}个与专业"${this.taskInfo.profession}"相关的岗检标准项`)
+								// 这里可以将数据存储到组件的数据中，供后续使用
+								// 例如：this.gjbzDataList = data
+							} else {
+								console.log(`未找到与专业"${this.taskInfo.profession}"相关的岗检标准项`)
+							}
+						} else {
+							console.error('加载岗检标准项失败:', respdata.getString('message'))
+						}
+					},
+					fail: (error) => {
+						console.error('加载岗检标准项失败:', error)
+					}
+				})
+			},
+			
+			// 确认问题类型
+			confirmProblemType() {
+				this.formData.problemType = this.selectedProblemType
+				this.hideProblemTypePicker()
+			},
+			
+			// 显示问题等级选择器
+			showProblemLevelPicker() {
+				this.selectedProblemLevel = this.formData.problemLevel
+				this.showProblemLevelModal = true
+			},
+			
+			// 隐藏问题等级选择器
+			hideProblemLevelPicker() {
+				this.showProblemLevelModal = false
+			},
+			
+			// 选择问题等级
+			selectProblemLevel(level: string) {
+				this.selectedProblemLevel = level
+			},
+			
+			// 确认问题等级
+			confirmProblemLevel() {
+      const level = this.problemLevels.find((item: any) => {
+        const l = item as UTSJSONObject
+        const value = l.getString('value')
+        return value != null && value === this.selectedProblemLevel
+      }) as UTSJSONObject | null
+				this.formData.problemLevel = level != null ? level['name'] as string : ''
+				this.hideProblemLevelPicker()
+			},
+			
+			// 专业类别选择器方法
+			showTypePicker() {
+				this.showTypePopup = true
+			},
+			hideTypePicker() {
+				this.showTypePopup = false
+				this.typeSearchKeyword = ''
+			},
+			selectType(index: number) {
+				this.selectedTypeIndex = index
+				this.hideTypePicker()
+				// 重置下级选择
+				this.selectedModuleIndex = -1
+				this.selectedResponsibilityIndex = -1
+				this.selectedIssueIndex = -1
+				this.moduleOptions = []
+				this.responsibilityOptions = []
+				this.issueOptions = []
+				// 加载模块选项
+				this.loadModuleOptions((this.typeOptions[index] as OptionItem).id)
+			},
+			selectTypeFromFiltered(item: OptionItem) {
+				// 找到原始数组中的索引
+				const index = this.typeOptions.findIndex(option => option.id === item.id)
+				if (index !== -1) {
+					this.selectType(index)
+				}
+			},
+			
+			// 模块选择器方法
+			showModulePicker() {
+				if (this.selectedTypeIndex === -1) {
+					uni.showToast({ title: '请先选择专业类别', icon: 'none' })
+					return
+				}
+				this.showModulePopup = true
+			},
+			hideModulePicker() {
+				this.showModulePopup = false
+				this.moduleSearchKeyword = ''
+			},
+			selectModule(index: number) {
+				this.selectedModuleIndex = index
+				// 回写选中的值到表单数据
+				this.formData.module = (this.moduleOptions[index] as OptionItem).name
+				this.hideModulePicker()
+				// 重置下级选择
+				this.selectedResponsibilityIndex = -1
+				this.selectedIssueIndex = -1
+				this.formData.responsibility = ''
+				this.formData.issue = ''
+				this.responsibilityOptions = []
+				this.issueOptions = []
+				// 加载责任选项
+				this.loadResponsibilityOptions((this.moduleOptions[index] as OptionItem).id)
+			},
+			selectModuleFromFiltered(item: OptionItem) {
+				// 找到原始数组中的索引
+				const index = this.moduleOptions.findIndex(option => option.id === item.id)
+				if (index !== -1) {
+					this.selectModule(index)
+				}
+			},
+			
+			// 责任选择器方法
+			showResponsibilityPicker() {
+				if (this.selectedModuleIndex === -1) {
+					uni.showToast({ title: '请先选择模块', icon: 'none' })
+					return
+				}
+				this.showResponsibilityPopup = true
+			},
+			hideResponsibilityPicker() {
+				this.showResponsibilityPopup = false
+				this.responsibilitySearchKeyword = ''
+			},
+			selectResponsibility(index: number) {
+				this.selectedResponsibilityIndex = index
+				// 回写选中的值到表单数据
+				this.formData.responsibility = (this.responsibilityOptions[index] as OptionItem).name
+				this.hideResponsibilityPicker()
+				// 重置下级选择
+				this.selectedIssueIndex = -1
+				this.formData.issue = ''
+				this.issueOptions = []
+				// 加载问题选项
+				this.loadIssueOptions((this.responsibilityOptions[index] as OptionItem).id)
+			},
+			selectResponsibilityFromFiltered(item: OptionItem) {
+				// 找到原始数组中的索引
+				const index = this.responsibilityOptions.findIndex(option => option.id === item.id)
+				if (index !== -1) {
+					this.selectResponsibility(index)
+				}
+			},
+			
+			// 问题选择器方法
+			showIssuePicker() {
+				if (this.selectedResponsibilityIndex === -1) {
+					uni.showToast({ title: '请先选择责任', icon: 'none' })
+					return
+				}
+				this.showIssuePopup = true
+			},
+			hideIssuePicker() {
+				this.showIssuePopup = false
+				this.issueSearchKeyword = ''
+			},
+			selectIssue(index: number) {
+				this.selectedIssueIndex = index
+				// 回写选中的值到表单数据
+				this.formData.issue = (this.issueOptions[index] as OptionItem).name
+				this.hideIssuePicker()
+				// 自动回填问题性质和对应分数
+				this.autoFillIssueDetails((this.issueOptions[index] as OptionItem).id, (this.issueOptions[index] as OptionItem).name)
+			},
+			selectIssueFromFiltered(item: OptionItem) {
+				// 找到原始数组中的索引
+				const index = this.issueOptions.findIndex(option => option.id === item.id)
+				if (index !== -1) {
+					this.selectIssue(index)
+				}
+			},
+			
+			// 性质界定选择器方法
+			showQualityPicker() {
+				this.loadQualityOptions()
+				this.showQualityPopup = true
+			},
+			hideQualityPicker() {
+				this.showQualityPopup = false
+				this.qualitySearchKeyword = ''
+			},
+			selectQuality(index: number) {
+				this.selectedQualityIndex = index
+				// 回写选中的值到表单数据
+				this.formData.quality = (this.qualityOptions[index] as OptionItem).name
+				this.hideQualityPicker()
+				// 自动带出扣分值和安全记分关联项
+				this.loadQualityDetails((this.qualityOptions[index] as OptionItem).id)
+			},
+			selectQualityFromFiltered(item: OptionItem) {
+				// 找到原始数组中的索引
+				const index = this.qualityOptions.findIndex(option => option.id === item.id)
+				if (index !== -1) {
+					this.selectQuality(index)
+				}
+			},
+			
+			// 加载模块选项
+			loadModuleOptions(typeId: string) {
+				const token = uni.getStorageSync('token')
+				uni.request({
+					url: getApiUrl('/gjbz-data/options/modules'),
+					method: 'GET',
+					header: {
+						'Authorization': `Bearer ${token}`
+					},
+					success: (res) => {
+						const respdata = res.data as UTSJSONObject
+						if (respdata.getNumber('code') === 200) {
+							const data = respdata.getArray('data')
+							if (data != null) {
+								const options: OptionItem[] = []
+								for (let i = 0; i < data.length; i++) {
+									const item = data[i] as string
+									options.push({
+										id: (i + 1).toString(),
+										name: item
+									} as OptionItem)
+								}
+								this.moduleOptions = options
+							}
+						}
+					},
+					fail: (error) => {
+						console.error('加载模块选项失败:', error)
+						this.moduleOptions = [
+							{ id: 'module1', name: '模块1' },
+							{ id: 'module2', name: '模块2' },
+							{ id: 'module3', name: '模块3' }
+						] as OptionItem[]
+					}
+				})
+			},
+			
+			// 加载责任选项
+			loadResponsibilityOptions(moduleId: string) {
+				const token = uni.getStorageSync('token')
+				uni.request({
+					url: getApiUrl('/gjbz-data/options/responsibilities'),
+					method: 'GET',
+					header: {
+						'Authorization': `Bearer ${token}`
+					},
+					success: (res) => {
+						const respdata = res.data as UTSJSONObject
+						if (respdata.getNumber('code') === 200) {
+							const data = respdata.getArray('data')
+							if (data != null) {
+								const options: OptionItem[] = []
+								for (let i = 0; i < data.length; i++) {
+									const item = data[i] as string
+									options.push({
+										id: (i + 1).toString(),
+										name: item
+									} as OptionItem)
+								}
+								this.responsibilityOptions = options
+							}
+						}
+					},
+					fail: (error) => {
+						console.error('加载责任选项失败:', error)
+						this.responsibilityOptions = [
+							{ id: 'resp1', name: '责任1' },
+							{ id: 'resp2', name: '责任2' },
+							{ id: 'resp3', name: '责任3' }
+						] as OptionItem[]
+					}
+				})
+			},
+			
+			// 加载问题选项
+			loadIssueOptions(responsibilityId: string) {
+				const token = uni.getStorageSync('token')
+				uni.request({
+					url: getApiUrl('/gjbz-data/options/issues'),
+					method: 'GET',
+					header: {
+						'Authorization': `Bearer ${token}`
+					},
+					success: (res) => {
+						const respdata = res.data as UTSJSONObject
+						if (respdata.getNumber('code') === 200) {
+							const data = respdata.getArray('data')
+							if (data != null) {
+								const options: OptionItem[] = []
+								for (let i = 0; i < data.length; i++) {
+									const item = data[i] as string
+									options.push({
+										id: (i + 1).toString(),
+										name: item
+									} as OptionItem)
+								}
+								this.issueOptions = options
+							}
+						}
+					},
+					fail: (error) => {
+						console.error('加载问题选项失败:', error)
+						this.issueOptions = [
+							{ id: 'issue1', name: '问题1' },
+							{ id: 'issue2', name: '问题2' },
+							{ id: 'issue3', name: '问题3' }
+						] as OptionItem[]
+					}
+				})
+			},
+			
+			// 加载性质界定选项
+			loadQualityOptions() {
+				const token = uni.getStorageSync('token')
+				uni.request({
+					url: getApiUrl('/gjbz-data/options/qualities'),
+					method: 'GET',
+					header: {
+						'Authorization': `Bearer ${token}`
+					},
+					success: (res) => {
+						const respdata = res.data as UTSJSONObject
+						if (respdata.getNumber('code') === 200) {
+							const data = respdata.getArray('data')
+							if (data != null) {
+								const options: OptionItem[] = []
+								for (let i = 0; i < data.length; i++) {
+									const item = data[i] as string
+									options.push({
+										id: (i + 1).toString(),
+										name: item
+									} as OptionItem)
+								}
+								this.qualityOptions = options
+							}
+						}
+					},
+					fail: (error) => {
+					console.error('加载性质界定选项失败:', error)
+					this.qualityOptions = [
+						{ id: 'quality1', name: '一般问题' },
+						{ id: 'quality2', name: '中等问题' },
+						{ id: 'quality3', name: '严重问题' },
+						{ id: 'quality4', name: '重大问题' }
+					] as OptionItem[]
+				}
+				})
+			},
+			
+			// 加载性质界定详情（扣分值和安全记分关联项）
+			loadQualityDetails(qualityId: string) {
+				// 模拟API调用
+				setTimeout(() => {
+					switch (qualityId) {
+						case 'quality1':
+							this.formData.deductionScore = '5'
+							this.formData.safetyScoreItem = '一般安全记分'
+							break
+						case 'quality2':
+							this.formData.deductionScore = '10'
+							this.formData.safetyScoreItem = '严重安全记分'
+							break
+						case 'quality3':
+							this.formData.deductionScore = '20'
+							this.formData.safetyScoreItem = '重大安全记分'
+							break
+						default:
+							this.formData.deductionScore = ''
+							this.formData.safetyScoreItem = ''
+					}
+			}, 100)
+			},
+			
+			// 根据选择的问题自动填充问题性质和对应分数
+			autoFillIssueDetails(issueId: string, issueName: string) {
+				console.log('开始自动填充问题详情:', issueId, issueName)
+				
+				// 首先加载性质界定选项（如果还没有加载）
+				if (this.qualityOptions.length === 0) {
+					this.loadQualityOptions()
+				}
+				
+				// 根据问题名称智能匹配问题性质和分数
+      const issueMapping = this.getIssueQualityMapping(issueName) as UTSJSONObject | null
+      
+      if (issueMapping != null) {
+       // 设置问题性质
+       this.formData.quality = issueMapping.getString('quality') ?? ''
+       // 查找对应的性质界定索引
+       const qualityIndex = this.qualityOptions.findIndex((item: OptionItem) => item.name === (issueMapping.getString('quality') ?? ''))
+       if (qualityIndex !== -1) {
+        this.selectedQualityIndex = qualityIndex
+       }
+       
+       // 设置扣分值和安全记分关联项
+       this.formData.deductionScore = issueMapping.getString('deductionScore') ?? ''
+       this.formData.safetyScoreItem = issueMapping.getString('safetyScoreItem') ?? ''
+					
+					console.log('自动填充完成:', {
+						quality: this.formData.quality,
+						deductionScore: this.formData.deductionScore,
+						safetyScoreItem: this.formData.safetyScoreItem
+					})
+					
+					// 显示提示信息
+					uni.showToast({
+						title: `已自动填充：${issueMapping.quality}，扣${issueMapping.deductionScore}分`,
+						icon: 'success',
+						duration: 2000
+					})
+				} else {
+					console.log('未找到匹配的问题映射规则')
+				}
+			},
+			
+			// 获取问题与性质界定的映射关系
+  getIssueQualityMapping(issueName: string): UTSJSONObject {
+    // 定义问题与性质界定的映射规则
+    const mappingRules = [
+      // 严重问题类型
+      { keywords: ['违章', '违规', '严重', '重大', '危险', '安全隐患'], quality: '严重问题', deductionScore: '15', safetyScoreItem: '严重安全记分' },
+      { keywords: ['火灾', '爆炸', '中毒', '触电', '高空坠落'], quality: '重大问题', deductionScore: '25', safetyScoreItem: '重大安全记分' },
+      
+      // 一般问题类型
+      { keywords: ['轻微', '一般', '小问题', '不规范', '不完善'], quality: '一般问题', deductionScore: '5', safetyScoreItem: '一般安全记分' },
+      { keywords: ['标识', '标牌', '记录', '台账', '文档'], quality: '一般问题', deductionScore: '3', safetyScoreItem: '一般安全记分' },
+      
+      // 中等问题类型
+      { keywords: ['设备', '工具', '防护', '操作', '流程'], quality: '中等问题', deductionScore: '10', safetyScoreItem: '中等安全记分' },
+      { keywords: ['环境', '卫生', '整理', '整顿'], quality: '中等问题', deductionScore: '8', safetyScoreItem: '中等安全记分' }
+    ] as UTSJSONObject[]
+				
+      // 查找匹配的规则
+      for (let i = 0; i < mappingRules.length; i++) {
+       const rule = mappingRules[i] as UTSJSONObject
+       const keywords = rule.getArray('keywords') as string[]
+       for (let j = 0; j < keywords.length; j++) {
+        const keyword = keywords[j]
+        if (issueName.includes(keyword)) {
+         return {
+								quality: rule.quality,
+								deductionScore: rule.deductionScore,
+								safetyScoreItem: rule.safetyScoreItem
+							}
+						}
+					}
+				}
+				
+				// 如果没有匹配到，返回默认值
+				return {
+					quality: '一般问题',
+					deductionScore: '5',
+					safetyScoreItem: '一般安全记分'
+				}
+			},
+			
+			// 添加照片
+			addPhoto() {
+				uni.chooseImage({
+					count: 3 - this.formData.photos.length,
+					sizeType: ['compressed'],
+					sourceType: ['camera', 'album'],
+					success: (res) => {
+						this.formData.photos.push(...res.tempFilePaths)
+				}
+			})
+		},
+			
+			// 删除照片
+			deletePhoto(index: number) {
+				this.formData.photos.splice(index, 1)
+			},
+			
+			// 预览照片
+			previewPhoto(photo: string) {
+				uni.previewImage({
+					current: photo,
+					urls: this.formData.photos
+				})
+			},
+			
+			// 保存记录
+			saveRecord() {
+				// 表单验证
+			if (this.formData.problemType == '') {
+					uni.showToast({ title: '请选择问题类型', icon: 'none' })
+					return
+				}
+				
+			if (this.formData.problemLevel == '') {
+					uni.showToast({ title: '请选择问题等级', icon: 'none' })
+					return
+				}
+				
+			if (this.formData.problemDescription.trim() == '') {
+					uni.showToast({ title: '请输入问题描述', icon: 'none' })
+					return
+				}
+				
+			if (this.formData.location.trim() == '') {
+					uni.showToast({ title: '请输入发现位置', icon: 'none' })
+					return
+				}
+				
+				try {
+					uni.showLoading({ title: '保存中...' })
+					
+					// 模拟API调用
+					uni.request({
+						url: '/api/monthly/problem/save',
+						method: 'POST',
+						data: {
+							taskId: this.taskInfo.taskNumber,
+							...this.formData
+						},
+						success: (res) => {
+							uni.hideLoading()
+							const respdate=res.data as UTSJSONObject
+							if (respdate.getNumber('code') == 200) {
+								uni.showToast({ title: '保存成功', icon: 'success' })
+								setTimeout(() => {
+									uni.navigateBack()
+								}, 1500)
+							} else {
+								const msg = respdate.getString('message')
+								uni.showToast({ title: msg != null ? msg : '保存失败', icon: 'none' })
+							}
+						},
+						fail: (error) => {
+							uni.hideLoading()
+							console.error('保存失败:', error)
+							uni.showToast({ title: '保存失败', icon: 'none' })
+						}
+					})
+				} catch (error) {
+					uni.hideLoading()
+					console.error('保存失败:', error)
+					uni.showToast({ title: '保存失败', icon: 'none' })
+				}
+			}
+		}
+	}
+</script>
+
+<style scoped>
+	.container {
+		min-height: 100vh;
+		background-color: #f5f5f5;
+		position: relative;
+		z-index: 1;
+	}
+	
+	/* 头部样式 */
+	.header {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		padding: 20px;
+		background-color: #fff;
+		border-bottom: 1px solid #f0f0f0;
+	}
+	
+	.header-left {
+		display: flex;
+		align-items: center;
+		gap: 5px;
+	}
+	
+	.back-icon {
+		font-size: 24px;
+		color: #007AFF;
+	}
+	
+	.back-text {
+		font-size: 16px;
+		color: #007AFF;
+	}
+	
+	.header-title {
+		font-size: 18px;
+		font-weight: bold;
+		color: #333;
+	}
+	
+	.header-right {
+		display: flex;
+		align-items: center;
+	}
+	
+	.save-btn {
+		font-size: 16px;
+		color: #007AFF;
+		font-weight: 500;
+	}
+	
+	/* 任务信息样式 */
+	.task-info {
+		background-color: #fff;
+		margin: 10px 20px;
+		border-radius: 8px;
+		padding: 20px;
+	}
+	
+	.info-item {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		padding: 10px 0;
+		border-bottom: 1px solid #f0f0f0;
+	}
+	
+	.info-item:last-child {
+		border-bottom: none;
+	}
+	
+	.info-label {
+		font-size: 14px;
+		color: #666;
+	}
+	
+	.info-value {
+		font-size: 14px;
+		color: #333;
+		font-weight: 500;
+	}
+	
+	/* 表单样式 */
+	.form-section {
+		background-color: #fff;
+		margin: 10px 20px;
+		border-radius: 8px;
+		padding: 20px;
+	}
+	
+	.section-title {
+		display: flex;
+		align-items: center;
+		margin-bottom: 20px;
+	}
+	
+	.title-text {
+		font-size: 16px;
+		font-weight: bold;
+		color: #333;
+	}
+	
+	.required-mark {
+		font-size: 16px;
+		color: #ff4757;
+		margin-left: 4px;
+	}
+	
+	.form-item {
+		margin-bottom: 20px;
+	}
+	
+	.form-item:last-child {
+		margin-bottom: 0;
+	}
+	
+	.form-item-inline {
+		margin-bottom: 20px;
+		display: flex;
+		flex-direction: column;
+		gap: 8px;
+		padding: 0 20px;
+	}
+	
+	.form-label {
+		font-size: 14px;
+		color: #333;
+		margin-bottom: 8px;
+		display: block;
+	}
+	
+	.form-label-inline {
+		font-size: 14px;
+		color: #333;
+		font-weight: 500;
+		margin-bottom: 0;
+	}
+	
+	.picker-wrapper {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		padding: 12px 15px;
+		border: 1px solid #e9ecef;
+		border-radius: 6px;
+		background-color: #fff;
+	}
+	
+	.picker-wrapper-inline {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		padding: 12px 15px;
+		border: 1px solid #e9ecef;
+		border-radius: 6px;
+		background-color: #fff;
+		width: 100%;
+		transition: all 0.3s ease;
+		cursor: pointer;
+	}
+	
+	.picker-wrapper-inline:hover {
+		border-color: #667eea;
+		box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+	}
+	
+	.picker-wrapper-inline:active {
+		transform: scale(0.98);
+	}
+	
+	.picker-wrapper-inline.disabled {
+		background-color: #f5f5f5;
+		color: #999;
+		cursor: not-allowed;
+		opacity: 0.6;
+	}
+	
+	.picker-wrapper-inline.disabled:hover {
+		border-color: #e9ecef;
+		box-shadow: none;
+	}
+	
+	.text-input-inline {
+		padding: 12px 15px;
+		border: 1px solid #e9ecef;
+		border-radius: 6px;
+		font-size: 14px;
+		color: #333;
+		background-color: #fff;
+		flex: 1;
+	}
+	
+	.bottom-save-container {
+		padding: 30rpx;
+		margin-top: 40rpx;
+		border-top: 1rpx solid #f0f0f0;
+		background-color: #fff;
+	}
+	
+	.bottom-save-btn {
+		width: 100%;
+		height: 88rpx;
+		background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+		border-radius: 12rpx;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		box-shadow: 0 8rpx 20rpx rgba(102, 126, 234, 0.3);
+		transition: all 0.3s ease;
+	}
+	
+	.bottom-save-btn:active {
+		transform: translateY(2rpx);
+		box-shadow: 0 4rpx 12rpx rgba(102, 126, 234, 0.2);
+	}
+	
+	.bottom-save-text {
+		color: #fff;
+		font-size: 32rpx;
+		font-weight: 600;
+		letter-spacing: 2rpx;
+	}
+	
+	.picker-text {
+		font-size: 14px;
+		color: #333;
+	}
+	
+	.picker-text.placeholder {
+		color: #999;
+	}
+	
+	.picker-arrow {
+		font-size: 16px;
+		color: #ccc;
+	}
+	
+	.text-input {
+		padding: 12px 15px;
+		border: 1px solid #e9ecef;
+		border-radius: 6px;
+		font-size: 14px;
+		color: #333;
+		background-color: #fff;
+	}
+	
+	.textarea-input {
+		padding: 12px 15px;
+		border: 1px solid #e9ecef;
+		border-radius: 6px;
+		font-size: 14px;
+		color: #333;
+		background-color: #fff;
+		min-height: 80px;
+		resize: none;
+	}
+	
+	.char-count {
+		font-size: 12px;
+		color: #999;
+		text-align: right;
+		margin-top: 5px;
+		display: block;
+	}
+	
+	/* 照片上传样式 */
+	.photo-upload {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 10px;
+		margin-bottom: 5px;
+	}
+	
+	.photo-item {
+		position: relative;
+		width: 80px;
+		height: 80px;
+	}
+	
+	.photo-preview {
+		width: 100%;
+		height: 100%;
+		border-radius: 6px;
+		object-fit: cover;
+	}
+	
+	.photo-delete {
+		position: absolute;
+		top: -5px;
+		right: -5px;
+		width: 20px;
+		height: 20px;
+		background-color: #ff4757;
+		border-radius: 10px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+	
+	.delete-icon {
+		font-size: 12px;
+		color: #fff;
+		font-weight: bold;
+	}
+	
+	.photo-add {
+		width: 80px;
+		height: 80px;
+		border: 1px dashed #ccc;
+		border-radius: 6px;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		background-color: #f8f9fa;
+	}
+	
+	.add-icon {
+		font-size: 24px;
+		color: #999;
+		margin-bottom: 4px;
+	}
+	
+	.add-text {
+		font-size: 12px;
+		color: #999;
+	}
+	
+	.photo-tip {
+		font-size: 12px;
+		color: #999;
+	}
+	
+	/* 选择器弹窗样式 */
+	.popup-overlay {
+		position: fixed !important;
+		top: 0 !important;
+		left: 0 !important;
+		width: 100% !important;
+		height: 100% !important;
+		background-color: rgba(0, 0, 0, 0.5);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		z-index: 9999 !important;
+		animation: fadeIn 0.3s ease;
+		pointer-events: auto;
+	}
+	
+	.picker-modal {
+		position: fixed !important;
+		top: 0 !important;
+		left: 0 !important;
+		width: 100% !important;
+		height: 100% !important;
+		background-color: rgba(0, 0, 0, 0.5);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		z-index: 9999 !important;
+		animation: fadeIn 0.3s ease;
+		pointer-events: auto;
+	}
+	
+	@keyframes fadeIn {
+		from {
+			opacity: 0;
+		}
+		to {
+			opacity: 1;
+		}
+	}
+	
+	.popup-content {
+		width: 90% !important;
+		max-width: 500px;
+		max-height: 70%;
+		background-color: #fff;
+		border-radius: 12px;
+		overflow: hidden;
+		animation: scaleIn 0.3s ease;
+		box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+		position: relative;
+		z-index: 10000;
+	}
+	
+	.picker-content {
+		width: 90% !important;
+		max-width: 500px;
+		max-height: 70%;
+		background-color: #fff;
+		border-radius: 12px;
+		overflow: hidden;
+		animation: scaleIn 0.3s ease;
+		box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+		position: relative;
+		z-index: 10000;
+	}
+	
+	@keyframes slideUp {
+		from {
+			transform: translateY(100%);
+		}
+		to {
+			transform: translateY(0);
+		}
+	}
+	
+	@keyframes scaleIn {
+		from {
+			opacity: 0;
+			transform: scale(0.8);
+		}
+		to {
+			opacity: 1;
+			transform: scale(1);
+		}
+	}
+	
+	.popup-header {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		padding: 15px 20px;
+		border-bottom: 1px solid #e9ecef;
+		background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+		position: relative;
+	}
+	
+	.picker-header {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		padding: 15px 20px;
+		border-bottom: 1px solid #e9ecef;
+		background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+		position: relative;
+	}
+	
+	.picker-header::after {
+		content: '';
+		position: absolute;
+		bottom: 0;
+		left: 50%;
+		transform: translateX(-50%);
+		width: 30px;
+		height: 3px;
+		background-color: rgba(255, 255, 255, 0.3);
+		border-radius: 2px;
+	}
+	
+	.picker-cancel {
+		font-size: 16px;
+		color: rgba(255, 255, 255, 0.8);
+		font-weight: 500;
+	}
+	
+	.picker-title {
+		font-size: 16px;
+		font-weight: 600;
+		color: #fff;
+		letter-spacing: 1px;
+	}
+	
+	.picker-confirm {
+		font-size: 16px;
+		color: #fff;
+		font-weight: 600;
+		background-color: rgba(255, 255, 255, 0.2);
+		padding: 6px 12px;
+		border-radius: 15px;
+		transition: all 0.2s ease;
+	}
+	
+	.picker-confirm:active {
+		background-color: rgba(255, 255, 255, 0.3);
+		transform: scale(0.95);
+	}
+	
+	.popup-title {
+		font-size: 16px;
+		font-weight: 600;
+		color: #fff;
+		letter-spacing: 1px;
+	}
+	
+	.popup-close {
+		font-size: 24px;
+		color: rgba(255, 255, 255, 0.8);
+		font-weight: 300;
+		width: 30px;
+		height: 30px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		border-radius: 15px;
+		transition: all 0.2s ease;
+	}
+	
+	.popup-close:active {
+		background-color: rgba(255, 255, 255, 0.2);
+		transform: scale(0.9);
+	}
+	
+	.popup-search {
+		padding: 15px 20px;
+		border-bottom: 1px solid #e9ecef;
+		background-color: #f8f9fa;
+	}
+	
+	.search-input {
+		width: 100%;
+		height: 40px;
+		padding: 0 15px;
+		border: 1px solid #ddd;
+		border-radius: 20px;
+		font-size: 14px;
+		background-color: #fff;
+		outline: none;
+		transition: all 0.2s ease;
+	}
+	
+	.search-input:focus {
+		border-color: #667eea;
+		box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+	}
+	
+	.popup-list {
+		max-height: 350px;
+		overflow-y: auto;
+	}
+	
+	.popup-empty {
+		padding: 40px 20px;
+		text-align: center;
+	}
+	
+	.empty-text {
+		font-size: 14px;
+		color: #999;
+	}
+	
+	.picker-list {
+		max-height: 300px;
+		overflow-y: auto;
+	}
+	
+	.picker-item {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		padding: 15px 20px;
+		border-bottom: 1px solid #f0f0f0;
+		transition: all 0.2s ease;
+		cursor: pointer;
+		position: relative;
+	}
+	
+	.picker-item:hover {
+		background-color: #f8f9fa;
+		color: #667eea;
+	}
+	
+	.picker-item:active {
+		background-color: #e9ecef;
+		transform: scale(0.98);
+	}
+	
+	.picker-item:last-child {
+		border-bottom: none;
+	}
+	
+	.picker-item.selected {
+		background-color: #f8f9ff;
+	}
+	
+	.popup-item {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		padding: 15px 20px;
+		border-bottom: 1px solid #f0f0f0;
+		transition: all 0.2s ease;
+		cursor: pointer;
+	}
+	
+	.popup-item:hover {
+		background-color: #f8f9fa;
+	}
+	
+	.popup-item-selected {
+		background-color: #e8f2ff;
+		border-left: 4px solid #667eea;
+		padding-left: 16px;
+	}
+	
+	.popup-item-selected:hover {
+		background-color: #ddeeff;
+	}
+	
+	.popup-item-text {
+		font-size: 16px;
+		color: #333;
+		font-weight: 400;
+	}
+	
+	.picker-item-text {
+		font-size: 16px;
+		color: #333;
+	}
+	
+	.level-item {
+		flex: 1;
+	}
+	
+	.level-name {
+		font-size: 16px;
+		color: #333;
+		margin-bottom: 4px;
+		display: block;
+	}
+	
+	.level-desc {
+		font-size: 12px;
+		color: #999;
+	}
+	
+	.popup-item-check {
+		font-size: 18px;
+		color: #667eea;
+		font-weight: bold;
+		animation: checkIn 0.3s ease;
+	}
+	
+	@keyframes checkIn {
+		from {
+			opacity: 0;
+			transform: scale(0.5);
+		}
+		to {
+			opacity: 1;
+			transform: scale(1);
+		}
+	}
+	
+	.popup-loading {
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		padding: 40px 20px;
+	}
+	
+	.loading-text {
+		font-size: 14px;
+		color: #999;
+	}
+</style>

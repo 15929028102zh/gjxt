@@ -174,8 +174,8 @@
 				professionId: recordData.getString('professionId') ?? '',
 				professionName: recordData.getString('professionName') ?? '',
 				inspector: recordData.getString('inspectorName') ?? '',
-				groupLeader: recordData.getString('groupLeaderName') ?? '',
-				deputyLeader: recordData.getString('deputyLeaderName') ?? '',
+					groupLeader: recordData.getString('groupLeaderName') ?? '',
+					deputyLeader: recordData.getString('deputyLeaderName') ?? '',
 				// 部门ID使用字符串类型
 				departmentId: recordData.getString('departmentId') ?? '',
 				departmentName: recordData.getString('departmentName') ?? '',

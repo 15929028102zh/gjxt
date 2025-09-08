@@ -1,5 +1,5 @@
 
-	import { getApiUrl } from '@/config/api.uts'
+	import { getApiUrl, apiConfig } from '@/config/api.uts'
 	type LoginFormData = { __$originalPosition?: UTSSourceMapPosition<"LoginFormData", "pages/login/login.uvue", 51, 7>;
 		username: string
 		password: string
@@ -65,9 +65,12 @@
 						if (userInfo != null) {
 							console.log('保存用户信息到本地存储:', JSON.stringify(userInfo), " at pages/login/login.uvue:114")
 							uni.setStorageSync('userInfo', JSON.stringify(userInfo))
+							
+							// 设置用户头像
+							this.updateUserAvatar(userInfo)
 						}
 					} else {
-						console.log('获取用户信息失败，使用基本信息', " at pages/login/login.uvue:118")
+						console.log('获取用户信息失败，使用基本信息', " at pages/login/login.uvue:121")
 						// 如果获取用户信息失败，使用基本信息
 						uni.setStorageSync('userInfo', JSON.stringify({ 
 							id: 'temp_' + Date.now(),
@@ -77,7 +80,7 @@
 					}
 				},
 				fail: (error) => {
-					console.log('获取用户信息失败:', error, " at pages/login/login.uvue:128")
+					console.log('获取用户信息失败:', error, " at pages/login/login.uvue:131")
 					// 如果获取用户信息失败，使用基本信息
 					uni.setStorageSync('userInfo', JSON.stringify({ 
 						id: 'temp_' + Date.now(),
@@ -93,7 +96,7 @@
 			
 			this.loading = true
 			const loginUrl = getApiUrl('/user/login')
-			console.log('登录API地址:', loginUrl, " at pages/login/login.uvue:144")
+			console.log('登录API地址:', loginUrl, " at pages/login/login.uvue:147")
 		
 			uni.request({
 				url: loginUrl,
@@ -132,7 +135,7 @@
 					this.loading = false
 				},
 				fail: (error) => {
-					console.log('登录请求失败:', error, " at pages/login/login.uvue:183")
+					console.log('登录请求失败:', error, " at pages/login/login.uvue:186")
 					uni.showToast({
 						title: '网络请求失败',
 						icon: 'none'
@@ -140,7 +143,36 @@
 					this.loading = false
 				}
 			})
-		}
+		},
+		
+		updateUserAvatar(userInfo: UTSJSONObject) {
+			const imageUrl = userInfo.getString('imageUrl')
+			if (imageUrl != null && imageUrl != '') {
+				console.log('用户已有头像，设置头像:', imageUrl, " at pages/login/login.uvue:199")
+				// 将物理路径转换为HTTP访问路径
+				const httpImageUrl = this.convertToHttpUrl(imageUrl)
+				// 更新本地用户信息中的头像
+				userInfo.set('avatar', httpImageUrl)
+				uni.setStorageSync('userInfo', JSON.stringify(userInfo))
+				console.log('头像已更新到本地存储:', httpImageUrl, " at pages/login/login.uvue:205")
+			} else {
+				console.log('用户暂无头像', " at pages/login/login.uvue:207")
+			}
+		},
+		
+		// 将相对路径转换为HTTP访问路径
+		convertToHttpUrl(relativePath: string): string {
+			console.log('相对路径:', relativePath, " at pages/login/login.uvue:213")
+			// 如果已经是HTTP路径，直接返回
+			if (relativePath.startsWith('http://') || relativePath.startsWith('https://')) {
+				return relativePath
+			}
+			
+			// 直接拼接完整的HTTP URL
+			// 后端已返回相对路径，如: /files/images/20250818/xxx.jpg
+			const httpUrl = `${apiConfig.baseUrl}/api${relativePath}`
+			console.log('转换后的HTTP URL:', httpUrl, " at pages/login/login.uvue:222")
+			return httpUrl
 		},
 		
 		onLoad() {
@@ -152,6 +184,7 @@
 				})
 			}
 		}
+	}
 	})
 
 export default __sfc__

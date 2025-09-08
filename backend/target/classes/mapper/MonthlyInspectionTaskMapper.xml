@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gjxt.inspection.mapper.MonthlyInspectionTaskMapper">
+
+    <!-- 基础结果映射 -->
+    <resultMap id="BaseResultMap" type="com.gjxt.inspection.entity.MonthlyInspectionTask">
+        <id column="id" property="id" jdbcType="VARCHAR"/>
+        <result column="task_no" property="taskNo" jdbcType="VARCHAR"/>
+        <result column="inspection_time" property="inspectionTime" jdbcType="VARCHAR"/>
+        <result column="group_leader_id" property="groupLeaderId" jdbcType="VARCHAR"/>
+        <result column="deputy_leader_id" property="deputyLeaderId" jdbcType="VARCHAR"/>
+        <result column="department_id" property="departmentId" jdbcType="VARCHAR"/>
+        <result column="profession_id" property="professionId" jdbcType="VARCHAR"/>
+        <result column="task_description" property="taskDescription" jdbcType="VARCHAR"/>
+        <result column="status" property="status" jdbcType="INTEGER"/>
+        <result column="notification_sent" property="notificationSent" jdbcType="INTEGER"/>
+        <result column="create_user_id" property="createUserId" jdbcType="VARCHAR"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="update_time" property="updateTime" jdbcType="TIMESTAMP"/>
+        <result column="deleted" property="deleted" jdbcType="INTEGER"/>
+    </resultMap>
+
+    <!-- 详情结果映射（包含关联信息） -->
+    <resultMap id="TaskDetailResultMap" type="com.gjxt.inspection.entity.MonthlyInspectionTask" extends="BaseResultMap">
+        <result column="group_leader_name" property="groupLeaderName" jdbcType="VARCHAR"/>
+        <result column="deputy_leader_name" property="deputyLeaderName" jdbcType="VARCHAR"/>
+        <result column="department_name" property="departmentName" jdbcType="VARCHAR"/>
+        <result column="profession_name" property="professionName" jdbcType="VARCHAR"/>
+        <result column="create_user_name" property="createUserName" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <!-- 基础列 -->
+    <sql id="Base_Column_List">
+        id, task_no, inspection_time, group_leader_id, deputy_leader_id, department_id,
+        profession_id, task_description, status, notification_sent, create_user_id,
+        create_time, update_time, deleted
+    </sql>
+
+    <!-- 详情查询列（包含关联信息） -->
+    <sql id="Detail_Column_List">
+        t.id, t.task_no, t.inspection_time, t.group_leader_id, t.deputy_leader_id,
+        t.department_id, t.profession_id, t.task_description, t.status, t.notification_sent,
+        t.create_user_id, t.create_time, t.update_time, t.deleted,
+        gl.username as group_leader_name,
+        dl.username as deputy_leader_name,
+        d.dept_name as department_name,
+        p.dict_label as profession_name,
+        cu.username as create_user_name
+    </sql>
+
+    <!-- 分页查询月检任务列表 -->
+    <select id="selectTaskPage" resultMap="TaskDetailResultMap">
+        SELECT
+        <include refid="Detail_Column_List"/>
+        FROM sys_monthly_inspection_task t
+        LEFT JOIN sys_user gl ON t.group_leader_id = gl.id AND gl.deleted = 0
+        LEFT JOIN sys_user dl ON t.deputy_leader_id = dl.id AND dl.deleted = 0
+        LEFT JOIN sys_dept d ON t.department_id = d.id AND d.deleted = 0
+        LEFT JOIN sys_dictionary p ON t.profession_id = p.dict_value AND p.dict_type = '专业' AND p.deleted = 0
+        LEFT JOIN sys_user cu ON t.create_user_id = cu.id AND cu.deleted = 0
+        WHERE t.deleted = 0
+        <if test="groupLeaderId != null and groupLeaderId != ''">
+            AND t.group_leader_id = #{groupLeaderId}
+        </if>
+        <if test="deputyLeaderId != null and deputyLeaderId != ''">
+            AND t.deputy_leader_id = #{deputyLeaderId}
+        </if>
+        <if test="departmentId != null and departmentId != ''">
+            AND t.department_id = #{departmentId}
+        </if>
+        <if test="professionId != null and professionId != ''">
+            AND t.profession_id = #{professionId}
+        </if>
+        <if test="status != null">
+            AND t.status = #{status}
+        </if>
+        <if test="inspectionTime != null and inspectionTime != ''">
+            AND t.inspection_time LIKE CONCAT('%', #{inspectionTime}, '%')
+        </if>
+        ORDER BY t.create_time DESC
+    </select>
+
+    <!-- 根据ID查询任务详情 -->
+    <select id="selectTaskDetail" resultMap="TaskDetailResultMap">
+        SELECT
+        <include refid="Detail_Column_List"/>
+        FROM sys_monthly_inspection_task t
+        LEFT JOIN sys_user gl ON t.group_leader_id = gl.id AND gl.deleted = 0
+        LEFT JOIN sys_user dl ON t.deputy_leader_id = dl.id AND dl.deleted = 0
+        LEFT JOIN sys_dept d ON t.department_id = d.id AND d.deleted = 0
+        LEFT JOIN sys_dictionary p ON t.profession_id = p.dict_value AND p.dict_type = '专业' AND p.deleted = 0
+        LEFT JOIN sys_user cu ON t.create_user_id = cu.id AND cu.deleted = 0
+        WHERE t.task_no = #{id} AND t.deleted = 0
+    </select>
+
+    <!-- 根据用户ID查询相关任务 -->
+    <select id="selectTasksByUserId" resultMap="TaskDetailResultMap">
+        SELECT
+        <include refid="Detail_Column_List"/>
+        FROM sys_monthly_inspection_task t
+        LEFT JOIN sys_user gl ON t.group_leader_id = gl.id AND gl.deleted = 0
+        LEFT JOIN sys_user dl ON t.deputy_leader_id = dl.id AND dl.deleted = 0
+        LEFT JOIN sys_dept d ON t.department_id = d.id AND d.deleted = 0
+        LEFT JOIN sys_dictionary p ON t.profession_id = p.dict_value AND p.dict_type = '专业' AND p.deleted = 0
+        LEFT JOIN sys_user cu ON t.create_user_id = cu.id AND cu.deleted = 0
+        WHERE t.deleted = 0
+        AND (t.group_leader_id = #{userId} OR t.deputy_leader_id = #{userId})
+        <if test="status != null">
+            AND t.status = #{status}
+        </if>
+        ORDER BY t.create_time DESC
+    </select>
+
+    <!-- 统计各状态任务数量 -->
+    <select id="selectStatusStatistics" resultType="map">
+        SELECT
+        status,
+        COUNT(*) as count
+        FROM sys_monthly_inspection_task
+        WHERE deleted = 0
+        GROUP BY status
+    </select>
+
+    <!-- 统计各部门任务数量 -->
+    <select id="selectDepartmentStatistics" resultType="map">
+        SELECT
+        d.name as department_name,
+        COUNT(t.id) as count
+        FROM sys_monthly_inspection_task t
+        LEFT JOIN sys_dept d ON t.department_id = d.id AND d.deleted = 0
+        WHERE t.deleted = 0
+        <if test="status != null">
+            AND t.status = #{status}
+        </if>
+        GROUP BY t.department_id, d.name
+        ORDER BY count DESC
+    </select>
+
+    <!-- 统计各专业任务数量 -->
+    <select id="selectProfessionStatistics" resultType="map">
+        SELECT
+        p.name as profession_name,
+        COUNT(t.id) as count
+        FROM sys_monthly_inspection_task t
+        WHERE t.deleted = 0
+        <if test="status != null">
+            AND t.status = #{status}
+        </if>
+        GROUP BY t.profession_id, p.name
+        ORDER BY count DESC
+    </select>
+
+    <!-- 查询需要发送通知的任务 -->
+    <select id="selectTasksForNotification" resultMap="TaskDetailResultMap">
+        SELECT
+        <include refid="Detail_Column_List"/>
+        FROM sys_monthly_inspection_task t
+        LEFT JOIN sys_user gl ON t.group_leader_id = gl.id AND gl.deleted = 0
+        LEFT JOIN sys_user dl ON t.deputy_leader_id = dl.id AND dl.deleted = 0
+        LEFT JOIN sys_dept d ON t.department_id = d.id AND d.deleted = 0
+        LEFT JOIN sys_user cu ON t.create_user_id = cu.id AND cu.deleted = 0
+        WHERE t.deleted = 0 AND t.notification_sent = 0
+        ORDER BY t.create_time ASC
+    </select>
+
+    <!-- 批量更新通知发送状态 -->
+    <update id="batchUpdateNotificationSent">
+        UPDATE sys_monthly_inspection_task
+        SET notification_sent = 1, update_time = NOW()
+        WHERE id IN
+        <foreach collection="taskIds" item="taskId" open="(" separator="," close=")">
+            #{taskId}
+        </foreach>
+        AND deleted = 0
+    </update>
+
+    <!-- 根据任务编号查询任务 -->
+    <select id="selectByTaskNo" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM sys_monthly_inspection_task
+        WHERE task_no = #{taskNo} AND deleted = 0
+    </select>
+
+</mapper>

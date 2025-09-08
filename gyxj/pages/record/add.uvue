@@ -1585,11 +1585,32 @@
 					})
 					
 					const token = uni.getStorageSync('token')
-					const submitData = {
+					// 获取选中的性质界定和考核情况的文本值
+				let natureDefinition = ''
+				let assessmentSituation = ''
+				
+				if (this.selectedNatureIndex >= 0 && this.selectedNatureIndex < this.natureOptions.length) {
+					natureDefinition = this.natureOptions[this.selectedNatureIndex].name
+				}
+				
+				if (this.selectedAssessmentIndex >= 0 && this.selectedAssessmentIndex < this.assessmentOptions.length) {
+				assessmentSituation = this.assessmentOptions[this.selectedAssessmentIndex].label
+			}
+				
+				// 处理整改期限日期格式，添加默认时间
+			let rectificationDeadline = this.formData.rectificationDate
+			console.log('调试：原始整改期限日期:', rectificationDeadline)
+			if (rectificationDeadline != null && rectificationDeadline != '' && rectificationDeadline.indexOf(' ') === -1) {
+				// 如果日期不包含时间部分，添加默认时间 23:59:59
+				rectificationDeadline = rectificationDeadline + ' 23:59:59'
+				console.log('调试：处理后的整改期限日期:', rectificationDeadline)
+			}
+			
+			const submitData = {
 				responsibleUnit: this.formData.responsibleUnit,
 				responsiblePerson: this.formData.responsiblePerson,
-				natureId: this.formData.natureId,
-				scoreId: this.formData.scoreId,
+				natureDefinition: natureDefinition,
+				assessmentSituation: assessmentSituation,
 				assessmentAmount: this.formData.assessmentAmount,
 				safetyScore: this.formData.safetyScore,
 				professionId: this.formData.professionId,
@@ -1599,12 +1620,18 @@
 				groupLeader: this.formData.groupLeader,
 				deputyLeader: this.formData.deputyLeader,
 				departmentId: this.formData.departmentId,
-				rectificationDate: this.formData.rectificationDate,
+				rectificationDeadline: rectificationDeadline,
 				imageUrls: imageUrls.length > 0 ? JSON.stringify(imageUrls) : ''
 			}
 						
-				// 调试信息：检查部门信息是否正确包含在提交数据中
+				// 调试信息：检查提交的数据
 				console.log('调试：准备提交的数据:', submitData)
+				console.log('调试：性质界定索引:', this.selectedNatureIndex)
+				console.log('调试：性质界定选项:', this.natureOptions)
+				console.log('调试：性质界定值:', natureDefinition)
+				console.log('调试：考核情况索引:', this.selectedAssessmentIndex)
+				console.log('调试：考核情况选项:', this.assessmentOptions)
+				console.log('调试：考核情况值:', assessmentSituation)
 				console.log('调试：部门ID字段:', this.formData.departmentId)
 				console.log('调试：当前选中的部门索引:', this.selectedDepartmentIndex)
 				if (this.selectedDepartmentIndex >= 0 && this.selectedDepartmentIndex < this.departmentOptions.length) {

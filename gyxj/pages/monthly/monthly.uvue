@@ -1,12 +1,40 @@
 <template>
-	<view class="container">
+	<scroll-view 
+		class="container" 
+		scroll-y="true" 
+		:scroll-top="scrollTop" 
+		:style="{height: containerHeight + 'px'}" 
+		enable-back-to-top="true"
+		refresher-enabled="true"
+		:refresher-triggered="isRefreshing"
+		refresher-default-style="black"
+		refresher-background="#f5f5f5"
+		@refresherrefresh="onRefresh"
+		@refresherrestore="onRefreshRestore"
+	>
 		<!-- 顶部欢迎区域 -->
 		<view class="header">
 			<view class="welcome">
-				<text class="welcome-text">月检统计</text>
-				<text class="date-text">{{currentDate}}</text>
+				<text class="greeting">欢迎回来，{{userName}}</text>
+				<text class="app-name">{{currentDate}}</text>
+				<!-- 通知图标放在欢迎区域右上角 -->
+				<view class="notification-icon-wrapper" @click="showNotifications">
+					<text class="icon-bell">🔔</text>
+					<view v-if="notificationCount > 0" class="notification-badge">
+						<text class="badge-text">{{notificationCount > 99 ? '99+' : notificationCount}}</text>
+					</view>
+				</view>
 			</view>
-			<image class="avatar" src="/static/avatar.png"></image>
+			<view class="header-right">
+				<view class="user-avatar" @click="goToProfile">
+					<image v-if="userInfo != null && (userInfo.getString('avatar') ?? '') != ''" 
+						   class="avatar-image" 
+						   :src="userInfo.getString('avatar') ?? ''" 
+						   mode="aspectFill">
+					</image>
+					<text v-else class="avatar-placeholder">{{userName.charAt(0)}}</text>
+				</view>
+			</view>
 		</view>
 		
 		<!-- 统计卡片 -->
@@ -83,7 +111,36 @@
 				</view>
 			</view>
 		</view>
-	</view>
+		
+		<!-- 通知弹窗 -->
+		<view v-if="showNotificationModal" class="notification-modal" @click="hideNotifications">
+			<view class="notification-content" @click.stop>
+				<view class="notification-header">
+					<text class="notification-title">通知消息</text>
+					<view class="notification-actions">
+						<text class="mark-all-read" @click="markAllAsRead">全部已读</text>
+					</view>
+				</view>
+				<view class="notification-list">
+					<view v-if="notifications.length === 0" class="empty-notifications">
+						<text class="empty-text">暂无通知</text>
+					</view>
+					<view v-for="notification in notifications" :key="notification.id" 
+						  class="notification-item" 
+						  :class="{unread: !notification.isRead}"
+						  @click="handleNotificationClick(notification)">
+						<view class="notification-dot" v-if="!notification.isRead"></view>
+						<view class="notification-info">
+							<text class="notification-item-title">{{notification.title}}</text>
+							<text class="notification-item-content">{{notification.content}}</text>
+							<text class="notification-time">{{notification.createTime}}</text>
+						</view>
+						<text class="notification-arrow">›</text>
+					</view>
+				</view>
+			</view>
+		</view>
+	</scroll-view>
 </template>
 
 <script lang="uts">
@@ -102,24 +159,45 @@
 		monthlyTotal: number
 	}
 
+	type Notification = {
+		id: string,
+		taskId: string,
+		taskNo: string,
+		title: string,
+		content: string,
+		createTime: string,
+		isRead: boolean
+	}
+
 	export default {
 		data() {
-			return {
-				userInfo: {} as UTSJSONObject,
-				currentDate: '',
-				statistics: {
-					monthlyPending: 0,
-					monthlyCompleted: 0,
-					monthlyTotal: 0
-				} as MonthlyStatistics,
-				monthlyRecords: [] as MonthlyRecord[]
-			}
-		},
+				return {
+					userInfo: {} as UTSJSONObject,
+					userName: '用户', // 简化的用户姓名变量
+					currentDate: '',
+					statistics: {
+						monthlyPending: 0,
+						monthlyCompleted: 0,
+						monthlyTotal: 0
+					} as MonthlyStatistics,
+					monthlyRecords: [] as MonthlyRecord[],
+					notifications: [] as Notification[],
+					notificationCount: 0,
+					showNotificationModal: false,
+					// 滚动相关
+					scrollTop: 0,
+					containerHeight: 0,
+					// 下拉刷新相关
+					isRefreshing: false
+				}
+			},
 		onLoad(options: OnLoadOptions) {
 			this.checkLogin()
 			this.initData()
+			this.initContainerHeight()
 			this.loadStatistics()
 			this.loadMonthlyRecords()
+			this.loadNotifications()
 		},
 		methods: {
 			checkLogin() {
@@ -133,8 +211,12 @@
 				const userInfoStr = uni.getStorageSync('userInfo') as string
 				if (userInfoStr != null && userInfoStr != '') {
 					this.userInfo = JSON.parse(userInfoStr) as UTSJSONObject
+					// 设置用户名
+					const realName = this.userInfo.getString('realName') ?? ''
+					this.userName = realName != '' ? realName : '用户'
 				} else {
 					this.userInfo = {} as UTSJSONObject
+					this.userName = '用户'
 				}
 			},
 			
@@ -247,6 +329,114 @@
 				uni.navigateTo({
 					url: '/pages/record/add'
 				})
+			},
+			
+			loadNotifications() {
+				const token = uni.getStorageSync('token')
+				const userId = this.userInfo.getString('id') ?? ''
+				uni.request({
+					url: getApiUrl(`/monthly-inspection-task/user/${userId}`),
+					method: 'GET',
+					header: {
+						'Authorization': `Bearer ${token}`
+					},
+					success: (res) => {
+						const response = res.data as UTSJSONObject
+						if (res.statusCode == 200 && (response.getNumber('code') ?? 0) == 200) {
+							const data = response.getArray('data') as Array<UTSJSONObject>
+							this.notifications = []
+							let unreadCount = 0
+							for (let i = 0; i < data.length; i++) {
+								const item = data[i]
+								const notification: Notification = {
+									id: item.getString('id') ?? '',
+									taskId: item.getString('taskId') ?? '',
+									taskNo: item.getString('taskNo') ?? '',
+									title: `月检任务通知 - ${item.getString('taskNo')}`,
+									content: `您有新的月检任务需要处理，任务编号：${item.getString('taskNo')}`,
+									createTime: item.getString('createTime') ?? '',
+									isRead: false
+								}
+								this.notifications.push(notification)
+								if (!notification.isRead) {
+									unreadCount++
+								}
+							}
+							this.notificationCount = unreadCount
+						}
+					},
+					fail: (error) => {
+						console.log('加载通知失败:', error)
+					}
+				})
+			},
+			
+			showNotifications() {
+				this.showNotificationModal = true
+			},
+			
+			hideNotifications() {
+				this.showNotificationModal = false
+			},
+			
+			handleNotificationClick(notification: Notification) {
+				// 标记为已读
+				notification.isRead = true
+				this.updateNotificationCount()
+				
+				// 跳转到月检任务录入页面，传递任务信息
+				uni.navigateTo({
+					url: `/pages/monthly/task-record?taskNo=${notification.taskNo}`
+				})
+				
+				this.hideNotifications()
+			},
+			
+			updateNotificationCount() {
+				let unreadCount = 0
+				for (let i = 0; i < this.notifications.length; i++) {
+					if (!this.notifications[i].isRead) {
+						unreadCount++
+					}
+				}
+				this.notificationCount = unreadCount
+			},
+			
+			goToProfile() {
+				uni.switchTab({
+					url: '/pages/profile/profile'
+				})
+			},
+			
+			markAllAsRead() {
+				for (let i = 0; i < this.notifications.length; i++) {
+					this.notifications[i].isRead = true
+				}
+				this.notificationCount = 0
+			},
+			
+			// 初始化容器高度
+			initContainerHeight() {
+				const systemInfo = uni.getSystemInfoSync()
+				this.containerHeight = systemInfo.windowHeight
+			},
+			
+			// 下拉刷新
+			onRefresh() {
+				this.isRefreshing = true
+				// 重新加载数据
+				this.loadStatistics()
+				this.loadMonthlyRecords()
+				this.loadNotifications()
+				// 模拟刷新延迟
+				setTimeout(() => {
+					this.isRefreshing = false
+				}, 1000)
+			},
+			
+			// 刷新恢复
+			onRefreshRestore() {
+				this.isRefreshing = false
 			}
 		}
 	}
@@ -254,32 +444,165 @@
 
 <style>
 	.container {
-		padding: 20px;
-		background-color: #f5f5f5;
-		min-height: 800px;
+		padding: 30rpx;
+		padding-bottom: 150rpx;
+		background: linear-gradient(180deg, #f8fafc 0%, #e2e8f0 100%);
+		box-sizing: border-box;
+		min-height: 100vh;
 	}
 	
 	.header {
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
-		margin-bottom: 20px;
+		padding: 30rpx 25rpx;
+		background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+		border-radius: 24rpx;
+		margin-bottom: 30rpx;
+		box-shadow: 0 8rpx 32rpx rgba(102, 126, 234, 0.3);
+		position: relative;
+		overflow: hidden;
+	}
+	
+	.header::before {
+		content: '';
+		position: absolute;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="white" fill-opacity="0.1"/><circle cx="75" cy="75" r="1" fill="white" fill-opacity="0.1"/><circle cx="50" cy="10" r="0.5" fill="white" fill-opacity="0.1"/><circle cx="10" cy="60" r="0.5" fill="white" fill-opacity="0.1"/><circle cx="90" cy="40" r="0.5" fill="white" fill-opacity="0.1"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+		pointer-events: none;
+	}
+	
+	.header::before {
+		content: '';
+		position: absolute;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="white" fill-opacity="0.1"/><circle cx="75" cy="75" r="1" fill="white" fill-opacity="0.1"/><circle cx="50" cy="10" r="0.5" fill="white" fill-opacity="0.1"/><circle cx="10" cy="60" r="0.5" fill="white" fill-opacity="0.1"/><circle cx="90" cy="40" r="0.5" fill="white" fill-opacity="0.1"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+		pointer-events: none;
+	}
+	
+	.header-right {
+		display: flex;
+		align-items: flex-start;
+		gap: 15rpx;
+		z-index: 2;
+		position: relative;
+		margin-top: 30rpx;
 	}
 	
 	.welcome {
+		display: flex;
+		flex-direction: column;
 		flex: 1;
+		z-index: 2;
+		position: relative;
+		padding-right: 140rpx;
 	}
 	
-	.welcome-text {
-		font-size: 20px;
-		font-weight: bold;
-		color: #333;
-		margin-bottom: 4px;
+	.greeting {
+		color: rgba(105, 72, 72, 0.95);
+		font-size: 32rpx;
+		font-weight: 600;
+		margin-bottom: 8rpx;
+		letter-spacing: 0.5rpx;
+		text-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.1);
 	}
 	
-	.date-text {
-		font-size: 14px;
-		color: #666;
+	.app-name {
+		color: rgba(105, 72, 72, 0.95);
+		font-size: 26rpx;
+		font-weight: 400;
+		letter-spacing: 0.3rpx;
+	}
+	
+	.notification-icon-wrapper {
+		position: absolute;
+		top: 15rpx;
+		right: 15rpx;
+		width: 70rpx;
+		height: 70rpx;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		background: rgba(255, 255, 255, 0.2);
+		border-radius: 50%;
+		backdrop-filter: blur(10rpx);
+		border: 2rpx solid rgba(255, 255, 255, 0.3);
+		transition: all 0.3s ease;
+		z-index: 3;
+	}
+	
+	.notification-icon-wrapper:active {
+		transform: scale(0.95);
+		background: rgba(255, 255, 255, 0.3);
+	}
+	
+	.icon-bell {
+		font-size: 32rpx;
+		color: rgba(255, 255, 255, 0.9);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 100%;
+		height: 100%;
+	}
+	
+	.notification-badge {
+		position: absolute;
+		top: -8rpx;
+		right: -8rpx;
+		min-width: 28rpx;
+		height: 28rpx;
+		background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+		border-radius: 50%;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		border: 2rpx solid rgba(255, 255, 255, 0.8);
+		box-shadow: 0 4rpx 12rpx rgba(255, 107, 107, 0.4);
+		z-index: 4;
+	}
+	
+	.badge-text {
+		font-size: 20rpx;
+		color: white;
+		font-weight: 600;
+		line-height: 1;
+	}
+	
+	.user-avatar {
+		width: 100rpx;
+		height: 100rpx;
+		border-radius: 50rpx;
+		background-color: rgba(255, 255, 255, 0.2);
+		overflow: hidden;
+		border: 3rpx solid rgba(255, 255, 255, 0.4);
+		box-shadow: 0 6rpx 20rpx rgba(0, 0, 0, 0.15), 0 0 0 1rpx rgba(255, 255, 255, 0.1);
+		z-index: 2;
+		position: relative;
+		transition: all 0.3s ease;
+	}
+	
+	.user-avatar:active {
+		transform: scale(0.95);
+	}
+	
+	.avatar-image {
+		width: 100rpx;
+		height: 100rpx;
+		border-radius: 50rpx;
+	}
+	
+	.avatar-placeholder {
+		color: rgba(255, 255, 255, 0.9);
+		font-size: 28rpx;
+		font-weight: 600;
+		text-transform: uppercase;
 	}
 	
 	.avatar {
@@ -485,5 +808,128 @@
 	.empty-text {
 		font-size: 14px;
 		color: #999;
+	}
+	
+	/* 通知弹窗样式 */
+	.notification-modal {
+		position: fixed;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		background-color: rgba(0, 0, 0, 0.5);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		z-index: 1000;
+	}
+	
+	.notification-content {
+		width: 90%;
+		max-width: 400px;
+		max-height: 70%;
+		background-color: #fff;
+		border-radius: 12px;
+		overflow: hidden;
+	}
+	
+	.notification-header {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		padding: 20px;
+		border-bottom: 1px solid #f0f0f0;
+	}
+	
+	.notification-title {
+		font-size: 18px;
+		font-weight: bold;
+		color: #333;
+	}
+	
+	.notification-actions {
+		display: flex;
+		align-items: center;
+		gap: 15px;
+	}
+	
+	.mark-all-read {
+		font-size: 14px;
+		color: #007AFF;
+	}
+	
+	.close-btn {
+		font-size: 20px;
+		color: #999;
+		width: 30px;
+		height: 30px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+	
+	.notification-list {
+		max-height: 400px;
+		overflow-y: auto;
+	}
+	
+	.empty-notifications {
+		padding: 40px 20px;
+		text-align: center;
+	}
+	
+	.notification-item {
+		display: flex;
+		align-items: center;
+		padding: 15px 20px;
+		border-bottom: 1px solid #f0f0f0;
+		position: relative;
+	}
+	
+	.notification-item.unread {
+		background-color: #f8f9ff;
+	}
+	
+	.notification-item:last-child {
+		border-bottom: none;
+	}
+	
+	.notification-dot {
+		width: 8px;
+		height: 8px;
+		background-color: #007AFF;
+		border-radius: 4px;
+		margin-right: 12px;
+		flex-shrink: 0;
+	}
+	
+	.notification-info {
+		flex: 1;
+		margin-right: 10px;
+	}
+	
+	.notification-item-title {
+		font-size: 16px;
+		color: #333;
+		font-weight: 500;
+		margin-bottom: 4px;
+	}
+	
+	.notification-item-content {
+		font-size: 14px;
+		color: #666;
+		margin-bottom: 4px;
+		line-height: 1.4;
+	}
+	
+	.notification-time {
+		font-size: 12px;
+		color: #999;
+	}
+	
+	.notification-arrow {
+		font-size: 18px;
+		color: #ccc;
+		flex-shrink: 0;
 	}
 </style>

@@ -1279,11 +1279,32 @@
 					})
 					
 					const token = uni.getStorageSync('token')
-					const submitData = {__$originalPosition: new UTSSourceMapPosition("submitData", "pages/record/add.uvue", 1588, 12),
+					// 获取选中的性质界定和考核情况的文本值
+				let natureDefinition = ''
+				let assessmentSituation = ''
+				
+				if (this.selectedNatureIndex >= 0 && this.selectedNatureIndex < this.natureOptions.length) {
+					natureDefinition = this.natureOptions[this.selectedNatureIndex].name
+				}
+				
+				if (this.selectedAssessmentIndex >= 0 && this.selectedAssessmentIndex < this.assessmentOptions.length) {
+				assessmentSituation = this.assessmentOptions[this.selectedAssessmentIndex].label
+			}
+				
+				// 处理整改期限日期格式，添加默认时间
+			let rectificationDeadline = this.formData.rectificationDate
+			console.log('调试：原始整改期限日期:', rectificationDeadline, " at pages/record/add.uvue:1602")
+			if (rectificationDeadline != null && rectificationDeadline != '' && rectificationDeadline.indexOf(' ') === -1) {
+				// 如果日期不包含时间部分，添加默认时间 23:59:59
+				rectificationDeadline = rectificationDeadline + ' 23:59:59'
+				console.log('调试：处理后的整改期限日期:', rectificationDeadline, " at pages/record/add.uvue:1606")
+			}
+			
+			const submitData = {__$originalPosition: new UTSSourceMapPosition("submitData", "pages/record/add.uvue", 1609, 10),
 				responsibleUnit: this.formData.responsibleUnit,
 				responsiblePerson: this.formData.responsiblePerson,
-				natureId: this.formData.natureId,
-				scoreId: this.formData.scoreId,
+				natureDefinition: natureDefinition,
+				assessmentSituation: assessmentSituation,
 				assessmentAmount: this.formData.assessmentAmount,
 				safetyScore: this.formData.safetyScore,
 				professionId: this.formData.professionId,
@@ -1293,16 +1314,22 @@
 				groupLeader: this.formData.groupLeader,
 				deputyLeader: this.formData.deputyLeader,
 				departmentId: this.formData.departmentId,
-				rectificationDate: this.formData.rectificationDate,
+				rectificationDeadline: rectificationDeadline,
 				imageUrls: imageUrls.length > 0 ? JSON.stringify(imageUrls) : ''
 			}
 						
-				// 调试信息：检查部门信息是否正确包含在提交数据中
-				console.log('调试：准备提交的数据:', submitData, " at pages/record/add.uvue:1607")
-				console.log('调试：部门ID字段:', this.formData.departmentId, " at pages/record/add.uvue:1608")
-				console.log('调试：当前选中的部门索引:', this.selectedDepartmentIndex, " at pages/record/add.uvue:1609")
+				// 调试信息：检查提交的数据
+				console.log('调试：准备提交的数据:', submitData, " at pages/record/add.uvue:1628")
+				console.log('调试：性质界定索引:', this.selectedNatureIndex, " at pages/record/add.uvue:1629")
+				console.log('调试：性质界定选项:', this.natureOptions, " at pages/record/add.uvue:1630")
+				console.log('调试：性质界定值:', natureDefinition, " at pages/record/add.uvue:1631")
+				console.log('调试：考核情况索引:', this.selectedAssessmentIndex, " at pages/record/add.uvue:1632")
+				console.log('调试：考核情况选项:', this.assessmentOptions, " at pages/record/add.uvue:1633")
+				console.log('调试：考核情况值:', assessmentSituation, " at pages/record/add.uvue:1634")
+				console.log('调试：部门ID字段:', this.formData.departmentId, " at pages/record/add.uvue:1635")
+				console.log('调试：当前选中的部门索引:', this.selectedDepartmentIndex, " at pages/record/add.uvue:1636")
 				if (this.selectedDepartmentIndex >= 0 && this.selectedDepartmentIndex < this.departmentOptions.length) {
-					console.log('调试：当前选中的部门对象:', this.departmentOptions[this.selectedDepartmentIndex], " at pages/record/add.uvue:1611")
+					console.log('调试：当前选中的部门对象:', this.departmentOptions[this.selectedDepartmentIndex], " at pages/record/add.uvue:1638")
 				}
 				uni.showToast({
 					title: `提交部门ID: ${this.formData.departmentId ?? '空'}`,
@@ -1361,7 +1388,7 @@
 							this.submitting = false
 						},
 				fail: (error) => {
-					console.error('提交记录失败:', error, " at pages/record/add.uvue:1670")
+					console.error('提交记录失败:', error, " at pages/record/add.uvue:1697")
 					uni.hideLoading()
 					uni.showToast({
 						title: '网络错误',
@@ -1371,7 +1398,7 @@
 				}
 			})
 		} catch (error) {
-			console.error('提交记录失败:', error, " at pages/record/add.uvue:1680")
+			console.error('提交记录失败:', error, " at pages/record/add.uvue:1707")
 			uni.hideLoading()
 			uni.showToast({
 					title: '操作失败',

@@ -1,25 +1,25 @@
-2025-08-30 18:32:14 [main] INFO  com.gjxt.inspection.InspectionSystemApplication - Starting InspectionSystemApplication using Java 1.8.0_391 on 误入凡尘的灵 with PID 30904 (F:\gjxt\backend\target\classes started by 174344 in F:\gjxt)
-2025-08-30 18:32:14 [main] DEBUG com.gjxt.inspection.InspectionSystemApplication - Running with Spring Boot v2.7.18, Spring v5.3.31
-2025-08-30 18:32:14 [main] INFO  com.gjxt.inspection.InspectionSystemApplication - No active profile set, falling back to 1 default profile: "default"
-2025-08-30 18:32:16 [main] INFO  o.s.boot.web.embedded.tomcat.TomcatWebServer - Tomcat initialized with port(s): 8080 (http)
-2025-08-30 18:32:16 [main] INFO  org.apache.catalina.core.StandardService - Starting service [Tomcat]
-2025-08-30 18:32:16 [main] INFO  org.apache.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/9.0.83]
-2025-08-30 18:32:16 [main] INFO  o.a.c.c.ContainerBase.[Tomcat].[localhost].[/api] - Initializing Spring embedded WebApplicationContext
-2025-08-30 18:32:16 [main] INFO  o.s.b.w.s.c.ServletWebServerApplicationContext - Root WebApplicationContext: initialization completed in 1210 ms
-2025-08-30 18:32:16 [main] INFO  c.a.d.s.b.a.DruidDataSourceAutoConfigure - Init DruidDataSource
-2025-08-30 18:32:17 [main] INFO  com.alibaba.druid.pool.DruidDataSource - {dataSource-1} inited
-2025-08-30 18:32:19 [main] WARN  o.s.b.a.s.s.UserDetailsServiceAutoConfiguration - 
+2025-09-03 16:57:45 [main] INFO  com.gjxt.inspection.InspectionSystemApplication - Starting InspectionSystemApplication using Java 1.8.0_391 on 误入凡尘的灵 with PID 44136 (F:\gjxt\backend\target\classes started by 174344 in F:\gjxt)
+2025-09-03 16:57:45 [main] DEBUG com.gjxt.inspection.InspectionSystemApplication - Running with Spring Boot v2.7.18, Spring v5.3.31
+2025-09-03 16:57:45 [main] INFO  com.gjxt.inspection.InspectionSystemApplication - No active profile set, falling back to 1 default profile: "default"
+2025-09-03 16:57:47 [main] INFO  o.s.boot.web.embedded.tomcat.TomcatWebServer - Tomcat initialized with port(s): 8080 (http)
+2025-09-03 16:57:47 [main] INFO  org.apache.catalina.core.StandardService - Starting service [Tomcat]
+2025-09-03 16:57:47 [main] INFO  org.apache.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/9.0.83]
+2025-09-03 16:57:47 [main] INFO  o.a.c.c.ContainerBase.[Tomcat].[localhost].[/api] - Initializing Spring embedded WebApplicationContext
+2025-09-03 16:57:47 [main] INFO  o.s.b.w.s.c.ServletWebServerApplicationContext - Root WebApplicationContext: initialization completed in 1192 ms
+2025-09-03 16:57:47 [main] INFO  c.a.d.s.b.a.DruidDataSourceAutoConfigure - Init DruidDataSource
+2025-09-03 16:57:48 [main] INFO  com.alibaba.druid.pool.DruidDataSource - {dataSource-1} inited
+2025-09-03 16:57:50 [main] WARN  o.s.b.a.s.s.UserDetailsServiceAutoConfiguration - 
 
-Using generated security password: 5088ce15-ca05-4fcf-a79f-f30bee646a0c
+Using generated security password: 7ad2697e-a936-4b78-a1c7-48e83c96dd00
 
 This generated password is for development use only. Your security configuration must be updated before running your application in production.
 
-2025-08-30 18:32:19 [main] INFO  o.s.security.web.DefaultSecurityFilterChain - Will secure any request with [org.springframework.security.web.session.DisableEncodeUrlFilter@29c25bbc, org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter@30704f85, org.springframework.security.web.context.SecurityContextPersistenceFilter@595ec862, org.springframework.security.web.header.HeaderWriterFilter@3c71cf3e, org.springframework.security.web.authentication.logout.LogoutFilter@22cd8ec2, org.springframework.security.web.savedrequest.RequestCacheAwareFilter@102af1bb, org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter@173b1af1, org.springframework.security.web.authentication.AnonymousAuthenticationFilter@2b99c937, org.springframework.security.web.session.SessionManagementFilter@69ba72da, org.springframework.security.web.access.ExceptionTranslationFilter@1ff463bb, org.springframework.security.web.access.intercept.FilterSecurityInterceptor@4387d2f4]
-2025-08-30 18:32:20 [main] INFO  org.quartz.impl.StdSchedulerFactory - Using default implementation for ThreadExecutor
-2025-08-30 18:32:20 [main] INFO  org.quartz.core.SchedulerSignalerImpl - Initialized Scheduler Signaller of type: class org.quartz.core.SchedulerSignalerImpl
-2025-08-30 18:32:20 [main] INFO  org.quartz.core.QuartzScheduler - Quartz Scheduler v.2.3.2 created.
-2025-08-30 18:32:20 [main] INFO  org.quartz.simpl.RAMJobStore - RAMJobStore initialized.
-2025-08-30 18:32:20 [main] INFO  org.quartz.core.QuartzScheduler - Scheduler meta-data: Quartz Scheduler (v2.3.2) 'quartzScheduler' with instanceId 'NON_CLUSTERED'
+2025-09-03 16:57:50 [main] INFO  o.s.security.web.DefaultSecurityFilterChain - Will secure any request with [org.springframework.security.web.session.DisableEncodeUrlFilter@3a72e2e8, org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter@42401b81, org.springframework.security.web.context.SecurityContextPersistenceFilter@51e94b7d, org.springframework.security.web.header.HeaderWriterFilter@340c57e0, org.springframework.security.web.authentication.logout.LogoutFilter@4387d2f4, org.springframework.security.web.savedrequest.RequestCacheAwareFilter@3a4f8e8a, org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter@4768b95c, org.springframework.security.web.authentication.AnonymousAuthenticationFilter@f1d1463, org.springframework.security.web.session.SessionManagementFilter@10a0d93a, org.springframework.security.web.access.ExceptionTranslationFilter@2a9e754e, org.springframework.security.web.access.intercept.FilterSecurityInterceptor@5ddb302]
+2025-09-03 16:57:50 [main] INFO  org.quartz.impl.StdSchedulerFactory - Using default implementation for ThreadExecutor
+2025-09-03 16:57:50 [main] INFO  org.quartz.core.SchedulerSignalerImpl - Initialized Scheduler Signaller of type: class org.quartz.core.SchedulerSignalerImpl
+2025-09-03 16:57:50 [main] INFO  org.quartz.core.QuartzScheduler - Quartz Scheduler v.2.3.2 created.
+2025-09-03 16:57:50 [main] INFO  org.quartz.simpl.RAMJobStore - RAMJobStore initialized.
+2025-09-03 16:57:50 [main] INFO  org.quartz.core.QuartzScheduler - Scheduler meta-data: Quartz Scheduler (v2.3.2) 'quartzScheduler' with instanceId 'NON_CLUSTERED'
   Scheduler class: 'org.quartz.core.QuartzScheduler' - running locally.
   NOT STARTED.
   Currently in standby mode.
@@ -27,55 +27,45 @@ This generated password is for development use only. Your security configuration
   Using thread pool 'org.quartz.simpl.SimpleThreadPool' - with 10 threads.
   Using job-store 'org.quartz.simpl.RAMJobStore' - which does not support persistence. and is not clustered.
 
-2025-08-30 18:32:20 [main] INFO  org.quartz.impl.StdSchedulerFactory - Quartz scheduler 'quartzScheduler' initialized from an externally provided properties instance.
-2025-08-30 18:32:20 [main] INFO  org.quartz.impl.StdSchedulerFactory - Quartz scheduler version: 2.3.2
-2025-08-30 18:32:20 [main] INFO  org.quartz.core.QuartzScheduler - JobFactory set to: org.springframework.scheduling.quartz.SpringBeanJobFactory@6edd4fe2
-2025-08-30 18:32:20 [main] INFO  o.s.boot.web.embedded.tomcat.TomcatWebServer - Tomcat started on port(s): 8080 (http) with context path '/api'
-2025-08-30 18:32:20 [main] INFO  o.s.scheduling.quartz.SchedulerFactoryBean - Starting Quartz Scheduler now
-2025-08-30 18:32:20 [main] INFO  org.quartz.core.QuartzScheduler - Scheduler quartzScheduler_$_NON_CLUSTERED started.
-2025-08-30 18:32:20 [main] INFO  com.gjxt.inspection.InspectionSystemApplication - Started InspectionSystemApplication in 5.859 seconds (JVM running for 7.302)
-2025-08-30 18:36:11 [http-nio-192.168.42.128-8080-exec-1] INFO  o.a.c.c.ContainerBase.[Tomcat].[localhost].[/api] - Initializing Spring DispatcherServlet 'dispatcherServlet'
-2025-08-30 18:36:11 [http-nio-192.168.42.128-8080-exec-1] INFO  org.springframework.web.servlet.DispatcherServlet - Initializing Servlet 'dispatcherServlet'
-2025-08-30 18:36:11 [http-nio-192.168.42.128-8080-exec-1] INFO  org.springframework.web.servlet.DispatcherServlet - Completed initialization in 13 ms
-2025-08-30 18:38:36 [http-nio-192.168.42.128-8080-exec-7] INFO  c.g.i.service.impl.SysInspectionRecordServiceImpl - 生成新的记录编号: 028d2e0a-32a7-4cbe-93a6-5f201db0247c
-2025-08-30 18:38:36 [http-nio-192.168.42.128-8080-exec-7] INFO  c.g.i.service.impl.SysInspectionRecordServiceImpl - 提交记录 - 检查组长ID: null, 副组长ID: null
-2025-08-30 18:38:36 [http-nio-192.168.42.128-8080-exec-7] INFO  c.g.i.service.impl.SysInspectionRecordServiceImpl - 前端提交数据 - groupLeader: 张三, deputyLeader: 李四
-2025-08-30 18:44:26 [http-nio-192.168.42.128-8080-exec-5] INFO  c.g.i.service.impl.SysInspectionRecordServiceImpl - 导出Excel成功，共导出1条记录
-2025-08-30 18:52:59 [http-nio-192.168.42.128-8080-exec-3] INFO  c.g.i.service.impl.SysInspectionRecordServiceImpl - 生成新的记录编号: 1835da59-a9a6-4797-9a15-2c6ae70e8bd9
-2025-08-30 18:52:59 [http-nio-192.168.42.128-8080-exec-3] INFO  c.g.i.service.impl.SysInspectionRecordServiceImpl - 提交记录 - 检查组长ID: null, 副组长ID: null
-2025-08-30 18:52:59 [http-nio-192.168.42.128-8080-exec-3] INFO  c.g.i.service.impl.SysInspectionRecordServiceImpl - 前端提交数据 - groupLeader: 张三, deputyLeader: 李四
-2025-08-30 18:56:28 [http-nio-192.168.42.128-8080-exec-6] INFO  c.g.i.service.impl.SysInspectionRecordServiceImpl - 生成新的记录编号: 36922d28-b3e0-4808-b21b-dc6f7fbb8df1
-2025-08-30 18:56:28 [http-nio-192.168.42.128-8080-exec-6] INFO  c.g.i.service.impl.SysInspectionRecordServiceImpl - 提交记录 - 检查组长ID: null, 副组长ID: null
-2025-08-30 18:56:28 [http-nio-192.168.42.128-8080-exec-6] INFO  c.g.i.service.impl.SysInspectionRecordServiceImpl - 前端提交数据 - groupLeader: 张三, deputyLeader: 李四
-2025-08-30 19:00:10 [SpringApplicationShutdownHook] INFO  org.quartz.core.QuartzScheduler - Scheduler quartzScheduler_$_NON_CLUSTERED paused.
-2025-08-30 19:00:10 [SpringApplicationShutdownHook] INFO  o.s.scheduling.quartz.SchedulerFactoryBean - Shutting down Quartz Scheduler
-2025-08-30 19:00:10 [SpringApplicationShutdownHook] INFO  org.quartz.core.QuartzScheduler - Scheduler quartzScheduler_$_NON_CLUSTERED shutting down.
-2025-08-30 19:00:10 [SpringApplicationShutdownHook] INFO  org.quartz.core.QuartzScheduler - Scheduler quartzScheduler_$_NON_CLUSTERED paused.
-2025-08-30 19:00:10 [SpringApplicationShutdownHook] INFO  org.quartz.core.QuartzScheduler - Scheduler quartzScheduler_$_NON_CLUSTERED shutdown complete.
-2025-08-30 19:00:10 [SpringApplicationShutdownHook] INFO  com.alibaba.druid.pool.DruidDataSource - {dataSource-1} closing ...
-2025-08-30 19:00:10 [SpringApplicationShutdownHook] INFO  com.alibaba.druid.pool.DruidDataSource - {dataSource-1} closed
-2025-08-30 19:00:18 [main] INFO  com.gjxt.inspection.InspectionSystemApplication - Starting InspectionSystemApplication using Java 1.8.0_391 on 误入凡尘的灵 with PID 8452 (F:\gjxt\backend\target\classes started by 174344 in F:\gjxt)
-2025-08-30 19:00:18 [main] DEBUG com.gjxt.inspection.InspectionSystemApplication - Running with Spring Boot v2.7.18, Spring v5.3.31
-2025-08-30 19:00:18 [main] INFO  com.gjxt.inspection.InspectionSystemApplication - No active profile set, falling back to 1 default profile: "default"
-2025-08-30 19:00:20 [main] INFO  o.s.boot.web.embedded.tomcat.TomcatWebServer - Tomcat initialized with port(s): 8080 (http)
-2025-08-30 19:00:20 [main] INFO  org.apache.catalina.core.StandardService - Starting service [Tomcat]
-2025-08-30 19:00:20 [main] INFO  org.apache.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/9.0.83]
-2025-08-30 19:00:20 [main] INFO  o.a.c.c.ContainerBase.[Tomcat].[localhost].[/api] - Initializing Spring embedded WebApplicationContext
-2025-08-30 19:00:20 [main] INFO  o.s.b.w.s.c.ServletWebServerApplicationContext - Root WebApplicationContext: initialization completed in 1198 ms
-2025-08-30 19:00:20 [main] INFO  c.a.d.s.b.a.DruidDataSourceAutoConfigure - Init DruidDataSource
-2025-08-30 19:00:21 [main] INFO  com.alibaba.druid.pool.DruidDataSource - {dataSource-1} inited
-2025-08-30 19:00:23 [main] WARN  o.s.b.a.s.s.UserDetailsServiceAutoConfiguration - 
+2025-09-03 16:57:50 [main] INFO  org.quartz.impl.StdSchedulerFactory - Quartz scheduler 'quartzScheduler' initialized from an externally provided properties instance.
+2025-09-03 16:57:50 [main] INFO  org.quartz.impl.StdSchedulerFactory - Quartz scheduler version: 2.3.2
+2025-09-03 16:57:50 [main] INFO  org.quartz.core.QuartzScheduler - JobFactory set to: org.springframework.scheduling.quartz.SpringBeanJobFactory@3e0855b0
+2025-09-03 16:57:50 [main] INFO  o.s.boot.web.embedded.tomcat.TomcatWebServer - Tomcat started on port(s): 8080 (http) with context path '/api'
+2025-09-03 16:57:50 [main] INFO  o.s.scheduling.quartz.SchedulerFactoryBean - Starting Quartz Scheduler now
+2025-09-03 16:57:50 [main] INFO  org.quartz.core.QuartzScheduler - Scheduler quartzScheduler_$_NON_CLUSTERED started.
+2025-09-03 16:57:50 [main] INFO  com.gjxt.inspection.InspectionSystemApplication - Started InspectionSystemApplication in 5.288 seconds (JVM running for 6.665)
+2025-09-03 16:57:56 [http-nio-192.168.244.128-8080-exec-3] INFO  o.a.c.c.ContainerBase.[Tomcat].[localhost].[/api] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+2025-09-03 16:57:56 [http-nio-192.168.244.128-8080-exec-3] INFO  org.springframework.web.servlet.DispatcherServlet - Initializing Servlet 'dispatcherServlet'
+2025-09-03 16:57:56 [http-nio-192.168.244.128-8080-exec-3] INFO  org.springframework.web.servlet.DispatcherServlet - Completed initialization in 1 ms
+2025-09-03 17:01:56 [SpringApplicationShutdownHook] INFO  org.quartz.core.QuartzScheduler - Scheduler quartzScheduler_$_NON_CLUSTERED paused.
+2025-09-03 17:01:56 [SpringApplicationShutdownHook] INFO  o.s.scheduling.quartz.SchedulerFactoryBean - Shutting down Quartz Scheduler
+2025-09-03 17:01:56 [SpringApplicationShutdownHook] INFO  org.quartz.core.QuartzScheduler - Scheduler quartzScheduler_$_NON_CLUSTERED shutting down.
+2025-09-03 17:01:56 [SpringApplicationShutdownHook] INFO  org.quartz.core.QuartzScheduler - Scheduler quartzScheduler_$_NON_CLUSTERED paused.
+2025-09-03 17:01:56 [SpringApplicationShutdownHook] INFO  org.quartz.core.QuartzScheduler - Scheduler quartzScheduler_$_NON_CLUSTERED shutdown complete.
+2025-09-03 17:01:56 [SpringApplicationShutdownHook] INFO  com.alibaba.druid.pool.DruidDataSource - {dataSource-1} closing ...
+2025-09-03 17:01:56 [SpringApplicationShutdownHook] INFO  com.alibaba.druid.pool.DruidDataSource - {dataSource-1} closed
+2025-09-03 17:02:00 [main] INFO  com.gjxt.inspection.InspectionSystemApplication - Starting InspectionSystemApplication using Java 1.8.0_391 on 误入凡尘的灵 with PID 34096 (F:\gjxt\backend\target\classes started by 174344 in F:\gjxt)
+2025-09-03 17:02:00 [main] DEBUG com.gjxt.inspection.InspectionSystemApplication - Running with Spring Boot v2.7.18, Spring v5.3.31
+2025-09-03 17:02:00 [main] INFO  com.gjxt.inspection.InspectionSystemApplication - No active profile set, falling back to 1 default profile: "default"
+2025-09-03 17:02:01 [main] INFO  o.s.boot.web.embedded.tomcat.TomcatWebServer - Tomcat initialized with port(s): 8080 (http)
+2025-09-03 17:02:01 [main] INFO  org.apache.catalina.core.StandardService - Starting service [Tomcat]
+2025-09-03 17:02:01 [main] INFO  org.apache.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/9.0.83]
+2025-09-03 17:02:01 [main] INFO  o.a.c.c.ContainerBase.[Tomcat].[localhost].[/api] - Initializing Spring embedded WebApplicationContext
+2025-09-03 17:02:01 [main] INFO  o.s.b.w.s.c.ServletWebServerApplicationContext - Root WebApplicationContext: initialization completed in 1171 ms
+2025-09-03 17:02:01 [main] INFO  c.a.d.s.b.a.DruidDataSourceAutoConfigure - Init DruidDataSource
+2025-09-03 17:02:02 [main] INFO  com.alibaba.druid.pool.DruidDataSource - {dataSource-1} inited
+2025-09-03 17:02:04 [main] WARN  o.s.b.a.s.s.UserDetailsServiceAutoConfiguration - 
 
-Using generated security password: 70362aaf-d9a2-4e52-97db-111b873975a2
+Using generated security password: de2dcbf3-4850-46af-94b4-b2942491d0d8
 
 This generated password is for development use only. Your security configuration must be updated before running your application in production.
 
-2025-08-30 19:00:23 [main] INFO  o.s.security.web.DefaultSecurityFilterChain - Will secure any request with [org.springframework.security.web.session.DisableEncodeUrlFilter@71a2df1, org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter@18faaff6, org.springframework.security.web.context.SecurityContextPersistenceFilter@4c50cd7d, org.springframework.security.web.header.HeaderWriterFilter@1c43df76, org.springframework.security.web.authentication.logout.LogoutFilter@3caf5c96, org.springframework.security.web.savedrequest.RequestCacheAwareFilter@1a4930cf, org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter@24eecabf, org.springframework.security.web.authentication.AnonymousAuthenticationFilter@2a9e754e, org.springframework.security.web.session.SessionManagementFilter@1b8d20e6, org.springframework.security.web.access.ExceptionTranslationFilter@2f038d3c, org.springframework.security.web.access.intercept.FilterSecurityInterceptor@35ab4260]
-2025-08-30 19:00:24 [main] INFO  org.quartz.impl.StdSchedulerFactory - Using default implementation for ThreadExecutor
-2025-08-30 19:00:24 [main] INFO  org.quartz.core.SchedulerSignalerImpl - Initialized Scheduler Signaller of type: class org.quartz.core.SchedulerSignalerImpl
-2025-08-30 19:00:24 [main] INFO  org.quartz.core.QuartzScheduler - Quartz Scheduler v.2.3.2 created.
-2025-08-30 19:00:24 [main] INFO  org.quartz.simpl.RAMJobStore - RAMJobStore initialized.
-2025-08-30 19:00:24 [main] INFO  org.quartz.core.QuartzScheduler - Scheduler meta-data: Quartz Scheduler (v2.3.2) 'quartzScheduler' with instanceId 'NON_CLUSTERED'
+2025-09-03 17:02:04 [main] INFO  o.s.security.web.DefaultSecurityFilterChain - Will secure any request with [org.springframework.security.web.session.DisableEncodeUrlFilter@d7055be, org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter@768f4b42, org.springframework.security.web.context.SecurityContextPersistenceFilter@7079f8f0, org.springframework.security.web.header.HeaderWriterFilter@2df71be0, org.springframework.security.web.authentication.logout.LogoutFilter@5f2b9da8, org.springframework.security.web.savedrequest.RequestCacheAwareFilter@7cdc4070, org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter@2b99c937, org.springframework.security.web.authentication.AnonymousAuthenticationFilter@12a6e8ed, org.springframework.security.web.session.SessionManagementFilter@1dbff71c, org.springframework.security.web.access.ExceptionTranslationFilter@29f95272, org.springframework.security.web.access.intercept.FilterSecurityInterceptor@6921cfa]
+2025-09-03 17:02:04 [main] INFO  org.quartz.impl.StdSchedulerFactory - Using default implementation for ThreadExecutor
+2025-09-03 17:02:04 [main] INFO  org.quartz.core.SchedulerSignalerImpl - Initialized Scheduler Signaller of type: class org.quartz.core.SchedulerSignalerImpl
+2025-09-03 17:02:04 [main] INFO  org.quartz.core.QuartzScheduler - Quartz Scheduler v.2.3.2 created.
+2025-09-03 17:02:04 [main] INFO  org.quartz.simpl.RAMJobStore - RAMJobStore initialized.
+2025-09-03 17:02:04 [main] INFO  org.quartz.core.QuartzScheduler - Scheduler meta-data: Quartz Scheduler (v2.3.2) 'quartzScheduler' with instanceId 'NON_CLUSTERED'
   Scheduler class: 'org.quartz.core.QuartzScheduler' - running locally.
   NOT STARTED.
   Currently in standby mode.
@@ -83,49 +73,45 @@ This generated password is for development use only. Your security configuration
   Using thread pool 'org.quartz.simpl.SimpleThreadPool' - with 10 threads.
   Using job-store 'org.quartz.simpl.RAMJobStore' - which does not support persistence. and is not clustered.
 
-2025-08-30 19:00:24 [main] INFO  org.quartz.impl.StdSchedulerFactory - Quartz scheduler 'quartzScheduler' initialized from an externally provided properties instance.
-2025-08-30 19:00:24 [main] INFO  org.quartz.impl.StdSchedulerFactory - Quartz scheduler version: 2.3.2
-2025-08-30 19:00:24 [main] INFO  org.quartz.core.QuartzScheduler - JobFactory set to: org.springframework.scheduling.quartz.SpringBeanJobFactory@1e9d7366
-2025-08-30 19:00:24 [main] INFO  o.s.boot.web.embedded.tomcat.TomcatWebServer - Tomcat started on port(s): 8080 (http) with context path '/api'
-2025-08-30 19:00:24 [main] INFO  o.s.scheduling.quartz.SchedulerFactoryBean - Starting Quartz Scheduler now
-2025-08-30 19:00:24 [main] INFO  org.quartz.core.QuartzScheduler - Scheduler quartzScheduler_$_NON_CLUSTERED started.
-2025-08-30 19:00:24 [main] INFO  com.gjxt.inspection.InspectionSystemApplication - Started InspectionSystemApplication in 5.542 seconds (JVM running for 6.787)
-2025-08-30 19:00:37 [http-nio-192.168.42.128-8080-exec-1] INFO  o.a.c.c.ContainerBase.[Tomcat].[localhost].[/api] - Initializing Spring DispatcherServlet 'dispatcherServlet'
-2025-08-30 19:00:37 [http-nio-192.168.42.128-8080-exec-1] INFO  org.springframework.web.servlet.DispatcherServlet - Initializing Servlet 'dispatcherServlet'
-2025-08-30 19:00:37 [http-nio-192.168.42.128-8080-exec-1] INFO  org.springframework.web.servlet.DispatcherServlet - Completed initialization in 1 ms
-2025-08-30 19:00:40 [http-nio-192.168.42.128-8080-exec-1] INFO  c.g.i.service.impl.SysInspectionRecordServiceImpl - 生成新的记录编号: 853e0fbc-a32b-4315-baa7-d848f2b9797e
-2025-08-30 19:00:40 [http-nio-192.168.42.128-8080-exec-1] INFO  c.g.i.service.impl.SysInspectionRecordServiceImpl - 提交记录 - 检查组长ID: null, 副组长ID: null
-2025-08-30 19:00:40 [http-nio-192.168.42.128-8080-exec-1] INFO  c.g.i.service.impl.SysInspectionRecordServiceImpl - 前端提交数据 - groupLeader: 张三, deputyLeader: 李四
-2025-08-30 19:10:08 [SpringApplicationShutdownHook] INFO  org.quartz.core.QuartzScheduler - Scheduler quartzScheduler_$_NON_CLUSTERED paused.
-2025-08-30 19:10:08 [http-nio-192.168.42.128-8080-exec-9] INFO  c.g.i.service.impl.SysInspectionRecordServiceImpl - 导出Excel成功，共导出4条记录
-2025-08-30 19:10:08 [SpringApplicationShutdownHook] INFO  o.s.scheduling.quartz.SchedulerFactoryBean - Shutting down Quartz Scheduler
-2025-08-30 19:10:08 [SpringApplicationShutdownHook] INFO  org.quartz.core.QuartzScheduler - Scheduler quartzScheduler_$_NON_CLUSTERED shutting down.
-2025-08-30 19:10:08 [SpringApplicationShutdownHook] INFO  org.quartz.core.QuartzScheduler - Scheduler quartzScheduler_$_NON_CLUSTERED paused.
-2025-08-30 19:10:08 [SpringApplicationShutdownHook] INFO  org.quartz.core.QuartzScheduler - Scheduler quartzScheduler_$_NON_CLUSTERED shutdown complete.
-2025-08-30 19:10:08 [SpringApplicationShutdownHook] INFO  com.alibaba.druid.pool.DruidDataSource - {dataSource-1} closing ...
-2025-08-30 19:10:08 [SpringApplicationShutdownHook] INFO  com.alibaba.druid.pool.DruidDataSource - {dataSource-1} closed
-2025-08-30 19:10:13 [main] INFO  com.gjxt.inspection.InspectionSystemApplication - Starting InspectionSystemApplication using Java 1.8.0_391 on 误入凡尘的灵 with PID 16104 (F:\gjxt\backend\target\classes started by 174344 in F:\gjxt)
-2025-08-30 19:10:13 [main] DEBUG com.gjxt.inspection.InspectionSystemApplication - Running with Spring Boot v2.7.18, Spring v5.3.31
-2025-08-30 19:10:13 [main] INFO  com.gjxt.inspection.InspectionSystemApplication - No active profile set, falling back to 1 default profile: "default"
-2025-08-30 19:10:14 [main] INFO  o.s.boot.web.embedded.tomcat.TomcatWebServer - Tomcat initialized with port(s): 8080 (http)
-2025-08-30 19:10:14 [main] INFO  org.apache.catalina.core.StandardService - Starting service [Tomcat]
-2025-08-30 19:10:14 [main] INFO  org.apache.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/9.0.83]
-2025-08-30 19:10:14 [main] INFO  o.a.c.c.ContainerBase.[Tomcat].[localhost].[/api] - Initializing Spring embedded WebApplicationContext
-2025-08-30 19:10:14 [main] INFO  o.s.b.w.s.c.ServletWebServerApplicationContext - Root WebApplicationContext: initialization completed in 1071 ms
-2025-08-30 19:10:14 [main] INFO  c.a.d.s.b.a.DruidDataSourceAutoConfigure - Init DruidDataSource
-2025-08-30 19:10:15 [main] INFO  com.alibaba.druid.pool.DruidDataSource - {dataSource-1} inited
-2025-08-30 19:10:17 [main] WARN  o.s.b.a.s.s.UserDetailsServiceAutoConfiguration - 
+2025-09-03 17:02:04 [main] INFO  org.quartz.impl.StdSchedulerFactory - Quartz scheduler 'quartzScheduler' initialized from an externally provided properties instance.
+2025-09-03 17:02:04 [main] INFO  org.quartz.impl.StdSchedulerFactory - Quartz scheduler version: 2.3.2
+2025-09-03 17:02:04 [main] INFO  org.quartz.core.QuartzScheduler - JobFactory set to: org.springframework.scheduling.quartz.SpringBeanJobFactory@b849fa6
+2025-09-03 17:02:04 [main] INFO  o.s.boot.web.embedded.tomcat.TomcatWebServer - Tomcat started on port(s): 8080 (http) with context path '/api'
+2025-09-03 17:02:04 [main] INFO  o.s.scheduling.quartz.SchedulerFactoryBean - Starting Quartz Scheduler now
+2025-09-03 17:02:04 [main] INFO  org.quartz.core.QuartzScheduler - Scheduler quartzScheduler_$_NON_CLUSTERED started.
+2025-09-03 17:02:04 [main] INFO  com.gjxt.inspection.InspectionSystemApplication - Started InspectionSystemApplication in 5.052 seconds (JVM running for 6.316)
+2025-09-03 17:02:08 [http-nio-192.168.244.128-8080-exec-7] INFO  o.a.c.c.ContainerBase.[Tomcat].[localhost].[/api] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+2025-09-03 17:02:08 [http-nio-192.168.244.128-8080-exec-7] INFO  org.springframework.web.servlet.DispatcherServlet - Initializing Servlet 'dispatcherServlet'
+2025-09-03 17:02:08 [http-nio-192.168.244.128-8080-exec-7] INFO  org.springframework.web.servlet.DispatcherServlet - Completed initialization in 0 ms
+2025-09-03 17:02:59 [SpringApplicationShutdownHook] INFO  org.quartz.core.QuartzScheduler - Scheduler quartzScheduler_$_NON_CLUSTERED paused.
+2025-09-03 17:02:59 [SpringApplicationShutdownHook] INFO  o.s.scheduling.quartz.SchedulerFactoryBean - Shutting down Quartz Scheduler
+2025-09-03 17:02:59 [SpringApplicationShutdownHook] INFO  org.quartz.core.QuartzScheduler - Scheduler quartzScheduler_$_NON_CLUSTERED shutting down.
+2025-09-03 17:02:59 [SpringApplicationShutdownHook] INFO  org.quartz.core.QuartzScheduler - Scheduler quartzScheduler_$_NON_CLUSTERED paused.
+2025-09-03 17:02:59 [SpringApplicationShutdownHook] INFO  org.quartz.core.QuartzScheduler - Scheduler quartzScheduler_$_NON_CLUSTERED shutdown complete.
+2025-09-03 17:02:59 [SpringApplicationShutdownHook] INFO  com.alibaba.druid.pool.DruidDataSource - {dataSource-1} closing ...
+2025-09-03 17:02:59 [SpringApplicationShutdownHook] INFO  com.alibaba.druid.pool.DruidDataSource - {dataSource-1} closed
+2025-09-03 17:03:04 [main] INFO  com.gjxt.inspection.InspectionSystemApplication - Starting InspectionSystemApplication using Java 1.8.0_391 on 误入凡尘的灵 with PID 9748 (F:\gjxt\backend\target\classes started by 174344 in F:\gjxt)
+2025-09-03 17:03:04 [main] DEBUG com.gjxt.inspection.InspectionSystemApplication - Running with Spring Boot v2.7.18, Spring v5.3.31
+2025-09-03 17:03:04 [main] INFO  com.gjxt.inspection.InspectionSystemApplication - No active profile set, falling back to 1 default profile: "default"
+2025-09-03 17:03:05 [main] INFO  o.s.boot.web.embedded.tomcat.TomcatWebServer - Tomcat initialized with port(s): 8080 (http)
+2025-09-03 17:03:05 [main] INFO  org.apache.catalina.core.StandardService - Starting service [Tomcat]
+2025-09-03 17:03:05 [main] INFO  org.apache.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/9.0.83]
+2025-09-03 17:03:05 [main] INFO  o.a.c.c.ContainerBase.[Tomcat].[localhost].[/api] - Initializing Spring embedded WebApplicationContext
+2025-09-03 17:03:05 [main] INFO  o.s.b.w.s.c.ServletWebServerApplicationContext - Root WebApplicationContext: initialization completed in 1141 ms
+2025-09-03 17:03:05 [main] INFO  c.a.d.s.b.a.DruidDataSourceAutoConfigure - Init DruidDataSource
+2025-09-03 17:03:06 [main] INFO  com.alibaba.druid.pool.DruidDataSource - {dataSource-1} inited
+2025-09-03 17:03:07 [main] WARN  o.s.b.a.s.s.UserDetailsServiceAutoConfiguration - 
 
-Using generated security password: cb262428-ec03-4bc3-ab41-157b8231e41a
+Using generated security password: 3d06ec8d-4211-4ee5-95e8-cddcdc1440fd
 
 This generated password is for development use only. Your security configuration must be updated before running your application in production.
 
-2025-08-30 19:10:17 [main] INFO  o.s.security.web.DefaultSecurityFilterChain - Will secure any request with [org.springframework.security.web.session.DisableEncodeUrlFilter@1218e12, org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter@29c25bbc, org.springframework.security.web.context.SecurityContextPersistenceFilter@abc7005, org.springframework.security.web.header.HeaderWriterFilter@248d3a, org.springframework.security.web.authentication.logout.LogoutFilter@165aa43a, org.springframework.security.web.savedrequest.RequestCacheAwareFilter@63c84d31, org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter@9f2376f, org.springframework.security.web.authentication.AnonymousAuthenticationFilter@30704f85, org.springframework.security.web.session.SessionManagementFilter@75f4d8a8, org.springframework.security.web.access.ExceptionTranslationFilter@fee881, org.springframework.security.web.access.intercept.FilterSecurityInterceptor@7c8f047a]
-2025-08-30 19:10:17 [main] INFO  org.quartz.impl.StdSchedulerFactory - Using default implementation for ThreadExecutor
-2025-08-30 19:10:17 [main] INFO  org.quartz.core.SchedulerSignalerImpl - Initialized Scheduler Signaller of type: class org.quartz.core.SchedulerSignalerImpl
-2025-08-30 19:10:17 [main] INFO  org.quartz.core.QuartzScheduler - Quartz Scheduler v.2.3.2 created.
-2025-08-30 19:10:17 [main] INFO  org.quartz.simpl.RAMJobStore - RAMJobStore initialized.
-2025-08-30 19:10:17 [main] INFO  org.quartz.core.QuartzScheduler - Scheduler meta-data: Quartz Scheduler (v2.3.2) 'quartzScheduler' with instanceId 'NON_CLUSTERED'
+2025-09-03 17:03:08 [main] INFO  o.s.security.web.DefaultSecurityFilterChain - Will secure any request with [org.springframework.security.web.session.DisableEncodeUrlFilter@3c7d8a4, org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter@5996d6f2, org.springframework.security.web.context.SecurityContextPersistenceFilter@29c25bbc, org.springframework.security.web.header.HeaderWriterFilter@e886caf, org.springframework.security.web.authentication.logout.LogoutFilter@fe08eaf, org.springframework.security.web.savedrequest.RequestCacheAwareFilter@2b99c937, org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter@1029cf9, org.springframework.security.web.authentication.AnonymousAuthenticationFilter@43423d40, org.springframework.security.web.session.SessionManagementFilter@6abe62bb, org.springframework.security.web.access.ExceptionTranslationFilter@4fee14b, org.springframework.security.web.access.intercept.FilterSecurityInterceptor@b8b2184]
+2025-09-03 17:03:08 [main] INFO  org.quartz.impl.StdSchedulerFactory - Using default implementation for ThreadExecutor
+2025-09-03 17:03:08 [main] INFO  org.quartz.core.SchedulerSignalerImpl - Initialized Scheduler Signaller of type: class org.quartz.core.SchedulerSignalerImpl
+2025-09-03 17:03:08 [main] INFO  org.quartz.core.QuartzScheduler - Quartz Scheduler v.2.3.2 created.
+2025-09-03 17:03:08 [main] INFO  org.quartz.simpl.RAMJobStore - RAMJobStore initialized.
+2025-09-03 17:03:08 [main] INFO  org.quartz.core.QuartzScheduler - Scheduler meta-data: Quartz Scheduler (v2.3.2) 'quartzScheduler' with instanceId 'NON_CLUSTERED'
   Scheduler class: 'org.quartz.core.QuartzScheduler' - running locally.
   NOT STARTED.
   Currently in standby mode.
@@ -133,38 +119,45 @@ This generated password is for development use only. Your security configuration
   Using thread pool 'org.quartz.simpl.SimpleThreadPool' - with 10 threads.
   Using job-store 'org.quartz.simpl.RAMJobStore' - which does not support persistence. and is not clustered.
 
-2025-08-30 19:10:17 [main] INFO  org.quartz.impl.StdSchedulerFactory - Quartz scheduler 'quartzScheduler' initialized from an externally provided properties instance.
-2025-08-30 19:10:17 [main] INFO  org.quartz.impl.StdSchedulerFactory - Quartz scheduler version: 2.3.2
-2025-08-30 19:10:17 [main] INFO  org.quartz.core.QuartzScheduler - JobFactory set to: org.springframework.scheduling.quartz.SpringBeanJobFactory@40d10264
-2025-08-30 19:10:17 [main] INFO  o.s.boot.web.embedded.tomcat.TomcatWebServer - Tomcat started on port(s): 8080 (http) with context path '/api'
-2025-08-30 19:10:17 [main] INFO  o.s.scheduling.quartz.SchedulerFactoryBean - Starting Quartz Scheduler now
-2025-08-30 19:10:17 [main] INFO  org.quartz.core.QuartzScheduler - Scheduler quartzScheduler_$_NON_CLUSTERED started.
-2025-08-30 19:10:17 [main] INFO  com.gjxt.inspection.InspectionSystemApplication - Started InspectionSystemApplication in 5.072 seconds (JVM running for 6.256)
-2025-08-30 19:10:28 [http-nio-192.168.42.128-8080-exec-1] INFO  o.a.c.c.ContainerBase.[Tomcat].[localhost].[/api] - Initializing Spring DispatcherServlet 'dispatcherServlet'
-2025-08-30 19:10:28 [http-nio-192.168.42.128-8080-exec-1] INFO  org.springframework.web.servlet.DispatcherServlet - Initializing Servlet 'dispatcherServlet'
-2025-08-30 19:10:28 [http-nio-192.168.42.128-8080-exec-1] INFO  org.springframework.web.servlet.DispatcherServlet - Completed initialization in 0 ms
-2025-08-30 22:03:27 [main] INFO  com.gjxt.inspection.InspectionSystemApplication - Starting InspectionSystemApplication using Java 1.8.0_391 on 误入凡尘的灵 with PID 44984 (F:\gjxt\backend\target\classes started by 174344 in F:\gjxt)
-2025-08-30 22:03:27 [main] DEBUG com.gjxt.inspection.InspectionSystemApplication - Running with Spring Boot v2.7.18, Spring v5.3.31
-2025-08-30 22:03:27 [main] INFO  com.gjxt.inspection.InspectionSystemApplication - No active profile set, falling back to 1 default profile: "default"
-2025-08-30 22:03:28 [main] INFO  o.s.boot.web.embedded.tomcat.TomcatWebServer - Tomcat initialized with port(s): 8080 (http)
-2025-08-30 22:03:28 [main] INFO  org.apache.catalina.core.StandardService - Starting service [Tomcat]
-2025-08-30 22:03:28 [main] INFO  org.apache.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/9.0.83]
-2025-08-30 22:03:29 [main] INFO  o.a.c.c.ContainerBase.[Tomcat].[localhost].[/api] - Initializing Spring embedded WebApplicationContext
-2025-08-30 22:03:29 [main] INFO  o.s.b.w.s.c.ServletWebServerApplicationContext - Root WebApplicationContext: initialization completed in 1097 ms
-2025-08-30 22:03:29 [main] INFO  c.a.d.s.b.a.DruidDataSourceAutoConfigure - Init DruidDataSource
-2025-08-30 22:03:30 [main] INFO  com.alibaba.druid.pool.DruidDataSource - {dataSource-1} inited
-2025-08-30 22:03:31 [main] WARN  o.s.b.a.s.s.UserDetailsServiceAutoConfiguration - 
+2025-09-03 17:03:08 [main] INFO  org.quartz.impl.StdSchedulerFactory - Quartz scheduler 'quartzScheduler' initialized from an externally provided properties instance.
+2025-09-03 17:03:08 [main] INFO  org.quartz.impl.StdSchedulerFactory - Quartz scheduler version: 2.3.2
+2025-09-03 17:03:08 [main] INFO  org.quartz.core.QuartzScheduler - JobFactory set to: org.springframework.scheduling.quartz.SpringBeanJobFactory@55f6f965
+2025-09-03 17:03:08 [main] INFO  o.s.boot.web.embedded.tomcat.TomcatWebServer - Tomcat started on port(s): 8080 (http) with context path '/api'
+2025-09-03 17:03:08 [main] INFO  o.s.scheduling.quartz.SchedulerFactoryBean - Starting Quartz Scheduler now
+2025-09-03 17:03:08 [main] INFO  org.quartz.core.QuartzScheduler - Scheduler quartzScheduler_$_NON_CLUSTERED started.
+2025-09-03 17:03:08 [main] INFO  com.gjxt.inspection.InspectionSystemApplication - Started InspectionSystemApplication in 5.077 seconds (JVM running for 6.183)
+2025-09-03 17:03:11 [http-nio-192.168.244.128-8080-exec-1] INFO  o.a.c.c.ContainerBase.[Tomcat].[localhost].[/api] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+2025-09-03 17:03:11 [http-nio-192.168.244.128-8080-exec-1] INFO  org.springframework.web.servlet.DispatcherServlet - Initializing Servlet 'dispatcherServlet'
+2025-09-03 17:03:11 [http-nio-192.168.244.128-8080-exec-1] INFO  org.springframework.web.servlet.DispatcherServlet - Completed initialization in 0 ms
+2025-09-03 17:14:22 [SpringApplicationShutdownHook] INFO  org.quartz.core.QuartzScheduler - Scheduler quartzScheduler_$_NON_CLUSTERED paused.
+2025-09-03 17:14:22 [SpringApplicationShutdownHook] INFO  o.s.scheduling.quartz.SchedulerFactoryBean - Shutting down Quartz Scheduler
+2025-09-03 17:14:22 [SpringApplicationShutdownHook] INFO  org.quartz.core.QuartzScheduler - Scheduler quartzScheduler_$_NON_CLUSTERED shutting down.
+2025-09-03 17:14:22 [SpringApplicationShutdownHook] INFO  org.quartz.core.QuartzScheduler - Scheduler quartzScheduler_$_NON_CLUSTERED paused.
+2025-09-03 17:14:22 [SpringApplicationShutdownHook] INFO  org.quartz.core.QuartzScheduler - Scheduler quartzScheduler_$_NON_CLUSTERED shutdown complete.
+2025-09-03 17:14:22 [SpringApplicationShutdownHook] INFO  com.alibaba.druid.pool.DruidDataSource - {dataSource-1} closing ...
+2025-09-03 17:14:22 [SpringApplicationShutdownHook] INFO  com.alibaba.druid.pool.DruidDataSource - {dataSource-1} closed
+2025-09-03 17:14:29 [main] INFO  com.gjxt.inspection.InspectionSystemApplication - Starting InspectionSystemApplication using Java 1.8.0_391 on 误入凡尘的灵 with PID 38932 (F:\gjxt\backend\target\classes started by 174344 in F:\gjxt)
+2025-09-03 17:14:29 [main] DEBUG com.gjxt.inspection.InspectionSystemApplication - Running with Spring Boot v2.7.18, Spring v5.3.31
+2025-09-03 17:14:29 [main] INFO  com.gjxt.inspection.InspectionSystemApplication - No active profile set, falling back to 1 default profile: "default"
+2025-09-03 17:14:30 [main] INFO  o.s.boot.web.embedded.tomcat.TomcatWebServer - Tomcat initialized with port(s): 8080 (http)
+2025-09-03 17:14:30 [main] INFO  org.apache.catalina.core.StandardService - Starting service [Tomcat]
+2025-09-03 17:14:30 [main] INFO  org.apache.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/9.0.83]
+2025-09-03 17:14:30 [main] INFO  o.a.c.c.ContainerBase.[Tomcat].[localhost].[/api] - Initializing Spring embedded WebApplicationContext
+2025-09-03 17:14:30 [main] INFO  o.s.b.w.s.c.ServletWebServerApplicationContext - Root WebApplicationContext: initialization completed in 1100 ms
+2025-09-03 17:14:30 [main] INFO  c.a.d.s.b.a.DruidDataSourceAutoConfigure - Init DruidDataSource
+2025-09-03 17:14:31 [main] INFO  com.alibaba.druid.pool.DruidDataSource - {dataSource-1} inited
+2025-09-03 17:14:32 [main] WARN  o.s.b.a.s.s.UserDetailsServiceAutoConfiguration - 
 
-Using generated security password: d4e1b171-c204-440c-9111-e5256a9cb1e1
+Using generated security password: 0b6e3a47-e56a-4f2e-80e0-1d812edca9d4
 
 This generated password is for development use only. Your security configuration must be updated before running your application in production.
 
-2025-08-30 22:03:32 [main] INFO  o.s.security.web.DefaultSecurityFilterChain - Will secure any request with [org.springframework.security.web.session.DisableEncodeUrlFilter@7d8f2eec, org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter@e886caf, org.springframework.security.web.context.SecurityContextPersistenceFilter@248d3a, org.springframework.security.web.header.HeaderWriterFilter@56478522, org.springframework.security.web.authentication.logout.LogoutFilter@5d9bb69b, org.springframework.security.web.savedrequest.RequestCacheAwareFilter@636e4bf8, org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter@7878bbdb, org.springframework.security.web.authentication.AnonymousAuthenticationFilter@1d585fb, org.springframework.security.web.session.SessionManagementFilter@1ff463bb, org.springframework.security.web.access.ExceptionTranslationFilter@279c4e3b, org.springframework.security.web.access.intercept.FilterSecurityInterceptor@97b5e6a]
-2025-08-30 22:03:32 [main] INFO  org.quartz.impl.StdSchedulerFactory - Using default implementation for ThreadExecutor
-2025-08-30 22:03:32 [main] INFO  org.quartz.core.SchedulerSignalerImpl - Initialized Scheduler Signaller of type: class org.quartz.core.SchedulerSignalerImpl
-2025-08-30 22:03:32 [main] INFO  org.quartz.core.QuartzScheduler - Quartz Scheduler v.2.3.2 created.
-2025-08-30 22:03:32 [main] INFO  org.quartz.simpl.RAMJobStore - RAMJobStore initialized.
-2025-08-30 22:03:32 [main] INFO  org.quartz.core.QuartzScheduler - Scheduler meta-data: Quartz Scheduler (v2.3.2) 'quartzScheduler' with instanceId 'NON_CLUSTERED'
+2025-09-03 17:14:32 [main] INFO  o.s.security.web.DefaultSecurityFilterChain - Will secure any request with [org.springframework.security.web.session.DisableEncodeUrlFilter@67770b37, org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter@72906e, org.springframework.security.web.context.SecurityContextPersistenceFilter@461c3709, org.springframework.security.web.header.HeaderWriterFilter@2a7d9b41, org.springframework.security.web.authentication.logout.LogoutFilter@707ca986, org.springframework.security.web.savedrequest.RequestCacheAwareFilter@3f63a513, org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter@6435fa1c, org.springframework.security.web.authentication.AnonymousAuthenticationFilter@5529ff44, org.springframework.security.web.session.SessionManagementFilter@40ef0af8, org.springframework.security.web.access.ExceptionTranslationFilter@144ab983, org.springframework.security.web.access.intercept.FilterSecurityInterceptor@1536ea40]
+2025-09-03 17:14:33 [main] INFO  org.quartz.impl.StdSchedulerFactory - Using default implementation for ThreadExecutor
+2025-09-03 17:14:33 [main] INFO  org.quartz.core.SchedulerSignalerImpl - Initialized Scheduler Signaller of type: class org.quartz.core.SchedulerSignalerImpl
+2025-09-03 17:14:33 [main] INFO  org.quartz.core.QuartzScheduler - Quartz Scheduler v.2.3.2 created.
+2025-09-03 17:14:33 [main] INFO  org.quartz.simpl.RAMJobStore - RAMJobStore initialized.
+2025-09-03 17:14:33 [main] INFO  org.quartz.core.QuartzScheduler - Scheduler meta-data: Quartz Scheduler (v2.3.2) 'quartzScheduler' with instanceId 'NON_CLUSTERED'
   Scheduler class: 'org.quartz.core.QuartzScheduler' - running locally.
   NOT STARTED.
   Currently in standby mode.
@@ -172,259 +165,17 @@ This generated password is for development use only. Your security configuration
   Using thread pool 'org.quartz.simpl.SimpleThreadPool' - with 10 threads.
   Using job-store 'org.quartz.simpl.RAMJobStore' - which does not support persistence. and is not clustered.
 
-2025-08-30 22:03:32 [main] INFO  org.quartz.impl.StdSchedulerFactory - Quartz scheduler 'quartzScheduler' initialized from an externally provided properties instance.
-2025-08-30 22:03:32 [main] INFO  org.quartz.impl.StdSchedulerFactory - Quartz scheduler version: 2.3.2
-2025-08-30 22:03:32 [main] INFO  org.quartz.core.QuartzScheduler - JobFactory set to: org.springframework.scheduling.quartz.SpringBeanJobFactory@72c704f1
-2025-08-30 22:03:32 [main] INFO  o.s.boot.web.embedded.tomcat.TomcatWebServer - Tomcat started on port(s): 8080 (http) with context path '/api'
-2025-08-30 22:03:32 [main] INFO  o.s.scheduling.quartz.SchedulerFactoryBean - Starting Quartz Scheduler now
-2025-08-30 22:03:32 [main] INFO  org.quartz.core.QuartzScheduler - Scheduler quartzScheduler_$_NON_CLUSTERED started.
-2025-08-30 22:03:32 [main] INFO  com.gjxt.inspection.InspectionSystemApplication - Started InspectionSystemApplication in 5.181 seconds (JVM running for 6.364)
-2025-08-30 22:03:36 [http-nio-192.168.42.128-8080-exec-1] INFO  o.a.c.c.ContainerBase.[Tomcat].[localhost].[/api] - Initializing Spring DispatcherServlet 'dispatcherServlet'
-2025-08-30 22:03:36 [http-nio-192.168.42.128-8080-exec-1] INFO  org.springframework.web.servlet.DispatcherServlet - Initializing Servlet 'dispatcherServlet'
-2025-08-30 22:03:36 [http-nio-192.168.42.128-8080-exec-1] INFO  org.springframework.web.servlet.DispatcherServlet - Completed initialization in 0 ms
-2025-08-30 22:03:37 [http-nio-192.168.42.128-8080-exec-1] INFO  c.g.i.service.impl.SysInspectionRecordServiceImpl - 导出Excel成功，共导出4条记录
-2025-08-30 22:16:28 [http-nio-192.168.42.128-8080-exec-2] INFO  c.g.i.service.impl.SysInspectionRecordServiceImpl - 导出Excel成功，共导出4条记录
-2025-08-30 22:17:20 [http-nio-192.168.42.128-8080-exec-5] INFO  c.g.i.service.impl.SysInspectionRecordServiceImpl - 生成新的记录编号: 89b87e38-a7fd-4a88-b565-904e122a91ab
-2025-08-30 22:17:20 [http-nio-192.168.42.128-8080-exec-5] INFO  c.g.i.service.impl.SysInspectionRecordServiceImpl - 提交记录 - 检查组长ID: null, 副组长ID: null
-2025-08-30 22:17:20 [http-nio-192.168.42.128-8080-exec-5] INFO  c.g.i.service.impl.SysInspectionRecordServiceImpl - 前端提交数据 - groupLeader: 组长, deputyLeader: 副组长
-2025-08-30 22:17:49 [SpringApplicationShutdownHook] INFO  org.quartz.core.QuartzScheduler - Scheduler quartzScheduler_$_NON_CLUSTERED paused.
-2025-08-30 22:17:49 [SpringApplicationShutdownHook] INFO  o.s.scheduling.quartz.SchedulerFactoryBean - Shutting down Quartz Scheduler
-2025-08-30 22:17:49 [SpringApplicationShutdownHook] INFO  org.quartz.core.QuartzScheduler - Scheduler quartzScheduler_$_NON_CLUSTERED shutting down.
-2025-08-30 22:17:49 [SpringApplicationShutdownHook] INFO  org.quartz.core.QuartzScheduler - Scheduler quartzScheduler_$_NON_CLUSTERED paused.
-2025-08-30 22:17:49 [SpringApplicationShutdownHook] INFO  org.quartz.core.QuartzScheduler - Scheduler quartzScheduler_$_NON_CLUSTERED shutdown complete.
-2025-08-30 22:17:49 [SpringApplicationShutdownHook] INFO  com.alibaba.druid.pool.DruidDataSource - {dataSource-1} closing ...
-2025-08-30 22:17:49 [SpringApplicationShutdownHook] INFO  com.alibaba.druid.pool.DruidDataSource - {dataSource-1} closed
-2025-08-30 22:17:54 [main] INFO  com.gjxt.inspection.InspectionSystemApplication - Starting InspectionSystemApplication using Java 1.8.0_391 on 误入凡尘的灵 with PID 44472 (F:\gjxt\backend\target\classes started by 174344 in F:\gjxt)
-2025-08-30 22:17:54 [main] DEBUG com.gjxt.inspection.InspectionSystemApplication - Running with Spring Boot v2.7.18, Spring v5.3.31
-2025-08-30 22:17:54 [main] INFO  com.gjxt.inspection.InspectionSystemApplication - No active profile set, falling back to 1 default profile: "default"
-2025-08-30 22:17:55 [main] INFO  o.s.boot.web.embedded.tomcat.TomcatWebServer - Tomcat initialized with port(s): 8080 (http)
-2025-08-30 22:17:55 [main] INFO  org.apache.catalina.core.StandardService - Starting service [Tomcat]
-2025-08-30 22:17:55 [main] INFO  org.apache.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/9.0.83]
-2025-08-30 22:17:55 [main] INFO  o.a.c.c.ContainerBase.[Tomcat].[localhost].[/api] - Initializing Spring embedded WebApplicationContext
-2025-08-30 22:17:55 [main] INFO  o.s.b.w.s.c.ServletWebServerApplicationContext - Root WebApplicationContext: initialization completed in 1074 ms
-2025-08-30 22:17:55 [main] INFO  c.a.d.s.b.a.DruidDataSourceAutoConfigure - Init DruidDataSource
-2025-08-30 22:17:57 [main] INFO  com.alibaba.druid.pool.DruidDataSource - {dataSource-1} inited
-2025-08-30 22:17:58 [main] WARN  o.s.b.a.s.s.UserDetailsServiceAutoConfiguration - 
-
-Using generated security password: 3f53ef2a-69b1-4d75-8d84-7ae8bfee312a
-
-This generated password is for development use only. Your security configuration must be updated before running your application in production.
-
-2025-08-30 22:17:58 [main] INFO  o.s.security.web.DefaultSecurityFilterChain - Will secure any request with [org.springframework.security.web.session.DisableEncodeUrlFilter@1acc873b, org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter@4ca970d5, org.springframework.security.web.context.SecurityContextPersistenceFilter@24eecabf, org.springframework.security.web.header.HeaderWriterFilter@67f591c2, org.springframework.security.web.authentication.logout.LogoutFilter@1d2046bb, org.springframework.security.web.savedrequest.RequestCacheAwareFilter@78d6c244, org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter@60ae7cf2, org.springframework.security.web.authentication.AnonymousAuthenticationFilter@dc8b2ff, org.springframework.security.web.session.SessionManagementFilter@5a1a20ae, org.springframework.security.web.access.ExceptionTranslationFilter@14dbfdb1, org.springframework.security.web.access.intercept.FilterSecurityInterceptor@48af5f38]
-2025-08-30 22:17:59 [main] INFO  org.quartz.impl.StdSchedulerFactory - Using default implementation for ThreadExecutor
-2025-08-30 22:17:59 [main] INFO  org.quartz.core.SchedulerSignalerImpl - Initialized Scheduler Signaller of type: class org.quartz.core.SchedulerSignalerImpl
-2025-08-30 22:17:59 [main] INFO  org.quartz.core.QuartzScheduler - Quartz Scheduler v.2.3.2 created.
-2025-08-30 22:17:59 [main] INFO  org.quartz.simpl.RAMJobStore - RAMJobStore initialized.
-2025-08-30 22:17:59 [main] INFO  org.quartz.core.QuartzScheduler - Scheduler meta-data: Quartz Scheduler (v2.3.2) 'quartzScheduler' with instanceId 'NON_CLUSTERED'
-  Scheduler class: 'org.quartz.core.QuartzScheduler' - running locally.
-  NOT STARTED.
-  Currently in standby mode.
-  Number of jobs executed: 0
-  Using thread pool 'org.quartz.simpl.SimpleThreadPool' - with 10 threads.
-  Using job-store 'org.quartz.simpl.RAMJobStore' - which does not support persistence. and is not clustered.
-
-2025-08-30 22:17:59 [main] INFO  org.quartz.impl.StdSchedulerFactory - Quartz scheduler 'quartzScheduler' initialized from an externally provided properties instance.
-2025-08-30 22:17:59 [main] INFO  org.quartz.impl.StdSchedulerFactory - Quartz scheduler version: 2.3.2
-2025-08-30 22:17:59 [main] INFO  org.quartz.core.QuartzScheduler - JobFactory set to: org.springframework.scheduling.quartz.SpringBeanJobFactory@1e7d3d87
-2025-08-30 22:17:59 [main] INFO  o.s.boot.web.embedded.tomcat.TomcatWebServer - Tomcat started on port(s): 8080 (http) with context path '/api'
-2025-08-30 22:17:59 [main] INFO  o.s.scheduling.quartz.SchedulerFactoryBean - Starting Quartz Scheduler now
-2025-08-30 22:17:59 [main] INFO  org.quartz.core.QuartzScheduler - Scheduler quartzScheduler_$_NON_CLUSTERED started.
-2025-08-30 22:17:59 [main] INFO  com.gjxt.inspection.InspectionSystemApplication - Started InspectionSystemApplication in 5.232 seconds (JVM running for 6.373)
-2025-08-30 22:18:16 [http-nio-192.168.42.128-8080-exec-2] INFO  o.a.c.c.ContainerBase.[Tomcat].[localhost].[/api] - Initializing Spring DispatcherServlet 'dispatcherServlet'
-2025-08-30 22:18:16 [http-nio-192.168.42.128-8080-exec-2] INFO  org.springframework.web.servlet.DispatcherServlet - Initializing Servlet 'dispatcherServlet'
-2025-08-30 22:18:16 [http-nio-192.168.42.128-8080-exec-2] INFO  org.springframework.web.servlet.DispatcherServlet - Completed initialization in 1 ms
-2025-08-30 22:19:06 [http-nio-192.168.42.128-8080-exec-4] INFO  c.g.i.service.impl.SysInspectionRecordServiceImpl - 生成新的记录编号: 72f831d2-e4ed-4a8a-921b-b2d3b32b5483
-2025-08-30 22:19:06 [http-nio-192.168.42.128-8080-exec-4] INFO  c.g.i.service.impl.SysInspectionRecordServiceImpl - 提交记录 - 检查组长ID: null, 副组长ID: null
-2025-08-30 22:19:06 [http-nio-192.168.42.128-8080-exec-4] INFO  c.g.i.service.impl.SysInspectionRecordServiceImpl - 前端提交数据 - groupLeader: 检查组长, deputyLeader: 检查副组长
-2025-08-30 22:22:37 [http-nio-192.168.42.128-8080-exec-5] INFO  c.g.i.service.impl.SysInspectionRecordServiceImpl - 导出Excel成功，共导出1条记录
-2025-08-30 22:22:37 [SpringApplicationShutdownHook] INFO  org.quartz.core.QuartzScheduler - Scheduler quartzScheduler_$_NON_CLUSTERED paused.
-2025-08-30 22:22:37 [SpringApplicationShutdownHook] INFO  o.s.scheduling.quartz.SchedulerFactoryBean - Shutting down Quartz Scheduler
-2025-08-30 22:22:37 [SpringApplicationShutdownHook] INFO  org.quartz.core.QuartzScheduler - Scheduler quartzScheduler_$_NON_CLUSTERED shutting down.
-2025-08-30 22:22:37 [SpringApplicationShutdownHook] INFO  org.quartz.core.QuartzScheduler - Scheduler quartzScheduler_$_NON_CLUSTERED paused.
-2025-08-30 22:22:37 [SpringApplicationShutdownHook] INFO  org.quartz.core.QuartzScheduler - Scheduler quartzScheduler_$_NON_CLUSTERED shutdown complete.
-2025-08-30 22:22:37 [SpringApplicationShutdownHook] INFO  com.alibaba.druid.pool.DruidDataSource - {dataSource-1} closing ...
-2025-08-30 22:22:37 [SpringApplicationShutdownHook] INFO  com.alibaba.druid.pool.DruidDataSource - {dataSource-1} closed
-2025-08-30 22:22:42 [main] INFO  com.gjxt.inspection.InspectionSystemApplication - Starting InspectionSystemApplication using Java 1.8.0_391 on 误入凡尘的灵 with PID 35520 (F:\gjxt\backend\target\classes started by 174344 in F:\gjxt)
-2025-08-30 22:22:42 [main] DEBUG com.gjxt.inspection.InspectionSystemApplication - Running with Spring Boot v2.7.18, Spring v5.3.31
-2025-08-30 22:22:42 [main] INFO  com.gjxt.inspection.InspectionSystemApplication - No active profile set, falling back to 1 default profile: "default"
-2025-08-30 22:22:43 [main] INFO  o.s.boot.web.embedded.tomcat.TomcatWebServer - Tomcat initialized with port(s): 8080 (http)
-2025-08-30 22:22:43 [main] INFO  org.apache.catalina.core.StandardService - Starting service [Tomcat]
-2025-08-30 22:22:43 [main] INFO  org.apache.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/9.0.83]
-2025-08-30 22:22:43 [main] INFO  o.a.c.c.ContainerBase.[Tomcat].[localhost].[/api] - Initializing Spring embedded WebApplicationContext
-2025-08-30 22:22:43 [main] INFO  o.s.b.w.s.c.ServletWebServerApplicationContext - Root WebApplicationContext: initialization completed in 1113 ms
-2025-08-30 22:22:44 [main] INFO  c.a.d.s.b.a.DruidDataSourceAutoConfigure - Init DruidDataSource
-2025-08-30 22:22:45 [main] INFO  com.alibaba.druid.pool.DruidDataSource - {dataSource-1} inited
-2025-08-30 22:22:46 [main] WARN  o.s.b.a.s.s.UserDetailsServiceAutoConfiguration - 
-
-Using generated security password: acf1bc64-8a3c-4d3a-b4ba-d9a86c410611
-
-This generated password is for development use only. Your security configuration must be updated before running your application in production.
-
-2025-08-30 22:22:46 [main] INFO  o.s.security.web.DefaultSecurityFilterChain - Will secure any request with [org.springframework.security.web.session.DisableEncodeUrlFilter@5d3b6585, org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter@41059616, org.springframework.security.web.context.SecurityContextPersistenceFilter@2d38db6f, org.springframework.security.web.header.HeaderWriterFilter@56cd5d76, org.springframework.security.web.authentication.logout.LogoutFilter@7c9372ed, org.springframework.security.web.savedrequest.RequestCacheAwareFilter@571d0925, org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter@32b95de, org.springframework.security.web.authentication.AnonymousAuthenticationFilter@2e93108a, org.springframework.security.web.session.SessionManagementFilter@7ffcb232, org.springframework.security.web.access.ExceptionTranslationFilter@595ec862, org.springframework.security.web.access.intercept.FilterSecurityInterceptor@1c0e4262]
-2025-08-30 22:22:47 [main] INFO  org.quartz.impl.StdSchedulerFactory - Using default implementation for ThreadExecutor
-2025-08-30 22:22:47 [main] INFO  org.quartz.core.SchedulerSignalerImpl - Initialized Scheduler Signaller of type: class org.quartz.core.SchedulerSignalerImpl
-2025-08-30 22:22:47 [main] INFO  org.quartz.core.QuartzScheduler - Quartz Scheduler v.2.3.2 created.
-2025-08-30 22:22:47 [main] INFO  org.quartz.simpl.RAMJobStore - RAMJobStore initialized.
-2025-08-30 22:22:47 [main] INFO  org.quartz.core.QuartzScheduler - Scheduler meta-data: Quartz Scheduler (v2.3.2) 'quartzScheduler' with instanceId 'NON_CLUSTERED'
-  Scheduler class: 'org.quartz.core.QuartzScheduler' - running locally.
-  NOT STARTED.
-  Currently in standby mode.
-  Number of jobs executed: 0
-  Using thread pool 'org.quartz.simpl.SimpleThreadPool' - with 10 threads.
-  Using job-store 'org.quartz.simpl.RAMJobStore' - which does not support persistence. and is not clustered.
-
-2025-08-30 22:22:47 [main] INFO  org.quartz.impl.StdSchedulerFactory - Quartz scheduler 'quartzScheduler' initialized from an externally provided properties instance.
-2025-08-30 22:22:47 [main] INFO  org.quartz.impl.StdSchedulerFactory - Quartz scheduler version: 2.3.2
-2025-08-30 22:22:47 [main] INFO  org.quartz.core.QuartzScheduler - JobFactory set to: org.springframework.scheduling.quartz.SpringBeanJobFactory@4e26987b
-2025-08-30 22:22:47 [main] INFO  o.s.boot.web.embedded.tomcat.TomcatWebServer - Tomcat started on port(s): 8080 (http) with context path '/api'
-2025-08-30 22:22:47 [main] INFO  o.s.scheduling.quartz.SchedulerFactoryBean - Starting Quartz Scheduler now
-2025-08-30 22:22:47 [main] INFO  org.quartz.core.QuartzScheduler - Scheduler quartzScheduler_$_NON_CLUSTERED started.
-2025-08-30 22:22:47 [main] INFO  com.gjxt.inspection.InspectionSystemApplication - Started InspectionSystemApplication in 5.207 seconds (JVM running for 6.445)
-2025-08-30 22:22:52 [http-nio-192.168.42.128-8080-exec-1] INFO  o.a.c.c.ContainerBase.[Tomcat].[localhost].[/api] - Initializing Spring DispatcherServlet 'dispatcherServlet'
-2025-08-30 22:22:52 [http-nio-192.168.42.128-8080-exec-1] INFO  org.springframework.web.servlet.DispatcherServlet - Initializing Servlet 'dispatcherServlet'
-2025-08-30 22:22:52 [http-nio-192.168.42.128-8080-exec-1] INFO  org.springframework.web.servlet.DispatcherServlet - Completed initialization in 1 ms
-2025-08-30 22:23:07 [http-nio-192.168.42.128-8080-exec-1] INFO  c.g.i.service.impl.SysInspectionRecordServiceImpl - 导出Excel成功，共导出1条记录
-2025-08-30 22:23:12 [http-nio-192.168.42.128-8080-exec-2] INFO  c.g.i.service.impl.SysInspectionRecordServiceImpl - 导出Excel成功，共导出1条记录
-2025-08-30 22:24:57 [SpringApplicationShutdownHook] INFO  org.quartz.core.QuartzScheduler - Scheduler quartzScheduler_$_NON_CLUSTERED paused.
-2025-08-30 22:24:57 [SpringApplicationShutdownHook] INFO  o.s.scheduling.quartz.SchedulerFactoryBean - Shutting down Quartz Scheduler
-2025-08-30 22:24:57 [SpringApplicationShutdownHook] INFO  org.quartz.core.QuartzScheduler - Scheduler quartzScheduler_$_NON_CLUSTERED shutting down.
-2025-08-30 22:24:57 [SpringApplicationShutdownHook] INFO  org.quartz.core.QuartzScheduler - Scheduler quartzScheduler_$_NON_CLUSTERED paused.
-2025-08-30 22:24:57 [SpringApplicationShutdownHook] INFO  org.quartz.core.QuartzScheduler - Scheduler quartzScheduler_$_NON_CLUSTERED shutdown complete.
-2025-08-30 22:24:57 [SpringApplicationShutdownHook] INFO  com.alibaba.druid.pool.DruidDataSource - {dataSource-1} closing ...
-2025-08-30 22:24:57 [SpringApplicationShutdownHook] INFO  com.alibaba.druid.pool.DruidDataSource - {dataSource-1} closed
-2025-08-30 22:25:01 [main] INFO  com.gjxt.inspection.InspectionSystemApplication - Starting InspectionSystemApplication using Java 1.8.0_391 on 误入凡尘的灵 with PID 17820 (F:\gjxt\backend\target\classes started by 174344 in F:\gjxt)
-2025-08-30 22:25:01 [main] DEBUG com.gjxt.inspection.InspectionSystemApplication - Running with Spring Boot v2.7.18, Spring v5.3.31
-2025-08-30 22:25:01 [main] INFO  com.gjxt.inspection.InspectionSystemApplication - No active profile set, falling back to 1 default profile: "default"
-2025-08-30 22:25:02 [main] INFO  o.s.boot.web.embedded.tomcat.TomcatWebServer - Tomcat initialized with port(s): 8080 (http)
-2025-08-30 22:25:02 [main] INFO  org.apache.catalina.core.StandardService - Starting service [Tomcat]
-2025-08-30 22:25:02 [main] INFO  org.apache.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/9.0.83]
-2025-08-30 22:25:03 [main] INFO  o.a.c.c.ContainerBase.[Tomcat].[localhost].[/api] - Initializing Spring embedded WebApplicationContext
-2025-08-30 22:25:03 [main] INFO  o.s.b.w.s.c.ServletWebServerApplicationContext - Root WebApplicationContext: initialization completed in 1076 ms
-2025-08-30 22:25:03 [main] INFO  c.a.d.s.b.a.DruidDataSourceAutoConfigure - Init DruidDataSource
-2025-08-30 22:25:04 [main] INFO  com.alibaba.druid.pool.DruidDataSource - {dataSource-1} inited
-2025-08-30 22:25:06 [main] WARN  o.s.b.a.s.s.UserDetailsServiceAutoConfiguration - 
-
-Using generated security password: 87740367-19d0-4080-9a57-ce2c0616f767
-
-This generated password is for development use only. Your security configuration must be updated before running your application in production.
-
-2025-08-30 22:25:06 [main] INFO  o.s.security.web.DefaultSecurityFilterChain - Will secure any request with [org.springframework.security.web.session.DisableEncodeUrlFilter@1308ef19, org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter@5b1ff8cd, org.springframework.security.web.context.SecurityContextPersistenceFilter@6de610c6, org.springframework.security.web.header.HeaderWriterFilter@1b8d20e6, org.springframework.security.web.authentication.logout.LogoutFilter@3b9c9b8b, org.springframework.security.web.savedrequest.RequestCacheAwareFilter@631944d4, org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter@6e3b2dd3, org.springframework.security.web.authentication.AnonymousAuthenticationFilter@6cee903a, org.springframework.security.web.session.SessionManagementFilter@78d6c244, org.springframework.security.web.access.ExceptionTranslationFilter@284c4f02, org.springframework.security.web.access.intercept.FilterSecurityInterceptor@760a2b6e]
-2025-08-30 22:25:06 [main] INFO  org.quartz.impl.StdSchedulerFactory - Using default implementation for ThreadExecutor
-2025-08-30 22:25:06 [main] INFO  org.quartz.core.SchedulerSignalerImpl - Initialized Scheduler Signaller of type: class org.quartz.core.SchedulerSignalerImpl
-2025-08-30 22:25:06 [main] INFO  org.quartz.core.QuartzScheduler - Quartz Scheduler v.2.3.2 created.
-2025-08-30 22:25:06 [main] INFO  org.quartz.simpl.RAMJobStore - RAMJobStore initialized.
-2025-08-30 22:25:06 [main] INFO  org.quartz.core.QuartzScheduler - Scheduler meta-data: Quartz Scheduler (v2.3.2) 'quartzScheduler' with instanceId 'NON_CLUSTERED'
-  Scheduler class: 'org.quartz.core.QuartzScheduler' - running locally.
-  NOT STARTED.
-  Currently in standby mode.
-  Number of jobs executed: 0
-  Using thread pool 'org.quartz.simpl.SimpleThreadPool' - with 10 threads.
-  Using job-store 'org.quartz.simpl.RAMJobStore' - which does not support persistence. and is not clustered.
-
-2025-08-30 22:25:06 [main] INFO  org.quartz.impl.StdSchedulerFactory - Quartz scheduler 'quartzScheduler' initialized from an externally provided properties instance.
-2025-08-30 22:25:06 [main] INFO  org.quartz.impl.StdSchedulerFactory - Quartz scheduler version: 2.3.2
-2025-08-30 22:25:06 [main] INFO  org.quartz.core.QuartzScheduler - JobFactory set to: org.springframework.scheduling.quartz.SpringBeanJobFactory@1e3566e
-2025-08-30 22:25:06 [main] INFO  o.s.boot.web.embedded.tomcat.TomcatWebServer - Tomcat started on port(s): 8080 (http) with context path '/api'
-2025-08-30 22:25:06 [main] INFO  o.s.scheduling.quartz.SchedulerFactoryBean - Starting Quartz Scheduler now
-2025-08-30 22:25:06 [main] INFO  org.quartz.core.QuartzScheduler - Scheduler quartzScheduler_$_NON_CLUSTERED started.
-2025-08-30 22:25:06 [main] INFO  com.gjxt.inspection.InspectionSystemApplication - Started InspectionSystemApplication in 5.287 seconds (JVM running for 6.567)
-2025-08-30 22:25:10 [http-nio-192.168.42.128-8080-exec-4] INFO  o.a.c.c.ContainerBase.[Tomcat].[localhost].[/api] - Initializing Spring DispatcherServlet 'dispatcherServlet'
-2025-08-30 22:25:10 [http-nio-192.168.42.128-8080-exec-4] INFO  org.springframework.web.servlet.DispatcherServlet - Initializing Servlet 'dispatcherServlet'
-2025-08-30 22:25:10 [http-nio-192.168.42.128-8080-exec-4] INFO  org.springframework.web.servlet.DispatcherServlet - Completed initialization in 1 ms
-2025-08-30 22:25:16 [http-nio-192.168.42.128-8080-exec-5] INFO  c.g.i.service.impl.SysInspectionRecordServiceImpl - 导出Excel成功，共导出1条记录
-2025-08-30 22:26:25 [SpringApplicationShutdownHook] INFO  org.quartz.core.QuartzScheduler - Scheduler quartzScheduler_$_NON_CLUSTERED paused.
-2025-08-30 22:26:25 [SpringApplicationShutdownHook] INFO  o.s.scheduling.quartz.SchedulerFactoryBean - Shutting down Quartz Scheduler
-2025-08-30 22:26:25 [SpringApplicationShutdownHook] INFO  org.quartz.core.QuartzScheduler - Scheduler quartzScheduler_$_NON_CLUSTERED shutting down.
-2025-08-30 22:26:25 [SpringApplicationShutdownHook] INFO  org.quartz.core.QuartzScheduler - Scheduler quartzScheduler_$_NON_CLUSTERED paused.
-2025-08-30 22:26:25 [SpringApplicationShutdownHook] INFO  org.quartz.core.QuartzScheduler - Scheduler quartzScheduler_$_NON_CLUSTERED shutdown complete.
-2025-08-30 22:26:25 [SpringApplicationShutdownHook] INFO  com.alibaba.druid.pool.DruidDataSource - {dataSource-1} closing ...
-2025-08-30 22:26:25 [SpringApplicationShutdownHook] INFO  com.alibaba.druid.pool.DruidDataSource - {dataSource-1} closed
-2025-08-30 22:26:30 [main] INFO  com.gjxt.inspection.InspectionSystemApplication - Starting InspectionSystemApplication using Java 1.8.0_391 on 误入凡尘的灵 with PID 43240 (F:\gjxt\backend\target\classes started by 174344 in F:\gjxt)
-2025-08-30 22:26:30 [main] DEBUG com.gjxt.inspection.InspectionSystemApplication - Running with Spring Boot v2.7.18, Spring v5.3.31
-2025-08-30 22:26:30 [main] INFO  com.gjxt.inspection.InspectionSystemApplication - No active profile set, falling back to 1 default profile: "default"
-2025-08-30 22:26:31 [main] INFO  o.s.boot.web.embedded.tomcat.TomcatWebServer - Tomcat initialized with port(s): 8080 (http)
-2025-08-30 22:26:31 [main] INFO  org.apache.catalina.core.StandardService - Starting service [Tomcat]
-2025-08-30 22:26:31 [main] INFO  org.apache.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/9.0.83]
-2025-08-30 22:26:31 [main] INFO  o.a.c.c.ContainerBase.[Tomcat].[localhost].[/api] - Initializing Spring embedded WebApplicationContext
-2025-08-30 22:26:31 [main] INFO  o.s.b.w.s.c.ServletWebServerApplicationContext - Root WebApplicationContext: initialization completed in 1073 ms
-2025-08-30 22:26:31 [main] INFO  c.a.d.s.b.a.DruidDataSourceAutoConfigure - Init DruidDataSource
-2025-08-30 22:26:32 [main] INFO  com.alibaba.druid.pool.DruidDataSource - {dataSource-1} inited
-2025-08-30 22:26:34 [main] WARN  o.s.b.a.s.s.UserDetailsServiceAutoConfiguration - 
-
-Using generated security password: 15808baf-84f9-4e33-8cd9-c1b357d31490
-
-This generated password is for development use only. Your security configuration must be updated before running your application in production.
-
-2025-08-30 22:26:34 [main] INFO  o.s.security.web.DefaultSecurityFilterChain - Will secure any request with [org.springframework.security.web.session.DisableEncodeUrlFilter@5abbb273, org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter@25d9291a, org.springframework.security.web.context.SecurityContextPersistenceFilter@7ee64b53, org.springframework.security.web.header.HeaderWriterFilter@2d38db6f, org.springframework.security.web.authentication.logout.LogoutFilter@3a4f8e8a, org.springframework.security.web.savedrequest.RequestCacheAwareFilter@7d126083, org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter@18faaff6, org.springframework.security.web.authentication.AnonymousAuthenticationFilter@445058e8, org.springframework.security.web.session.SessionManagementFilter@35ab4260, org.springframework.security.web.access.ExceptionTranslationFilter@9bf63d2, org.springframework.security.web.access.intercept.FilterSecurityInterceptor@698ac187]
-2025-08-30 22:26:35 [main] INFO  org.quartz.impl.StdSchedulerFactory - Using default implementation for ThreadExecutor
-2025-08-30 22:26:35 [main] INFO  org.quartz.core.SchedulerSignalerImpl - Initialized Scheduler Signaller of type: class org.quartz.core.SchedulerSignalerImpl
-2025-08-30 22:26:35 [main] INFO  org.quartz.core.QuartzScheduler - Quartz Scheduler v.2.3.2 created.
-2025-08-30 22:26:35 [main] INFO  org.quartz.simpl.RAMJobStore - RAMJobStore initialized.
-2025-08-30 22:26:35 [main] INFO  org.quartz.core.QuartzScheduler - Scheduler meta-data: Quartz Scheduler (v2.3.2) 'quartzScheduler' with instanceId 'NON_CLUSTERED'
-  Scheduler class: 'org.quartz.core.QuartzScheduler' - running locally.
-  NOT STARTED.
-  Currently in standby mode.
-  Number of jobs executed: 0
-  Using thread pool 'org.quartz.simpl.SimpleThreadPool' - with 10 threads.
-  Using job-store 'org.quartz.simpl.RAMJobStore' - which does not support persistence. and is not clustered.
-
-2025-08-30 22:26:35 [main] INFO  org.quartz.impl.StdSchedulerFactory - Quartz scheduler 'quartzScheduler' initialized from an externally provided properties instance.
-2025-08-30 22:26:35 [main] INFO  org.quartz.impl.StdSchedulerFactory - Quartz scheduler version: 2.3.2
-2025-08-30 22:26:35 [main] INFO  org.quartz.core.QuartzScheduler - JobFactory set to: org.springframework.scheduling.quartz.SpringBeanJobFactory@508f4bb5
-2025-08-30 22:26:35 [main] INFO  o.s.boot.web.embedded.tomcat.TomcatWebServer - Tomcat started on port(s): 8080 (http) with context path '/api'
-2025-08-30 22:26:35 [main] INFO  o.s.scheduling.quartz.SchedulerFactoryBean - Starting Quartz Scheduler now
-2025-08-30 22:26:35 [main] INFO  org.quartz.core.QuartzScheduler - Scheduler quartzScheduler_$_NON_CLUSTERED started.
-2025-08-30 22:26:35 [main] INFO  com.gjxt.inspection.InspectionSystemApplication - Started InspectionSystemApplication in 5.144 seconds (JVM running for 6.389)
-2025-08-30 22:26:38 [http-nio-192.168.42.128-8080-exec-1] INFO  o.a.c.c.ContainerBase.[Tomcat].[localhost].[/api] - Initializing Spring DispatcherServlet 'dispatcherServlet'
-2025-08-30 22:26:38 [http-nio-192.168.42.128-8080-exec-1] INFO  org.springframework.web.servlet.DispatcherServlet - Initializing Servlet 'dispatcherServlet'
-2025-08-30 22:26:38 [http-nio-192.168.42.128-8080-exec-1] INFO  org.springframework.web.servlet.DispatcherServlet - Completed initialization in 1 ms
-2025-08-30 22:26:41 [http-nio-192.168.42.128-8080-exec-1] INFO  c.g.i.service.impl.SysInspectionRecordServiceImpl - 导出Excel成功，共导出1条记录
-2025-08-30 22:28:59 [http-nio-192.168.42.128-8080-exec-2] INFO  c.g.i.service.impl.SysInspectionRecordServiceImpl - 导出Excel成功，共导出1条记录
-2025-08-30 22:28:59 [SpringApplicationShutdownHook] INFO  org.quartz.core.QuartzScheduler - Scheduler quartzScheduler_$_NON_CLUSTERED paused.
-2025-08-30 22:28:59 [SpringApplicationShutdownHook] INFO  o.s.scheduling.quartz.SchedulerFactoryBean - Shutting down Quartz Scheduler
-2025-08-30 22:28:59 [SpringApplicationShutdownHook] INFO  org.quartz.core.QuartzScheduler - Scheduler quartzScheduler_$_NON_CLUSTERED shutting down.
-2025-08-30 22:28:59 [SpringApplicationShutdownHook] INFO  org.quartz.core.QuartzScheduler - Scheduler quartzScheduler_$_NON_CLUSTERED paused.
-2025-08-30 22:28:59 [SpringApplicationShutdownHook] INFO  org.quartz.core.QuartzScheduler - Scheduler quartzScheduler_$_NON_CLUSTERED shutdown complete.
-2025-08-30 22:28:59 [SpringApplicationShutdownHook] INFO  com.alibaba.druid.pool.DruidDataSource - {dataSource-1} closing ...
-2025-08-30 22:28:59 [SpringApplicationShutdownHook] INFO  com.alibaba.druid.pool.DruidDataSource - {dataSource-1} closed
-2025-08-30 22:29:03 [main] INFO  com.gjxt.inspection.InspectionSystemApplication - Starting InspectionSystemApplication using Java 1.8.0_391 on 误入凡尘的灵 with PID 41136 (F:\gjxt\backend\target\classes started by 174344 in F:\gjxt)
-2025-08-30 22:29:03 [main] DEBUG com.gjxt.inspection.InspectionSystemApplication - Running with Spring Boot v2.7.18, Spring v5.3.31
-2025-08-30 22:29:03 [main] INFO  com.gjxt.inspection.InspectionSystemApplication - No active profile set, falling back to 1 default profile: "default"
-2025-08-30 22:29:04 [main] INFO  o.s.boot.web.embedded.tomcat.TomcatWebServer - Tomcat initialized with port(s): 8080 (http)
-2025-08-30 22:29:04 [main] INFO  org.apache.catalina.core.StandardService - Starting service [Tomcat]
-2025-08-30 22:29:04 [main] INFO  org.apache.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/9.0.83]
-2025-08-30 22:29:05 [main] INFO  o.a.c.c.ContainerBase.[Tomcat].[localhost].[/api] - Initializing Spring embedded WebApplicationContext
-2025-08-30 22:29:05 [main] INFO  o.s.b.w.s.c.ServletWebServerApplicationContext - Root WebApplicationContext: initialization completed in 1129 ms
-2025-08-30 22:29:05 [main] INFO  c.a.d.s.b.a.DruidDataSourceAutoConfigure - Init DruidDataSource
-2025-08-30 22:29:06 [main] INFO  com.alibaba.druid.pool.DruidDataSource - {dataSource-1} inited
-2025-08-30 22:29:07 [main] WARN  o.s.b.a.s.s.UserDetailsServiceAutoConfiguration - 
-
-Using generated security password: 7485a222-dafa-48b9-8e91-70eaa82eb27c
-
-This generated password is for development use only. Your security configuration must be updated before running your application in production.
-
-2025-08-30 22:29:07 [main] INFO  o.s.security.web.DefaultSecurityFilterChain - Will secure any request with [org.springframework.security.web.session.DisableEncodeUrlFilter@7f4f1536, org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter@1ad1b737, org.springframework.security.web.context.SecurityContextPersistenceFilter@269308cc, org.springframework.security.web.header.HeaderWriterFilter@4d2f9e3c, org.springframework.security.web.authentication.logout.LogoutFilter@7a1ddbf1, org.springframework.security.web.savedrequest.RequestCacheAwareFilter@17d816b3, org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter@312f3050, org.springframework.security.web.authentication.AnonymousAuthenticationFilter@342a1f84, org.springframework.security.web.session.SessionManagementFilter@44aeae34, org.springframework.security.web.access.ExceptionTranslationFilter@6cc8da1c, org.springframework.security.web.access.intercept.FilterSecurityInterceptor@3cbfdf5c]
-2025-08-30 22:29:08 [main] INFO  org.quartz.impl.StdSchedulerFactory - Using default implementation for ThreadExecutor
-2025-08-30 22:29:08 [main] INFO  org.quartz.core.SchedulerSignalerImpl - Initialized Scheduler Signaller of type: class org.quartz.core.SchedulerSignalerImpl
-2025-08-30 22:29:08 [main] INFO  org.quartz.core.QuartzScheduler - Quartz Scheduler v.2.3.2 created.
-2025-08-30 22:29:08 [main] INFO  org.quartz.simpl.RAMJobStore - RAMJobStore initialized.
-2025-08-30 22:29:08 [main] INFO  org.quartz.core.QuartzScheduler - Scheduler meta-data: Quartz Scheduler (v2.3.2) 'quartzScheduler' with instanceId 'NON_CLUSTERED'
-  Scheduler class: 'org.quartz.core.QuartzScheduler' - running locally.
-  NOT STARTED.
-  Currently in standby mode.
-  Number of jobs executed: 0
-  Using thread pool 'org.quartz.simpl.SimpleThreadPool' - with 10 threads.
-  Using job-store 'org.quartz.simpl.RAMJobStore' - which does not support persistence. and is not clustered.
-
-2025-08-30 22:29:08 [main] INFO  org.quartz.impl.StdSchedulerFactory - Quartz scheduler 'quartzScheduler' initialized from an externally provided properties instance.
-2025-08-30 22:29:08 [main] INFO  org.quartz.impl.StdSchedulerFactory - Quartz scheduler version: 2.3.2
-2025-08-30 22:29:08 [main] INFO  org.quartz.core.QuartzScheduler - JobFactory set to: org.springframework.scheduling.quartz.SpringBeanJobFactory@722b3ba2
-2025-08-30 22:29:08 [main] INFO  o.s.boot.web.embedded.tomcat.TomcatWebServer - Tomcat started on port(s): 8080 (http) with context path '/api'
-2025-08-30 22:29:08 [main] INFO  o.s.scheduling.quartz.SchedulerFactoryBean - Starting Quartz Scheduler now
-2025-08-30 22:29:08 [main] INFO  org.quartz.core.QuartzScheduler - Scheduler quartzScheduler_$_NON_CLUSTERED started.
-2025-08-30 22:29:08 [main] INFO  com.gjxt.inspection.InspectionSystemApplication - Started InspectionSystemApplication in 5.195 seconds (JVM running for 6.451)
-2025-08-30 22:29:11 [http-nio-192.168.42.128-8080-exec-1] INFO  o.a.c.c.ContainerBase.[Tomcat].[localhost].[/api] - Initializing Spring DispatcherServlet 'dispatcherServlet'
-2025-08-30 22:29:11 [http-nio-192.168.42.128-8080-exec-1] INFO  org.springframework.web.servlet.DispatcherServlet - Initializing Servlet 'dispatcherServlet'
-2025-08-30 22:29:11 [http-nio-192.168.42.128-8080-exec-1] INFO  org.springframework.web.servlet.DispatcherServlet - Completed initialization in 1 ms
-2025-08-30 22:29:13 [http-nio-192.168.42.128-8080-exec-1] INFO  c.g.i.service.impl.SysInspectionRecordServiceImpl - 导出Excel成功，共导出1条记录
-2025-08-30 22:30:26 [http-nio-192.168.42.128-8080-exec-6] INFO  c.g.i.service.impl.SysInspectionRecordServiceImpl - 导出Excel成功，共导出1条记录
+2025-09-03 17:14:33 [main] INFO  org.quartz.impl.StdSchedulerFactory - Quartz scheduler 'quartzScheduler' initialized from an externally provided properties instance.
+2025-09-03 17:14:33 [main] INFO  org.quartz.impl.StdSchedulerFactory - Quartz scheduler version: 2.3.2
+2025-09-03 17:14:33 [main] INFO  org.quartz.core.QuartzScheduler - JobFactory set to: org.springframework.scheduling.quartz.SpringBeanJobFactory@6c742b84
+2025-09-03 17:14:33 [main] INFO  o.s.boot.web.embedded.tomcat.TomcatWebServer - Tomcat started on port(s): 8080 (http) with context path '/api'
+2025-09-03 17:14:33 [main] INFO  o.s.scheduling.quartz.SchedulerFactoryBean - Starting Quartz Scheduler now
+2025-09-03 17:14:33 [main] INFO  org.quartz.core.QuartzScheduler - Scheduler quartzScheduler_$_NON_CLUSTERED started.
+2025-09-03 17:14:33 [main] INFO  com.gjxt.inspection.InspectionSystemApplication - Started InspectionSystemApplication in 4.813 seconds (JVM running for 5.95)
+2025-09-03 17:15:13 [SpringApplicationShutdownHook] INFO  org.quartz.core.QuartzScheduler - Scheduler quartzScheduler_$_NON_CLUSTERED paused.
+2025-09-03 17:15:13 [SpringApplicationShutdownHook] INFO  o.s.scheduling.quartz.SchedulerFactoryBean - Shutting down Quartz Scheduler
+2025-09-03 17:15:13 [SpringApplicationShutdownHook] INFO  org.quartz.core.QuartzScheduler - Scheduler quartzScheduler_$_NON_CLUSTERED shutting down.
+2025-09-03 17:15:13 [SpringApplicationShutdownHook] INFO  org.quartz.core.QuartzScheduler - Scheduler quartzScheduler_$_NON_CLUSTERED paused.
+2025-09-03 17:15:13 [SpringApplicationShutdownHook] INFO  org.quartz.core.QuartzScheduler - Scheduler quartzScheduler_$_NON_CLUSTERED shutdown complete.
+2025-09-03 17:15:13 [SpringApplicationShutdownHook] INFO  com.alibaba.druid.pool.DruidDataSource - {dataSource-1} closing ...
+2025-09-03 17:15:13 [SpringApplicationShutdownHook] INFO  com.alibaba.druid.pool.DruidDataSource - {dataSource-1} closed

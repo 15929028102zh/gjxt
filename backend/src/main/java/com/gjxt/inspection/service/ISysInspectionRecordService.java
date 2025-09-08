@@ -297,4 +297,13 @@ public interface ISysInspectionRecordService extends IService<SysInspectionRecor
      */
     Long getWeeklyRecordCountByUserAndStatus(String userId, Integer status);
 
+    /**
+     * 查询延迟整改的记录（整改期限小于当前日期且状态为待整改）
+     *
+     * @param current 当前页
+     * @param size 每页大小
+     * @return 延迟整改记录分页结果
+     */
+    PageResult<SysInspectionRecord> getDelayedRectificationRecords(Long current, Long size);
+
 }

@@ -577,19 +577,40 @@ public class SysInspectionRecord extends BaseEntity {
         if (submitData.getDepartmentId() != null) {
             record.setDepartmentId(submitData.getDepartmentId());
         }
+        // 使用日志记录调试信息
+        System.err.println("=== 调试信息 ===");
+        System.err.println("前端传递的整改期限: " + submitData.getRectificationDeadline());
+        
         if (submitData.getRectificationDeadline() != null) {
+            System.err.println("整改期限不为null，开始解析");
             try {
                 // 解析整改时间
                 LocalDateTime rectificationDeadline = submitData.getRectificationDeadline();
+                System.err.println("解析后的整改期限: " + rectificationDeadline);
                 if (rectificationDeadline != null) {
                     record.setRectificationDeadline(rectificationDeadline);
+                    System.err.println("成功设置整改期限: " + rectificationDeadline);
+                } else {
+                    // 如果为null，设置默认值为当前时间后7天
+                    record.setRectificationDeadline(LocalDateTime.now().plusDays(7));
+                    System.err.println("设置默认整改期限(解析为null): " + record.getRectificationDeadline());
                 }
             } catch (Exception e) {
-                // 如果解析失败，保持为null
+                // 如果解析失败，设置默认值为当前时间后7天
+                record.setRectificationDeadline(LocalDateTime.now().plusDays(7));
+                System.err.println("解析失败，设置默认整改期限: " + record.getRectificationDeadline() + ", 错误: " + e.getMessage());
             }
+        } else {
+            // 如果整改期限为空，设置默认值为当前时间后7天
+            record.setRectificationDeadline(LocalDateTime.now().plusDays(7));
+            System.err.println("前端未传递整改期限，设置默认值: " + record.getRectificationDeadline());
         }
-        if (submitData.getProblemImageUrls() != null && !submitData.getProblemImageUrls().isEmpty()) {
-            record.setProblemImageUrls(String.join(",", submitData.getProblemImageUrls()));
+        System.err.println("=== 调试信息结束 ===");
+        // 处理图片URL字段 - 前端传递的是imageUrls字段
+        if (submitData.getImageUrls() != null && !submitData.getImageUrls().isEmpty()) {
+            record.setProblemImageUrls(submitData.getImageUrls());
+        } else if (submitData.getProblemImageUrls() != null && !submitData.getProblemImageUrls().isEmpty()) {
+            record.setProblemImageUrls(submitData.getProblemImageUrls());
         }
         // scoreId字段映射：根据scoreId获取对应的考核值并设置到assessmentSituation
         if (submitData.getAssessmentSituation() != null) {

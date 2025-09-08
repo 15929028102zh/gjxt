@@ -1,0 +1,89 @@
+<template>
+	<view class="container">
+		<view class="test-section">
+			<text class="title">延迟整改功能测试</text>
+			
+			<button class="test-btn" @click="testDelayedMode">测试延迟整改模式</button>
+			<button class="test-btn" @click="testNormalMode">测试正常模式</button>
+			
+			<view class="info">
+				<text>点击上方按钮测试不同模式下的复查页面显示效果</text>
+			</view>
+		</view>
+	</view>
+</template>
+
+<script>
+	export default {
+		data() {
+			return {
+				testRecordId: '1' // 使用一个测试记录ID
+			}
+		},
+		methods: {
+			testDelayedMode() {
+				console.log('测试延迟整改模式')
+				uni.navigateTo({
+					url: `/pages/record/review?id=${this.testRecordId}&delayed=true`
+				})
+			},
+			
+			testNormalMode() {
+				console.log('测试正常模式')
+				uni.navigateTo({
+					url: `/pages/record/review?id=${this.testRecordId}`
+				})
+			}
+		}
+	}
+</script>
+
+<style>
+	.container {
+		padding: 40rpx;
+	}
+	
+	.test-section {
+		background-color: #fff;
+		border-radius: 20rpx;
+		padding: 40rpx;
+		box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
+	}
+	
+	.title {
+		font-size: 36rpx;
+		font-weight: bold;
+		color: #333;
+		margin-bottom: 40rpx;
+		text-align: center;
+		display: block;
+	}
+	
+	.test-btn {
+		width: 100%;
+		height: 80rpx;
+		background-color: #007aff;
+		color: white;
+		border: none;
+		border-radius: 10rpx;
+		font-size: 32rpx;
+		margin-bottom: 20rpx;
+	}
+	
+	.test-btn:active {
+		background-color: #0056cc;
+	}
+	
+	.info {
+		margin-top: 40rpx;
+		padding: 20rpx;
+		background-color: #f8f9fa;
+		border-radius: 10rpx;
+		text-align: center;
+	}
+	
+	.info text {
+		font-size: 28rpx;
+		color: #666;
+	}
+</style>

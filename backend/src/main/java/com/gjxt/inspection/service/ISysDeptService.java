@@ -71,7 +71,7 @@ public interface ISysDeptService extends IService<SysDept> {
      * @param status 状态
      * @return 是否成功
      */
-    boolean updateDeptStatus(Long id, Integer status);
+    boolean updateDeptStatus(String id, Integer status);
 
     /**
      * 检查部门名称是否存在
@@ -80,7 +80,7 @@ public interface ISysDeptService extends IService<SysDept> {
      * @param excludeId 排除的部门ID
      * @return 是否存在
      */
-    boolean checkDeptNameExists(String deptName, Long excludeId);
+    boolean checkDeptNameExists(String deptName, String excludeId);
 
     /**
      * 检查是否有子部门
@@ -88,7 +88,7 @@ public interface ISysDeptService extends IService<SysDept> {
      * @param deptId 部门ID
      * @return 是否有子部门
      */
-    boolean hasChildDept(Long deptId);
+    boolean hasChildDept(String deptId);
 
     /**
      * 获取启用的部门列表

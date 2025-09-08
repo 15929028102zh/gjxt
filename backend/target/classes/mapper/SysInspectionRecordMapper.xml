@@ -121,18 +121,15 @@
     <select id="selectRecordDetail" parameterType="string" resultMap="RecordDetailResultMap">
         SELECT 
             <include refid="Base_Column_List" />,
-            u1.real_name as group_leader_name,
-            u2.real_name as deputy_leader_name,
-            u3.real_name as inspector_name,
+            r.group_leader_name as group_leader_name,
+            r.deputy_leader_name as deputy_leader_name,
+            r.inspector as inspector_name,
             d.dept_name as department_name,
             p.dict_value as professionName,
             u5.real_name as reviewer_name
         FROM sys_inspection_record r
-        LEFT JOIN sys_user u1 ON r.group_leader_id = u1.id AND u1.deleted = 0
-        LEFT JOIN sys_user u2 ON r.deputy_leader_id = u2.id AND u2.deleted = 0
         LEFT JOIN sys_dept d ON r.department_id = d.id AND d.deleted = 0
         LEFT JOIN sys_dictionary p ON r.profession_id = p.id AND p.deleted = 0
-        LEFT JOIN sys_user u3 ON r.inspector = u3.id AND u3.deleted = 0
         LEFT JOIN sys_user u5 ON r.reviewer_id = u5.id AND u5.deleted = 0
         WHERE r.id = #{id} AND r.deleted = 0
     </select>
@@ -348,23 +345,41 @@
         ${sql}
     </select>
 
+    <!-- 分页查询延迟整改的记录 -->
+    <select id="selectDelayedRectificationRecords" resultMap="RecordDetailResultMap">
+        SELECT 
+            <include refid="Base_Column_List" />,
+            r.group_leader_name as group_leader_name,
+            r.deputy_leader_name as deputy_leader_name,
+            d.dept_name as department_name,
+            p.dict_value as professionName,
+            r.inspector as inspector_name,
+            r.responsible_person as responsible_person_name,
+            u5.real_name as reviewer_name
+        FROM sys_inspection_record r
+        LEFT JOIN sys_dept d ON r.department_id = d.id AND d.deleted = 0
+        LEFT JOIN sys_dictionary p ON r.profession_id = p.id AND p.deleted = 0
+        LEFT JOIN sys_user u5 ON r.reviewer_id = u5.id AND u5.deleted = 0
+        WHERE r.deleted = 0
+            AND r.status = 0
+            AND r.rectification_deadline &lt;= #{currentTime}
+        ORDER BY r.rectification_deadline ASC
+    </select>
+
     <!-- 导出巡检记录数据（带关联信息） -->
     <select id="selectExportData" resultMap="RecordDetailResultMap">
         SELECT 
             <include refid="Base_Column_List" />,
-            u1.real_name as group_leader_name,
-            u2.real_name as deputy_leader_name,
+            r.group_leader_name as group_leader_name,
+            r.deputy_leader_name as deputy_leader_name,
             d.dept_name as department_name,
             p.dict_value as professionName,
-            u3.real_name as inspector_name,
+            r.inspector as inspector_name,
             r.responsible_person as responsible_person_name,
             u5.real_name as reviewer_name
         FROM sys_inspection_record r
-        LEFT JOIN sys_user u1 ON r.group_leader_id = u1.id AND u1.deleted = 0
-        LEFT JOIN sys_user u2 ON r.deputy_leader_id = u2.id AND u2.deleted = 0
         LEFT JOIN sys_dept d ON r.department_id = d.id AND d.deleted = 0
         LEFT JOIN sys_dictionary p ON r.profession_id = p.id AND p.deleted = 0
-        LEFT JOIN sys_user u3 ON r.inspector = u3.id AND u3.deleted = 0
         LEFT JOIN sys_user u5 ON r.reviewer_id = u5.id AND u5.deleted = 0
         WHERE r.deleted = 0
         <if test="status != null and status != ''">

@@ -417,6 +417,20 @@ public class SysInspectionRecordServiceImpl extends ServiceImpl<SysInspectionRec
     }
 
     @Override
+    public PageResult<SysInspectionRecord> getDelayedRectificationRecords(Long current, Long size) {
+        Page<SysInspectionRecord> page = new Page<>(current, size);
+        LocalDateTime currentTime = LocalDateTime.now();
+        
+        log.info("查询延迟整改记录，当前时间：{}", currentTime);
+        
+        IPage<SysInspectionRecord> result = recordMapper.selectDelayedRectificationRecords(page, currentTime);
+        
+        log.info("查询到 {} 条延迟整改记录", result.getTotal());
+        
+        return new PageResult<>(result.getCurrent(), result.getSize(), result.getTotal(), result.getRecords());
+    }
+
+    @Override
     public void exportRecordsToExcel(HttpServletResponse response, String problemDescription, 
                                     String responsiblePerson, String professionId, String natureId, 
                                     String departmentId, Integer status, LocalDateTime startTime, 

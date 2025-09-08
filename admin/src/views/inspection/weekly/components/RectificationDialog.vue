@@ -248,7 +248,7 @@ const departmentOptions = ref([])
 
 // 图片上传相关
 const uploadAction = computed(() => {
-  return 'http://192.168.42.128:8080/api/upload/image'
+  return 'http://192.168.244.128:8080/api/upload/image'
 })
 
 const uploadHeaders = computed(() => {
@@ -281,7 +281,7 @@ const parseImageUrls = (imageUrls) => {
     // 转换为完整URL，添加/api前缀
     return urlList.map(url => {
       if (url && url.startsWith('/')) {
-        return `http://192.168.42.128:8080/api${url}`
+        return `http://192.168.244.128:8080/api${url}`
       }
       return url || ''
     }).filter(url => url)

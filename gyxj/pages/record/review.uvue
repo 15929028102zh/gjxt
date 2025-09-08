@@ -236,25 +236,29 @@
 				</view>
 			</view>
 			
+			
+			
 			<!-- 复查效果描述 -->
 			<view class="form-item">
 				<text class="form-label">复查效果描述</text>
 				<view class="form-input-wrapper">
 					<textarea 
+						v-if="!isDelayed && !isReviewed"
 						v-model="reviewEffect"
 						class="form-textarea"
 						placeholder="请描述复查效果..."
 						maxlength="500"
 						show-confirm-bar="false"
 					></textarea>
+					<view v-else class="form-display-text">{{reviewEffect.length > 0 ? reviewEffect : '暂无复查效果描述'}}</view>
 				</view>
 			</view>
 			
 			<!-- 复查图片 -->
 			<view class="form-item">
-				<text class="form-label">📷 复查图片 ({{reviewImages.length}}/3)</text>
+				<text class="form-label">📷 复查图片 ({{reviewImages.length}}{{(isDelayed || isReviewed) ? '' : '/3'}})</text>
 				<view class="image-upload">
-					<view class="image-list">
+					<view class="image-list" v-if="reviewImages.length > 0">
 						<view class="image-item" v-for="(image, index) in reviewImages" :key="index">
 							<image 
 								:src="image" 
@@ -264,12 +268,19 @@
 								@error="onImageError"
 								@load="onImageLoad"
 							></image>
-							<view class="image-delete" @click="removeReviewImage(index)">
+							<view v-if="!isDelayed && !isReviewed" class="image-delete" @click="removeReviewImage(index)">
 								<text>×</text>
 							</view>
 						</view>
 						
-						<view class="image-add" v-if="reviewImages.length < 3" @click="chooseReviewImage">
+						<view v-if="!isDelayed && !isReviewed && reviewImages.length < 3" class="image-add" @click="chooseReviewImage">
+							<text class="add-icon">+</text>
+							<text class="add-text">添加图片</text>
+						</view>
+					</view>
+					<view v-else class="no-image-container">
+						
+						<view v-if="!isDelayed && !isReviewed" class="image-add" @click="chooseReviewImage">
 							<text class="add-icon">+</text>
 							<text class="add-text">添加图片</text>
 						</view>
@@ -278,7 +289,7 @@
 			</view>
 			
 			<!-- 确认复查按钮 -->
-			<view class="save-button-wrapper">
+			<view v-if="!isDelayed && !isReviewed" class="save-button-wrapper">
 				<button class="save-btn" @click="saveReviewInfo" :disabled="saving">
 					{{saving ? '保存中...' : '确认复查'}}
 				</button>
@@ -369,11 +380,41 @@
 				showDepartmentPopup: false,
 				// 数据加载状态跟踪
 				loadedDataCount: 0,
-				totalDataCount: 4 // 总共需要加载4类数据
+				totalDataCount: 4, // 总共需要加载4类数据
+				// 延迟整改模式标识
+				isDelayed: false,
+				// 已复查记录标识
+				isReviewed: false
 			}
 		},
 		onLoad(options: UTSJSONObject) {
 			this.recordId = options.getString('id') ?? ''
+			// 检查是否为延迟整改模式
+			const delayedParam = options.getString('delayed')
+			console.log('URL参数 delayed:', delayedParam)
+			console.log('参数类型:', typeof delayedParam)
+			// 直接判断参数是否存在且为'true'
+			if (delayedParam != null && delayedParam == 'true') {
+				this.isDelayed = true
+				console.log('设置为延迟整改模式')
+			} else {
+				this.isDelayed = false
+				console.log('设置为正常模式')
+			}
+			console.log('最终 isDelayed 值:', this.isDelayed)
+			
+			// 检查是否为已复查记录模式
+			const reviewedParam = options.getString('reviewed')
+			console.log('URL参数 reviewed:', reviewedParam)
+			if (reviewedParam != null && reviewedParam == 'true') {
+				this.isReviewed = true
+				console.log('设置为已复查记录模式')
+			} else {
+				this.isReviewed = false
+				console.log('设置为正常模式')
+			}
+			console.log('最终 isReviewed 值:', this.isReviewed)
+			console.log('完整URL参数:', options)
 			this.checkLogin()
 			// 重置数据加载计数器
 			this.loadedDataCount = 0
@@ -478,8 +519,8 @@
 									professionId: recordData.getString('professionId') ?? '',
 									professionName: recordData.getString('professionName') ?? '',
 									inspector: recordData.getString('inspectorName') ?? '',
-									groupLeader: recordData.getString('groupLeaderName') ?? '',
-									deputyLeader: recordData.getString('deputyLeaderName') ?? '',
+					groupLeader: recordData.getString('groupLeaderName') ?? '',
+					deputyLeader: recordData.getString('deputyLeaderName') ?? '',
 									// 部门ID使用字符串类型
 									departmentId: recordData.getString('departmentId') ?? '',
 									departmentName: recordData.getString('departmentName') ?? '',
@@ -563,24 +604,25 @@
 								
 								// 处理复查图片
 								const reviewImages = this.recordDetail?.reviewImageUrls
+								console.log('调试：复查图片原始数据', reviewImages)
 								if (reviewImages != null && reviewImages != '') {
-									try {
-										let urlList: Array<string> = []
-										if (typeof reviewImages === 'string') {
-											const parsed = JSON.parse(reviewImages as string)
-											if (Array.isArray(parsed)) {
-												urlList = parsed as Array<string>
-											}
-										} else if (Array.isArray(reviewImages)) {
-											urlList = reviewImages as Array<string>
-										}
-										this.reviewImages = urlList.map(url => this.convertToHttpUrl(url))
-									} catch (e) {
-										if (typeof reviewImages === 'string') {
-											const urlList = (reviewImages as string).split(',')
-											this.reviewImages = urlList.map(url => this.convertToHttpUrl(url.trim()))
-										}
+									// 直接按逗号分割处理，因为数据库存储格式就是逗号分割的
+									if (typeof reviewImages === 'string') {
+										const urlList = (reviewImages as string).split(',')
+										console.log('调试：逗号分割结果', urlList)
+										// 过滤空字符串并转换为完整URL
+										this.reviewImages = urlList
+											.map(url => url.trim())
+											.filter(url => url.length > 0)
+											.map(url => this.convertToHttpUrl(url))
+										console.log('调试：最终的复查图片URL列表', this.reviewImages)
+									} else if (Array.isArray(reviewImages)) {
+										// 如果已经是数组，直接处理
+										this.reviewImages = (reviewImages as Array<string>).map(url => this.convertToHttpUrl(url))
+										console.log('调试：直接数组处理结果', this.reviewImages)
 									}
+								} else {
+									console.log('调试：复查图片数据为空')
 								}
 							}
 						} else {
@@ -707,20 +749,41 @@
 							uni.hideLoading()
 						}
 						
-						const updateData = {
-							id: this.recordDetail?.id ?? '',
-							problemDescription: this.recordDetail?.problemDescription ?? '',
-							responsibleUnit: this.recordDetail?.responsibleUnit ?? '',
-							responsiblePerson: this.recordDetail?.responsiblePerson ?? '',
-							// 性质界定：保存当前选中的名称（与数据库存储格式一致）
-							natureDefinition: this.selectedNatureIndex !== -1 ? this.natureOptions[this.selectedNatureIndex].name : (this.recordDetail?.natureId ?? ''),
-							rectificationEffect: this.recordDetail?.rectificationEffect ?? '',
-							rectificationImageUrls: this.recordDetail?.rectificationImageUrls ?? '',
-							reviewEffect: this.reviewEffect,
-							reviewImageUrls: reviewImageUrls.join(','),
-							status: 2,
-							reviewTime: new Date().toISOString().replace('T', ' ').substring(0, 19)
-						}
+						// 获取当前登录用户信息
+			const userInfoStr = uni.getStorageSync('userInfo') as string
+			console.log('获取到的用户信息字符串:', userInfoStr)
+			let currentUserId = ''
+			if (userInfoStr != null && userInfoStr != '') {
+				try {
+					const userInfo = JSON.parse(userInfoStr) as UTSJSONObject
+					console.log('解析后的用户信息对象:', userInfo)
+					currentUserId = userInfo.getString('id') ?? ''
+					console.log('当前复查人ID:', currentUserId)
+					if (currentUserId === '') {
+						console.log('用户信息对象:', JSON.stringify(userInfo))
+					}
+				} catch (e) {
+					console.error('解析用户信息失败:', e)
+				}
+			} else {
+				console.log('用户信息字符串为空或null')
+			}
+				
+				const updateData = {
+					id: this.recordDetail?.id ?? '',
+					problemDescription: this.recordDetail?.problemDescription ?? '',
+					responsibleUnit: this.recordDetail?.responsibleUnit ?? '',
+					responsiblePerson: this.recordDetail?.responsiblePerson ?? '',
+					// 性质界定：保存当前选中的名称（与数据库存储格式一致）
+					natureDefinition: this.selectedNatureIndex !== -1 ? this.natureOptions[this.selectedNatureIndex].name : (this.recordDetail?.natureId ?? ''),
+					rectificationEffect: this.recordDetail?.rectificationEffect ?? '',
+					rectificationImageUrls: this.recordDetail?.rectificationImageUrls ?? '',
+					reviewEffect: this.reviewEffect,
+					reviewImageUrls: reviewImageUrls.join(','),
+					reviewerId: currentUserId, // 设置复查人ID
+					status: 2,
+					reviewTime: new Date().toISOString().replace('T', ' ').substring(0, 19)
+				}
 						
 						uni.showLoading({
 							title: '保存中...'
@@ -1311,6 +1374,13 @@
 			color: #999;
 		}
 		
+		.no-image-container {
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			gap: 15px;
+		}
+		
 		.no-image-text {
 			padding: 20px;
 			text-align: center;
@@ -1319,6 +1389,7 @@
 			background-color: #f8f9fa;
 			border-radius: 6px;
 			border: 1px solid #e9ecef;
+			width: 100%;
 		}
 		
 		.save-button-wrapper {
@@ -1342,17 +1413,34 @@
 			color: #999;
 		}
 		
-		.error-state {
-			flex: 1;
-			display: flex;
-			justify-content: center;
-			align-items: center;
+		.delayed-mode-tip {
+			margin: 20rpx;
+			padding: 20rpx;
+			background-color: #fff3cd;
+			border: 2rpx solid #ffeaa7;
+			border-radius: 10rpx;
+			text-align: center;
 		}
 		
-		.error-text {
-			font-size: 16px;
-			color: #999;
+		.tip-text {
+			color: #856404;
+			font-size: 28rpx;
+			font-weight: bold;
 		}
+		
+
+	
+	.error-state {
+		flex: 1;
+		display: flex;
+		justify-content: center;
+		align-items: center;
+	}
+	
+	.error-text {
+		font-size: 16px;
+		color: #999;
+	}
 		
 		/* 下拉选择器样式 */
 		.custom-picker-full {

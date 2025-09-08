@@ -29,7 +29,7 @@ public interface SysDeptMapper extends BaseMapper<SysDept> {
      * @param parentId 父部门ID
      * @return 子部门列表
      */
-    List<SysDept> selectByParentId(@Param("parentId") Long parentId);
+    List<SysDept> selectByParentId(@Param("parentId") String parentId);
 
     /**
      * 检查部门名称是否存在
@@ -38,13 +38,13 @@ public interface SysDeptMapper extends BaseMapper<SysDept> {
      * @param excludeId 排除的部门ID
      * @return 存在数量
      */
-    int checkDeptNameExists(@Param("deptName") String deptName, @Param("excludeId") Long excludeId);
+    int checkDeptNameExists(@Param("deptName") String deptName, @Param("excludeId") String excludeId);
 
     /**
-     * 查询部门是否有子部门
+     * 检查部门是否有子部门
      *
      * @param deptId 部门ID
      * @return 子部门数量
      */
-    int hasChildByDeptId(@Param("deptId") Long deptId);
+    int hasChildByDeptId(@Param("deptId") String deptId);
 }

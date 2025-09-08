@@ -48,7 +48,7 @@ public interface SysUserMapper extends BaseMapper<SysUser> {
                                           @Param("username") String username,
                                           @Param("realName") String realName,
                                           @Param("department") String department,
-                                          @Param("deptId") Long deptId,
+                                          @Param("deptId") String deptId,
                                           @Param("role") String role,
                                           @Param("status") Integer status);
 

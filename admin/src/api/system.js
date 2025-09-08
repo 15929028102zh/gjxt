@@ -106,6 +106,15 @@ export const userApi = {
       method: 'get',
       params: { username, excludeId }
     })
+  },
+  
+  // 更新用户头像
+  updateAvatar(id, imageUrl) {
+    return request({
+      url: `/user/${id}/avatar`,
+      method: 'put',
+      data: { imageUrl }
+    })
   }
 }
 

@@ -1579,17 +1579,37 @@ open class GenPagesRecordAdd : BasePage {
                     }
                     uni_showLoading(ShowLoadingOptions(title = "提交中..."))
                     val token = uni_getStorageSync("token")
-                    val submitData: UTSJSONObject = _uO("__\$originalPosition" to UTSSourceMapPosition("submitData", "pages/record/add.uvue", 1588, 12), "responsibleUnit" to this.formData.responsibleUnit, "responsiblePerson" to this.formData.responsiblePerson, "natureId" to this.formData.natureId, "scoreId" to this.formData.scoreId, "assessmentAmount" to this.formData.assessmentAmount, "safetyScore" to this.formData.safetyScore, "professionId" to this.formData.professionId, "problemDescription" to this.formData.problemDescription, "location" to this.formData.location, "inspector" to this.formData.inspector, "groupLeader" to this.formData.groupLeader, "deputyLeader" to this.formData.deputyLeader, "departmentId" to this.formData.departmentId, "rectificationDate" to this.formData.rectificationDate, "imageUrls" to if (imageUrls.length > 0) {
+                    var natureDefinition = ""
+                    var assessmentSituation = ""
+                    if (this.selectedNatureIndex >= 0 && this.selectedNatureIndex < this.natureOptions.length) {
+                        natureDefinition = this.natureOptions[this.selectedNatureIndex].name
+                    }
+                    if (this.selectedAssessmentIndex >= 0 && this.selectedAssessmentIndex < this.assessmentOptions.length) {
+                        assessmentSituation = this.assessmentOptions[this.selectedAssessmentIndex].label
+                    }
+                    var rectificationDeadline = this.formData.rectificationDate
+                    console.log("调试：原始整改期限日期:", rectificationDeadline, " at pages/record/add.uvue:1602")
+                    if (rectificationDeadline != null && rectificationDeadline != "" && rectificationDeadline.indexOf(" ") === -1) {
+                        rectificationDeadline = rectificationDeadline + " 23:59:59"
+                        console.log("调试：处理后的整改期限日期:", rectificationDeadline, " at pages/record/add.uvue:1606")
+                    }
+                    val submitData: UTSJSONObject = _uO("__\$originalPosition" to UTSSourceMapPosition("submitData", "pages/record/add.uvue", 1609, 10), "responsibleUnit" to this.formData.responsibleUnit, "responsiblePerson" to this.formData.responsiblePerson, "natureDefinition" to natureDefinition, "assessmentSituation" to assessmentSituation, "assessmentAmount" to this.formData.assessmentAmount, "safetyScore" to this.formData.safetyScore, "professionId" to this.formData.professionId, "problemDescription" to this.formData.problemDescription, "location" to this.formData.location, "inspector" to this.formData.inspector, "groupLeader" to this.formData.groupLeader, "deputyLeader" to this.formData.deputyLeader, "departmentId" to this.formData.departmentId, "rectificationDeadline" to rectificationDeadline, "imageUrls" to if (imageUrls.length > 0) {
                         JSON.stringify(imageUrls)
                     } else {
                         ""
                     }
                     )
-                    console.log("调试：准备提交的数据:", submitData, " at pages/record/add.uvue:1607")
-                    console.log("调试：部门ID字段:", this.formData.departmentId, " at pages/record/add.uvue:1608")
-                    console.log("调试：当前选中的部门索引:", this.selectedDepartmentIndex, " at pages/record/add.uvue:1609")
+                    console.log("调试：准备提交的数据:", submitData, " at pages/record/add.uvue:1628")
+                    console.log("调试：性质界定索引:", this.selectedNatureIndex, " at pages/record/add.uvue:1629")
+                    console.log("调试：性质界定选项:", this.natureOptions, " at pages/record/add.uvue:1630")
+                    console.log("调试：性质界定值:", natureDefinition, " at pages/record/add.uvue:1631")
+                    console.log("调试：考核情况索引:", this.selectedAssessmentIndex, " at pages/record/add.uvue:1632")
+                    console.log("调试：考核情况选项:", this.assessmentOptions, " at pages/record/add.uvue:1633")
+                    console.log("调试：考核情况值:", assessmentSituation, " at pages/record/add.uvue:1634")
+                    console.log("调试：部门ID字段:", this.formData.departmentId, " at pages/record/add.uvue:1635")
+                    console.log("调试：当前选中的部门索引:", this.selectedDepartmentIndex, " at pages/record/add.uvue:1636")
                     if (this.selectedDepartmentIndex >= 0 && this.selectedDepartmentIndex < this.departmentOptions.length) {
-                        console.log("调试：当前选中的部门对象:", this.departmentOptions[this.selectedDepartmentIndex], " at pages/record/add.uvue:1611")
+                        console.log("调试：当前选中的部门对象:", this.departmentOptions[this.selectedDepartmentIndex], " at pages/record/add.uvue:1638")
                     }
                     uni_showToast(ShowToastOptions(title = "\u63D0\u4EA4\u90E8\u95E8ID: " + (this.formData.departmentId ?: "空"), icon = "none", duration = 2000))
                     uni_request<Any>(RequestOptions(url = getApiUrl("/inspection-record/submit"), method = "POST", header = object : UTSJSONObject() {
@@ -1618,7 +1638,7 @@ open class GenPagesRecordAdd : BasePage {
                         this.submitting = false
                     }
                     , fail = fun(error){
-                        console.error("提交记录失败:", error, " at pages/record/add.uvue:1670")
+                        console.error("提交记录失败:", error, " at pages/record/add.uvue:1697")
                         uni_hideLoading()
                         uni_showToast(ShowToastOptions(title = "网络错误", icon = "none"))
                         this.submitting = false
@@ -1626,7 +1646,7 @@ open class GenPagesRecordAdd : BasePage {
                     ))
                 }
                  catch (error: Throwable) {
-                    console.error("提交记录失败:", error, " at pages/record/add.uvue:1680")
+                    console.error("提交记录失败:", error, " at pages/record/add.uvue:1707")
                     uni_hideLoading()
                     uni_showToast(ShowToastOptions(title = "操作失败", icon = "none"))
                     this.submitting = false

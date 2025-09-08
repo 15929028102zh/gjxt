@@ -32,6 +32,10 @@ open class GenPagesRecordRecord : BasePage {
             if (options["delayed"] != null && options["delayed"] == "true") {
                 this.isDelayed = true
             }
+            if (options["type"] != null && options["type"] == "reviewed") {
+                this.isReviewed = true
+                this.status = "2"
+            }
             this.loadRecords()
             uni__on("recordUpdated", this.handleRecordUpdated)
         }
@@ -67,7 +71,7 @@ open class GenPagesRecordRecord : BasePage {
             _cE("scroll-view", _uM("class" to "record-list", "scroll-y" to "true", "enable-back-to-top" to "true", "onScrolltolower" to _ctx.handleScrollToLower), _uA(
                 _cE(Fragment, null, RenderHelpers.renderList(_ctx.recordList, fun(record, __key, __index, _cached): Any {
                     return _cE("view", _uM("class" to "record-item", "key" to record.id, "onClick" to fun(){
-                        _ctx.goToDetail(record.id)
+                        _ctx.goToDetail(record)
                     }
                     , "onLongpress" to fun(){
                         _ctx.showDeleteConfirm(record.id, record.problemDescription)
@@ -141,20 +145,26 @@ open class GenPagesRecordRecord : BasePage {
     open var pageSize: Number by `$data`
     open var status: String by `$data`
     open var isDelayed: Boolean by `$data`
+    open var isReviewed: Boolean by `$data`
     @Suppress("USELESS_CAST")
     override fun data(): Map<String, Any?> {
-        return _uM("recordList" to _uA<InspectionRecord>(), "loading" to false, "loadingMore" to false, "hasMore" to true, "totalCount" to 0, "pageNum" to 1, "pageSize" to 20, "status" to "0", "isDelayed" to false)
+        return _uM("recordList" to _uA<InspectionRecord>(), "loading" to false, "loadingMore" to false, "hasMore" to true, "totalCount" to 0, "pageNum" to 1, "pageSize" to 20, "status" to "0", "isDelayed" to false, "isReviewed" to false)
     }
     open var checkLogin = ::gen_checkLogin_fn
     open fun gen_checkLogin_fn() {
-        val token = uni_getStorageSync("token") as String
+        val tokenData = uni_getStorageSync("token")
+        val token = if (tokenData != null) {
+            tokenData as String
+        } else {
+            ""
+        }
         if (token == null || token == "") {
             uni_reLaunch(ReLaunchOptions(url = "/pages/login/login"))
         }
     }
     open var handleRecordUpdated = ::gen_handleRecordUpdated_fn
     open fun gen_handleRecordUpdated_fn() {
-        console.log("接收到记录更新事件，开始刷新数据", " at pages/record/record.uvue:128")
+        console.log("接收到记录更新事件，开始刷新数据", " at pages/record/record.uvue:135")
         this.refreshRecords()
     }
     open var loadRecords = ::gen_loadRecords_fn
@@ -166,7 +176,13 @@ open class GenPagesRecordRecord : BasePage {
                     this.loadingMore = true
                 }
                 val token = uni_getStorageSync("token")
-                uni_request<Any>(RequestOptions(url = getApiUrl("/inspection-record/page?current=" + this.pageNum + "&size=" + this.pageSize + "&status=" + this.status), method = "GET", header = object : UTSJSONObject() {
+                var apiUrl = ""
+                if (this.isDelayed) {
+                    apiUrl = getApiUrl("/inspection-record/delayed?current=" + this.pageNum + "&size=" + this.pageSize)
+                } else {
+                    apiUrl = getApiUrl("/inspection-record/page?current=" + this.pageNum + "&size=" + this.pageSize + "&status=" + this.status)
+                }
+                uni_request<Any>(RequestOptions(url = apiUrl, method = "GET", header = object : UTSJSONObject() {
                     var Authorization = "Bearer " + token
                 }, success = fun(res){
                     val responseData = res.data as UTSJSONObject
@@ -179,11 +195,11 @@ open class GenPagesRecordRecord : BasePage {
                                 var i: Number = 0
                                 while(i < records.length){
                                     val item = records[i]
-                                    console.log("原始数据对象:", item, " at pages/record/record.uvue:160")
-                                    console.log("problemDescription字段:", item.getString("problemDescription"), " at pages/record/record.uvue:161")
+                                    console.log("原始数据对象:", item, " at pages/record/record.uvue:175")
+                                    console.log("problemDescription字段:", item.getString("problemDescription"), " at pages/record/record.uvue:176")
                                     val createTime = item.getString("createTime") ?: ""
                                     val record = InspectionRecord(id = item.getString("id") ?: "", problemDescription = item.getString("problemDescription") ?: "", responsiblePerson = item.getString("responsiblePerson") ?: "", inspectorName = item.getString("inspector") ?: "", createDate = this.formatDate(createTime), status = item.getNumber("status") ?: 0)
-                                    console.log("处理后的记录对象:", record, " at pages/record/record.uvue:173")
+                                    console.log("处理后的记录对象:", record, " at pages/record/record.uvue:188")
                                     newRecords.push(record)
                                     i++
                                 }
@@ -209,7 +225,7 @@ open class GenPagesRecordRecord : BasePage {
                     this.loadingMore = false
                 }
                 , fail = fun(error){
-                    console.error("加载记录失败:", error, " at pages/record/record.uvue:197")
+                    console.error("加载记录失败:", error, " at pages/record/record.uvue:212")
                     uni_showToast(ShowToastOptions(title = "网络错误", icon = "none"))
                     this.loading = false
                     this.loadingMore = false
@@ -218,8 +234,11 @@ open class GenPagesRecordRecord : BasePage {
         })
     }
     open var getStatusText = ::gen_getStatusText_fn
-    open fun gen_getStatusText_fn(status: Number): String {
-        val statusMap: UTSJSONObject = object : UTSJSONObject(UTSSourceMapPosition("statusMap", "pages/record/record.uvue", 209, 10)) {
+    open fun gen_getStatusText_fn(status: Number?): String {
+        if (status == null) {
+            return "未知"
+        }
+        val statusMap: UTSJSONObject = object : UTSJSONObject(UTSSourceMapPosition("statusMap", "pages/record/record.uvue", 225, 10)) {
             var `0` = "待整改"
             var `1` = "已整改"
             var `2` = "已复查"
@@ -242,8 +261,11 @@ open class GenPagesRecordRecord : BasePage {
         return dateTimeStr
     }
     open var getStatusClass = ::gen_getStatusClass_fn
-    open fun gen_getStatusClass_fn(status: Number): String {
-        val classMap: UTSJSONObject = object : UTSJSONObject(UTSSourceMapPosition("classMap", "pages/record/record.uvue", 228, 11)) {
+    open fun gen_getStatusClass_fn(status: Number?): String {
+        if (status == null) {
+            return "status-unknown"
+        }
+        val classMap: UTSJSONObject = object : UTSJSONObject(UTSSourceMapPosition("classMap", "pages/record/record.uvue", 245, 11)) {
             var `0` = "status-pending"
             var `1` = "status-completed"
             var `2` = "status-accepted"
@@ -272,21 +294,17 @@ open class GenPagesRecordRecord : BasePage {
         return ""
     }
     open var goToDetail = ::gen_goToDetail_fn
-    open fun gen_goToDetail_fn(recordId: String) {
-        val record = this.recordList.find(fun(r): Boolean {
-            return r.id === recordId
-        }
-        )
-        if (record != null) {
-            if (record.status === 0) {
-                uni_navigateTo(NavigateToOptions(url = "/pages/record/detail?id=" + recordId))
-            } else if (record.status === 1) {
-                uni_navigateTo(NavigateToOptions(url = "/pages/record/review?id=" + recordId))
-            } else if (record.status === 2) {
-                uni_navigateTo(NavigateToOptions(url = "/pages/record/detail?id=" + recordId))
-            }
+    open fun gen_goToDetail_fn(record: InspectionRecord) {
+        if (this.isDelayed) {
+            uni_navigateTo(NavigateToOptions(url = "/pages/record/review?id=" + record.id + "&delayed=true"))
+        } else if (this.isReviewed) {
+            uni_navigateTo(NavigateToOptions(url = "/pages/record/review?id=" + record.id + "&reviewed=true"))
+        } else if (record.status === 0) {
+            uni_navigateTo(NavigateToOptions(url = "/pages/record/detail?id=" + record.id))
+        } else if (record.status === 1) {
+            uni_navigateTo(NavigateToOptions(url = "/pages/record/review?id=" + record.id))
         } else {
-            uni_navigateTo(NavigateToOptions(url = "/pages/record/detail?id=" + recordId))
+            uni_navigateTo(NavigateToOptions(url = "/pages/record/review?id=" + record.id))
         }
     }
     open var refreshRecords = ::gen_refreshRecords_fn
@@ -342,7 +360,7 @@ open class GenPagesRecordRecord : BasePage {
         }
         , fail = fun(error){
             uni_hideLoading()
-            console.error("删除记录失败:", error, " at pages/record/record.uvue:345")
+            console.error("删除记录失败:", error, " at pages/record/record.uvue:364")
             uni_showToast(ShowToastOptions(title = "网络错误", icon = "none"))
         }
         ))

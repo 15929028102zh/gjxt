@@ -26,20 +26,26 @@
 				pageNum: 1,
 				pageSize: 20,
 				status: '0', // 默认显示待整改记录
-				isDelayed: false // 是否是延迟整改
+				isDelayed: false, // 是否是延迟整改
+				isReviewed: false // 是否是已复查记录
 			}
 		},
 		onLoad(options: OnLoadOptions) {
-			this.checkLogin()
-			// 从URL参数获取status值
-			if (options['status'] != null) {
-				this.status = options['status'] as string
-			}
-			// 检查是否是延迟整改
-			if (options['delayed'] != null && options['delayed'] == 'true') {
-				this.isDelayed = true
-			}
-			this.loadRecords()
+				this.checkLogin()
+				// 从URL参数获取status值
+				if (options['status'] != null) {
+					this.status = options['status'] as string
+				}
+				// 检查是否是延迟整改
+				if (options['delayed'] != null && options['delayed'] == 'true') {
+					this.isDelayed = true
+				}
+				// 检查是否是已复查记录
+				if (options['type'] != null && options['type'] == 'reviewed') {
+					this.isReviewed = true
+					this.status = '2' // 设置状态为已复查
+				}
+				this.loadRecords()
 			
 			// 监听全局事件，当记录更新时刷新数据
 			uni.$on('recordUpdated', this.handleRecordUpdated)
@@ -62,7 +68,8 @@
 		},
 			methods: {
 			checkLogin() {
-				const token = uni.getStorageSync('token') as string
+				const tokenData = uni.getStorageSync('token')
+				const token = tokenData != null ? tokenData as string : ''
 				if (token == null || token == '') {
 					uni.reLaunch({
 						url: '/pages/login/login'
@@ -72,7 +79,7 @@
 			
 			// 处理记录更新事件
 			handleRecordUpdated() {
-				console.log('接收到记录更新事件，开始刷新数据', " at pages/record/record.uvue:128")
+				console.log('接收到记录更新事件，开始刷新数据', " at pages/record/record.uvue:135")
 				this.refreshRecords()
 			},
 			
@@ -87,8 +94,16 @@
 			
 				const token = uni.getStorageSync('token')
 				
+				// 根据是否是延迟整改选择不同的API
+				let apiUrl = ''
+				if (this.isDelayed) {
+					apiUrl = getApiUrl(`/inspection-record/delayed?current=${this.pageNum}&size=${this.pageSize}`)
+				} else {
+					apiUrl = getApiUrl(`/inspection-record/page?current=${this.pageNum}&size=${this.pageSize}&status=${this.status}`)
+				}
+				
 				uni.request({
-					url: getApiUrl(`/inspection-record/page?current=${this.pageNum}&size=${this.pageSize}&status=${this.status}`),
+					url: apiUrl,
 					method: 'GET',
 					header: {
 						'Authorization': `Bearer ${token}`
@@ -104,8 +119,8 @@
 								for (let i = 0; i < records.length; i++) {
 									const item = records[i]
 									// 打印原始数据对象，检查字段内容
-									console.log('原始数据对象:', item, " at pages/record/record.uvue:160")
-									console.log('problemDescription字段:', item.getString('problemDescription'), " at pages/record/record.uvue:161")
+									console.log('原始数据对象:', item, " at pages/record/record.uvue:175")
+									console.log('problemDescription字段:', item.getString('problemDescription'), " at pages/record/record.uvue:176")
 									
 									const createTime = item.getString('createTime') ?? ''
 									const record: InspectionRecord = {
@@ -117,7 +132,7 @@
 										status: item.getNumber('status') ?? 0
 									}
 									// 打印处理后的记录对象
-									console.log('处理后的记录对象:', record, " at pages/record/record.uvue:173")
+									console.log('处理后的记录对象:', record, " at pages/record/record.uvue:188")
 									newRecords.push(record)
 								}
 							}
@@ -141,7 +156,7 @@
 					this.loadingMore = false
 				},
 				fail: (error) => {
-					console.error('加载记录失败:', error, " at pages/record/record.uvue:197")
+					console.error('加载记录失败:', error, " at pages/record/record.uvue:212")
 					uni.showToast({
 						title: '网络错误',
 						icon: 'none'
@@ -152,8 +167,9 @@
 		})
 	},
 			
-		getStatusText(status: number): string {
-			const statusMap: UTSJSONObject = {__$originalPosition: new UTSSourceMapPosition("statusMap", "pages/record/record.uvue", 209, 10),
+		getStatusText(status: number | null): string {
+			if (status == null) return '未知'
+			const statusMap: UTSJSONObject = {__$originalPosition: new UTSSourceMapPosition("statusMap", "pages/record/record.uvue", 225, 10),
 				"0": '待整改',
 				"1": '已整改',
 				"2": '已复查'
@@ -171,8 +187,9 @@
 			return dateTimeStr
 		},
 			
-		getStatusClass(status: number): string {
-				const classMap: UTSJSONObject = {__$originalPosition: new UTSSourceMapPosition("classMap", "pages/record/record.uvue", 228, 11),
+		getStatusClass(status: number | null): string {
+				if (status == null) return 'status-unknown'
+				const classMap: UTSJSONObject = {__$originalPosition: new UTSSourceMapPosition("classMap", "pages/record/record.uvue", 245, 11),
 					"0": 'status-pending',
 					"1": 'status-completed',
 					"2": 'status-accepted'
@@ -189,30 +206,32 @@
 				return ''
 			},
 			
-			goToDetail(recordId: string) {
-				// 根据记录状态决定跳转页面
-				const record = this.recordList.find(r => r.id === recordId)
-				if (record != null) {
-					if (record.status === 0) {
-						// 待整改，跳转到detail页面
-						uni.navigateTo({
-							url: `/pages/record/detail?id=${recordId}`
-						})
-					} else if (record.status === 1) {
-						// 已整改，跳转到review页面
-						uni.navigateTo({
-							url: `/pages/record/review?id=${recordId}`
-						})
-					} else if (record.status === 2) {
-						// 已复查，跳转到detail页面（只读模式）
-						uni.navigateTo({
-							url: `/pages/record/detail?id=${recordId}`
-						})
-					}
-				} else {
-					// 如果找不到记录，默认跳转到detail页面
+			goToDetail(record: InspectionRecord) {
+				// 根据页面模式和记录状态进行不同的跳转
+				if (this.isDelayed) {
+					// 延迟整改模式：跳转到review.uvue页面（只读模式）
 					uni.navigateTo({
-						url: `/pages/record/detail?id=${recordId}`
+						url: `/pages/record/review?id=${record.id}&delayed=true`
+					})
+				} else if (this.isReviewed) {
+					// 已复查记录模式：与延迟整改使用相同逻辑跳转到review.uvue页面
+					uni.navigateTo({
+						url: `/pages/record/review?id=${record.id}&reviewed=true`
+					})
+				} else if (record.status === 0) {
+					// 待整改：跳转到detail页面
+					uni.navigateTo({
+						url: `/pages/record/detail?id=${record.id}`
+					})
+				} else if (record.status === 1) {
+					// 已整改：跳转到review.uvue页面
+					uni.navigateTo({
+						url: `/pages/record/review?id=${record.id}`
+					})
+				} else {
+					// 其他状态：跳转到review.uvue页面（只读模式）
+					uni.navigateTo({
+						url: `/pages/record/review?id=${record.id}`
 					})
 				}
 			},
@@ -289,7 +308,7 @@
 					},
 					fail: (error) => {
 						uni.hideLoading()
-						console.error('删除记录失败:', error, " at pages/record/record.uvue:345")
+						console.error('删除记录失败:', error, " at pages/record/record.uvue:364")
 						uni.showToast({
 							title: '网络错误',
 							icon: 'none'
@@ -319,7 +338,7 @@ const _cache = this.$.renderCache
         return _cE("view", _uM({
           class: "record-item",
           key: record.id,
-          onClick: () => {_ctx.goToDetail(record.id)},
+          onClick: () => {_ctx.goToDetail(record)},
           onLongpress: () => {_ctx.showDeleteConfirm(record.id, record.problemDescription)}
         }), [
           _cE("view", _uM({ class: "record-content" }), [

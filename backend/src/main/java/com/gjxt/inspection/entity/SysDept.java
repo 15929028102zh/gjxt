@@ -12,8 +12,6 @@ import com.baomidou.mybatisplus.annotation.TableName;
 @TableName("sys_dept")
 public class SysDept extends BaseEntity {
 
-    private static final long serialVersionUID = 1L;
-
     /**
      * 部门名称
      */
@@ -30,7 +28,7 @@ public class SysDept extends BaseEntity {
      * 父部门ID
      */
     @TableField("parent_id")
-    private Long parentId;
+    private String parentId;
 
     /**
      * 排序
@@ -60,11 +58,11 @@ public class SysDept extends BaseEntity {
         this.description = description;
     }
 
-    public Long getParentId() {
+    public String getParentId() {
         return parentId;
     }
 
-    public void setParentId(Long parentId) {
+    public void setParentId(String parentId) {
         this.parentId = parentId;
     }
 

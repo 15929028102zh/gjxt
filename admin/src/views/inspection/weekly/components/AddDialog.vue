@@ -304,7 +304,7 @@ const departmentOptions = ref([])
 
 // 图片上传相关
 const uploadAction = computed(() => {
-  return 'http://192.168.42.128:8080/api/upload/image'
+  return 'http://192.168.244.128:8080/api/upload/image'
 })
 
 const uploadHeaders = computed(() => {

@@ -20,6 +20,7 @@
         <result column="create_time" property="createTime" />
         <result column="update_time" property="updateTime" />
         <result column="deleted" property="deleted" />
+        <result column="image_url" property="imageUrl" />
     </resultMap>
 
     <!-- 基础字段 -->
@@ -33,6 +34,7 @@
         SELECT u.id, u.username, u.password, u.real_name, u.phone, u.email, 
                u.department, u.dept_id, u.position, u.role, u.status,
                u.last_login_time, u.create_time, u.update_time, u.deleted,
+               u.image_url,
                d.dept_name
         FROM sys_user u
         LEFT JOIN sys_dept d ON u.dept_id = d.id

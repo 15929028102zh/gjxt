@@ -66,7 +66,7 @@ public class SysUserController {
             @RequestParam(required = false) String username,
             @RequestParam(required = false) String realName,
             @RequestParam(required = false) String department,
-            @RequestParam(required = false) Long deptId,
+            @RequestParam(required = false) String deptId,
             @RequestParam(required = false) String role,
             @RequestParam(required = false) Integer status) {
         try {
@@ -209,7 +209,7 @@ public class SysUserController {
      * 根据部门名称查询用户列表
      */
     @GetMapping("/by-department")
-    public Result<List<SysUser>> getUsersByDepartment(@RequestParam Long deptId) {
+    public Result<List<SysUser>> getUsersByDepartment(@RequestParam String deptId) {
         try {
             List<SysUser> users = userService.getUsersByDeptId(deptId);
             // 清除密码信息

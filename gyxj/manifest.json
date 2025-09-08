@@ -39,15 +39,15 @@
 		},
 		"networkSecurityConfig": {
 			"domain-config": [{
-					"domain": "192.168.100.102",
+					"domain": "192.168.244.128",
 					"cleartextTrafficPermitted": true
 				},
 				{
-					"domain": "192.168.100.102",
+					"domain": "192.168.244.128",
 					"cleartextTrafficPermitted": true
 				},
 				{
-					"domain": "192.168.100.102",
+					"domain": "192.168.244.128",
 					"cleartextTrafficPermitted": true
 				}
 			]

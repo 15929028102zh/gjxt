@@ -17,15 +17,7 @@ import io.dcloud.uniapp.extapi.request as uni_request
 import io.dcloud.uniapp.extapi.setStorageSync as uni_setStorageSync
 import io.dcloud.uniapp.extapi.showToast as uni_showToast
 open class GenPagesLoginLogin : BasePage {
-    constructor(__ins: ComponentInternalInstance, __renderer: String?) : super(__ins, __renderer) {
-        onLoad(fun(_: OnLoadOptions) {
-            val token = uni_getStorageSync("token")
-            if (token != null && token != "") {
-                uni_reLaunch(ReLaunchOptions(url = "/pages/home/home"))
-            }
-        }
-        , __ins)
-    }
+    constructor(__ins: ComponentInternalInstance, __renderer: String?) : super(__ins, __renderer) {}
     @Suppress("UNUSED_PARAMETER", "UNUSED_VARIABLE")
     override fun `$render`(): Any? {
         val _ctx = this
@@ -131,14 +123,15 @@ open class GenPagesLoginLogin : BasePage {
                 if (userInfo != null) {
                     console.log("保存用户信息到本地存储:", JSON.stringify(userInfo), " at pages/login/login.uvue:114")
                     uni_setStorageSync("userInfo", JSON.stringify(userInfo))
+                    this.updateUserAvatar(userInfo)
                 }
             } else {
-                console.log("获取用户信息失败，使用基本信息", " at pages/login/login.uvue:118")
+                console.log("获取用户信息失败，使用基本信息", " at pages/login/login.uvue:121")
                 uni_setStorageSync("userInfo", JSON.stringify(_uO("id" to ("temp_" + Date.now()), "username" to this.form.username, "realName" to this.form.username)))
             }
         }
         , fail = fun(error){
-            console.log("获取用户信息失败:", error, " at pages/login/login.uvue:128")
+            console.log("获取用户信息失败:", error, " at pages/login/login.uvue:131")
             uni_setStorageSync("userInfo", JSON.stringify(_uO("id" to ("temp_" + Date.now()), "username" to this.form.username, "realName" to this.form.username)))
         }
         ))
@@ -150,7 +143,7 @@ open class GenPagesLoginLogin : BasePage {
         }
         this.loading = true
         val loginUrl = getApiUrl("/user/login")
-        console.log("登录API地址:", loginUrl, " at pages/login/login.uvue:144")
+        console.log("登录API地址:", loginUrl, " at pages/login/login.uvue:147")
         uni_request<Any>(RequestOptions(url = loginUrl, method = "POST", header = object : UTSJSONObject() {
             var `Content-Type` = "application/json"
         }, data = JSON.stringify(this.form), success = fun(res){
@@ -169,11 +162,41 @@ open class GenPagesLoginLogin : BasePage {
             this.loading = false
         }
         , fail = fun(error){
-            console.log("登录请求失败:", error, " at pages/login/login.uvue:183")
+            console.log("登录请求失败:", error, " at pages/login/login.uvue:186")
             uni_showToast(ShowToastOptions(title = "网络请求失败", icon = "none"))
             this.loading = false
         }
         ))
+    }
+    open var updateUserAvatar = ::gen_updateUserAvatar_fn
+    open fun gen_updateUserAvatar_fn(userInfo: UTSJSONObject) {
+        val imageUrl = userInfo.getString("imageUrl")
+        if (imageUrl != null && imageUrl != "") {
+            console.log("用户已有头像，设置头像:", imageUrl, " at pages/login/login.uvue:199")
+            val httpImageUrl = this.convertToHttpUrl(imageUrl)
+            userInfo.set("avatar", httpImageUrl)
+            uni_setStorageSync("userInfo", JSON.stringify(userInfo))
+            console.log("头像已更新到本地存储:", httpImageUrl, " at pages/login/login.uvue:205")
+        } else {
+            console.log("用户暂无头像", " at pages/login/login.uvue:207")
+        }
+    }
+    open var convertToHttpUrl = ::gen_convertToHttpUrl_fn
+    open fun gen_convertToHttpUrl_fn(relativePath: String): String {
+        console.log("相对路径:", relativePath, " at pages/login/login.uvue:213")
+        if (relativePath.startsWith("http://") || relativePath.startsWith("https://")) {
+            return relativePath
+        }
+        val httpUrl = "" + apiConfig.baseUrl + "/api" + relativePath
+        console.log("转换后的HTTP URL:", httpUrl, " at pages/login/login.uvue:222")
+        return httpUrl
+    }
+    open var onLoad = ::gen_onLoad_fn
+    open fun gen_onLoad_fn() {
+        val token = uni_getStorageSync("token")
+        if (token != null && token != "") {
+            uni_reLaunch(ReLaunchOptions(url = "/pages/home/home"))
+        }
     }
     companion object {
         val styles: Map<String, Map<String, Map<String, Any>>> by lazy {

@@ -65,9 +65,9 @@ fun tryConnectSocket(host: String, port: String, id: String): UTSPromise<SocketT
     )
 }
 fun initRuntimeSocketService(): UTSPromise<Boolean> {
-    val hosts: String = "192.168.93.1,192.168.229.1,192.168.42.128,127.0.0.1"
+    val hosts: String = "192.168.93.1,192.168.229.1,192.168.244.128,127.0.0.1"
     val port: String = "8090"
-    val id: String = "app-android_C6LFWr"
+    val id: String = "app-android_HZtxWG"
     if (hosts == "" || port == "" || id == "") {
         return UTSPromise.resolve(false)
     }
@@ -188,7 +188,7 @@ open class ApiConfigReactiveObject : ApiConfig, IUTSReactive<ApiConfig> {
             _tRS(__v_raw, "baseUrl", oldValue, value)
         }
 }
-val apiConfig = reactive(ApiConfig(baseUrl = "http://192.168.42.128:8080"))
+val apiConfig = reactive(ApiConfig(baseUrl = "http://192.168.244.128:8080"))
 val getApiUrl = fun(endpoint: String): String {
     return "" + apiConfig.baseUrl + "/api" + endpoint
 }
@@ -434,7 +434,7 @@ open class StatisticsData (
     @JsonNotNull
     open var completedIssues: Number,
     @JsonNotNull
-    open var weeklyTotal: Number,
+    open var reviewedCount: Number,
 ) : UTSReactiveObject(), IUTSSourceMap {
     override fun `__$getOriginalPosition`(): UTSSourceMapPosition? {
         return UTSSourceMapPosition("StatisticsData", "pages/weekly/weekly.uvue", 72, 7)
@@ -448,7 +448,7 @@ open class StatisticsDataReactiveObject : StatisticsData, IUTSReactive<Statistic
     override var __v_isReadonly: Boolean
     override var __v_isShallow: Boolean
     override var __v_skip: Boolean
-    constructor(__v_raw: StatisticsData, __v_isReadonly: Boolean, __v_isShallow: Boolean, __v_skip: Boolean) : super(pendingIssues = __v_raw.pendingIssues, completedIssues = __v_raw.completedIssues, weeklyTotal = __v_raw.weeklyTotal) {
+    constructor(__v_raw: StatisticsData, __v_isReadonly: Boolean, __v_isShallow: Boolean, __v_skip: Boolean) : super(pendingIssues = __v_raw.pendingIssues, completedIssues = __v_raw.completedIssues, reviewedCount = __v_raw.reviewedCount) {
         this.__v_raw = __v_raw
         this.__v_isReadonly = __v_isReadonly
         this.__v_isShallow = __v_isShallow
@@ -481,17 +481,17 @@ open class StatisticsDataReactiveObject : StatisticsData, IUTSReactive<Statistic
             __v_raw.completedIssues = value
             _tRS(__v_raw, "completedIssues", oldValue, value)
         }
-    override var weeklyTotal: Number
+    override var reviewedCount: Number
         get() {
-            return _tRG(__v_raw, "weeklyTotal", __v_raw.weeklyTotal, __v_isReadonly, __v_isShallow)
+            return _tRG(__v_raw, "reviewedCount", __v_raw.reviewedCount, __v_isReadonly, __v_isShallow)
         }
         set(value) {
-            if (!__v_canSet("weeklyTotal")) {
+            if (!__v_canSet("reviewedCount")) {
                 return
             }
-            val oldValue = __v_raw.weeklyTotal
-            __v_raw.weeklyTotal = value
-            _tRS(__v_raw, "weeklyTotal", oldValue, value)
+            val oldValue = __v_raw.reviewedCount
+            __v_raw.reviewedCount = value
+            _tRS(__v_raw, "reviewedCount", oldValue, value)
         }
 }
 val GenPagesWeeklyWeeklyClass = CreateVueComponent(GenPagesWeeklyWeekly::class.java, fun(): VueComponentOptions {
@@ -514,7 +514,7 @@ open class MonthlyRecord (
     open var status: String,
 ) : UTSReactiveObject(), IUTSSourceMap {
     override fun `__$getOriginalPosition`(): UTSSourceMapPosition? {
-        return UTSSourceMapPosition("MonthlyRecord", "pages/monthly/monthly.uvue", 91, 7)
+        return UTSSourceMapPosition("MonthlyRecord", "pages/monthly/monthly.uvue", 148, 7)
     }
     override fun __v_create(__v_isReadonly: Boolean, __v_isShallow: Boolean, __v_skip: Boolean): UTSReactiveObject {
         return MonthlyRecordReactiveObject(this, __v_isReadonly, __v_isShallow, __v_skip)
@@ -604,7 +604,7 @@ open class MonthlyStatistics (
     open var monthlyTotal: Number,
 ) : UTSReactiveObject(), IUTSSourceMap {
     override fun `__$getOriginalPosition`(): UTSSourceMapPosition? {
-        return UTSSourceMapPosition("MonthlyStatistics", "pages/monthly/monthly.uvue", 99, 7)
+        return UTSSourceMapPosition("MonthlyStatistics", "pages/monthly/monthly.uvue", 156, 7)
     }
     override fun __v_create(__v_isReadonly: Boolean, __v_isShallow: Boolean, __v_skip: Boolean): UTSReactiveObject {
         return MonthlyStatisticsReactiveObject(this, __v_isReadonly, __v_isShallow, __v_skip)
@@ -661,11 +661,519 @@ open class MonthlyStatisticsReactiveObject : MonthlyStatistics, IUTSReactive<Mon
             _tRS(__v_raw, "monthlyTotal", oldValue, value)
         }
 }
+open class Notification (
+    @JsonNotNull
+    open var id: String,
+    @JsonNotNull
+    open var taskId: String,
+    @JsonNotNull
+    open var taskNo: String,
+    @JsonNotNull
+    open var title: String,
+    @JsonNotNull
+    open var content: String,
+    @JsonNotNull
+    open var createTime: String,
+    @JsonNotNull
+    open var isRead: Boolean = false,
+) : UTSReactiveObject(), IUTSSourceMap {
+    override fun `__$getOriginalPosition`(): UTSSourceMapPosition? {
+        return UTSSourceMapPosition("Notification", "pages/monthly/monthly.uvue", 162, 7)
+    }
+    override fun __v_create(__v_isReadonly: Boolean, __v_isShallow: Boolean, __v_skip: Boolean): UTSReactiveObject {
+        return NotificationReactiveObject(this, __v_isReadonly, __v_isShallow, __v_skip)
+    }
+}
+open class NotificationReactiveObject : Notification, IUTSReactive<Notification> {
+    override var __v_raw: Notification
+    override var __v_isReadonly: Boolean
+    override var __v_isShallow: Boolean
+    override var __v_skip: Boolean
+    constructor(__v_raw: Notification, __v_isReadonly: Boolean, __v_isShallow: Boolean, __v_skip: Boolean) : super(id = __v_raw.id, taskId = __v_raw.taskId, taskNo = __v_raw.taskNo, title = __v_raw.title, content = __v_raw.content, createTime = __v_raw.createTime, isRead = __v_raw.isRead) {
+        this.__v_raw = __v_raw
+        this.__v_isReadonly = __v_isReadonly
+        this.__v_isShallow = __v_isShallow
+        this.__v_skip = __v_skip
+    }
+    override fun __v_clone(__v_isReadonly: Boolean, __v_isShallow: Boolean, __v_skip: Boolean): NotificationReactiveObject {
+        return NotificationReactiveObject(this.__v_raw, __v_isReadonly, __v_isShallow, __v_skip)
+    }
+    override var id: String
+        get() {
+            return _tRG(__v_raw, "id", __v_raw.id, __v_isReadonly, __v_isShallow)
+        }
+        set(value) {
+            if (!__v_canSet("id")) {
+                return
+            }
+            val oldValue = __v_raw.id
+            __v_raw.id = value
+            _tRS(__v_raw, "id", oldValue, value)
+        }
+    override var taskId: String
+        get() {
+            return _tRG(__v_raw, "taskId", __v_raw.taskId, __v_isReadonly, __v_isShallow)
+        }
+        set(value) {
+            if (!__v_canSet("taskId")) {
+                return
+            }
+            val oldValue = __v_raw.taskId
+            __v_raw.taskId = value
+            _tRS(__v_raw, "taskId", oldValue, value)
+        }
+    override var taskNo: String
+        get() {
+            return _tRG(__v_raw, "taskNo", __v_raw.taskNo, __v_isReadonly, __v_isShallow)
+        }
+        set(value) {
+            if (!__v_canSet("taskNo")) {
+                return
+            }
+            val oldValue = __v_raw.taskNo
+            __v_raw.taskNo = value
+            _tRS(__v_raw, "taskNo", oldValue, value)
+        }
+    override var title: String
+        get() {
+            return _tRG(__v_raw, "title", __v_raw.title, __v_isReadonly, __v_isShallow)
+        }
+        set(value) {
+            if (!__v_canSet("title")) {
+                return
+            }
+            val oldValue = __v_raw.title
+            __v_raw.title = value
+            _tRS(__v_raw, "title", oldValue, value)
+        }
+    override var content: String
+        get() {
+            return _tRG(__v_raw, "content", __v_raw.content, __v_isReadonly, __v_isShallow)
+        }
+        set(value) {
+            if (!__v_canSet("content")) {
+                return
+            }
+            val oldValue = __v_raw.content
+            __v_raw.content = value
+            _tRS(__v_raw, "content", oldValue, value)
+        }
+    override var createTime: String
+        get() {
+            return _tRG(__v_raw, "createTime", __v_raw.createTime, __v_isReadonly, __v_isShallow)
+        }
+        set(value) {
+            if (!__v_canSet("createTime")) {
+                return
+            }
+            val oldValue = __v_raw.createTime
+            __v_raw.createTime = value
+            _tRS(__v_raw, "createTime", oldValue, value)
+        }
+    override var isRead: Boolean
+        get() {
+            return _tRG(__v_raw, "isRead", __v_raw.isRead, __v_isReadonly, __v_isShallow)
+        }
+        set(value) {
+            if (!__v_canSet("isRead")) {
+                return
+            }
+            val oldValue = __v_raw.isRead
+            __v_raw.isRead = value
+            _tRS(__v_raw, "isRead", oldValue, value)
+        }
+}
 val GenPagesMonthlyMonthlyClass = CreateVueComponent(GenPagesMonthlyMonthly::class.java, fun(): VueComponentOptions {
     return VueComponentOptions(type = "page", name = "", inheritAttrs = GenPagesMonthlyMonthly.inheritAttrs, inject = GenPagesMonthlyMonthly.inject, props = GenPagesMonthlyMonthly.props, propsNeedCastKeys = GenPagesMonthlyMonthly.propsNeedCastKeys, emits = GenPagesMonthlyMonthly.emits, components = GenPagesMonthlyMonthly.components, styles = GenPagesMonthlyMonthly.styles)
 }
 , fun(instance, renderer): GenPagesMonthlyMonthly {
     return GenPagesMonthlyMonthly(instance, renderer)
+}
+)
+open class TaskInfo (
+    @JsonNotNull
+    open var taskNumber: String,
+    @JsonNotNull
+    open var inspectionDate: String,
+    @JsonNotNull
+    open var department: String,
+    @JsonNotNull
+    open var profession: String,
+    @JsonNotNull
+    open var groupLeader: String,
+    @JsonNotNull
+    open var deputyLeader: String,
+) : UTSReactiveObject(), IUTSSourceMap {
+    override fun `__$getOriginalPosition`(): UTSSourceMapPosition? {
+        return UTSSourceMapPosition("TaskInfo", "pages/monthly/task-record.uvue", 374, 7)
+    }
+    override fun __v_create(__v_isReadonly: Boolean, __v_isShallow: Boolean, __v_skip: Boolean): UTSReactiveObject {
+        return TaskInfoReactiveObject(this, __v_isReadonly, __v_isShallow, __v_skip)
+    }
+}
+open class TaskInfoReactiveObject : TaskInfo, IUTSReactive<TaskInfo> {
+    override var __v_raw: TaskInfo
+    override var __v_isReadonly: Boolean
+    override var __v_isShallow: Boolean
+    override var __v_skip: Boolean
+    constructor(__v_raw: TaskInfo, __v_isReadonly: Boolean, __v_isShallow: Boolean, __v_skip: Boolean) : super(taskNumber = __v_raw.taskNumber, inspectionDate = __v_raw.inspectionDate, department = __v_raw.department, profession = __v_raw.profession, groupLeader = __v_raw.groupLeader, deputyLeader = __v_raw.deputyLeader) {
+        this.__v_raw = __v_raw
+        this.__v_isReadonly = __v_isReadonly
+        this.__v_isShallow = __v_isShallow
+        this.__v_skip = __v_skip
+    }
+    override fun __v_clone(__v_isReadonly: Boolean, __v_isShallow: Boolean, __v_skip: Boolean): TaskInfoReactiveObject {
+        return TaskInfoReactiveObject(this.__v_raw, __v_isReadonly, __v_isShallow, __v_skip)
+    }
+    override var taskNumber: String
+        get() {
+            return _tRG(__v_raw, "taskNumber", __v_raw.taskNumber, __v_isReadonly, __v_isShallow)
+        }
+        set(value) {
+            if (!__v_canSet("taskNumber")) {
+                return
+            }
+            val oldValue = __v_raw.taskNumber
+            __v_raw.taskNumber = value
+            _tRS(__v_raw, "taskNumber", oldValue, value)
+        }
+    override var inspectionDate: String
+        get() {
+            return _tRG(__v_raw, "inspectionDate", __v_raw.inspectionDate, __v_isReadonly, __v_isShallow)
+        }
+        set(value) {
+            if (!__v_canSet("inspectionDate")) {
+                return
+            }
+            val oldValue = __v_raw.inspectionDate
+            __v_raw.inspectionDate = value
+            _tRS(__v_raw, "inspectionDate", oldValue, value)
+        }
+    override var department: String
+        get() {
+            return _tRG(__v_raw, "department", __v_raw.department, __v_isReadonly, __v_isShallow)
+        }
+        set(value) {
+            if (!__v_canSet("department")) {
+                return
+            }
+            val oldValue = __v_raw.department
+            __v_raw.department = value
+            _tRS(__v_raw, "department", oldValue, value)
+        }
+    override var profession: String
+        get() {
+            return _tRG(__v_raw, "profession", __v_raw.profession, __v_isReadonly, __v_isShallow)
+        }
+        set(value) {
+            if (!__v_canSet("profession")) {
+                return
+            }
+            val oldValue = __v_raw.profession
+            __v_raw.profession = value
+            _tRS(__v_raw, "profession", oldValue, value)
+        }
+    override var groupLeader: String
+        get() {
+            return _tRG(__v_raw, "groupLeader", __v_raw.groupLeader, __v_isReadonly, __v_isShallow)
+        }
+        set(value) {
+            if (!__v_canSet("groupLeader")) {
+                return
+            }
+            val oldValue = __v_raw.groupLeader
+            __v_raw.groupLeader = value
+            _tRS(__v_raw, "groupLeader", oldValue, value)
+        }
+    override var deputyLeader: String
+        get() {
+            return _tRG(__v_raw, "deputyLeader", __v_raw.deputyLeader, __v_isReadonly, __v_isShallow)
+        }
+        set(value) {
+            if (!__v_canSet("deputyLeader")) {
+                return
+            }
+            val oldValue = __v_raw.deputyLeader
+            __v_raw.deputyLeader = value
+            _tRS(__v_raw, "deputyLeader", oldValue, value)
+        }
+}
+open class FormData (
+    @JsonNotNull
+    open var problemType: String,
+    @JsonNotNull
+    open var problemLevel: String,
+    @JsonNotNull
+    open var problemDescription: String,
+    @JsonNotNull
+    open var location: String,
+    @JsonNotNull
+    open var suggestion: String,
+    @JsonNotNull
+    open var photos: UTSArray<String>,
+    @JsonNotNull
+    open var deductionScore: String,
+    @JsonNotNull
+    open var safetyScoreItem: String,
+    @JsonNotNull
+    open var rectificationDate: String,
+    @JsonNotNull
+    open var module: String,
+    @JsonNotNull
+    open var responsibility: String,
+    @JsonNotNull
+    open var issue: String,
+    @JsonNotNull
+    open var quality: String,
+) : UTSReactiveObject(), IUTSSourceMap {
+    override fun `__$getOriginalPosition`(): UTSSourceMapPosition? {
+        return UTSSourceMapPosition("FormData", "pages/monthly/task-record.uvue", 383, 7)
+    }
+    override fun __v_create(__v_isReadonly: Boolean, __v_isShallow: Boolean, __v_skip: Boolean): UTSReactiveObject {
+        return FormDataReactiveObject(this, __v_isReadonly, __v_isShallow, __v_skip)
+    }
+}
+open class FormDataReactiveObject : FormData, IUTSReactive<FormData> {
+    override var __v_raw: FormData
+    override var __v_isReadonly: Boolean
+    override var __v_isShallow: Boolean
+    override var __v_skip: Boolean
+    constructor(__v_raw: FormData, __v_isReadonly: Boolean, __v_isShallow: Boolean, __v_skip: Boolean) : super(problemType = __v_raw.problemType, problemLevel = __v_raw.problemLevel, problemDescription = __v_raw.problemDescription, location = __v_raw.location, suggestion = __v_raw.suggestion, photos = __v_raw.photos, deductionScore = __v_raw.deductionScore, safetyScoreItem = __v_raw.safetyScoreItem, rectificationDate = __v_raw.rectificationDate, module = __v_raw.module, responsibility = __v_raw.responsibility, issue = __v_raw.issue, quality = __v_raw.quality) {
+        this.__v_raw = __v_raw
+        this.__v_isReadonly = __v_isReadonly
+        this.__v_isShallow = __v_isShallow
+        this.__v_skip = __v_skip
+    }
+    override fun __v_clone(__v_isReadonly: Boolean, __v_isShallow: Boolean, __v_skip: Boolean): FormDataReactiveObject {
+        return FormDataReactiveObject(this.__v_raw, __v_isReadonly, __v_isShallow, __v_skip)
+    }
+    override var problemType: String
+        get() {
+            return _tRG(__v_raw, "problemType", __v_raw.problemType, __v_isReadonly, __v_isShallow)
+        }
+        set(value) {
+            if (!__v_canSet("problemType")) {
+                return
+            }
+            val oldValue = __v_raw.problemType
+            __v_raw.problemType = value
+            _tRS(__v_raw, "problemType", oldValue, value)
+        }
+    override var problemLevel: String
+        get() {
+            return _tRG(__v_raw, "problemLevel", __v_raw.problemLevel, __v_isReadonly, __v_isShallow)
+        }
+        set(value) {
+            if (!__v_canSet("problemLevel")) {
+                return
+            }
+            val oldValue = __v_raw.problemLevel
+            __v_raw.problemLevel = value
+            _tRS(__v_raw, "problemLevel", oldValue, value)
+        }
+    override var problemDescription: String
+        get() {
+            return _tRG(__v_raw, "problemDescription", __v_raw.problemDescription, __v_isReadonly, __v_isShallow)
+        }
+        set(value) {
+            if (!__v_canSet("problemDescription")) {
+                return
+            }
+            val oldValue = __v_raw.problemDescription
+            __v_raw.problemDescription = value
+            _tRS(__v_raw, "problemDescription", oldValue, value)
+        }
+    override var location: String
+        get() {
+            return _tRG(__v_raw, "location", __v_raw.location, __v_isReadonly, __v_isShallow)
+        }
+        set(value) {
+            if (!__v_canSet("location")) {
+                return
+            }
+            val oldValue = __v_raw.location
+            __v_raw.location = value
+            _tRS(__v_raw, "location", oldValue, value)
+        }
+    override var suggestion: String
+        get() {
+            return _tRG(__v_raw, "suggestion", __v_raw.suggestion, __v_isReadonly, __v_isShallow)
+        }
+        set(value) {
+            if (!__v_canSet("suggestion")) {
+                return
+            }
+            val oldValue = __v_raw.suggestion
+            __v_raw.suggestion = value
+            _tRS(__v_raw, "suggestion", oldValue, value)
+        }
+    override var photos: UTSArray<String>
+        get() {
+            return _tRG(__v_raw, "photos", __v_raw.photos, __v_isReadonly, __v_isShallow)
+        }
+        set(value) {
+            if (!__v_canSet("photos")) {
+                return
+            }
+            val oldValue = __v_raw.photos
+            __v_raw.photos = value
+            _tRS(__v_raw, "photos", oldValue, value)
+        }
+    override var deductionScore: String
+        get() {
+            return _tRG(__v_raw, "deductionScore", __v_raw.deductionScore, __v_isReadonly, __v_isShallow)
+        }
+        set(value) {
+            if (!__v_canSet("deductionScore")) {
+                return
+            }
+            val oldValue = __v_raw.deductionScore
+            __v_raw.deductionScore = value
+            _tRS(__v_raw, "deductionScore", oldValue, value)
+        }
+    override var safetyScoreItem: String
+        get() {
+            return _tRG(__v_raw, "safetyScoreItem", __v_raw.safetyScoreItem, __v_isReadonly, __v_isShallow)
+        }
+        set(value) {
+            if (!__v_canSet("safetyScoreItem")) {
+                return
+            }
+            val oldValue = __v_raw.safetyScoreItem
+            __v_raw.safetyScoreItem = value
+            _tRS(__v_raw, "safetyScoreItem", oldValue, value)
+        }
+    override var rectificationDate: String
+        get() {
+            return _tRG(__v_raw, "rectificationDate", __v_raw.rectificationDate, __v_isReadonly, __v_isShallow)
+        }
+        set(value) {
+            if (!__v_canSet("rectificationDate")) {
+                return
+            }
+            val oldValue = __v_raw.rectificationDate
+            __v_raw.rectificationDate = value
+            _tRS(__v_raw, "rectificationDate", oldValue, value)
+        }
+    override var module: String
+        get() {
+            return _tRG(__v_raw, "module", __v_raw.module, __v_isReadonly, __v_isShallow)
+        }
+        set(value) {
+            if (!__v_canSet("module")) {
+                return
+            }
+            val oldValue = __v_raw.module
+            __v_raw.module = value
+            _tRS(__v_raw, "module", oldValue, value)
+        }
+    override var responsibility: String
+        get() {
+            return _tRG(__v_raw, "responsibility", __v_raw.responsibility, __v_isReadonly, __v_isShallow)
+        }
+        set(value) {
+            if (!__v_canSet("responsibility")) {
+                return
+            }
+            val oldValue = __v_raw.responsibility
+            __v_raw.responsibility = value
+            _tRS(__v_raw, "responsibility", oldValue, value)
+        }
+    override var issue: String
+        get() {
+            return _tRG(__v_raw, "issue", __v_raw.issue, __v_isReadonly, __v_isShallow)
+        }
+        set(value) {
+            if (!__v_canSet("issue")) {
+                return
+            }
+            val oldValue = __v_raw.issue
+            __v_raw.issue = value
+            _tRS(__v_raw, "issue", oldValue, value)
+        }
+    override var quality: String
+        get() {
+            return _tRG(__v_raw, "quality", __v_raw.quality, __v_isReadonly, __v_isShallow)
+        }
+        set(value) {
+            if (!__v_canSet("quality")) {
+                return
+            }
+            val oldValue = __v_raw.quality
+            __v_raw.quality = value
+            _tRS(__v_raw, "quality", oldValue, value)
+        }
+}
+open class OptionItem (
+    @JsonNotNull
+    open var id: String,
+    @JsonNotNull
+    open var name: String,
+    open var value: String? = null,
+) : UTSReactiveObject(), IUTSSourceMap {
+    override fun `__$getOriginalPosition`(): UTSSourceMapPosition? {
+        return UTSSourceMapPosition("OptionItem", "pages/monthly/task-record.uvue", 399, 7)
+    }
+    override fun __v_create(__v_isReadonly: Boolean, __v_isShallow: Boolean, __v_skip: Boolean): UTSReactiveObject {
+        return OptionItemReactiveObject(this, __v_isReadonly, __v_isShallow, __v_skip)
+    }
+}
+open class OptionItemReactiveObject : OptionItem, IUTSReactive<OptionItem> {
+    override var __v_raw: OptionItem
+    override var __v_isReadonly: Boolean
+    override var __v_isShallow: Boolean
+    override var __v_skip: Boolean
+    constructor(__v_raw: OptionItem, __v_isReadonly: Boolean, __v_isShallow: Boolean, __v_skip: Boolean) : super(id = __v_raw.id, name = __v_raw.name, value = __v_raw.value) {
+        this.__v_raw = __v_raw
+        this.__v_isReadonly = __v_isReadonly
+        this.__v_isShallow = __v_isShallow
+        this.__v_skip = __v_skip
+    }
+    override fun __v_clone(__v_isReadonly: Boolean, __v_isShallow: Boolean, __v_skip: Boolean): OptionItemReactiveObject {
+        return OptionItemReactiveObject(this.__v_raw, __v_isReadonly, __v_isShallow, __v_skip)
+    }
+    override var id: String
+        get() {
+            return _tRG(__v_raw, "id", __v_raw.id, __v_isReadonly, __v_isShallow)
+        }
+        set(value) {
+            if (!__v_canSet("id")) {
+                return
+            }
+            val oldValue = __v_raw.id
+            __v_raw.id = value
+            _tRS(__v_raw, "id", oldValue, value)
+        }
+    override var name: String
+        get() {
+            return _tRG(__v_raw, "name", __v_raw.name, __v_isReadonly, __v_isShallow)
+        }
+        set(value) {
+            if (!__v_canSet("name")) {
+                return
+            }
+            val oldValue = __v_raw.name
+            __v_raw.name = value
+            _tRS(__v_raw, "name", oldValue, value)
+        }
+    override var value: String?
+        get() {
+            return _tRG(__v_raw, "value", __v_raw.value, __v_isReadonly, __v_isShallow)
+        }
+        set(value) {
+            if (!__v_canSet("value")) {
+                return
+            }
+            val oldValue = __v_raw.value
+            __v_raw.value = value
+            _tRS(__v_raw, "value", oldValue, value)
+        }
+}
+val GenPagesMonthlyTaskRecordClass = CreateVueComponent(GenPagesMonthlyTaskRecord::class.java, fun(): VueComponentOptions {
+    return VueComponentOptions(type = "page", name = "", inheritAttrs = GenPagesMonthlyTaskRecord.inheritAttrs, inject = GenPagesMonthlyTaskRecord.inject, props = GenPagesMonthlyTaskRecord.props, propsNeedCastKeys = GenPagesMonthlyTaskRecord.propsNeedCastKeys, emits = GenPagesMonthlyTaskRecord.emits, components = GenPagesMonthlyTaskRecord.components, styles = GenPagesMonthlyTaskRecord.styles)
+}
+, fun(instance, renderer): GenPagesMonthlyTaskRecord {
+    return GenPagesMonthlyTaskRecord(instance, renderer)
 }
 )
 open class EditForm (
@@ -2197,7 +2705,7 @@ open class NatureOption2 (
     open var name: String,
 ) : UTSReactiveObject(), IUTSSourceMap {
     override fun `__$getOriginalPosition`(): UTSSourceMapPosition? {
-        return UTSSourceMapPosition("NatureOption", "pages/record/review.uvue", 296, 7)
+        return UTSSourceMapPosition("NatureOption", "pages/record/review.uvue", 307, 7)
     }
     override fun __v_create(__v_isReadonly: Boolean, __v_isShallow: Boolean, __v_skip: Boolean): UTSReactiveObject {
         return NatureOption2ReactiveObject(this, __v_isReadonly, __v_isShallow, __v_skip)
@@ -2249,7 +2757,7 @@ open class ProfessionOption2 (
     open var name: String,
 ) : UTSReactiveObject(), IUTSSourceMap {
     override fun `__$getOriginalPosition`(): UTSSourceMapPosition? {
-        return UTSSourceMapPosition("ProfessionOption", "pages/record/review.uvue", 301, 7)
+        return UTSSourceMapPosition("ProfessionOption", "pages/record/review.uvue", 312, 7)
     }
     override fun __v_create(__v_isReadonly: Boolean, __v_isShallow: Boolean, __v_skip: Boolean): UTSReactiveObject {
         return ProfessionOption2ReactiveObject(this, __v_isReadonly, __v_isShallow, __v_skip)
@@ -2301,7 +2809,7 @@ open class DepartmentOption2 (
     open var name: String,
 ) : UTSReactiveObject(), IUTSSourceMap {
     override fun `__$getOriginalPosition`(): UTSSourceMapPosition? {
-        return UTSSourceMapPosition("DepartmentOption", "pages/record/review.uvue", 306, 7)
+        return UTSSourceMapPosition("DepartmentOption", "pages/record/review.uvue", 317, 7)
     }
     override fun __v_create(__v_isReadonly: Boolean, __v_isShallow: Boolean, __v_skip: Boolean): UTSReactiveObject {
         return DepartmentOption2ReactiveObject(this, __v_isReadonly, __v_isShallow, __v_skip)
@@ -2415,7 +2923,7 @@ open class RecordDetail1 (
     open var reviewImageUrls: String,
 ) : UTSReactiveObject(), IUTSSourceMap {
     override fun `__$getOriginalPosition`(): UTSSourceMapPosition? {
-        return UTSSourceMapPosition("RecordDetail", "pages/record/review.uvue", 311, 7)
+        return UTSSourceMapPosition("RecordDetail", "pages/record/review.uvue", 322, 7)
     }
     override fun __v_create(__v_isReadonly: Boolean, __v_isShallow: Boolean, __v_skip: Boolean): UTSReactiveObject {
         return RecordDetail1ReactiveObject(this, __v_isReadonly, __v_isShallow, __v_skip)
@@ -3252,6 +3760,13 @@ val GenPagesChartTestChartTestClass = CreateVueComponent(GenPagesChartTestChartT
     return GenPagesChartTestChartTest(instance, renderer)
 }
 )
+val GenPagesTestTestClass = CreateVueComponent(GenPagesTestTest::class.java, fun(): VueComponentOptions {
+    return VueComponentOptions(type = "page", name = "", inheritAttrs = GenPagesTestTest.inheritAttrs, inject = GenPagesTestTest.inject, props = GenPagesTestTest.props, propsNeedCastKeys = GenPagesTestTest.propsNeedCastKeys, emits = GenPagesTestTest.emits, components = GenPagesTestTest.components, styles = GenPagesTestTest.styles)
+}
+, fun(instance, renderer): GenPagesTestTest {
+    return GenPagesTestTest(instance, renderer)
+}
+)
 fun createApp(): UTSJSONObject {
     val app = createSSRApp(GenAppClass)
     return _uO("app" to app)
@@ -3273,6 +3788,7 @@ fun definePageRoutes() {
     __uniRoutes.push(UniPageRoute(path = "pages/home/home", component = GenPagesHomeHomeClass, meta = UniPageMeta(isQuit = true), style = _uM("navigationBarTitleText" to "首页", "enablePullDownRefresh" to true, "disableScroll" to false)))
     __uniRoutes.push(UniPageRoute(path = "pages/weekly/weekly", component = GenPagesWeeklyWeeklyClass, meta = UniPageMeta(isQuit = false), style = _uM("navigationBarTitleText" to "周检")))
     __uniRoutes.push(UniPageRoute(path = "pages/monthly/monthly", component = GenPagesMonthlyMonthlyClass, meta = UniPageMeta(isQuit = false), style = _uM("navigationBarTitleText" to "月检")))
+    __uniRoutes.push(UniPageRoute(path = "pages/monthly/task-record", component = GenPagesMonthlyTaskRecordClass, meta = UniPageMeta(isQuit = false), style = _uM("navigationBarTitleText" to "月检任务录入")))
     __uniRoutes.push(UniPageRoute(path = "pages/profile/profile", component = GenPagesProfileProfileClass, meta = UniPageMeta(isQuit = false), style = _uM("navigationBarTitleText" to "我的")))
     __uniRoutes.push(UniPageRoute(path = "pages/index/index", component = GenPagesIndexIndexClass, meta = UniPageMeta(isQuit = false), style = _uM("navigationBarTitleText" to "首页")))
     __uniRoutes.push(UniPageRoute(path = "pages/login/login", component = GenPagesLoginLoginClass, meta = UniPageMeta(isQuit = false), style = _uM("navigationBarTitleText" to "登录", "navigationStyle" to "custom")))
@@ -3282,6 +3798,7 @@ fun definePageRoutes() {
     __uniRoutes.push(UniPageRoute(path = "pages/record/review", component = GenPagesRecordReviewClass, meta = UniPageMeta(isQuit = false), style = _uM("navigationBarTitleText" to "复查记录")))
     __uniRoutes.push(UniPageRoute(path = "pages/statistics/statistics", component = GenPagesStatisticsStatisticsClass, meta = UniPageMeta(isQuit = false), style = _uM("navigationBarTitleText" to "统计")))
     __uniRoutes.push(UniPageRoute(path = "pages/chart-test/chart-test", component = GenPagesChartTestChartTestClass, meta = UniPageMeta(isQuit = false), style = _uM("navigationBarTitleText" to "图表测试")))
+    __uniRoutes.push(UniPageRoute(path = "pages/test/test", component = GenPagesTestTestClass, meta = UniPageMeta(isQuit = false), style = _uM("navigationBarTitleText" to "延迟整改测试")))
 }
 val __uniTabBar: Map<String, Any?>? = _uM("color" to "#7A7E83", "selectedColor" to "#3cc51f", "borderStyle" to "black", "backgroundColor" to "#ffffff", "list" to _uA(
     _uM("pagePath" to "pages/home/home", "iconPath" to "static/home.png", "selectedIconPath" to "static/home-active.png", "text" to "首页"),

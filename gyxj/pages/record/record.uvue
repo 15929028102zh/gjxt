@@ -8,7 +8,7 @@
 		
 		<!-- 记录列表 -->
 		<scroll-view class="record-list" scroll-y="true" enable-back-to-top="true" @scrolltolower="handleScrollToLower">
-			<view class="record-item" v-for="record in recordList" :key="record.id" @click="goToDetail(record.id)" @longpress="showDeleteConfirm(record.id, record.problemDescription)">
+			<view class="record-item" v-for="record in recordList" :key="record.id" @click="goToDetail(record)" @longpress="showDeleteConfirm(record.id, record.problemDescription)">
 				<view class="record-content">
 					<!-- 左侧内容区域 -->
 					<view class="left-content">
@@ -79,20 +79,26 @@
 				pageNum: 1,
 				pageSize: 20,
 				status: '0', // 默认显示待整改记录
-				isDelayed: false // 是否是延迟整改
+				isDelayed: false, // 是否是延迟整改
+				isReviewed: false // 是否是已复查记录
 			}
 		},
 		onLoad(options: OnLoadOptions) {
-			this.checkLogin()
-			// 从URL参数获取status值
-			if (options['status'] != null) {
-				this.status = options['status'] as string
-			}
-			// 检查是否是延迟整改
-			if (options['delayed'] != null && options['delayed'] == 'true') {
-				this.isDelayed = true
-			}
-			this.loadRecords()
+				this.checkLogin()
+				// 从URL参数获取status值
+				if (options['status'] != null) {
+					this.status = options['status'] as string
+				}
+				// 检查是否是延迟整改
+				if (options['delayed'] != null && options['delayed'] == 'true') {
+					this.isDelayed = true
+				}
+				// 检查是否是已复查记录
+				if (options['type'] != null && options['type'] == 'reviewed') {
+					this.isReviewed = true
+					this.status = '2' // 设置状态为已复查
+				}
+				this.loadRecords()
 			
 			// 监听全局事件，当记录更新时刷新数据
 			uni.$on('recordUpdated', this.handleRecordUpdated)
@@ -115,7 +121,8 @@
 		},
 			methods: {
 			checkLogin() {
-				const token = uni.getStorageSync('token') as string
+				const tokenData = uni.getStorageSync('token')
+				const token = tokenData != null ? tokenData as string : ''
 				if (token == null || token == '') {
 					uni.reLaunch({
 						url: '/pages/login/login'
@@ -140,8 +147,16 @@
 			
 				const token = uni.getStorageSync('token')
 				
+				// 根据是否是延迟整改选择不同的API
+				let apiUrl = ''
+				if (this.isDelayed) {
+					apiUrl = getApiUrl(`/inspection-record/delayed?current=${this.pageNum}&size=${this.pageSize}`)
+				} else {
+					apiUrl = getApiUrl(`/inspection-record/page?current=${this.pageNum}&size=${this.pageSize}&status=${this.status}`)
+				}
+				
 				uni.request({
-					url: getApiUrl(`/inspection-record/page?current=${this.pageNum}&size=${this.pageSize}&status=${this.status}`),
+					url: apiUrl,
 					method: 'GET',
 					header: {
 						'Authorization': `Bearer ${token}`
@@ -205,7 +220,8 @@
 		})
 	},
 			
-		getStatusText(status: number): string {
+		getStatusText(status: number | null): string {
+			if (status == null) return '未知'
 			const statusMap: UTSJSONObject = {
 				"0": '待整改',
 				"1": '已整改',
@@ -224,7 +240,8 @@
 			return dateTimeStr
 		},
 			
-		getStatusClass(status: number): string {
+		getStatusClass(status: number | null): string {
+				if (status == null) return 'status-unknown'
 				const classMap: UTSJSONObject = {
 					"0": 'status-pending',
 					"1": 'status-completed',
@@ -242,30 +259,32 @@
 				return ''
 			},
 			
-			goToDetail(recordId: string) {
-				// 根据记录状态决定跳转页面
-				const record = this.recordList.find(r => r.id === recordId)
-				if (record != null) {
-					if (record.status === 0) {
-						// 待整改，跳转到detail页面
-						uni.navigateTo({
-							url: `/pages/record/detail?id=${recordId}`
-						})
-					} else if (record.status === 1) {
-						// 已整改，跳转到review页面
-						uni.navigateTo({
-							url: `/pages/record/review?id=${recordId}`
-						})
-					} else if (record.status === 2) {
-						// 已复查，跳转到detail页面（只读模式）
-						uni.navigateTo({
-							url: `/pages/record/detail?id=${recordId}`
-						})
-					}
-				} else {
-					// 如果找不到记录，默认跳转到detail页面
+			goToDetail(record: InspectionRecord) {
+				// 根据页面模式和记录状态进行不同的跳转
+				if (this.isDelayed) {
+					// 延迟整改模式：跳转到review.uvue页面（只读模式）
 					uni.navigateTo({
-						url: `/pages/record/detail?id=${recordId}`
+						url: `/pages/record/review?id=${record.id}&delayed=true`
+					})
+				} else if (this.isReviewed) {
+					// 已复查记录模式：与延迟整改使用相同逻辑跳转到review.uvue页面
+					uni.navigateTo({
+						url: `/pages/record/review?id=${record.id}&reviewed=true`
+					})
+				} else if (record.status === 0) {
+					// 待整改：跳转到detail页面
+					uni.navigateTo({
+						url: `/pages/record/detail?id=${record.id}`
+					})
+				} else if (record.status === 1) {
+					// 已整改：跳转到review.uvue页面
+					uni.navigateTo({
+						url: `/pages/record/review?id=${record.id}`
+					})
+				} else {
+					// 其他状态：跳转到review.uvue页面（只读模式）
+					uni.navigateTo({
+						url: `/pages/record/review?id=${record.id}`
 					})
 				}
 			},

@@ -142,7 +142,7 @@ public class SysDeptController {
             @RequestParam String deptName,
             @RequestParam(required = false) String excludeId) {
         try {
-            boolean exists = deptService.checkDeptNameExists(deptName, excludeId != null ? Long.valueOf(excludeId) : null);
+            boolean exists = deptService.checkDeptNameExists(deptName, excludeId);
             return Result.success(exists);
         } catch (Exception e) {
             return Result.error(e.getMessage());
@@ -155,7 +155,7 @@ public class SysDeptController {
     @GetMapping("/{id}/has-child")
     public Result<Boolean> hasChildDept(@PathVariable String id) {
         try {
-            boolean hasChild = deptService.hasChildDept(Long.valueOf(id));
+            boolean hasChild = deptService.hasChildDept(id);
             return Result.success(hasChild);
         } catch (Exception e) {
             return Result.error("检查失败: " + e.getMessage());

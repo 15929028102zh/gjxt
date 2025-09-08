@@ -271,6 +271,21 @@ public class SysInspectionRecordController {
     }
 
     /**
+     * 分页查询延迟整改记录
+     */
+    @GetMapping("/delayed")
+    public Result<PageResult<SysInspectionRecord>> getDelayedRectificationRecords(
+            @RequestParam(defaultValue = "1") Long current,
+            @RequestParam(defaultValue = "10") Long size) {
+        try {
+            PageResult<SysInspectionRecord> result = inspectionRecordService.getDelayedRectificationRecords(current, size);
+            return Result.success(result);
+        } catch (Exception e) {
+            return Result.error(e.getMessage());
+        }
+    }
+
+    /**
      * 导出巡检记录
      */
     @GetMapping("/export")

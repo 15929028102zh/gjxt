@@ -2,7 +2,7 @@ server:
   port: 8080
   servlet:
     context-path: /api
-  address: 192.168.42.128
+  address: 192.168.244.128
 
 spring:
   application:

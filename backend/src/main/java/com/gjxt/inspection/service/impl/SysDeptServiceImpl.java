@@ -73,7 +73,7 @@ public class SysDeptServiceImpl extends ServiceImpl<SysDeptMapper, SysDept> impl
             dept.setSortOrder(0);
         }
         if (dept.getParentId() == null) {
-            dept.setParentId(0L);
+            dept.setParentId("0");
         }
         
         // 设置时间字段
@@ -88,7 +88,7 @@ public class SysDeptServiceImpl extends ServiceImpl<SysDeptMapper, SysDept> impl
     @Transactional(rollbackFor = Exception.class)
     public boolean updateDept(SysDept dept) {
         // 检查部门名称是否重复
-        if (checkDeptNameExists(dept.getDeptName(), Long.valueOf(dept.getId()))) {
+        if (checkDeptNameExists(dept.getDeptName(), dept.getId())) {
             throw new RuntimeException("部门名称已存在");
         }
         
@@ -102,11 +102,11 @@ public class SysDeptServiceImpl extends ServiceImpl<SysDeptMapper, SysDept> impl
     @Transactional(rollbackFor = Exception.class)
     public boolean deleteDept(String id) {
         // 检查是否有子部门
-        if (hasChildDept(Long.valueOf(id))) {
+        if (hasChildDept(id) ){
             throw new RuntimeException("存在子部门，无法删除");
         }
         
-        return removeById(Long.valueOf(id));
+        return removeById(id);
     }
 
     @Override
@@ -114,33 +114,32 @@ public class SysDeptServiceImpl extends ServiceImpl<SysDeptMapper, SysDept> impl
     public boolean batchDeleteDepts(List<String> ids) {
         // 检查每个部门是否有子部门
         for (String id : ids) {
-            if (hasChildDept(Long.valueOf(id))) {
+            if (hasChildDept(id)) {
                 throw new RuntimeException("存在子部门，无法删除");
             }
         }
         
-        List<Long> longIds = ids.stream().map(Long::valueOf).collect(Collectors.toList());
-        return removeByIds(longIds);
+        return removeByIds(ids);
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public boolean updateDeptStatus(Long id, Integer status) {
+    public boolean updateDeptStatus(String id, Integer status) {
         SysDept dept = new SysDept();
-        dept.setId(id.toString());
+        dept.setId(id);
         dept.setStatus(status);
         dept.setUpdateTime(LocalDateTime.now());
         return updateById(dept);
     }
 
     @Override
-    public boolean checkDeptNameExists(String deptName, Long excludeId) {
+    public boolean checkDeptNameExists(String deptName, String excludeId) {
         int count = baseMapper.checkDeptNameExists(deptName, excludeId);
         return count > 0;
     }
 
     @Override
-    public boolean hasChildDept(Long deptId) {
+    public boolean hasChildDept(String deptId) {
         int count = baseMapper.hasChildByDeptId(deptId);
         return count > 0;
     }
@@ -161,16 +160,15 @@ public class SysDeptServiceImpl extends ServiceImpl<SysDeptMapper, SysDept> impl
      * @param parentId 父部门ID
      * @return 树形结构列表
      */
-    private List<SysDept> buildDeptTree(List<SysDept> allDepts, Long parentId) {
+    private List<SysDept> buildDeptTree(List<SysDept> allDepts, String parentId) {
         List<SysDept> result = new ArrayList<>();
-        
         for (SysDept dept : allDepts) {
-            Long deptParentId = dept.getParentId();
-            if ((parentId == null && (deptParentId == null || deptParentId == 0)) ||
+            String deptParentId = dept.getParentId();
+            if ((parentId == null && (deptParentId == null || "0".equals(deptParentId))) ||
                 (parentId != null && parentId.equals(deptParentId))) {
                 
                 // 递归查找子部门
-                List<SysDept> children = buildDeptTree(allDepts, Long.valueOf(dept.getId()));
+                List<SysDept> children = buildDeptTree(allDepts, dept.getId());
                 // 这里可以设置children属性，如果SysDept实体类有children字段的话
                 
                 result.add(dept);

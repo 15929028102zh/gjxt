@@ -26,6 +26,7 @@ export class UniAppConfig extends io.dcloud.uniapp.appframe.AppConfig {
 import GenPagesHomeHomeClass from './pages/home/home.uvue'
 import GenPagesWeeklyWeeklyClass from './pages/weekly/weekly.uvue'
 import GenPagesMonthlyMonthlyClass from './pages/monthly/monthly.uvue'
+import GenPagesMonthlyTaskRecordClass from './pages/monthly/task-record.uvue'
 import GenPagesProfileProfileClass from './pages/profile/profile.uvue'
 import GenPagesIndexIndexClass from './pages/index/index.uvue'
 import GenPagesLoginLoginClass from './pages/login/login.uvue'
@@ -35,10 +36,12 @@ import GenPagesRecordDetailClass from './pages/record/detail.uvue'
 import GenPagesRecordReviewClass from './pages/record/review.uvue'
 import GenPagesStatisticsStatisticsClass from './pages/statistics/statistics.uvue'
 import GenPagesChartTestChartTestClass from './pages/chart-test/chart-test.uvue'
+import GenPagesTestTestClass from './pages/test/test.uvue'
 function definePageRoutes() {
 __uniRoutes.push({ path: "pages/home/home", component: GenPagesHomeHomeClass, meta: { isQuit: true } as UniPageMeta, style: _uM([["navigationBarTitleText","首页"],["enablePullDownRefresh",true],["disableScroll",false]]) } as UniPageRoute)
 __uniRoutes.push({ path: "pages/weekly/weekly", component: GenPagesWeeklyWeeklyClass, meta: { isQuit: false } as UniPageMeta, style: _uM([["navigationBarTitleText","周检"]]) } as UniPageRoute)
 __uniRoutes.push({ path: "pages/monthly/monthly", component: GenPagesMonthlyMonthlyClass, meta: { isQuit: false } as UniPageMeta, style: _uM([["navigationBarTitleText","月检"]]) } as UniPageRoute)
+__uniRoutes.push({ path: "pages/monthly/task-record", component: GenPagesMonthlyTaskRecordClass, meta: { isQuit: false } as UniPageMeta, style: _uM([["navigationBarTitleText","月检任务录入"]]) } as UniPageRoute)
 __uniRoutes.push({ path: "pages/profile/profile", component: GenPagesProfileProfileClass, meta: { isQuit: false } as UniPageMeta, style: _uM([["navigationBarTitleText","我的"]]) } as UniPageRoute)
 __uniRoutes.push({ path: "pages/index/index", component: GenPagesIndexIndexClass, meta: { isQuit: false } as UniPageMeta, style: _uM([["navigationBarTitleText","首页"]]) } as UniPageRoute)
 __uniRoutes.push({ path: "pages/login/login", component: GenPagesLoginLoginClass, meta: { isQuit: false } as UniPageMeta, style: _uM([["navigationBarTitleText","登录"],["navigationStyle","custom"]]) } as UniPageRoute)
@@ -48,6 +51,7 @@ __uniRoutes.push({ path: "pages/record/detail", component: GenPagesRecordDetailC
 __uniRoutes.push({ path: "pages/record/review", component: GenPagesRecordReviewClass, meta: { isQuit: false } as UniPageMeta, style: _uM([["navigationBarTitleText","复查记录"]]) } as UniPageRoute)
 __uniRoutes.push({ path: "pages/statistics/statistics", component: GenPagesStatisticsStatisticsClass, meta: { isQuit: false } as UniPageMeta, style: _uM([["navigationBarTitleText","统计"]]) } as UniPageRoute)
 __uniRoutes.push({ path: "pages/chart-test/chart-test", component: GenPagesChartTestChartTestClass, meta: { isQuit: false } as UniPageMeta, style: _uM([["navigationBarTitleText","图表测试"]]) } as UniPageRoute)
+__uniRoutes.push({ path: "pages/test/test", component: GenPagesTestTestClass, meta: { isQuit: false } as UniPageMeta, style: _uM([["navigationBarTitleText","延迟整改测试"]]) } as UniPageRoute)
 }
 const __uniTabBar: Map<string, any | null> | null = _uM([["color","#7A7E83"],["selectedColor","#3cc51f"],["borderStyle","black"],["backgroundColor","#ffffff"],["list",[_uM([["pagePath","pages/home/home"],["iconPath","static/home.png"],["selectedIconPath","static/home-active.png"],["text","首页"]]),_uM([["pagePath","pages/weekly/weekly"],["iconPath","static/category.png"],["selectedIconPath","static/category-active.png"],["text","周检"]]),_uM([["pagePath","pages/monthly/monthly"],["iconPath","static/date.png"],["selectedIconPath","static/date-active.png"],["text","月检"]]),_uM([["pagePath","pages/profile/profile"],["iconPath","static/profile.png"],["selectedIconPath","static/profile-active.png"],["text","我的"]])]]])
 const __uniLaunchPage: Map<string, any | null> = _uM([["url","pages/home/home"],["style",_uM([["navigationBarTitleText","首页"],["enablePullDownRefresh",true],["disableScroll",false]])]])

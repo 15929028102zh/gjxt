@@ -63,7 +63,7 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
 
     @Override
     public PageResult<SysUser> getUserPage(Long current, Long size, String username, String realName, 
-                                          String department, Long deptId, String role, Integer status) {
+                                          String department, String deptId, String role, Integer status) {
         // 直接使用关联查询的分页方法
         IPage<SysUser> result = baseMapper.selectUserPageWithDept(
             new Page<>(current, size), username, realName, department, deptId, role, status);
@@ -200,7 +200,7 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
     }
 
     @Override
-    public List<SysUser> getUsersByDeptId(Long deptId) {
+    public List<SysUser> getUsersByDeptId(String deptId) {
         LambdaQueryWrapper<SysUser> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(SysUser::getDeptId, deptId)
                    .eq(SysUser::getDeleted, 0)

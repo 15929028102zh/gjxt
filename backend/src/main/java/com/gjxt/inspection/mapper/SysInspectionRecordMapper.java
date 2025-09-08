@@ -183,11 +183,21 @@ public interface SysInspectionRecordMapper extends BaseMapper<SysInspectionRecor
                                                @Param("weekEnd") LocalDateTime weekEnd);
 
     /**
-     * 执行自定义SQL查询（绕过MyBatis-Plus逻辑删除拦截器）
+     * 执行自定义SQL查询
      *
-     * @param sql 原生SQL语句
+     * @param sql SQL语句
      * @return 查询结果
      */
     List<Map<String, Object>> selectBySql(@Param("sql") String sql);
+
+    /**
+     * 分页查询延迟整改的记录
+     *
+     * @param page 分页参数
+     * @param currentTime 当前时间
+     * @return 延迟整改记录分页列表
+     */
+    IPage<SysInspectionRecord> selectDelayedRectificationRecords(Page<SysInspectionRecord> page,
+                                                                @Param("currentTime") LocalDateTime currentTime);
 
 }

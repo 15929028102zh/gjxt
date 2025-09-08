@@ -5,7 +5,7 @@ export type ApiConfig = {
 
 // 实例化配置
 export const apiConfig = reactive({ 
-  baseUrl: 'http://192.168.42.128:8080' 
+  baseUrl: 'http://192.168.244.128:8080' 
 } as ApiConfig)
 
 // 获取完整的API URL

@@ -4,61 +4,73 @@
     "compiler_version": "4.76"
   },
   "files": {
+    "pages/record/detail.kt": {
+      "class": "GenPagesRecordDetail",
+      "md5": "f07a58b8b862f18b02b26c1755a4c3fa2ed37e3b"
+    },
+    "pages/chart-test/chart-test.kt": {
+      "md5": "b15e70316d3ec37837d9ece1d5d2f55822dcc972",
+      "class": "GenPagesChartTestChartTest"
+    },
     "pages/index/index.kt": {
       "md5": "fa7733f846e8e2c312408802c30a5c46ac57fe66",
       "class": "GenPagesIndexIndex"
     },
-    "pages/login/login.kt": {
-      "class": "GenPagesLoginLogin",
-      "md5": "a26ad630920b411bb612041664fe4e3e09745ba4"
+    "index.kt": {
+      "md5": "0328ef93cafe4635ce0f01ab772766d350c11eb3",
+      "class": ""
     },
     "pages/home/home.kt": {
       "class": "GenPagesHomeHome",
       "md5": "acc0cb4a2250931da9d1ab1c784a4b433ccc611d"
     },
-    "pages/charts-demo/charts-demo.kt": {
-      "class": "GenPagesChartsDemoChartsDemo",
-      "md5": "9f93e79ea77053127baf585528bbb7baf41cddda"
+    "pages/record/record-full-detail.kt": {
+      "md5": "b232855d651825f376b9e3a5eb0ed8505dffd379",
+      "class": "GenPagesRecordRecordFullDetail"
     },
-    "pages/chart-test/chart-test.kt": {
-      "class": "GenPagesChartTestChartTest",
-      "md5": "b15e70316d3ec37837d9ece1d5d2f55822dcc972"
-    },
-    "pages/record/add.kt": {
-      "class": "GenPagesRecordAdd",
-      "md5": "90902840bac532dc782c888f0f778663756b5501"
-    },
-    "pages/record/record.kt": {
-      "md5": "3862367ab225fd587a02820f92dd040b63f3290f",
-      "class": "GenPagesRecordRecord"
-    },
-    "index.kt": {
-      "md5": "fb509999863179d974d455fc3daa44c8b4c75bf7",
-      "class": ""
+    "pages/monthly/monthly.kt": {
+      "md5": "8df1565314db50a9174734cc7ae8acc5286205ec",
+      "class": "GenPagesMonthlyMonthly"
     },
     "pages/profile/profile.kt": {
       "class": "GenPagesProfileProfile",
       "md5": "e3e10dde6a8f64e82599b0c9fe53a958027e8964"
     },
-    "pages/monthly/monthly.kt": {
-      "class": "GenPagesMonthlyMonthly",
-      "md5": "f1426747e49c8e289fcf801a265d88ac952ad01d"
+    "pages/record/review.kt": {
+      "md5": "032432301c5c0cec31a129848c8de61beeeb6bb2",
+      "class": "GenPagesRecordReview"
     },
-    "pages/weekly/weekly.kt": {
-      "md5": "ace1ac46b8e89cfec8bbe0aa802615d75cac7f8e",
-      "class": "GenPagesWeeklyWeekly"
+    "pages/test/test.kt": {
+      "class": "GenPagesTestTest",
+      "md5": "adb8b72ad486e88e96fab96377a5fcba2b500883"
+    },
+    "pages/record/record.kt": {
+      "md5": "109839e483d3ba9d2aa45be7d640ca9bdb73e0c0",
+      "class": "GenPagesRecordRecord"
+    },
+    "pages/login/login.kt": {
+      "md5": "90fc9ec6546f5b04e44fed72dab636df3ac3115e",
+      "class": "GenPagesLoginLogin"
     },
     "pages/statistics/statistics.kt": {
-      "class": "GenPagesStatisticsStatistics",
-      "md5": "5033706f78eb87522f4df3caee5a4acfec208126"
+      "md5": "5033706f78eb87522f4df3caee5a4acfec208126",
+      "class": "GenPagesStatisticsStatistics"
     },
-    "pages/record/detail.kt": {
-      "md5": "f07a58b8b862f18b02b26c1755a4c3fa2ed37e3b",
-      "class": "GenPagesRecordDetail"
+    "pages/charts-demo/charts-demo.kt": {
+      "class": "GenPagesChartsDemoChartsDemo",
+      "md5": "9f93e79ea77053127baf585528bbb7baf41cddda"
     },
-    "pages/record/review.kt": {
-      "class": "GenPagesRecordReview",
-      "md5": "4ad76bf1c5260d9e4c28008481257802a0e35b53"
+    "pages/monthly/task-record.kt": {
+      "class": "GenPagesMonthlyTaskRecord",
+      "md5": "0bbb6ceda273fa4ef426079d364e0621daa24040"
+    },
+    "pages/record/add.kt": {
+      "md5": "a21bc87ef2344550aa5f339810dcefd1c17556d1",
+      "class": "GenPagesRecordAdd"
+    },
+    "pages/weekly/weekly.kt": {
+      "md5": "c81463e31be35c1b37b7c8f8dca0b01b75b1fba6",
+      "class": "GenPagesWeeklyWeekly"
     }
   }
 }

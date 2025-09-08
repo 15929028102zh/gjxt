@@ -18,7 +18,7 @@
 				<text class="greeting">欢迎回来，{{userName}}</text>
 				<text class="app-name">{{currentDate}}</text>
 			</view>
-			<image class="avatar" :src="(userInfo.getString('avatar') ?? '') != '' ? (userInfo.getString('avatar') ?? '') : '/static/default-avatar.svg'" mode="aspectFill"></image>
+			<image class="avatar" :src="userInfo != null && (userInfo.getString('avatar') ?? '') != '' ? (userInfo.getString('avatar') ?? '') : '/static/default-avatar.svg'" mode="aspectFill"></image>
 		</view>
 			<!-- 操作按钮 -->
 		<view class="action-buttons">
@@ -45,10 +45,10 @@
 				<text class="stats-label">已整改</text>
 				<text class="stats-icon">✅</text>
 			</view>
-			<view class="stats-card" @click="goToWeeklyReport">
-				<text class="stats-number">{{statistics.weeklyTotal}}</text>
-				<text class="stats-label">本周记录</text>
-				<text class="stats-icon">📊</text>
+			<view class="stats-card" @click="goToReviewedRecords">
+				<text class="stats-number">{{statistics.reviewedCount}}</text>
+				<text class="stats-label">已复查数量</text>
+				<text class="stats-icon">✅</text>
 			</view>
 		</view>
 		
@@ -72,7 +72,7 @@
 	type StatisticsData = {
 		pendingIssues: number,
 		completedIssues: number,
-		weeklyTotal: number
+		reviewedCount: number
 	}
 
 	export default {
@@ -88,7 +88,7 @@
 				statistics: {
 					pendingIssues: 0,
 					completedIssues: 0,
-					weeklyTotal: 0
+					reviewedCount: 0
 				} as StatisticsData,
 				recentRecords: [] as RecentRecord[]
 			}
@@ -117,7 +117,8 @@
 			
 			// 加载用户信息
 			loadUserInfo() {
-				const userInfoStr = uni.getStorageSync('userInfo') as string
+				const userInfoData = uni.getStorageSync('userInfo')
+				const userInfoStr = userInfoData != null ? userInfoData as string : ''
 				
 				if (userInfoStr != null && userInfoStr != '' && userInfoStr != 'null' && userInfoStr != 'undefined') {
 					try {
@@ -201,27 +202,27 @@
 					}
 				})
 				
-				// 获取总记录数量（不传状态参数）
-				const totalUrl = getApiUrl('/inspection-record/weekly-count')
-				console.log('总记录数量请求URL:', totalUrl)
+				// 获取已复查数量（状态为2）
+				const reviewedUrl = getApiUrl('/inspection-record/weekly-count?status=2')
+				console.log('已复查数量请求URL:', reviewedUrl)
 				uni.request({
-					url: totalUrl,
+					url: reviewedUrl,
 					method: 'GET',
 					header: {
 						'Authorization': `Bearer ${token}`
 					},
 					success: (res) => {
-						console.log('总记录数量请求成功:', res)
+						console.log('已复查数量请求成功:', res)
 						const response = res.data as UTSJSONObject
 						if (res.statusCode == 200 && (response.getNumber('code') ?? 0) == 200) {
-							this.statistics.weeklyTotal = response.getNumber('data') ?? 0
-							console.log('总记录数量:', this.statistics.weeklyTotal)
+							this.statistics.reviewedCount = response.getNumber('data') ?? 0
+							console.log('已复查数量:', this.statistics.reviewedCount)
 						} else {
-							console.log('总记录数量请求失败:', response)
+							console.log('已复查数量请求失败:', response)
 						}
 					},
 					fail: (error) => {
-						console.log('总记录数量请求错误:', error)
+						console.log('已复查数量请求错误:', error)
 					}
 				})
 			},
@@ -261,14 +262,16 @@
 				})
 			},
 			
-			getStatusText(status: string): string {
+			getStatusText(status: string | null): string {
+				if (status == null) return '未知'
 				if (status == "0") return '待整改'
 				if (status == "1") return '已整改'
 				if (status == "2") return '已复查'
 				return '未知'
 			},
 			
-			getStatusClass(status: string): string {
+			getStatusClass(status: string | null): string {
+				if (status == null) return 'status-unknown'
 				if (status == "0") return 'status-pending'
 				if (status == "1") return 'status-completed'
 				if (status == "2") return 'status-accepted'
@@ -287,9 +290,9 @@
 				})
 			},
 			
-			goToWeeklyReport() {
+			goToReviewedRecords() {
 				uni.navigateTo({
-					url: '/pages/statistics/statistics'
+					url: '/pages/record/record?type=reviewed'
 				})
 			},
 			

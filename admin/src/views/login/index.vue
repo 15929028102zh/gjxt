@@ -3,7 +3,7 @@
     <div class="login-box">
       <div class="login-header">
         <img src="/logo.png" alt="Logo" class="logo" />
-        <h2>工业巡检系统</h2>
+        <h2>岗位巡检系统</h2>
         <p>后台管理系统</p>
       </div>
       
@@ -52,19 +52,20 @@
 
 <script setup>
 import { ref, reactive } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { login, userApi } from '@/api/system'
-import { setToken } from '@/utils/token'
+import { setToken, isTokenValid } from '@/utils/token'
 
 const router = useRouter()
+const route = useRoute()
 const loginFormRef = ref()
 const loading = ref(false)
 
 // 登录表单数据
 const loginForm = reactive({
-  username: 'admin',
-  password: '123456'
+  username: '',
+  password: ''
 })
 
 // 表单验证规则
@@ -108,7 +109,23 @@ const handleLogin = async () => {
       }
       
       ElMessage.success('登录成功')
-      router.push('/')
+      
+      // 延迟跳转，确保token已经设置并且页面状态更新
+        setTimeout(() => {
+          console.log('开始执行跳转逻辑')
+          console.log('当前路径:', route.path)
+          console.log('Token是否有效:', isTokenValid())
+          console.log('准备跳转到根路径 /')
+          router.push('/').then(() => {
+            console.log('路由跳转Promise成功')
+            setTimeout(() => {
+              console.log('跳转后的路径:', router.currentRoute.value.path)
+              console.log('跳转后的完整路由信息:', router.currentRoute.value)
+            }, 100)
+          }).catch(err => {
+            console.error('路由跳转失败:', err)
+          })
+        }, 200)
     } else {
       ElMessage.error('登录失败，未获取到token')
     }

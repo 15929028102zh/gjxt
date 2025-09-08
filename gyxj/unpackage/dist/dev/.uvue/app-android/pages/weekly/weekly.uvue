@@ -11,7 +11,7 @@ type StatisticsData = {
     __$originalPosition?: UTSSourceMapPosition<"StatisticsData", "pages/weekly/weekly.uvue", 72, 7>;
     pendingIssues: number;
     completedIssues: number;
-    weeklyTotal: number;
+    reviewedCount: number;
 };
 const __sfc__ = defineComponent({
     data() {
@@ -26,7 +26,7 @@ const __sfc__ = defineComponent({
             statistics: {
                 pendingIssues: 0,
                 completedIssues: 0,
-                weeklyTotal: 0
+                reviewedCount: 0
             } as StatisticsData,
             recentRecords: [] as RecentRecord[]
         };
@@ -53,17 +53,18 @@ const __sfc__ = defineComponent({
         },
         // 加载用户信息
         loadUserInfo() {
-            const userInfoStr = uni.getStorageSync('userInfo') as string;
+            const userInfoData = uni.getStorageSync('userInfo');
+            const userInfoStr = userInfoData != null ? userInfoData as string : '';
             if (userInfoStr != null && userInfoStr != '' && userInfoStr != 'null' && userInfoStr != 'undefined') {
                 try {
-                    const parsedUserInfo = UTSAndroid.consoleDebugError(JSON.parse(userInfoStr), " at pages/weekly/weekly.uvue:124") as UTSJSONObject;
+                    const parsedUserInfo = UTSAndroid.consoleDebugError(JSON.parse(userInfoStr), " at pages/weekly/weekly.uvue:125") as UTSJSONObject;
                     this.userInfo = parsedUserInfo;
                     // 设置简化的用户姓名
                     const realNameValue = parsedUserInfo.getString('realName');
                     this.userName = realNameValue != null ? realNameValue : '用户';
                 }
                 catch (error: any) {
-                    console.error('用户信息JSON解析失败:', error, " at pages/weekly/weekly.uvue:130");
+                    console.error('用户信息JSON解析失败:', error, " at pages/weekly/weekly.uvue:131");
                     this.userInfo = {} as UTSJSONObject;
                     this.userName = '解析失败用户';
                 }
@@ -85,11 +86,11 @@ const __sfc__ = defineComponent({
             this.currentDate = `${year}年${formattedMonth}月${formattedDay}日 星期${weekday}`;
         },
         loadStatistics() {
-            console.log('开始加载统计数据', " at pages/weekly/weekly.uvue:153");
+            console.log('开始加载统计数据', " at pages/weekly/weekly.uvue:154");
             const token = uni.getStorageSync('token');
             // 获取待整改数量（状态为0）
             const pendingUrl = getApiUrl('/inspection-record/weekly-count?status=0');
-            console.log('待整改数量请求URL:', pendingUrl, " at pages/weekly/weekly.uvue:158");
+            console.log('待整改数量请求URL:', pendingUrl, " at pages/weekly/weekly.uvue:159");
             uni.request({
                 url: pendingUrl,
                 method: 'GET',
@@ -97,23 +98,23 @@ const __sfc__ = defineComponent({
                     'Authorization': `Bearer ${token}`
                 },
                 success: (res) => {
-                    console.log('待整改数量请求成功:', res, " at pages/weekly/weekly.uvue:166");
+                    console.log('待整改数量请求成功:', res, " at pages/weekly/weekly.uvue:167");
                     const response = res.data as UTSJSONObject;
                     if (res.statusCode == 200 && (response.getNumber('code') ?? 0) == 200) {
                         this.statistics.pendingIssues = response.getNumber('data') ?? 0;
-                        console.log('待整改数量:', this.statistics.pendingIssues, " at pages/weekly/weekly.uvue:170");
+                        console.log('待整改数量:', this.statistics.pendingIssues, " at pages/weekly/weekly.uvue:171");
                     }
                     else {
-                        console.log('待整改数量请求失败:', response, " at pages/weekly/weekly.uvue:172");
+                        console.log('待整改数量请求失败:', response, " at pages/weekly/weekly.uvue:173");
                     }
                 },
                 fail: (error) => {
-                    console.log('待整改数量请求错误:', error, " at pages/weekly/weekly.uvue:176");
+                    console.log('待整改数量请求错误:', error, " at pages/weekly/weekly.uvue:177");
                 }
             });
             // 获取已整改数量（状态为1）
             const completedUrl = getApiUrl('/inspection-record/weekly-count?status=1');
-            console.log('已整改数量请求URL:', completedUrl, " at pages/weekly/weekly.uvue:182");
+            console.log('已整改数量请求URL:', completedUrl, " at pages/weekly/weekly.uvue:183");
             uni.request({
                 url: completedUrl,
                 method: 'GET',
@@ -121,49 +122,49 @@ const __sfc__ = defineComponent({
                     'Authorization': `Bearer ${token}`
                 },
                 success: (res) => {
-                    console.log('已整改数量请求成功:', res, " at pages/weekly/weekly.uvue:190");
+                    console.log('已整改数量请求成功:', res, " at pages/weekly/weekly.uvue:191");
                     const response = res.data as UTSJSONObject;
                     if (res.statusCode == 200 && (response.getNumber('code') ?? 0) == 200) {
                         this.statistics.completedIssues = response.getNumber('data') ?? 0;
-                        console.log('已整改数量:', this.statistics.completedIssues, " at pages/weekly/weekly.uvue:194");
+                        console.log('已整改数量:', this.statistics.completedIssues, " at pages/weekly/weekly.uvue:195");
                     }
                     else {
-                        console.log('已整改数量请求失败:', response, " at pages/weekly/weekly.uvue:196");
+                        console.log('已整改数量请求失败:', response, " at pages/weekly/weekly.uvue:197");
                     }
                 },
                 fail: (error) => {
-                    console.log('已整改数量请求错误:', error, " at pages/weekly/weekly.uvue:200");
+                    console.log('已整改数量请求错误:', error, " at pages/weekly/weekly.uvue:201");
                 }
             });
-            // 获取总记录数量（不传状态参数）
-            const totalUrl = getApiUrl('/inspection-record/weekly-count');
-            console.log('总记录数量请求URL:', totalUrl, " at pages/weekly/weekly.uvue:206");
+            // 获取已复查数量（状态为2）
+            const reviewedUrl = getApiUrl('/inspection-record/weekly-count?status=2');
+            console.log('已复查数量请求URL:', reviewedUrl, " at pages/weekly/weekly.uvue:207");
             uni.request({
-                url: totalUrl,
+                url: reviewedUrl,
                 method: 'GET',
                 header: {
                     'Authorization': `Bearer ${token}`
                 },
                 success: (res) => {
-                    console.log('总记录数量请求成功:', res, " at pages/weekly/weekly.uvue:214");
+                    console.log('已复查数量请求成功:', res, " at pages/weekly/weekly.uvue:215");
                     const response = res.data as UTSJSONObject;
                     if (res.statusCode == 200 && (response.getNumber('code') ?? 0) == 200) {
-                        this.statistics.weeklyTotal = response.getNumber('data') ?? 0;
-                        console.log('总记录数量:', this.statistics.weeklyTotal, " at pages/weekly/weekly.uvue:218");
+                        this.statistics.reviewedCount = response.getNumber('data') ?? 0;
+                        console.log('已复查数量:', this.statistics.reviewedCount, " at pages/weekly/weekly.uvue:219");
                     }
                     else {
-                        console.log('总记录数量请求失败:', response, " at pages/weekly/weekly.uvue:220");
+                        console.log('已复查数量请求失败:', response, " at pages/weekly/weekly.uvue:221");
                     }
                 },
                 fail: (error) => {
-                    console.log('总记录数量请求错误:', error, " at pages/weekly/weekly.uvue:224");
+                    console.log('已复查数量请求错误:', error, " at pages/weekly/weekly.uvue:225");
                 }
             });
         },
         loadRecentRecords() {
             const token = uni.getStorageSync('token');
             const apiUrl = getApiUrl('/inspection-record/page?current=1&size=5&status=0');
-            console.log('请求URL:', apiUrl, " at pages/weekly/weekly.uvue:232");
+            console.log('请求URL:', apiUrl, " at pages/weekly/weekly.uvue:233");
             uni.request({
                 url: apiUrl,
                 method: 'GET',
@@ -190,11 +191,13 @@ const __sfc__ = defineComponent({
                     }
                 },
                 fail: (error) => {
-                    console.log('加载最近记录失败:', error, " at pages/weekly/weekly.uvue:259");
+                    console.log('加载最近记录失败:', error, " at pages/weekly/weekly.uvue:260");
                 }
             });
         },
-        getStatusText(status: string): string {
+        getStatusText(status: string | null): string {
+            if (status == null)
+                return '未知';
             if (status == "0")
                 return '待整改';
             if (status == "1")
@@ -203,7 +206,9 @@ const __sfc__ = defineComponent({
                 return '已复查';
             return '未知';
         },
-        getStatusClass(status: string): string {
+        getStatusClass(status: string | null): string {
+            if (status == null)
+                return 'status-unknown';
             if (status == "0")
                 return 'status-pending';
             if (status == "1")
@@ -222,9 +227,9 @@ const __sfc__ = defineComponent({
                 url: '/pages/record/record?status=1'
             });
         },
-        goToWeeklyReport() {
+        goToReviewedRecords() {
             uni.navigateTo({
-                url: '/pages/statistics/statistics'
+                url: '/pages/record/record?type=reviewed'
             });
         },
         goToRecords() {
@@ -251,19 +256,19 @@ const __sfc__ = defineComponent({
         },
         // 下拉刷新事件处理
         onRefresh() {
-            console.log('开始下拉刷新', " at pages/weekly/weekly.uvue:324");
+            console.log('开始下拉刷新', " at pages/weekly/weekly.uvue:327");
             this.isRefreshing = true;
             // 重新加载数据
             this.reloadAllData();
         },
         // 刷新恢复事件处理
         onRefreshRestore() {
-            console.log('刷新恢复', " at pages/weekly/weekly.uvue:333");
+            console.log('刷新恢复', " at pages/weekly/weekly.uvue:336");
             this.isRefreshing = false;
         },
         // 重新加载所有数据
         reloadAllData() {
-            console.log('重新加载所有数据', " at pages/weekly/weekly.uvue:339");
+            console.log('重新加载所有数据', " at pages/weekly/weekly.uvue:342");
             try {
                 // 重新初始化时间
                 this.initData();
@@ -272,15 +277,15 @@ const __sfc__ = defineComponent({
                 // 重新加载统计数据和记录
                 this.loadStatistics();
                 this.loadRecentRecords();
-                console.log('数据加载完成', " at pages/weekly/weekly.uvue:352");
+                console.log('数据加载完成', " at pages/weekly/weekly.uvue:355");
             }
             catch (error: any) {
-                console.error('数据加载失败:', error, " at pages/weekly/weekly.uvue:355");
+                console.error('数据加载失败:', error, " at pages/weekly/weekly.uvue:358");
             }
             finally {
                 // 无论成功还是失败，都要关闭刷新动画
                 setTimeout(() => {
-                    console.log('关闭刷新动画', " at pages/weekly/weekly.uvue:359");
+                    console.log('关闭刷新动画', " at pages/weekly/weekly.uvue:362");
                     this.isRefreshing = false;
                 }, 1000); // 1秒后关闭刷新动画
             }
@@ -315,7 +320,7 @@ function GenPagesWeeklyWeeklyRender(this: InstanceType<typeof __sfc__>): any | n
             ]),
             _cE("image", _uM({
                 class: "avatar",
-                src: (_ctx.userInfo.getString('avatar') ?? '') != '' ? (_ctx.userInfo.getString('avatar') ?? '') : '/static/default-avatar.svg',
+                src: _ctx.userInfo != null && (_ctx.userInfo.getString('avatar') ?? '') != '' ? (_ctx.userInfo.getString('avatar') ?? '') : '/static/default-avatar.svg',
                 mode: "aspectFill"
             }), null, 8 /* PROPS */, ["src"])
         ]),
@@ -356,11 +361,11 @@ function GenPagesWeeklyWeeklyRender(this: InstanceType<typeof __sfc__>): any | n
             ], 8 /* PROPS */, ["onClick"]),
             _cE("view", _uM({
                 class: "stats-card",
-                onClick: _ctx.goToWeeklyReport
+                onClick: _ctx.goToReviewedRecords
             }), [
-                _cE("text", _uM({ class: "stats-number" }), _tD(_ctx.statistics.weeklyTotal), 1 /* TEXT */),
-                _cE("text", _uM({ class: "stats-label" }), "本周记录"),
-                _cE("text", _uM({ class: "stats-icon" }), "📊")
+                _cE("text", _uM({ class: "stats-number" }), _tD(_ctx.statistics.reviewedCount), 1 /* TEXT */),
+                _cE("text", _uM({ class: "stats-label" }), "已复查数量"),
+                _cE("text", _uM({ class: "stats-icon" }), "✅")
             ], 8 /* PROPS */, ["onClick"])
         ])
     ], 44 /* STYLE, PROPS, NEED_HYDRATION */, ["scroll-top", "refresher-triggered", "onRefresherrefresh", "onRefresherrestore"]);

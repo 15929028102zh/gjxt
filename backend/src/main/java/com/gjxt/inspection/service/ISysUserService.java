@@ -43,7 +43,7 @@ public interface ISysUserService extends IService<SysUser> {
      * @return 用户分页列表
      */
     PageResult<SysUser> getUserPage(Long current, Long size, String username, String realName, 
-                                   String department, Long deptId, String role, Integer status);
+                                   String department, String deptId, String role, Integer status);
 
     /**
      * 新增用户
@@ -128,7 +128,7 @@ public interface ISysUserService extends IService<SysUser> {
      * @param deptId 部门ID
      * @return 用户列表
      */
-    java.util.List<SysUser> getUsersByDeptId(Long deptId);
+    java.util.List<SysUser> getUsersByDeptId(String deptId);
 
     /**
      * 更新用户头像URL
