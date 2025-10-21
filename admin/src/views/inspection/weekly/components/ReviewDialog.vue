@@ -99,27 +99,15 @@
           <!-- 复查图片 -->
           <el-col :span="24">
             <el-form-item label="复查图片">
-              <div class="image-upload-container">
-                <el-upload
-                  v-model:file-list="imageFileList"
-                  :action="uploadAction"
-                  :headers="uploadHeaders"
-                  list-type="picture-card"
-                  :on-success="handleImageSuccess"
-                  :on-error="handleImageError"
-                  :on-remove="handleImageRemove"
-                  :before-upload="beforeImageUpload"
-                  :limit="3"
-                  :on-exceed="handleImageExceed"
-                >
-                  <el-icon><Plus /></el-icon>
-                  <template #tip>
-                    <div class="el-upload__tip">
-                      只能上传jpg/png文件，且不超过2MB，最多3张
-                    </div>
-                  </template>
-                </el-upload>
-              </div>
+              <DragUpload
+                v-model="imageFileList"
+                :limit="3"
+                tip="只能上传jpg/png文件，且不超过2MB，最多3张"
+                @success="handleImageSuccess"
+                @error="handleImageError"
+                @remove="handleImageRemove"
+                @exceed="handleImageExceed"
+              />
             </el-form-item>
           </el-col>
         </el-row>
@@ -141,6 +129,8 @@ import { ElMessage } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
 import { inspectionApi, getUserList } from '@/api/inspection'
 import { getToken } from '@/utils/token'
+import { convertToHttpUrl } from '@/config/api'
+import DragUpload from '@/components/DragUpload.vue'
 
 const props = defineProps({
   visible: {
@@ -188,9 +178,11 @@ const rules = {
 // 选项数据
 // 与移动端保持一致，只需要复查效果描述和图片
 
+import { getFullApiUrl, getImageUploadUrl } from '@/config/api'
+
 // 图片上传相关
 const uploadAction = computed(() => {
-  return 'http://192.168.244.128:8080/api/upload/image'
+  return getImageUploadUrl()
 })
 
 const uploadHeaders = computed(() => {
@@ -199,39 +191,7 @@ const uploadHeaders = computed(() => {
   }
 })
 
-// 解析图片URL的工具函数
-const parseImageUrls = (imageUrls) => {
-  if (!imageUrls) return []
-  
-  try {
-    let urlList = []
-    if (typeof imageUrls === 'string') {
-      // 首先尝试JSON解析
-      try {
-        const parsed = JSON.parse(imageUrls)
-        if (Array.isArray(parsed)) {
-          urlList = parsed
-        }
-      } catch (e) {
-        // JSON解析失败，尝试逗号分割
-        urlList = imageUrls.split(',').map(url => url.trim()).filter(url => url)
-      }
-    } else if (Array.isArray(imageUrls)) {
-      urlList = imageUrls
-    }
-    
-    // 转换为完整URL
-    return urlList.map(url => {
-      if (url && url.startsWith('/')) {
-        return `http://192.168.244.128:8080/api${url}`
-      }
-      return url || ''
-    }).filter(url => url)
-  } catch (e) {
-    console.error('解析图片URL失败:', e, '原始数据:', imageUrls)
-    return []
-  }
-}
+import { parseImageUrls } from '@/config/api'
 
 // 监听表单数据变化
 watch(() => props.formData, (newData) => {
@@ -247,19 +207,11 @@ watch(() => props.formData, (newData) => {
     
     // 处理复查图片数据
     if (newData.reviewImageUrls) {
-      try {
-        const urls = typeof newData.reviewImageUrls === 'string' 
-          ? JSON.parse(newData.reviewImageUrls) 
-          : newData.reviewImageUrls
-        if (Array.isArray(urls)) {
-          imageFileList.value = urls.map((url, index) => ({
-            name: `review_image_${index}`,
-            url: url
-          }))
-        }
-      } catch (e) {
-        console.error('解析复查图片URL失败:', e)
-      }
+      const urls = parseImageUrls(newData.reviewImageUrls)
+      imageFileList.value = urls.map((url, index) => ({
+        name: `review_image_${index}`,
+        url: url
+      }))
     } else {
       imageFileList.value = []
     }
@@ -316,8 +268,12 @@ const handleImageExceed = () => {
 const updateImageUrls = () => {
   const urls = imageFileList.value
     .filter(file => file.response?.data?.filePath || file.url)
-    .map(file => file.response?.data?.filePath || file.url)
-  form.reviewImageUrls = JSON.stringify(urls)
+    .map(file => {
+      const filePath = file.response?.data?.filePath || file.url
+      // 使用convertToHttpUrl转换为正确的HTTP访问路径
+      return convertToHttpUrl(filePath)
+    })
+  form.reviewImageUrls = urls.join(',')
 }
 
 // 格式化日期

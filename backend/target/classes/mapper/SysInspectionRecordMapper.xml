@@ -6,8 +6,7 @@
     <resultMap id="BaseResultMap" type="com.gjxt.inspection.entity.SysInspectionRecord">
         <id column="id" property="id" />
         <result column="record_no" property="recordNo" />
-        <result column="group_leader_id" property="groupLeaderId" />
-        <result column="deputy_leader_id" property="deputyLeaderId" />
+
         <result column="department_id" property="departmentId" />
         <result column="profession_id" property="professionId" />
         <result column="location" property="location" />
@@ -36,8 +35,6 @@
 
     <!-- 带关联信息的结果映射 -->
     <resultMap id="RecordDetailResultMap" type="com.gjxt.inspection.entity.SysInspectionRecord" extends="BaseResultMap">
-        <result column="group_leader_name" property="groupLeaderName" />
-        <result column="deputy_leader_name" property="deputyLeaderName" />
         <result column="department_name" property="departmentName" />
         <result column="professionName" property="professionName" />
         <result column="inspector_name" property="inspectorName" />
@@ -47,7 +44,7 @@
 
     <!-- 基础字段 -->
     <sql id="Base_Column_List">
-        r.id, r.record_no, r.group_leader_id, r.deputy_leader_id, r.department_id,
+        r.id, r.record_no, r.department_id,
         r.profession_id, r.location, r.inspector, r.responsible_unit, r.responsible_person,
         r.problem_description, r.problem_image_urls, r.rectification_deadline, r.rectification_effect,
         r.rectification_image_urls, r.rectification_time, r.reviewer_id, r.review_effect,
@@ -59,8 +56,6 @@
     <select id="selectRecordPage" resultMap="RecordDetailResultMap">
         SELECT 
             <include refid="Base_Column_List" />,
-            r.group_leader_name as group_leader_name,
-            r.deputy_leader_name as deputy_leader_name,
             d.dept_name as department_name,
             p.dict_value as professionName,
             r.inspector as inspector_name,
@@ -73,13 +68,6 @@
         LEFT JOIN sys_user u5 ON r.reviewer_id = u5.id AND u5.deleted = 0
 
         WHERE r.deleted = 0
-
-        <if test="groupLeaderId != null and groupLeaderId != ''">
-            AND r.group_leader_id = #{groupLeaderId}
-        </if>
-        <if test="deputyLeaderId != null and deputyLeaderId != ''">
-            AND r.deputy_leader_id = #{deputyLeaderId}
-        </if>
         <if test="departmentId != null and departmentId != ''">
             AND r.department_id = #{departmentId}
         </if>
@@ -87,7 +75,12 @@
             AND r.profession_id = #{professionId}
         </if>
         <if test="natureId != null and natureId != ''">
-            AND r.nature_definition = #{natureId}
+            AND EXISTS (
+                SELECT 1 FROM sys_dictionary nd 
+                WHERE nd.id = #{natureId} 
+                AND nd.dict_value = r.nature_definition 
+                AND nd.deleted = 0
+            )
         </if>
         <if test="locationId != null and locationId != ''">
             AND r.location LIKE CONCAT('%', #{locationId}, '%')
@@ -104,9 +97,25 @@
         <if test="reviewerId != null and reviewerId != ''">
             AND r.reviewer_id = #{reviewerId}
         </if>
+        <if test="problemDescription != null and problemDescription != ''">
+            AND r.problem_description LIKE CONCAT('%', #{problemDescription}, '%')
+        </if>
+        <if test="responsiblePerson != null and responsiblePerson != ''">
+            AND r.responsible_person LIKE CONCAT('%', #{responsiblePerson}, '%')
+        </if>
 
         <if test="status != null and status != ''">
-            AND r.status = #{status}
+            <choose>
+                <when test="status.indexOf(',') != -1">
+                    AND r.status IN
+                    <foreach collection="@org.apache.commons.lang3.StringUtils@split(status, ',')" item="item" open="(" close=")" separator=",">
+                        #{item}
+                    </foreach>
+                </when>
+                <otherwise>
+                    AND r.status = #{status}
+                </otherwise>
+            </choose>
         </if>
         <if test="startTime != null">
             AND r.create_time &gt;= #{startTime}
@@ -114,7 +123,7 @@
         <if test="endTime != null">
             AND r.create_time &lt;= #{endTime}
         </if>
-        ORDER BY r.create_time DESC
+        ORDER BY p.sort_order ASC, r.create_time DESC
     </select>
 
     <!-- 根据ID查询巡检记录详情（带关联信息） -->
@@ -148,27 +157,48 @@
     <!-- 统计各状态问题数量 -->
     <select id="selectStatusStatistics" resultType="map">
         SELECT 
+            status,
             CASE 
                 WHEN status = 0 THEN '待整改'
-                WHEN status = 1 THEN '待复查'
-                WHEN status = 2 THEN '已完成'
+                WHEN status = 1 THEN '整改中'
+                WHEN status = 2 THEN '待复查'
+                WHEN status = 3 THEN '已完成'
+                WHEN status = 4 THEN '已提交'
                 ELSE '未知状态'
             END as status_name,
             COUNT(1) as count
         FROM sys_inspection_record
         WHERE deleted = 0
+        <if test="departmentId != null and departmentId != ''">
+            AND department_id = #{departmentId}
+        </if>
+        <if test="startDate != null and startDate != ''">
+            AND DATE(create_time) &gt;= #{startDate}
+        </if>
+        <if test="endDate != null and endDate != ''">
+            AND DATE(create_time) &lt;= #{endDate}
+        </if>
         GROUP BY status
     </select>
 
     <!-- 统计各专业问题数量 -->
     <select id="selectProfessionStatistics" resultType="map">
         SELECT 
-            p.profession_name,
+            p.dict_value as profession_name,
             COUNT(r.id) as count
-        FROM sys_profession p
+        FROM sys_dictionary p
         LEFT JOIN sys_inspection_record r ON p.id = r.profession_id AND r.deleted = 0
-        WHERE p.deleted = 0 AND p.status = 1
-        GROUP BY p.id, p.profession_name
+        WHERE p.deleted = 0 AND p.dict_type = 'profession'
+        <if test="departmentId != null and departmentId != ''">
+            AND r.department_id = #{departmentId}
+        </if>
+        <if test="startDate != null and startDate != ''">
+            AND DATE(r.create_time) &gt;= #{startDate}
+        </if>
+        <if test="endDate != null and endDate != ''">
+            AND DATE(r.create_time) &lt;= #{endDate}
+        </if>
+        GROUP BY p.id, p.dict_value
         HAVING count &gt; 0
         ORDER BY count DESC
     </select>
@@ -180,20 +210,37 @@
             COUNT(r.id) as count
         FROM sys_inspection_record r
         WHERE r.deleted = 0 AND r.location IS NOT NULL AND r.location != ''
+        <if test="departmentId != null and departmentId != ''">
+            AND r.department_id = #{departmentId}
+        </if>
+        <if test="startDate != null and startDate != ''">
+            AND DATE(r.create_time) &gt;= #{startDate}
+        </if>
+        <if test="endDate != null and endDate != ''">
+            AND DATE(r.create_time) &lt;= #{endDate}
+        </if>
         GROUP BY r.location
-        HAVING count > 0
+        HAVING count &gt; 0
         ORDER BY count DESC
     </select>
 
     <!-- 统计各责任人问题数量 -->
     <select id="selectResponsiblePersonStatistics" resultType="map">
         SELECT 
-            u.real_name as responsible_person_name,
+            r.responsible_person as responsible_person_name,
             COUNT(r.id) as count
-        FROM sys_user u
-        LEFT JOIN sys_inspection_record r ON u.id = r.responsible_person_id AND r.deleted = 0
-        WHERE u.deleted = 0 AND u.status = 1
-        GROUP BY u.id, u.real_name
+        FROM sys_inspection_record r
+        WHERE r.deleted = 0 AND r.responsible_person IS NOT NULL AND r.responsible_person != ''
+        <if test="departmentId != null and departmentId != ''">
+            AND r.department_id = #{departmentId}
+        </if>
+        <if test="startDate != null and startDate != ''">
+            AND DATE(r.create_time) &gt;= #{startDate}
+        </if>
+        <if test="endDate != null and endDate != ''">
+            AND DATE(r.create_time) &lt;= #{endDate}
+        </if>
+        GROUP BY r.responsible_person
         HAVING count &gt; 0
         ORDER BY count DESC
     </select>
@@ -233,8 +280,7 @@
             problem_description,
             location,
             inspector,
-            group_leader_id,
-            deputy_leader_id,
+
             department_id,
             group_leader_name,
             deputy_leader_name,
@@ -256,14 +302,13 @@
             #{problemDescription},
             #{location},
             #{inspector},
-            #{groupLeaderId},
-            #{deputyLeaderId},
+
             #{departmentId},
             #{groupLeaderNameField},
             #{deputyLeaderNameField},
             #{rectificationDeadline},
             #{problemImageUrls},
-            0,
+            4,
             #{createTime},
             #{updateTime},
             #{deleted}
@@ -273,19 +318,22 @@
     <!-- 根据时间范围统计各专业问题数量 -->
     <select id="selectProfessionStatisticsByDateRange" resultType="map">
         SELECT 
-            p.profession_name,
+            p.dict_value as profession_name,
             COUNT(r.id) as count
-        FROM sys_profession p
+        FROM sys_dictionary p
         LEFT JOIN sys_inspection_record r ON p.id = r.profession_id AND r.deleted = 0
-        WHERE p.deleted = 0 AND p.status = 1
+        WHERE p.deleted = 0 AND p.dict_type = 'profession'
+        <if test="departmentId != null and departmentId != ''">
+            AND r.department_id = #{departmentId}
+        </if>
         <if test="startDate != null and startDate != ''">
             AND DATE(r.create_time) &gt;= #{startDate}
         </if>
         <if test="endDate != null and endDate != ''">
             AND DATE(r.create_time) &lt;= #{endDate}
         </if>
-        GROUP BY p.id, p.profession_name
-        HAVING count > 0
+        GROUP BY p.id, p.dict_value
+        HAVING count &gt; 0
         ORDER BY count DESC
     </select>
 
@@ -296,6 +344,9 @@
             COUNT(r.id) as count
         FROM sys_inspection_record r
         WHERE r.deleted = 0 AND r.location IS NOT NULL AND r.location != ''
+        <if test="departmentId != null and departmentId != ''">
+            AND r.department_id = #{departmentId}
+        </if>
         <if test="startDate != null and startDate != ''">
             AND DATE(r.create_time) &gt;= #{startDate}
         </if>
@@ -303,40 +354,50 @@
             AND DATE(r.create_time) &lt;= #{endDate}
         </if>
         GROUP BY r.location
-        HAVING count > 0
+        HAVING count &gt; 0
         ORDER BY count DESC
     </select>
 
     <!-- 根据时间范围统计各责任人问题数量 -->
     <select id="selectResponsiblePersonStatisticsByDateRange" resultType="map">
         SELECT 
-            u.real_name as responsible_person_name,
+            r.responsible_person as responsible_person_name,
             COUNT(r.id) as count
-        FROM sys_user u
-        LEFT JOIN sys_inspection_record r ON u.id = r.responsible_person_id AND r.deleted = 0
-        WHERE u.deleted = 0 AND u.status = 1
+        FROM sys_inspection_record r
+        WHERE r.deleted = 0 AND r.responsible_person IS NOT NULL AND r.responsible_person != ''
+        <if test="departmentId != null and departmentId != ''">
+            AND r.department_id = #{departmentId}
+        </if>
         <if test="startDate != null and startDate != ''">
             AND DATE(r.create_time) &gt;= #{startDate}
         </if>
         <if test="endDate != null and endDate != ''">
             AND DATE(r.create_time) &lt;= #{endDate}
         </if>
-        GROUP BY u.id, u.real_name
+        GROUP BY r.responsible_person
         HAVING count &gt; 0
         ORDER BY count DESC
     </select>
 
     <!-- 按用户ID和状态查询当前周记录数量 -->
-    <select id="selectWeeklyRecordCountByUserAndStatus" resultType="long">
+    <select id="selectWeeklyRecordCount" resultType="long">
         SELECT COUNT(*)
         FROM sys_inspection_record r
         WHERE r.deleted = 0
-        
+        <if test="departmentId != null and departmentId != ''">
+            AND r.department_id = #{departmentId}
+        </if>
         <if test="userId != null and userId != ''">
-            AND r.responsible_person_id = #{userId}
+            AND r.inspector = #{userId}
         </if>
         <if test="status != null">
             AND r.status = #{status}
+        </if>
+        <if test="weekStart != null">
+            AND r.create_time &gt;= #{weekStart}
+        </if>
+        <if test="weekEnd != null">
+            AND r.create_time &lt;= #{weekEnd}
         </if>
     </select>
 
@@ -363,7 +424,72 @@
         WHERE r.deleted = 0
             AND r.status = 0
             AND r.rectification_deadline &lt;= #{currentTime}
+        <if test="departmentId != null and departmentId != ''">
+            AND r.department_id = #{departmentId}
+        </if>
         ORDER BY r.rectification_deadline ASC
+    </select>
+
+    <!-- 查询总记录数 -->
+    <select id="selectTotalRecordCount" resultType="long">
+        SELECT COUNT(*)
+        FROM sys_inspection_record
+        WHERE deleted = 0
+        <if test="departmentId != null and departmentId != ''">
+            AND department_id = #{departmentId}
+        </if>
+    </select>
+
+    <!-- 按状态查询记录数 -->
+    <select id="selectRecordCountByStatus" resultType="long">
+        SELECT COUNT(*)
+        FROM sys_inspection_record
+        WHERE deleted = 0
+        <if test="departmentId != null and departmentId != ''">
+            AND department_id = #{departmentId}
+        </if>
+        <if test="status != null">
+            AND status = #{status}
+        </if>
+    </select>
+
+    <!-- 查询当月记录数 -->
+    <select id="selectCurrentMonthRecordCount" resultType="long">
+        SELECT COUNT(*)
+        FROM sys_inspection_record
+        WHERE deleted = 0
+        <if test="departmentId != null and departmentId != ''">
+            AND department_id = #{departmentId}
+        </if>
+        AND YEAR(create_time) = YEAR(CURDATE())
+        AND MONTH(create_time) = MONTH(CURDATE())
+    </select>
+
+    <!-- 查询上月记录数 -->
+    <select id="selectLastMonthRecordCount" resultType="long">
+        SELECT COUNT(*)
+        FROM sys_inspection_record
+        WHERE deleted = 0
+        <if test="departmentId != null and departmentId != ''">
+            AND department_id = #{departmentId}
+        </if>
+        AND YEAR(create_time) = YEAR(DATE_SUB(CURDATE(), INTERVAL 1 MONTH))
+        AND MONTH(create_time) = MONTH(DATE_SUB(CURDATE(), INTERVAL 1 MONTH))
+    </select>
+
+    <!-- 查询月度趋势统计 -->
+    <select id="selectMonthlyTrendStatistics" resultType="map">
+        SELECT 
+            DATE_FORMAT(create_time, '%Y-%m') as month,
+            COUNT(*) as count
+        FROM sys_inspection_record
+        WHERE deleted = 0
+        <if test="departmentId != null and departmentId != ''">
+            AND department_id = #{departmentId}
+        </if>
+        AND create_time &gt;= DATE_SUB(CURDATE(), INTERVAL 12 MONTH)
+        GROUP BY DATE_FORMAT(create_time, '%Y-%m')
+        ORDER BY month ASC
     </select>
 
     <!-- 导出巡检记录数据（带关联信息） -->
@@ -403,7 +529,21 @@
         <if test="endTime != null">
             AND r.create_time &lt;= #{endTime}
         </if>
-        ORDER BY r.create_time DESC
+        <if test="departmentId != null and departmentId != ''">
+            AND r.department_id = #{departmentId}
+        </if>
+        <if test="natureId != null and natureId != ''">
+            AND EXISTS (
+                SELECT 1 FROM sys_dictionary nd 
+                WHERE nd.id = #{natureId} 
+                AND nd.dict_value = r.nature_definition 
+                AND nd.deleted = 0
+            )
+        </if>
+        <if test="problemDescription != null and problemDescription != ''">
+            AND r.problem_description LIKE CONCAT('%', #{problemDescription}, '%')
+        </if>
+        ORDER BY p.sort_order ASC, r.create_time DESC
     </select>
 
 </mapper>

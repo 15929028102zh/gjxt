@@ -13,14 +13,11 @@ public class SysInspectionRecordSubmitData {
     private String responsiblePerson;
     private String natureDefinition;
     private String scoreId;
-    private BigDecimal assessmentAmount;
     private BigDecimal safetyScore;
     private String professionId;
     private String problemDescription;
     private String location;
     private String inspector;
-    private String groupLeader;
-    private String deputyLeader;
     private String departmentId;
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime rectificationDeadline;

@@ -14,10 +14,10 @@ export function main(app: IApp) {
 }
 
 export class UniAppConfig extends io.dcloud.uniapp.appframe.AppConfig {
-    override name: string = "工业巡检"
-    override appid: string = "__UNI__630A075"
-    override versionName: string = "1.0.0"
-    override versionCode: string = "100"
+    override name: string = "榆林公司岗检系统"
+    override appid: string = "__UNI__B5A0920"
+    override versionName: string = "1.0.1"
+    override versionCode: string = "101"
     override uniCompilerVersion: string = "4.76"
     
     constructor() { super() }

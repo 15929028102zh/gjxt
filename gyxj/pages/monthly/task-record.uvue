@@ -47,86 +47,65 @@
 			</view>
 			
 			<!-- 专业类别（第1级联选择框） -->
-			<view class="form-item-inline">
-				<text class="form-label-inline">专业类别</text>
-				<view class="picker-wrapper-inline" @click="showTypePicker" :class="{disabled: typeOptions.length === 0}">
-					<text class="picker-text" :class="{placeholder: selectedTypeIndex === -1}">
+			<view class="form-item">
+				<text class="form-label-left">专业类别</text>
+				<view class="custom-picker-full" @click="showTypePicker" :class="{disabled: typeOptions.length === 0}">
+					<text class="picker-text-full" :class="{placeholder: selectedTypeIndex === -1}">
 						{{selectedTypeIndex === -1 ? '请选择专业类别' : (selectedTypeIndex < typeOptions.length ? (typeOptions[selectedTypeIndex] as OptionItem).name : '请选择专业类别')}}
 					</text>
-					<text class="picker-arrow">›</text>
 				</view>
 			</view>
 			
 			<!-- 模块（第2级联选择框） -->
-			<view class="form-item-inline">
-				<text class="form-label-inline">模块</text>
-				<view class="picker-wrapper-inline" @click="showModulePicker" :class="{disabled: moduleOptions.length === 0}">
-					<text class="picker-text" :class="{placeholder: selectedModuleIndex === -1}">
+			<view class="form-item">
+				<text class="form-label-left">模块</text>
+				<view class="custom-picker-full" @click="showModulePicker" :class="{disabled: moduleOptions.length === 0}">
+					<text class="picker-text-full" :class="{placeholder: selectedModuleIndex === -1}">
 						{{selectedModuleIndex === -1 ? '请选择模块' : (selectedModuleIndex < moduleOptions.length ? (moduleOptions[selectedModuleIndex] as OptionItem).name : '请选择模块')}}
 					</text>
-					<text class="picker-arrow">›</text>
 				</view>
 			</view>
 			
 			<!-- 责任（第3级联选择框） -->
-			<view class="form-item-inline">
-				<text class="form-label-inline">责任</text>
-				<view class="picker-wrapper-inline" @click="showResponsibilityPicker" :class="{disabled: responsibilityOptions.length === 0}">
-					<text class="picker-text" :class="{placeholder: selectedResponsibilityIndex === -1}">
+			<view class="form-item">
+				<text class="form-label-left">责任</text>
+				<view class="custom-picker-full" @click="showResponsibilityPicker" :class="{disabled: responsibilityOptions.length === 0}">
+					<text class="picker-text-full" :class="{placeholder: selectedResponsibilityIndex === -1}">
 						{{selectedResponsibilityIndex === -1 ? '请选择责任' : (selectedResponsibilityIndex < responsibilityOptions.length ? (responsibilityOptions[selectedResponsibilityIndex] as OptionItem).name : '请选择责任')}}
 					</text>
-					<text class="picker-arrow">›</text>
 				</view>
 			</view>
 			
 			<!-- 问题（第4级联选择框） -->
-			<view class="form-item-inline">
-				<text class="form-label-inline">问题</text>
-				<view class="picker-wrapper-inline" @click="showIssuePicker" :class="{disabled: issueOptions.length === 0}">
-					<text class="picker-text" :class="{placeholder: selectedIssueIndex === -1}">
+			<view class="form-item">
+				<text class="form-label-left">问题</text>
+				<view class="custom-picker-full" @click="showIssuePicker" :class="{disabled: issueOptions.length === 0}">
+					<text class="picker-text-full" :class="{placeholder: selectedIssueIndex === -1}">
 						{{selectedIssueIndex === -1 ? '请选择问题' : (selectedIssueIndex < issueOptions.length ? (issueOptions[selectedIssueIndex] as OptionItem).name : '请选择问题')}}
 					</text>
-					<text class="picker-arrow">›</text>
 				</view>
 			</view>
 			
 			<!-- 性质界定 -->
-			<view class="form-item-inline">
-				<text class="form-label-inline">性质界定</text>
-				<view class="picker-wrapper-inline" @click="showQualityPicker" :class="{disabled: qualityOptions.length === 0}">
-					<text class="picker-text" :class="{placeholder: selectedQualityIndex === -1}">
+			<view class="form-item">
+				<text class="form-label-left">性质界定</text>
+				<view class="custom-picker-full" @click="showQualityPicker" :class="{disabled: qualityOptions.length === 0}">
+					<text class="picker-text-full" :class="{placeholder: selectedQualityIndex === -1}">
 						{{selectedQualityIndex === -1 ? '请选择性质界定' : (selectedQualityIndex < qualityOptions.length ? (qualityOptions[selectedQualityIndex] as OptionItem).name : '请选择性质界定')}}
 					</text>
-					<text class="picker-arrow">›</text>
 				</view>
 			</view>
 			
-			<!-- 扣分值 -->
-			<view class="form-item-inline">
-				<text class="form-label-inline">扣分值</text>
-				<input class="text-input-inline" 
-					   v-model="formData.deductionScore" 
-					   placeholder="自动带出扣分值"
+			<!-- 安全记分 -->
+			<view class="form-item">
+				<text class="form-label-left">安全记分</text>
+				<input class="form-input" 
+					   v-model="formData.safetyScore" 
+					   placeholder="自动带出安全记分"
 					   readonly />
 			</view>
 			
-			<!-- 安全记分关联项 -->
-			<view class="form-item-inline">
-				<text class="form-label-inline">安全记分关联项</text>
-				<input class="text-input-inline" 
-					   v-model="formData.safetyScoreItem" 
-					   placeholder="自动带出安全记分关联项"
-					   readonly />
-			</view>
-			
-			<!-- 问题等级 -->
-			<view class="form-item-inline">
-				<text class="form-label-inline">问题等级</text>
-				<view class="picker-wrapper-inline" @click="showProblemLevelPicker">
-				<text class="picker-text" :class="{placeholder: formData.problemLevel === ''}">{{formData.problemLevel !== '' ? formData.problemLevel : '请选择问题等级'}}</text>
-				<text class="picker-arrow">›</text>
-			</view>
-			</view>
+
 			
 			<!-- 问题描述 -->
 			<view class="form-item">
@@ -139,30 +118,58 @@
 			</view>
 			
 			<!-- 发现位置 -->
-			<view class="form-item-inline">
-				<text class="form-label-inline">发现位置</text>
-				<input class="text-input-inline" 
+			<view class="form-item">
+				<text class="form-label-left">发现位置</text>
+				<input class="form-input" 
 					   v-model="formData.location" 
 					   placeholder="请输入问题发现的具体位置" />
 			</view>
 			
-			<!-- 整改建议 -->
+			<!-- 整改期限 -->
 			<view class="form-item">
-				<text class="form-label">整改建议</text>
-				<textarea class="textarea-input" 
-						  v-model="formData.suggestion" 
-						  placeholder="请提出整改建议"
-						  maxlength="300"></textarea>
-				<text class="char-count">{{formData.suggestion.length}}/300</text>
+				<text class="form-label-left">整改期限</text>
+				<view class="picker-container" @click="showDatePicker">
+					<text class="picker-text-full" :class="{placeholder: formData.rectificationDate === ''}">
+						{{formData.rectificationDate !== '' ? formData.rectificationDate : '请选择整改期限'}}
+					</text>
+				</view>
+				<!-- 日期选择器弹窗 -->
+				<view v-if="datePickerVisible" class="date-picker-modal" @click="hideDatePicker">
+					<view class="date-picker-content" @click.stop>
+						<view class="date-picker-header">
+							<text class="date-picker-cancel" @click="hideDatePicker">取消</text>
+							<text class="date-picker-title">选择日期</text>
+							<text class="date-picker-confirm" @click="confirmDatePicker">确定</text>
+						</view>
+						<picker-view class="date-picker-view" :value="pickerValue" @change="onPickerChange" indicator-style="height: 70px; top: 20%; margin-top: -20px;">
+							<picker-view-column>
+								<view v-for="(year, index) in years" :key="index" class="picker-item" :class="{selected: index === pickerValue[0]}">
+									{{year}}年
+								</view>
+							</picker-view-column>
+							<picker-view-column>
+								<view v-for="(month, index) in months" :key="index" class="picker-item" :class="{selected: index === pickerValue[1]}">
+									{{month}}月
+								</view>
+							</picker-view-column>
+							<picker-view-column>
+								<view v-for="(day, index) in days" :key="index" class="picker-item" :class="{selected: index === pickerValue[2]}">
+									{{day}}日
+								</view>
+								<!-- 添加空白项目，让最后的日期可以滚动到选择区域 -->
+								<view v-for="i in 2" :key="'empty-day-' + i" class="picker-item picker-item-spacer"></view>
+							</picker-view-column>
+						</picker-view>
+					</view>
+				</view>
 			</view>
 			
-			<!-- 整改期限 -->
-			<view class="form-item-inline">
-				<text class="form-label-inline">整改期限</text>
-				<input class="text-input-inline" 
-					   type="date" 
-					   v-model="formData.rectificationDate" 
-					   placeholder="请选择整改期限" />
+			<!-- 检查人 -->
+			<view class="form-item">
+				<text class="form-label-left">检查人</text>
+				<input class="form-input" 
+					   v-model="formData.inspector" 
+					   placeholder="请输入检查人姓名" />
 			</view>
 			
 			<!-- 照片上传 -->
@@ -170,7 +177,7 @@
 				<text class="form-label">问题照片</text>
 				<view class="photo-upload">
 					<view v-for="(photo, index) in formData.photos" :key="index" class="photo-item">
-						<image :src="photo" class="photo-preview" @click="previewPhoto(photo)"></image>
+						<image :src="convertToHttpUrl(photo)" class="photo-preview" @click="previewPhoto(photo)"></image>
 						<view class="photo-delete" @click="deletePhoto(index)">
 							<text class="delete-icon">×</text>
 						</view>
@@ -211,28 +218,7 @@
 			</view>
 		</view>
 		
-		<!-- 问题等级选择器 -->
-		<view v-if="showProblemLevelModal" class="picker-modal" @click="hideProblemLevelPicker">
-			<view class="picker-content" @click.stop>
-				<view class="picker-header">
-					<text class="picker-cancel" @click="hideProblemLevelPicker">取消</text>
-					<text class="picker-title">选择问题等级</text>
-					<text class="picker-confirm" @click="confirmProblemLevel">确定</text>
-				</view>
-				<view class="picker-list">
-              <view v-for="(level, index) in problemLevels" :key="index" 
-            class="picker-item" 
-            :class="{selected: selectedProblemLevel === (level as UTSJSONObject)['value']}"
-            @click="selectProblemLevel((level as UTSJSONObject)['value'] as string)">
-                <view class="level-item">
-                  <text class="level-name">{{(level as UTSJSONObject)['name']}}</text>
-                  <text class="level-desc">{{(level as UTSJSONObject)['desc']}}</text>
-            </view>
-            <text v-if="selectedProblemLevel === (level as UTSJSONObject)['value']" class="picker-check">✓</text>
-          </view>
-				</view>
-			</view>
-		</view>
+
 		
 		<!-- 专业类别选择弹窗 -->
 		<view v-if="showTypePopup" class="popup-overlay" @click="hideTypePicker">
@@ -369,7 +355,7 @@
 </template>
 
 <script lang="uts">
-	import { getApiUrl } from '@/config/api.uts'
+	import { getApiUrl, apiConfig } from '@/config/api.uts'
 	
 	type TaskInfo = {
 		taskNumber: string
@@ -382,18 +368,16 @@
 	
 	type FormData = {
 		problemType: string
-		problemLevel: string
 		problemDescription: string
 		location: string
-		suggestion: string
 		photos: string[]
-		deductionScore: string
-		safetyScoreItem: string
+		safetyScore: string
 		rectificationDate: string
 		module: string
 		responsibility: string
 		issue: string
 		quality: string
+		inspector: string
 	}
 	
 	type OptionItem = {
@@ -409,11 +393,8 @@
 			containerHeight: number
 			scrollTop: number
 			showProblemTypeModal: boolean
-			showProblemLevelModal: boolean
 			selectedProblemType: string
-			selectedProblemLevel: string
 			problemTypes: any[]
-			problemLevels: any[]
 			// 级联选择器相关
 			showTypePopup: boolean
 			showModulePopup: boolean
@@ -436,7 +417,22 @@
 			responsibilitySearchKeyword: string
 			issueSearchKeyword: string
 			qualitySearchKeyword: string
+			// 日期选择器相关
+			datePickerVisible: boolean
+			pickerValue: number[]
+			years: number[]
+			months: number[]
+			days: number[]
+			selectedYear: number
+			selectedMonth: number
+			selectedDay: number
+			pickerDebounceTimer: number | null
 		} {
+			// 计算默认整改时间（当前日期往后推7天）
+			const defaultDate = new Date()
+			defaultDate.setDate(defaultDate.getDate() + 7)
+			const defaultDateStr = `${defaultDate.getFullYear()}-${(defaultDate.getMonth() + 1).toString().padStart(2, '0')}-${defaultDate.getDate().toString().padStart(2, '0')}`
+			
 			return {
 				taskInfo: {
 					taskNumber: '',
@@ -448,25 +444,21 @@
 				} as TaskInfo,
 				formData: {
 			problemType: '',
-			problemLevel: '',
 			problemDescription: '',
 			location: '',
-			suggestion: '',
 			photos: [],
-			deductionScore: '',
-			safetyScoreItem: '',
-			rectificationDate: '',
+			safetyScore: '',
+			rectificationDate: defaultDateStr,
 			module: '',
 			responsibility: '',
 			issue: '',
-			quality: ''
+			quality: '',
+			inspector: ''
 		} as FormData,
 				containerHeight: 0,
 				scrollTop: 0,
 				showProblemTypeModal: false,
-				showProblemLevelModal: false,
-				selectedProblemType: '',
-				selectedProblemLevel: '',
+			selectedProblemType: '',
 				problemTypes: [
 					'安全隐患',
 					'设备故障',
@@ -474,8 +466,7 @@
 					'操作违规',
 					'制度缺失',
 					'其他问题'
-				],
-				problemLevels: [] as any[],
+			],
 				// 级联选择器相关
 				showTypePopup: false,
 				showModulePopup: false,
@@ -497,11 +488,46 @@
 				moduleSearchKeyword: '',
 				responsibilitySearchKeyword: '',
 				issueSearchKeyword: '',
-				qualitySearchKeyword: ''
+				qualitySearchKeyword: '',
+				// 日期选择器相关
+				datePickerVisible: false,
+				pickerValue: [0, 0, 0],
+				years: [] as number[],
+				months: [] as number[],
+				days: [] as number[],
+				selectedYear: (() => {
+					const tempDate = new Date()
+					tempDate.setDate(tempDate.getDate() + 7)
+					return tempDate.getFullYear()
+				})() as number,
+				selectedMonth: (() => {
+					const tempDate = new Date()
+					tempDate.setDate(tempDate.getDate() + 7)
+					return tempDate.getMonth() + 1
+				})() as number,
+				selectedDay: (() => {
+					const tempDate = new Date()
+					tempDate.setDate(tempDate.getDate() + 7)
+					return tempDate.getDate()
+				})() as number,
+				// 防抖定时器
+				pickerDebounceTimer: null as number | null
 			}
 		},
-		onLoad(options : UTSJSONObject) {
-			const taskId = options.getString('taskNo')
+		
+
+	
+
+	// 预览照片
+	previewPhoto(photo: string) {
+		uni.previewImage({
+			current: this.convertToHttpUrl(photo),
+			urls: this.formData.photos.map((p: string) => this.convertToHttpUrl(p)) as string[]
+		})
+	},
+
+	onLoad(options : UTSJSONObject) {
+			const taskId = options.getString('taskId')
 			console.log(taskId)
 			
 			if (taskId != null && taskId != '') {
@@ -509,10 +535,8 @@
 			}
 			// 初始化级联选择器数据
 			this.loadTypeOptions()
-			// 初始化问题等级数据
-			this.loadProblemLevels()
-			// 初始化整改期限默认值
-			this.formData.rectificationDate = this.getDefaultRectificationDate()
+			// 初始化日期选择器数据
+			this.initDateArrays()
 		},
 		onReady() {
 			this.initContainerHeight()
@@ -568,8 +592,6 @@
 			// 获取默认整改期限（当前日期往后推三个月）
 			getDefaultRectificationDate(): string {
 				const now = new Date()
-				// 往后推三个月
-				now.setMonth(now.getMonth() + 3)
 				const year = now.getFullYear()
 				const month = (now.getMonth() + 1).toString()
 				const day = now.getDate().toString()
@@ -579,7 +601,20 @@
 				}
 				return `${year}-${padZero(month)}-${padZero(day)}`
 			},
-			
+			// 将相对路径转换为HTTP访问路径
+			convertToHttpUrl(relativePath: string): string {
+				console.log('相对路径:', relativePath)
+				// 如果已经是HTTP路径，直接返回
+				if (relativePath.startsWith('http://') || relativePath.startsWith('https://')) {
+					return relativePath
+				}
+				
+				// 直接拼接完整的HTTP URL
+				// 后端已返回相对路径，如: /files/images/20250818/xxx.jpg
+				const httpUrl = `${apiConfig.baseUrl}/api${relativePath}`
+				console.log('转换后的HTTP URL:', httpUrl)
+				return httpUrl
+			},
 			// 初始化容器高度
 			initContainerHeight() {
 				const systemInfo = uni.getSystemInfoSync()
@@ -604,7 +639,7 @@
 								console.log("获取到的数据:",taskInfo)
 								if (taskInfo != null) {
 									this.taskInfo = {
-										taskNumber: taskInfo.getString('taskNo') ?? '',
+										taskNumber: taskInfo.getString('id') ?? '',
 										inspectionDate: taskInfo.getString('inspectionTime') ?? '',
 										department: taskInfo.getString('departmentName') ?? '',
 										profession: taskInfo.getString('professionId') ?? '',
@@ -764,56 +799,7 @@
 		this.autoFillProfession()
 		},
 		
-		// 加载问题等级选项
-		loadProblemLevels() {
-			const token = uni.getStorageSync('token')
-			uni.request({
-				url: getApiUrl('/dictionary/items/问题等级'),
-				method: 'GET',
-				header: {
-					'Authorization': `Bearer ${token}`
-				},
-				success: (res) => {
-					const respdata = res.data as UTSJSONObject
-					if (respdata.getNumber('code') === 200) {
-						const data = respdata.getArray('data')
-						console.log("获取到的问题等级数据", data)
-						if (data != null) {
-							const levels: any[] = []
-							for (let i = 0; i < data.length; i++) {
-								const item = data[i] as UTSJSONObject
-							const desc = item.getString('description')
-							levels.push({
-								value: item.getString('value'),
-								name: item.getString('label'),
-								desc: desc != null ? desc : ''
-							} as UTSJSONObject)
-							}
-							this.problemLevels = levels
-							console.log("问题等级选项已加载:", this.problemLevels)
-						}
-					} else {
-						console.error('加载问题等级失败:', respdata.getString('message'))
-						this.loadFallbackProblemLevels()
-					}
-				},
-				fail: (error) => {
-					console.error('加载问题等级失败:', error)
-					this.loadFallbackProblemLevels()
-				}
-			})
-		},
-		
-		// 加载备用问题等级数据
-		loadFallbackProblemLevels() {
-			this.problemLevels = [
-				{ value: 'critical', name: '严重', desc: '可能造成重大安全事故' },
-				{ value: 'major', name: '重要', desc: '可能造成一般安全事故' },
-				{ value: 'minor', name: '一般', desc: '需要及时整改' },
-				{ value: 'suggestion', name: '建议', desc: '改进建议' }
-			]
-			console.log("使用备用问题等级数据:", this.problemLevels)
-		},
+
 		
 		// 根据专业信息加载岗检标准项
 			loadGjbzDataByProfession() {
@@ -855,32 +841,9 @@
 				this.hideProblemTypePicker()
 			},
 			
-			// 显示问题等级选择器
-			showProblemLevelPicker() {
-				this.selectedProblemLevel = this.formData.problemLevel
-				this.showProblemLevelModal = true
-			},
+
 			
-			// 隐藏问题等级选择器
-			hideProblemLevelPicker() {
-				this.showProblemLevelModal = false
-			},
-			
-			// 选择问题等级
-			selectProblemLevel(level: string) {
-				this.selectedProblemLevel = level
-			},
-			
-			// 确认问题等级
-			confirmProblemLevel() {
-      const level = this.problemLevels.find((item: any) => {
-        const l = item as UTSJSONObject
-        const value = l.getString('value')
-        return value != null && value === this.selectedProblemLevel
-      }) as UTSJSONObject | null
-				this.formData.problemLevel = level != null ? level['name'] as string : ''
-				this.hideProblemLevelPicker()
-			},
+
 			
 			// 专业类别选择器方法
 			showTypePicker() {
@@ -1146,37 +1109,52 @@
 			loadQualityOptions() {
 				const token = uni.getStorageSync('token')
 				uni.request({
-					url: getApiUrl('/gjbz-data/options/qualities'),
+					url: getApiUrl('/dictionary/type/性质界定'),
 					method: 'GET',
 					header: {
-						'Authorization': `Bearer ${token}`
+						'Authorization': `Bearer ${token}`,
+						'Content-Type': 'application/json'
 					},
 					success: (res) => {
-						const respdata = res.data as UTSJSONObject
-						if (respdata.getNumber('code') === 200) {
-							const data = respdata.getArray('data')
-							if (data != null) {
-								const options: OptionItem[] = []
-								for (let i = 0; i < data.length; i++) {
-									const item = data[i] as string
-									options.push({
-										id: (i + 1).toString(),
-										name: item
-									} as OptionItem)
+						const data = res.data as UTSJSONObject
+						const code = data.getNumber('code')
+						if (res.statusCode === 200 && code === 200) {
+							// 将API返回的字典数据转换为选择器需要的格式
+							const dataArray = data.getArray('data')
+							if (dataArray != null) {
+								this.qualityOptions = []
+								for (let i = 0; i < dataArray.length; i++) {
+									const item = dataArray[i] as UTSJSONObject
+									const id = item.getString('id') ?? ''
+									const dictValue = item.getString('dictValue') ?? ''
+									const dictLabel = item.getString('dictLabel') ?? ''
+									const name = dictValue !== '' ? dictValue : dictLabel
+									this.qualityOptions.push({ id: id, name: name } as OptionItem)
 								}
-								this.qualityOptions = options
 							}
+							console.log('性质界定选项加载完成:', this.qualityOptions)
+						} else {
+							const message = data.getString('message') ?? '未知错误'
+							console.error('获取性质界定数据失败:', message)
+							// 使用默认数据作为备选
+							this.qualityOptions = [
+								{ id: '1', name: '一般问题' },
+								{ id: '2', name: '较大问题' },
+								{ id: '3', name: '严重问题' },
+								{ id: '4', name: '重大问题' }
+							] as OptionItem[]
 						}
 					},
 					fail: (error) => {
-					console.error('加载性质界定选项失败:', error)
-					this.qualityOptions = [
-						{ id: 'quality1', name: '一般问题' },
-						{ id: 'quality2', name: '中等问题' },
-						{ id: 'quality3', name: '严重问题' },
-						{ id: 'quality4', name: '重大问题' }
-					] as OptionItem[]
-				}
+						console.error('请求性质界定数据失败:', error)
+						// 使用默认数据作为备选
+						this.qualityOptions = [
+							{ id: '1', name: '一般问题' },
+							{ id: '2', name: '较大问题' },
+							{ id: '3', name: '严重问题' },
+							{ id: '4', name: '重大问题' }
+						] as OptionItem[]
+					}
 				})
 			},
 			
@@ -1186,20 +1164,16 @@
 				setTimeout(() => {
 					switch (qualityId) {
 						case 'quality1':
-							this.formData.deductionScore = '5'
-							this.formData.safetyScoreItem = '一般安全记分'
-							break
-						case 'quality2':
-							this.formData.deductionScore = '10'
-							this.formData.safetyScoreItem = '严重安全记分'
-							break
-						case 'quality3':
-							this.formData.deductionScore = '20'
-							this.formData.safetyScoreItem = '重大安全记分'
-							break
-						default:
-							this.formData.deductionScore = ''
-							this.formData.safetyScoreItem = ''
+					this.formData.safetyScore = '5分 - 一般安全记分'
+					break
+				case 'quality2':
+					this.formData.safetyScore = '10分 - 严重安全记分'
+					break
+				case 'quality3':
+					this.formData.safetyScore = '20分 - 重大安全记分'
+					break
+				default:
+					this.formData.safetyScore = ''
 					}
 			}, 100)
 			},
@@ -1210,37 +1184,137 @@
 				
 				// 首先加载性质界定选项（如果还没有加载）
 				if (this.qualityOptions.length === 0) {
-					this.loadQualityOptions()
+					this.loadQualityOptionsAndFill(issueId, issueName)
+					return
 				}
 				
+				this.performAutoFill(issueId, issueName)
+			},
+			
+			// 加载性质界定选项并执行自动填充
+			loadQualityOptionsAndFill(issueId: string, issueName: string) {
+				const token = uni.getStorageSync('token')
+				uni.request({
+					url: getApiUrl('/dictionary/type/性质界定'),
+					method: 'GET',
+					header: {
+						'Authorization': `Bearer ${token}`,
+						'Content-Type': 'application/json'
+					},
+					success: (res) => {
+						const data = res.data as UTSJSONObject
+						const code = data.getNumber('code')
+						if (res.statusCode === 200 && code === 200) {
+							// 将API返回的字典数据转换为选择器需要的格式
+							const dataArray = data.getArray('data')
+							if (dataArray != null) {
+								this.qualityOptions = []
+								for (let i = 0; i < dataArray.length; i++) {
+									const item = dataArray[i] as UTSJSONObject
+									const id = item.getString('id') ?? ''
+									const dictValue = item.getString('dictValue') ?? ''
+									const dictLabel = item.getString('dictLabel') ?? ''
+									const name = dictValue !== '' ? dictValue : dictLabel
+									this.qualityOptions.push({ id: id, name: name } as OptionItem)
+								}
+								// 加载完成后执行自动填充
+								this.performAutoFill(issueId, issueName)
+							}
+						} else {
+							const message = data.getString('message') ?? '未知错误'
+							console.error('获取性质界定数据失败:', message)
+							// 使用备用数据
+							this.qualityOptions = [
+								{ id: '1', name: '一般问题' },
+								{ id: '2', name: '较大问题' },
+								{ id: '3', name: '严重问题' },
+								{ id: '4', name: '重大问题' }
+							] as OptionItem[]
+							// 执行自动填充
+							this.performAutoFill(issueId, issueName)
+						}
+					},
+					fail: (error) => {
+						console.error('请求性质界定数据失败:', error)
+						// 使用备用数据
+						this.qualityOptions = [
+							{ id: '1', name: '一般问题' },
+							{ id: '2', name: '较大问题' },
+							{ id: '3', name: '严重问题' },
+							{ id: '4', name: '重大问题' }
+						] as OptionItem[]
+						// 执行自动填充
+						this.performAutoFill(issueId, issueName)
+					}
+				})
+			},
+			
+			// 执行自动填充逻辑
+			performAutoFill(issueId: string, issueName: string) {
 				// 根据问题名称智能匹配问题性质和分数
-      const issueMapping = this.getIssueQualityMapping(issueName) as UTSJSONObject | null
-      
-      if (issueMapping != null) {
-       // 设置问题性质
-       this.formData.quality = issueMapping.getString('quality') ?? ''
-       // 查找对应的性质界定索引
-       const qualityIndex = this.qualityOptions.findIndex((item: OptionItem) => item.name === (issueMapping.getString('quality') ?? ''))
-       if (qualityIndex !== -1) {
-        this.selectedQualityIndex = qualityIndex
-       }
-       
-       // 设置扣分值和安全记分关联项
-       this.formData.deductionScore = issueMapping.getString('deductionScore') ?? ''
-       this.formData.safetyScoreItem = issueMapping.getString('safetyScoreItem') ?? ''
+				const issueMapping = this.getIssueQualityMapping(issueName) as UTSJSONObject | null
+				
+				if (issueMapping != null) {
+					const qualityName = issueMapping.getString('quality') ?? ''
+					const safetyScoreText = issueMapping.getString('safetyScore') ?? ''
 					
-					console.log('自动填充完成:', {
-						quality: this.formData.quality,
-						deductionScore: this.formData.deductionScore,
-						safetyScoreItem: this.formData.safetyScoreItem
-					})
+					// 智能匹配性质界定
+				let qualityIndex = -1
+				let matchedQualityName = ''
+				
+				// 首先尝试精确匹配
+				qualityIndex = this.qualityOptions.findIndex((item: OptionItem) => item.name === qualityName)
+				
+				// 如果精确匹配失败，尝试模糊匹配
+				if (qualityIndex === -1) {
+					// 根据关键词匹配性质界定
+					if (qualityName.includes('严重') || qualityName.includes('重大')) {
+						qualityIndex = this.qualityOptions.findIndex((item: OptionItem) => 
+							item.name.includes('严重') || item.name.includes('重大') || item.name.includes('重要'))
+					} else if (qualityName.includes('一般') || qualityName.includes('轻微')) {
+						qualityIndex = this.qualityOptions.findIndex((item: OptionItem) => 
+							item.name.includes('一般') || item.name.includes('轻微') || item.name.includes('普通'))
+					} else if (qualityName.includes('中等') || qualityName.includes('较大')) {
+						qualityIndex = this.qualityOptions.findIndex((item: OptionItem) => 
+							item.name.includes('中等') || item.name.includes('较大') || item.name.includes('中'))
+					}
+				}
+				
+				// 设置性质界定
+				if (qualityIndex !== -1) {
+					this.selectedQualityIndex = qualityIndex
+					matchedQualityName = (this.qualityOptions[qualityIndex] as OptionItem).name
+					this.formData.quality = matchedQualityName
+				} else {
+					// 如果都没有匹配到，使用第一个选项作为默认值
+					if (this.qualityOptions.length > 0) {
+						this.selectedQualityIndex = 0
+						matchedQualityName = (this.qualityOptions[0] as OptionItem).name
+						this.formData.quality = matchedQualityName
+					}
+				}
 					
-					// 显示提示信息
-					uni.showToast({
-						title: `已自动填充：${issueMapping.quality}，扣${issueMapping.deductionScore}分`,
-						icon: 'success',
-						duration: 2000
-					})
+					// 设置安全记分 - 只提取数字部分
+      const scoreMatch = safetyScoreText.match(/(\d+)分/)
+      if (scoreMatch != null && scoreMatch.length > 1 && scoreMatch[1] != null) {
+       this.formData.safetyScore = scoreMatch[1] as string
+      } else {
+       this.formData.safetyScore = '5' // 默认值
+					}
+				
+				console.log('自动填充完成:', {
+					originalQuality: qualityName,
+					matchedQuality: matchedQualityName,
+					safetyScore: this.formData.safetyScore,
+					selectedQualityIndex: this.selectedQualityIndex
+				})
+				
+				// 显示提示信息
+				uni.showToast({
+					title: `已自动填充：${matchedQualityName}，${this.formData.safetyScore}分`,
+					icon: 'success',
+					duration: 2000
+				})
 				} else {
 					console.log('未找到匹配的问题映射规则')
 				}
@@ -1249,19 +1323,19 @@
 			// 获取问题与性质界定的映射关系
   getIssueQualityMapping(issueName: string): UTSJSONObject {
     // 定义问题与性质界定的映射规则
-    const mappingRules = [
-      // 严重问题类型
-      { keywords: ['违章', '违规', '严重', '重大', '危险', '安全隐患'], quality: '严重问题', deductionScore: '15', safetyScoreItem: '严重安全记分' },
-      { keywords: ['火灾', '爆炸', '中毒', '触电', '高空坠落'], quality: '重大问题', deductionScore: '25', safetyScoreItem: '重大安全记分' },
-      
-      // 一般问题类型
-      { keywords: ['轻微', '一般', '小问题', '不规范', '不完善'], quality: '一般问题', deductionScore: '5', safetyScoreItem: '一般安全记分' },
-      { keywords: ['标识', '标牌', '记录', '台账', '文档'], quality: '一般问题', deductionScore: '3', safetyScoreItem: '一般安全记分' },
-      
-      // 中等问题类型
-      { keywords: ['设备', '工具', '防护', '操作', '流程'], quality: '中等问题', deductionScore: '10', safetyScoreItem: '中等安全记分' },
-      { keywords: ['环境', '卫生', '整理', '整顿'], quality: '中等问题', deductionScore: '8', safetyScoreItem: '中等安全记分' }
-    ] as UTSJSONObject[]
+			const mappingRules = [
+				// 严重问题类型
+				{ keywords: ['违章', '违规', '严重', '重大', '危险', '安全隐患'], quality: '严重问题', safetyScore: '15分 - 严重安全记分' },
+				{ keywords: ['火灾', '爆炸', '中毒', '触电', '高空坠落'], quality: '重大问题', safetyScore: '25分 - 重大安全记分' },
+				
+				// 一般问题类型
+				{ keywords: ['轻微', '一般', '小问题', '不规范', '不完善'], quality: '一般问题', safetyScore: '5分 - 一般安全记分' },
+				{ keywords: ['标识', '标牌', '记录', '台账', '文档'], quality: '一般问题', safetyScore: '3分 - 一般安全记分' },
+				
+				// 中等问题类型
+				{ keywords: ['设备', '工具', '防护', '操作', '流程'], quality: '中等问题', safetyScore: '10分 - 中等安全记分' },
+				{ keywords: ['环境', '卫生', '整理', '整顿'], quality: '中等问题', safetyScore: '8分 - 中等安全记分' }
+			] as UTSJSONObject[]
 				
       // 查找匹配的规则
       for (let i = 0; i < mappingRules.length; i++) {
@@ -1270,20 +1344,18 @@
        for (let j = 0; j < keywords.length; j++) {
         const keyword = keywords[j]
         if (issueName.includes(keyword)) {
-         return {
-								quality: rule.quality,
-								deductionScore: rule.deductionScore,
-								safetyScoreItem: rule.safetyScoreItem
-							}
-						}
+					return {
+						quality: rule.quality,
+						safetyScore: rule.safetyScore
+					}
+				}
 					}
 				}
 				
 				// 如果没有匹配到，返回默认值
 				return {
 					quality: '一般问题',
-					deductionScore: '5',
-					safetyScoreItem: '一般安全记分'
+					safetyScore: '5分 - 一般安全记分'
 				}
 			},
 			
@@ -1294,10 +1366,82 @@
 					sizeType: ['compressed'],
 					sourceType: ['camera', 'album'],
 					success: (res) => {
-						this.formData.photos.push(...res.tempFilePaths)
-				}
-			})
-		},
+						// 逐个上传选择的图片
+						res.tempFilePaths.forEach(tempPath => {
+							this.uploadImage(tempPath)
+						})
+					}
+				})
+			},
+			
+			// 上传图片到服务器
+			uploadImage(imagePath: string) {
+				console.log('=== 移动端图片上传调试信息 ===')
+				console.log('选择的图片路径:', imagePath)
+				
+				uni.showLoading({
+					title: '上传中...'
+				})
+				
+				uni.uploadFile({
+					url: getApiUrl('/upload/image'),
+					filePath: imagePath,
+					name: 'file',
+					header: {
+						'Authorization': uni.getStorageSync('token')
+					},
+					success: (uploadRes) => {
+						uni.hideLoading()
+						console.log('上传响应状态码:', uploadRes.statusCode)
+						console.log('上传响应数据:', uploadRes.data)
+						
+						try {
+							const result = JSON.parse(uploadRes.data) as UTSJSONObject
+							console.log('解析后的响应数据:', result)
+							
+							const code = result.getNumber('code')
+							if (code === 200) {
+								// 上传成功，将服务器返回的URL添加到photos数组
+								const data = result.getJSON('data')
+								if (data != null) {
+									const url = data.getString('url')
+									console.log('服务器返回的图片URL:', url)
+									if (url != null) {
+										this.formData.photos.push(url)
+										console.log('当前photos数组:', this.formData.photos)
+									}
+								}
+							} else {
+								let message = result.getString('message')
+								if (message == null) {
+									message = '上传失败'
+								}
+								console.error('上传失败，服务器响应:', result)
+								uni.showToast({
+									title: message,
+									icon: 'none'
+								})
+							}
+						} catch (e) {
+							console.error('解析响应数据失败:', e)
+							console.error('原始响应数据:', uploadRes.data)
+							uni.showToast({
+								title: '上传失败',
+								icon: 'none'
+							})
+						}
+						console.log('=== 移动端图片上传调试信息结束 ===')
+					},
+					fail: (error) => {
+						uni.hideLoading()
+						console.error('图片上传失败:', error)
+						uni.showToast({
+							title: '上传失败',
+							icon: 'none'
+						})
+					}
+				})
+			},
 			
 			// 删除照片
 			deletePhoto(index: number) {
@@ -1305,46 +1449,110 @@
 			},
 			
 			// 预览照片
-			previewPhoto(photo: string) {
-				uni.previewImage({
-					current: photo,
-					urls: this.formData.photos
-				})
-			},
+	previewPhoto(photo: string) {
+		uni.previewImage({
+			current: this.convertToHttpUrl(photo),
+			urls: this.formData.photos.map((p: string) => this.convertToHttpUrl(p)) as string[]
+		})
+	},
 			
 			// 保存记录
 			saveRecord() {
 				// 表单验证
-			if (this.formData.problemType == '') {
-					uni.showToast({ title: '请选择问题类型', icon: 'none' })
+				if (this.selectedTypeIndex === -1) {
+					uni.showToast({ title: '请选择专业类别', icon: 'none' })
 					return
 				}
 				
-			if (this.formData.problemLevel == '') {
-					uni.showToast({ title: '请选择问题等级', icon: 'none' })
+				if (this.selectedModuleIndex === -1) {
+					uni.showToast({ title: '请选择模块', icon: 'none' })
 					return
 				}
 				
-			if (this.formData.problemDescription.trim() == '') {
+				if (this.selectedResponsibilityIndex === -1) {
+					uni.showToast({ title: '请选择责任', icon: 'none' })
+					return
+				}
+				
+				if (this.selectedIssueIndex === -1) {
+					uni.showToast({ title: '请选择问题', icon: 'none' })
+					return
+				}
+				
+				if (this.selectedQualityIndex === -1) {
+					uni.showToast({ title: '请选择性质界定', icon: 'none' })
+					return
+				}
+				
+				if (this.formData.problemDescription.trim() == '') {
 					uni.showToast({ title: '请输入问题描述', icon: 'none' })
 					return
 				}
 				
-			if (this.formData.location.trim() == '') {
+				if (this.formData.location.trim() == '') {
 					uni.showToast({ title: '请输入发现位置', icon: 'none' })
+					return
+				}
+				
+				if (this.formData.rectificationDate == '') {
+					uni.showToast({ title: '请选择整改期限', icon: 'none' })
+					return
+				}
+				
+				if (this.formData.inspector.trim() == '') {
+					uni.showToast({ title: '请输入检查人', icon: 'none' })
 					return
 				}
 				
 				try {
 					uni.showLoading({ title: '保存中...' })
 					
-					// 模拟API调用
+					// 获取用户信息
+					const userInfoStr = uni.getStorageSync('userInfo') as string
+					let userId = ''
+					if (userInfoStr != null && userInfoStr != '') {
+						try {
+							const userInfo = JSON.parse(userInfoStr) as UTSJSONObject
+							userId = userInfo.getString('id') ?? ''
+						} catch (e) {
+							console.error('解析用户信息失败:', e)
+						}
+					}
+					
+					if (userId == '') {
+						uni.hideLoading()
+						uni.showToast({ title: '获取用户信息失败，请重新登录', icon: 'none' })
+						return
+					}
+					
+					// 构建保存数据
+      const saveData = {
+        taskId: this.taskInfo.taskNumber,
+        professionalCategory: this.selectedTypeIndex !== -1 && this.typeOptions[this.selectedTypeIndex] != null ? this.typeOptions[this.selectedTypeIndex].name : '',
+        module: this.selectedModuleIndex !== -1 && this.moduleOptions[this.selectedModuleIndex] != null ? this.moduleOptions[this.selectedModuleIndex].name : '',
+        responsibility: this.selectedResponsibilityIndex !== -1 && this.responsibilityOptions[this.selectedResponsibilityIndex] != null ? this.responsibilityOptions[this.selectedResponsibilityIndex].name : '',
+        issue: this.selectedIssueIndex !== -1 && this.issueOptions[this.selectedIssueIndex] != null ? this.issueOptions[this.selectedIssueIndex].name : '',
+        qualityDetermination: this.selectedQualityIndex !== -1 && this.qualityOptions[this.selectedQualityIndex] != null ? this.qualityOptions[this.selectedQualityIndex].name : '',
+						problemDescription: this.formData.problemDescription,
+						location: this.formData.location,
+						rectificationDate: this.formData.rectificationDate,
+						inspector: this.formData.inspector,
+						safetyScore: this.formData.safetyScore,
+						photos: this.formData.photos
+					}
+					
+					// 调用月检记录保存接口
 					uni.request({
-						url: '/api/monthly/problem/save',
+						url: getApiUrl('/monthly-inspection-record'),
 						method: 'POST',
+						header: {
+							'Content-Type': 'application/json',
+							'Authorization': uni.getStorageSync('token') != null ? uni.getStorageSync('token') as string : '',
+							'userId': userId
+						},
 						data: {
-							taskId: this.taskInfo.taskNumber,
-							...this.formData
+							...saveData,
+							photos: this.formData.photos.join(',') // 将数组转换为逗号分隔的字符串
 						},
 						success: (res) => {
 							uni.hideLoading()
@@ -1370,6 +1578,181 @@
 					console.error('保存失败:', error)
 					uni.showToast({ title: '保存失败', icon: 'none' })
 				}
+			},
+			
+			// 初始化日期数组
+			initDateArrays() {
+				// 生成年份数组（当前年份到未来2年）
+				const currentYear = new Date().getFullYear()
+				this.years = []
+				for (let i = currentYear; i <= currentYear + 2; i++) {
+					this.years.push(i)
+				}
+				
+				// 生成月份数组
+				this.months = []
+				for (let i = 1; i <= 12; i++) {
+					this.months.push(i)
+				}
+				
+				// 生成日期数组
+				this.updateDays()
+				
+				// 设置默认选择值
+				const yearIndex = this.years.findIndex(year => year === this.selectedYear)
+				const monthIndex = (this.selectedMonth as number) - 1
+				const dayIndex = this.days.findIndex(day => day === this.selectedDay)
+				this.pickerValue = [yearIndex >= 0 ? yearIndex : 0, monthIndex, dayIndex >= 0 ? dayIndex : 0]
+				
+				console.log('初始化日期数组:', {
+					selectedYear: this.selectedYear,
+					selectedMonth: this.selectedMonth,
+					selectedDay: this.selectedDay,
+					yearIndex, monthIndex, dayIndex,
+					pickerValue: this.pickerValue,
+					daysArray: this.days
+				})
+			},
+			
+			// 更新日期数组
+			updateDays() {
+				const daysInMonth = new Date(this.selectedYear, this.selectedMonth, 0).getDate()
+				this.days = []
+				for (let i = 1; i <= daysInMonth; i++) {
+					this.days.push(i)
+				}
+			},
+			
+			// 显示日期选择器
+			showDatePicker() {
+				// 如果当前有设置的日期，使用该日期作为选择器的默认值
+				if (this.formData.rectificationDate !== '') {
+					const dateParts = this.formData.rectificationDate.split('-')
+					if (dateParts.length === 3) {
+						this.selectedYear = parseInt(dateParts[0])
+						this.selectedMonth = parseInt(dateParts[1])
+						this.selectedDay = parseInt(dateParts[2])
+					}
+				}
+				
+				// 更新日期数组
+				this.updateDays()
+				
+				// 设置picker的默认选择值
+				const yearIndex = this.years.findIndex(year => year === this.selectedYear)
+				const monthIndex = this.selectedMonth - 1
+				let dayIndex = this.days.findIndex(day => day === this.selectedDay)
+				
+				// 如果找不到对应的日期（比如选择了31号但当前月只有30天），则选择最后一天
+				if (dayIndex < 0) {
+					dayIndex = (this.days.length - 1) as Int
+					this.selectedDay = this.days[dayIndex]
+					console.log('日期不存在，调整为月末:', this.selectedDay)
+				}
+				
+				this.pickerValue = [yearIndex >= 0 ? yearIndex : 0, monthIndex, dayIndex]
+				
+				console.log('显示日期选择器:', {
+					selectedDate: this.formData.rectificationDate,
+					selectedYear: this.selectedYear,
+					selectedMonth: this.selectedMonth,
+					selectedDay: this.selectedDay,
+					yearIndex, monthIndex, dayIndex,
+					pickerValue: this.pickerValue
+				})
+				
+				this.datePickerVisible = true
+			},
+			
+			// 隐藏日期选择器
+			hideDatePicker() {
+				this.datePickerVisible = false
+			},
+			
+			// picker-view变化事件
+			onPickerChange(e: UniPickerViewChangeEvent) {
+				const value = e.detail.value as number[]
+				const oldDaysLength = this.days.length
+				
+				console.log('picker原始变化事件:', {
+					value: value,
+					oldSelectedYear: this.selectedYear,
+					oldSelectedMonth: this.selectedMonth,
+					oldSelectedDay: this.selectedDay,
+					oldDaysLength: oldDaysLength
+				})
+				
+				// 更新选择的年月日
+				this.selectedYear = this.years[value[0]]
+				this.selectedMonth = value[1] + 1  // 月份索引从0开始，实际月份从1开始
+				
+				// 更新日期数组（因为年月变化可能影响该月的天数）
+				this.updateDays()
+				
+				// 处理日期变化
+				let newDayIndex = value[2]
+				if (newDayIndex >= this.days.length) {
+					// 如果选择的日期超出了当前月的天数，调整为月末
+					newDayIndex = this.days.length - 1
+					console.log('日期超出范围，调整为月末:', this.days[newDayIndex])
+				}
+				
+				this.selectedDay = this.days[newDayIndex]
+				
+				// 如果天数数组长度发生变化，需要延迟更新pickerValue以避免冲突
+				if (oldDaysLength !== this.days.length) {
+					// 使用防抖机制，避免频繁更新
+					const timer = this.pickerDebounceTimer
+					if (timer !== null) {
+						clearTimeout(timer)
+					}
+					
+					this.pickerDebounceTimer = setTimeout(() => {
+						this.pickerValue = [value[0], value[1], newDayIndex]
+						console.log('延迟更新pickerValue:', {
+							newPickerValue: this.pickerValue,
+							selectedYear: this.selectedYear,
+							selectedMonth: this.selectedMonth,
+							selectedDay: this.selectedDay
+						})
+					}, 50) // 50ms延迟，提供更快速的平滑视觉效果
+				} else {
+					// 直接更新
+					this.pickerValue = [value[0], value[1], newDayIndex]
+					console.log('直接更新pickerValue:', {
+						newPickerValue: this.pickerValue,
+						selectedYear: this.selectedYear,
+						selectedMonth: this.selectedMonth,
+						selectedDay: this.selectedDay
+					})
+				}
+			},
+			
+			// 确认日期选择
+			confirmDatePicker() {
+				// 直接从pickerValue索引获取实际选择的值
+				const selectedYear = this.years[this.pickerValue[0]]
+				const selectedMonth = this.pickerValue[1] + 1  // 月份索引从0开始，实际月份从1开始
+				const selectedDay = this.days[this.pickerValue[2]]
+				
+				const year = selectedYear.toString().padStart(4, '0')
+				const month = selectedMonth.toString().padStart(2, '0')
+				const day = selectedDay.toString().padStart(2, '0')
+				const newDate = `${year}-${month}-${day}`
+				
+				console.log('确认日期选择:', {
+					pickerValue: this.pickerValue,
+					yearsArray: this.years,
+					monthsArray: this.months,
+					daysArray: this.days,
+					selectedYear: selectedYear,
+					selectedMonth: selectedMonth,
+					selectedDay: selectedDay,
+					formattedDate: newDate
+				})
+				
+				this.formData.rectificationDate = newDate
+				this.hideDatePicker()
 			}
 		}
 	}
@@ -1381,6 +1764,7 @@
 		background-color: #f5f5f5;
 		position: relative;
 		z-index: 1;
+		padding-bottom: 180rpx;
 	}
 	
 	/* 头部样式 */
@@ -1436,9 +1820,8 @@
 	
 	.info-item {
 		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		padding: 10px 0;
+		align-items: left;
+		padding: 12px 0;
 		border-bottom: 1px solid #f0f0f0;
 	}
 	
@@ -1449,12 +1832,18 @@
 	.info-label {
 		font-size: 14px;
 		color: #666;
+		width: 100px;
+		flex-shrink: 0;
+		text-align: left;
+		margin-right: 12px;
 	}
 	
 	.info-value {
 		font-size: 14px;
 		color: #333;
 		font-weight: 500;
+		flex: 1;
+		text-align: left;
 	}
 	
 	/* 表单样式 */
@@ -1568,34 +1957,59 @@
 	}
 	
 	.bottom-save-container {
-		padding: 30rpx;
-		margin-top: 40rpx;
-		border-top: 1rpx solid #f0f0f0;
-		background-color: #fff;
+		position: fixed;
+		bottom: 0;
+		left: 0;
+		right: 0;
+		padding: 20rpx 30rpx 40rpx;
+		background: linear-gradient(to top, rgba(85, 170, 255, 1.0) 0%, rgba(85, 170, 255, 0.9) 100%);
+		backdrop-filter: blur(10rpx);
+		border-top: 1rpx solid rgba(240, 240, 240, 0.8);
+		z-index: 999;
 	}
 	
 	.bottom-save-btn {
 		width: 100%;
-		height: 88rpx;
-		background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-		border-radius: 12rpx;
+		height: 96rpx;
+		background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+		border-radius: 48rpx;
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		box-shadow: 0 8rpx 20rpx rgba(102, 126, 234, 0.3);
-		transition: all 0.3s ease;
+		box-shadow: 0 12rpx 32rpx rgba(79, 172, 254, 0.4);
+		transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+		position: relative;
+		overflow: hidden;
+	}
+	
+	.bottom-save-btn::before {
+		content: '';
+		position: absolute;
+		top: 0;
+		left: -100%;
+		width: 100%;
+		height: 100%;
+		background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+		transition: left 0.6s;
 	}
 	
 	.bottom-save-btn:active {
-		transform: translateY(2rpx);
-		box-shadow: 0 4rpx 12rpx rgba(102, 126, 234, 0.2);
+		transform: translateY(2rpx) scale(0.98);
+		box-shadow: 0 8rpx 24rpx rgba(79, 172, 254, 0.3);
+	}
+	
+	.bottom-save-btn:active::before {
+		left: 100%;
 	}
 	
 	.bottom-save-text {
-		color: #fff;
-		font-size: 32rpx;
-		font-weight: 600;
-		letter-spacing: 2rpx;
+		color: #000000;
+		font-size: 34rpx;
+		font-weight: 700;
+		letter-spacing: 3rpx;
+		
+		position: relative;
+		z-index: 1;
 	}
 	
 	.picker-text {
@@ -2030,5 +2444,161 @@
 	.loading-text {
 		font-size: 14px;
 		color: #999;
+	}
+	
+	/* 新增样式 - 参考add.uvue页面 */
+	.form-label-left {
+		font-size: 16px;
+		color: #333;
+		margin-bottom: 10px;
+		font-weight: 400;
+		text-align: left;
+	}
+	
+	.custom-picker-full {
+		width: 100%;
+		padding: 20rpx;
+		border: 1px solid #ddd;
+		border-radius: 8rpx;
+		background-color: #fff;
+		min-height: 80rpx;
+		display: flex;
+		align-items: center;
+	}
+	
+	.custom-picker-full.disabled {
+		background: #f5f5f5;
+		border-color: #ddd;
+		opacity: 0.6;
+	}
+	
+	/* picker容器样式 */
+	.picker-container {
+		width: 100%;
+		padding: 20rpx;
+		border: 1px solid #ddd;
+		border-radius: 8rpx;
+		background-color: #fff;
+		min-height: 80rpx;
+		display: flex;
+		align-items: center;
+	}
+	
+	.picker-text-full {
+		font-size: 32rpx;
+		color: #333;
+		width: 100%;
+		text-align: left;
+	}
+	
+	.picker-text-full.placeholder {
+		color: #999;
+	}
+	
+	/* 日期选择器弹窗样式 */
+	.date-picker-modal {
+		position: fixed;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		background-color: rgba(0, 0, 0, 0.5);
+		display: flex;
+		align-items: flex-end;
+		z-index: 1000;
+	}
+	
+	.date-picker-content {
+		width: 100%;
+		background-color: #fff;
+		border-radius: 16px 16px 0 0;
+		padding-bottom: env(safe-area-inset-bottom);
+	}
+	
+	.date-picker-header {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		padding: 16px 20px;
+		border-bottom: 1px solid #f0f0f0;
+	}
+	
+	.date-picker-cancel {
+		font-size: 16px;
+		color: #999;
+	}
+	
+	.date-picker-title {
+		font-size: 18px;
+		font-weight: 600;
+		color: #333;
+	}
+	
+	.date-picker-confirm {
+		font-size: 16px;
+		color: #007AFF;
+		font-weight: 600;
+	}
+	
+	.date-picker-view {
+		height: 320px;
+		padding: 0 20px 20px;
+		position: relative;
+	}
+	
+	/* picker选中状态样式 - 重新定义以覆盖之前的样式 */
+	.picker-item {
+		height: 60px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		font-size: 16px;
+		color: #666;
+		transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+		border-radius: 8px;
+		margin: 4px 8px;
+		position: relative;
+		z-index: 2;
+		opacity: 0.6;
+		background-color: rgba(0, 0, 0, 0.02);
+	}
+	
+	/* picker选中状态样式 */
+	.picker-item.selected {
+		background: linear-gradient(135deg, #007AFF 0%, #0056CC 100%);
+		color: #fff;
+		font-weight: 700;
+		box-shadow: 0 4px 12px rgba(0, 122, 255, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+		transform: scale(1.05);
+		z-index: 3;
+		opacity: 1;
+		font-size: 18px;
+		border: 2px solid #fff;
+		text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+	}
+	
+	/* picker悬停状态样式 */
+	.picker-item:hover {
+		background-color: #f0f8ff;
+		color: #007AFF;
+	}
+
+	/* 空白占位项目样式 */
+	.picker-item-spacer {
+		pointer-events: none;
+		opacity: 0;
+		background: transparent !important;
+	}
+	
+	.form-input {
+		flex: 1;
+		padding: 12px 15px;
+		background: #f8f9fa;
+		border-radius: 8px;
+		border: 1px solid #e9ecef;
+		font-size: 16px;
+		color: #333;
+		box-sizing: border-box;
+		width: 100%;
 	}
 </style>

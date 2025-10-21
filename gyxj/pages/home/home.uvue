@@ -292,6 +292,19 @@
 		try {
 			const token = uni.getStorageSync('token')
 			
+			// 获取用户部门信息
+			let departmentId = ''
+			const userInfoData = uni.getStorageSync('userInfo')
+			const userInfoStr = userInfoData != null ? userInfoData as string : ''
+			if (userInfoStr != null && userInfoStr != '' && userInfoStr != 'null' && userInfoStr != 'undefined') {
+				try {
+					const parsedUserInfo = JSON.parse(userInfoStr) as UTSJSONObject
+					departmentId = parsedUserInfo.getString('deptId') ?? ''
+				} catch (error) {
+					console.error('用户信息JSON解析失败:', error)
+				}
+			}
+			
 			// 解析响应数据
 			let pending = 0, completed = 0, reviewed = 0, total = 0
 			let completedRequests = 0
@@ -322,18 +335,23 @@
 				return
 			}
 			
-			// 获取待整改数量（状态为0）
+			// 构建部门过滤参数
+			const deptParam = departmentId != null && departmentId != '' ? `&departmentId=${departmentId}` : ''
+			
+			// 获取待整改数量（状态为0）- 使用分页查询API获取准确数量
+			const pendingUrl = getApiUrl(`/inspection-record/page?current=1&size=1&status=0${departmentId != null && departmentId != '' ? '&departmentId=' + departmentId : ''}`)
 			uni.request({
-				url: getApiUrl('/inspection-record/weekly-count?status=0'),
+				url: pendingUrl,
 				method: 'GET',
 				header: {
 					'Authorization': `Bearer ${token}`
 				},
 				success: (res) => {
 					if (res.statusCode === 200 && res.data != null) {
-						const pendingData = res.data as UTSJSONObject
-						if ((pendingData.getNumber('code') ?? 0) === 200) {
-							pending = pendingData.getNumber('data') ?? 0
+						const response = res.data as UTSJSONObject
+						if ((response.getNumber('code') ?? 0) === 200) {
+							const data = response.getJSON('data') as UTSJSONObject
+							pending = data.getNumber('total') ?? 0
 						}
 					}
 					completedRequests++
@@ -350,18 +368,20 @@
 				}
 			})
 			
-			// 获取已整改数量（状态为1）
+			// 获取已整改数量（状态为1）- 使用分页查询API获取准确数量
+			const completedUrl = getApiUrl(`/inspection-record/page?current=1&size=1&status=1${departmentId != null && departmentId != '' ? '&departmentId=' + departmentId : ''}`)
 			uni.request({
-				url: getApiUrl('/inspection-record/weekly-count?status=1'),
+				url: completedUrl,
 				method: 'GET',
 				header: {
 					'Authorization': `Bearer ${token}`
 				},
 				success: (res) => {
 					if (res.statusCode === 200 && res.data != null) {
-						const completedData = res.data as UTSJSONObject
-						if ((completedData.getNumber('code') ?? 0) === 200) {
-							completed = completedData.getNumber('data') ?? 0
+						const response = res.data as UTSJSONObject
+						if ((response.getNumber('code') ?? 0) === 200) {
+							const data = response.getJSON('data') as UTSJSONObject
+							completed = data.getNumber('total') ?? 0
 						}
 					}
 					completedRequests++
@@ -378,18 +398,20 @@
 				}
 			})
 			
-			// 获取已复查数量（状态为2）
+			// 获取已复查数量（状态为2）- 使用分页查询API获取准确数量
+			const reviewedUrl = getApiUrl(`/inspection-record/page?current=1&size=1&status=2${departmentId != null && departmentId != '' ? '&departmentId=' + departmentId : ''}`)
 			uni.request({
-				url: getApiUrl('/inspection-record/weekly-count?status=2'),
+				url: reviewedUrl,
 				method: 'GET',
 				header: {
 					'Authorization': `Bearer ${token}`
 				},
 				success: (res) => {
 					if (res.statusCode === 200 && res.data != null) {
-						const reviewedData = res.data as UTSJSONObject
-						if ((reviewedData.getNumber('code') ?? 0) === 200) {
-							reviewed = reviewedData.getNumber('data') ?? 0
+						const response = res.data as UTSJSONObject
+						if ((response.getNumber('code') ?? 0) === 200) {
+							const data = response.getJSON('data') as UTSJSONObject
+							reviewed = data.getNumber('total') ?? 0
 						}
 					}
 					completedRequests++
@@ -406,18 +428,20 @@
 				}
 			})
 			
-			// 获取总记录数量
+			// 获取总记录数量 - 使用分页查询API获取准确数量
+			const totalUrl = getApiUrl(`/inspection-record/page?current=1&size=1${departmentId != null && departmentId != '' ? '&departmentId=' + departmentId : ''}`)
 			uni.request({
-				url: getApiUrl('/inspection-record/weekly-count'),
+				url: totalUrl,
 				method: 'GET',
 				header: {
 					'Authorization': `Bearer ${token}`
 				},
 				success: (res) => {
 					if (res.statusCode === 200 && res.data != null) {
-						const totalData = res.data as UTSJSONObject
-						if ((totalData.getNumber('code') ?? 0) === 200) {
-							total = totalData.getNumber('data') ?? 0
+						const response = res.data as UTSJSONObject
+						if ((response.getNumber('code') ?? 0) === 200) {
+							const data = response.getJSON('data') as UTSJSONObject
+							total = data.getNumber('total') ?? 0
 						}
 					}
 					completedRequests++
@@ -450,8 +474,25 @@
 	// 加载月检统计数据
 	const loadMonthlyStats = () : void => {
 		const token = uni.getStorageSync('token')
+		
+		// 获取用户部门信息
+		let departmentId = ''
+		const userInfoData = uni.getStorageSync('userInfo')
+		const userInfoStr = userInfoData != null ? userInfoData as string : ''
+		if (userInfoStr != null && userInfoStr != '' && userInfoStr != 'null' && userInfoStr != 'undefined') {
+			try {
+				const parsedUserInfo = JSON.parse(userInfoStr) as UTSJSONObject
+				departmentId = parsedUserInfo.getString('deptId') ?? ''
+			} catch (error) {
+				console.error('用户信息JSON解析失败:', error)
+			}
+		}
+		
+		// 构建部门过滤参数
+		const deptParam = departmentId != null && departmentId != '' ? `&departmentId=${departmentId}` : ''
+		
 		uni.request({
-			url: getApiUrl('/statistics/monthly'),
+			url: getApiUrl(`/statistics/monthly?1=1${deptParam}`),
 			method: 'GET',
 			header: {
 				'Content-Type': 'application/json',

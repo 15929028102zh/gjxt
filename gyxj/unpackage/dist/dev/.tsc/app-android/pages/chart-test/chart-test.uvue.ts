@@ -1,4 +1,4 @@
-import { GenUniModulesTuiXecharsComponentsTuiXecharsTuiXecharsClass } from '@/uni_modules/tui-xechars?uts-proxy';
+import _easycom_tui_xechars from '@/uni_modules/tui-xechars/components/tui-xechars/tui-xechars.uvue'
 import { ref, onMounted, nextTick } from 'vue'
 
 	
@@ -70,7 +70,7 @@ const _cache = __ins.renderCache;
 
 return (): any | null => {
 
-const _component_tui_xechars = resolveEasyComponent("tui-xechars",GenUniModulesTuiXecharsComponentsTuiXecharsTuiXecharsClass)
+const _component_tui_xechars = resolveEasyComponent("tui-xechars",_easycom_tui_xechars)
 
   return _cE("view", _uM({ class: "container" }), [
     _cE("view", _uM({ class: "title" }), [

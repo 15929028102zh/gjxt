@@ -29,19 +29,19 @@ public class StatisticsController {
             Map<String, Object> result = new HashMap<>();
             
             // 各状态问题数量统计
-            List<Map<String, Object>> statusStatsList = inspectionRecordService.getStatusStatistics();
+            List<Map<String, Object>> statusStatsList = inspectionRecordService.getStatusStatistics(null);
             result.put("statusStatistics", statusStatsList);
             
             // 各专业问题数量统计
-            List<Map<String, Object>> professionStats = inspectionRecordService.getProfessionStatistics(null);
+            List<Map<String, Object>> professionStats = inspectionRecordService.getProfessionStatistics(null, null);
             result.put("professionStatistics", professionStats);
             
             // 各部位问题数量统计
-            List<Map<String, Object>> locationStats = inspectionRecordService.getLocationStatistics(null);
+            List<Map<String, Object>> locationStats = inspectionRecordService.getLocationStatistics(null, null);
             result.put("locationStatistics", locationStats);
             
             // 各责任人问题数量统计
-            List<Map<String, Object>> responsibleStats = inspectionRecordService.getResponsiblePersonStatistics(null);
+            List<Map<String, Object>> responsibleStats = inspectionRecordService.getResponsiblePersonStatistics(null, null);
             result.put("responsibleStatistics", responsibleStats);
             
             // 转换状态统计为Map格式便于计算
@@ -83,7 +83,7 @@ public class StatisticsController {
     @GetMapping("/status-chart")
     public Result<Map<String, Object>> getStatusChartData() {
         try {
-            List<Map<String, Object>> statusStatsList = inspectionRecordService.getStatusStatistics();
+            List<Map<String, Object>> statusStatsList = inspectionRecordService.getStatusStatistics(null);
             
             // 转换为Map格式
             Map<String, Long> statusStats = new HashMap<>();
@@ -114,7 +114,7 @@ public class StatisticsController {
     @GetMapping("/profession-chart")
     public Result<List<Map<String, Object>>> getProfessionChartData() {
         try {
-            List<Map<String, Object>> professionStats = inspectionRecordService.getProfessionStatistics(null);
+            List<Map<String, Object>> professionStats = inspectionRecordService.getProfessionStatistics(null, null);
             return Result.success(professionStats);
         } catch (Exception e) {
             return Result.error(e.getMessage());
@@ -127,7 +127,7 @@ public class StatisticsController {
     @GetMapping("/location-chart")
     public Result<List<Map<String, Object>>> getLocationChartData() {
         try {
-            List<Map<String, Object>> locationStats = inspectionRecordService.getLocationStatistics(null);
+            List<Map<String, Object>> locationStats = inspectionRecordService.getLocationStatistics(null, null);
             return Result.success(locationStats);
         } catch (Exception e) {
             return Result.error(e.getMessage());
@@ -140,7 +140,7 @@ public class StatisticsController {
     @GetMapping("/responsible-chart")
     public Result<List<Map<String, Object>>> getResponsibleChartData() {
         try {
-            List<Map<String, Object>> responsibleStats = inspectionRecordService.getResponsiblePersonStatistics(null);
+            List<Map<String, Object>> responsibleStats = inspectionRecordService.getResponsiblePersonStatistics(null, null);
             return Result.success(responsibleStats);
         } catch (Exception e) {
             return Result.error(e.getMessage());

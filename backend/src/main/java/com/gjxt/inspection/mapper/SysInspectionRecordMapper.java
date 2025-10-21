@@ -25,8 +25,6 @@ public interface SysInspectionRecordMapper extends BaseMapper<SysInspectionRecor
      *
      * @param page 分页参数
      * @param taskId 任务ID
-     * @param groupLeaderId 检查组组长ID
-     * @param deputyLeaderId 检查组副组长ID
      * @param departmentId 所属部门ID
      * @param professionId 专业ID
      * @param natureId 性质界定ID
@@ -42,8 +40,6 @@ public interface SysInspectionRecordMapper extends BaseMapper<SysInspectionRecor
      */
     IPage<SysInspectionRecord> selectRecordPage(Page<SysInspectionRecord> page,
                                                 @Param("taskId") String taskId,
-                                                @Param("groupLeaderId") String groupLeaderId,
-                                                @Param("deputyLeaderId") String deputyLeaderId,
                                                 @Param("departmentId") String departmentId,
                                                 @Param("professionId") String professionId,
                                                 @Param("natureId") String natureId,
@@ -53,6 +49,8 @@ public interface SysInspectionRecordMapper extends BaseMapper<SysInspectionRecor
                                                 @Param("responsiblePersonId") String responsiblePersonId,
                                                 @Param("reviewerId") String reviewerId,
                                                 @Param("status") String status,
+                                                @Param("problemDescription") String problemDescription,
+                                                @Param("responsiblePerson") String responsiblePerson,
                                                 @Param("startTime") LocalDateTime startTime,
                                                 @Param("endTime") LocalDateTime endTime);
 
@@ -67,33 +65,78 @@ public interface SysInspectionRecordMapper extends BaseMapper<SysInspectionRecor
     /**
      * 统计各状态问题数量
      *
+     * @param departmentId 部门ID（可选）
      * @return 状态统计结果
      */
-    List<Map<String, Object>> selectStatusStatistics();
+    List<Map<String, Object>> selectStatusStatistics(@Param("departmentId") String departmentId);
 
     /**
      * 统计各专业问题数量
      *
      * @param status 状态（可选）
+     * @param departmentId 部门ID（可选）
      * @return 专业统计结果
      */
-    List<Map<String, Object>> selectProfessionStatistics(@Param("status") String status);
+    List<Map<String, Object>> selectProfessionStatistics(@Param("status") String status, @Param("departmentId") String departmentId);
 
     /**
      * 统计各部位问题数量
      *
      * @param status 状态（可选）
+     * @param departmentId 部门ID（可选）
      * @return 部位统计结果
      */
-    List<Map<String, Object>> selectLocationStatistics(@Param("status") String status);
+    List<Map<String, Object>> selectLocationStatistics(@Param("status") String status, @Param("departmentId") String departmentId);
 
     /**
      * 统计各责任人问题数量
      *
      * @param status 状态（可选）
+     * @param departmentId 部门ID（可选）
      * @return 责任人统计结果
      */
-    List<Map<String, Object>> selectResponsiblePersonStatistics(@Param("status") String status);
+    List<Map<String, Object>> selectResponsiblePersonStatistics(@Param("status") String status, @Param("departmentId") String departmentId);
+
+    /**
+     * 统计总记录数
+     *
+     * @param departmentId 部门ID（可选）
+     * @return 总记录数
+     */
+    Long selectTotalRecordCount(@Param("departmentId") String departmentId);
+
+    /**
+     * 根据状态统计记录数
+     *
+     * @param status 状态
+     * @param departmentId 部门ID（可选）
+     * @return 记录数
+     */
+    Long selectRecordCountByStatus(@Param("status") Integer status, @Param("departmentId") String departmentId);
+
+    /**
+     * 统计当月记录数
+     *
+     * @param departmentId 部门ID（可选）
+     * @return 当月记录数
+     */
+    Long selectCurrentMonthRecordCount(@Param("departmentId") String departmentId);
+
+    /**
+     * 统计上月记录数
+     *
+     * @param departmentId 部门ID（可选）
+     * @return 上月记录数
+     */
+    Long selectLastMonthRecordCount(@Param("departmentId") String departmentId);
+
+    /**
+     * 统计月度趋势
+     *
+     * @param departmentId 部门ID（可选）
+     * @return 月度趋势统计
+     */
+    List<Map<String, Object>> selectMonthlyTrendStatistics(@Param("departmentId") String departmentId);
 
     /**
      * 查询延迟整改的记录
@@ -118,7 +161,7 @@ public interface SysInspectionRecordMapper extends BaseMapper<SysInspectionRecor
      * @param status 状态
      * @return 巡检记录列表
      */
-    List<SysInspectionRecord> selectByUserId(@Param("userId") Long userId, @Param("status") String status);
+    List<SysInspectionRecord> selectByUserId(@Param("userId") String userId, @Param("status") String status);
 
     /**
      * 导出巡检记录数据
@@ -138,7 +181,10 @@ public interface SysInspectionRecordMapper extends BaseMapper<SysInspectionRecor
                                                @Param("checkerId") Long checkerId,
                                                @Param("responsiblePerson") String responsiblePerson,
                                                @Param("startTime") LocalDateTime startTime,
-                                               @Param("endTime") LocalDateTime endTime);
+                                               @Param("endTime") LocalDateTime endTime,
+                                               @Param("departmentId") String departmentId,
+                                               @Param("natureId") String natureId,
+                                               @Param("problemDescription") String problemDescription);
 
     /**
      * 根据日期范围统计状态数据
@@ -169,18 +215,20 @@ public interface SysInspectionRecordMapper extends BaseMapper<SysInspectionRecor
                                                                      @Param("endDate") String endDate);
 
     /**
-     * 按用户ID和状态查询当前周记录数量
+     * 查询用户本周巡检记录数量
      *
-     * @param userId 用户ID（可为空）
-     * @param status 状态（可为空）
-     * @param weekStart 本周开始时间
-     * @param weekEnd 本周结束时间
+     * @param userId 用户ID
+     * @param status 状态
+     * @param departmentId 部门ID（可选）
+     * @param weekStart 周开始时间
+     * @param weekEnd 周结束时间
      * @return 记录数量
      */
-    Long selectWeeklyRecordCountByUserAndStatus(@Param("userId") String userId,
-                                               @Param("status") Integer status,
-                                               @Param("weekStart") LocalDateTime weekStart,
-                                               @Param("weekEnd") LocalDateTime weekEnd);
+    Long selectWeeklyRecordCount(@Param("userId") String userId,
+                                @Param("status") Integer status,
+                                @Param("departmentId") String departmentId,
+                                @Param("weekStart") LocalDateTime weekStart,
+                                @Param("weekEnd") LocalDateTime weekEnd);
 
     /**
      * 执行自定义SQL查询
@@ -195,9 +243,11 @@ public interface SysInspectionRecordMapper extends BaseMapper<SysInspectionRecor
      *
      * @param page 分页参数
      * @param currentTime 当前时间
+     * @param departmentId 部门ID
      * @return 延迟整改记录分页列表
      */
     IPage<SysInspectionRecord> selectDelayedRectificationRecords(Page<SysInspectionRecord> page,
-                                                                @Param("currentTime") LocalDateTime currentTime);
+                                                                @Param("currentTime") LocalDateTime currentTime,
+                                                                @Param("departmentId") String departmentId);
 
 }

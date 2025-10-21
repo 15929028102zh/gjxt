@@ -112,16 +112,29 @@ public class FileUploadController {
             /* @ApiParam("图片文件") */ @RequestParam("file") MultipartFile file) {
         
         try {
+            // 添加调试日志
+            System.out.println("=== 图片上传调试信息 ===");
+            System.out.println("原始文件名: " + file.getOriginalFilename());
+            System.out.println("文件大小: " + file.getSize());
+            System.out.println("文件类型: " + file.getContentType());
+            
             String filePath = fileUploadUtil.uploadImage(file);
+            
+            System.out.println("生成的文件路径: " + filePath);
+            System.out.println("=== 图片上传调试信息结束 ===");
             
             Map<String, Object> result = new HashMap<>();
             result.put("fileName", file.getOriginalFilename());
+            result.put("url", filePath);  // 修改为url字段，与前端期望一致
             result.put("filePath", filePath);
             result.put("fileSize", file.getSize());
             result.put("fileSizeDesc", FileUploadUtil.getFileSizeDescription(file.getSize()));
             
             return Result.success(result);
-        } catch (Exception e) {            return Result.error("图片上传失败: " + e.getMessage());
+        } catch (Exception e) {
+            System.err.println("图片上传失败: " + e.getMessage());
+            e.printStackTrace();
+            return Result.error("图片上传失败: " + e.getMessage());
         }
     }
 

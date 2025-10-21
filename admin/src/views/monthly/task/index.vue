@@ -112,6 +112,7 @@
             <template #default="{ row }">
               <el-button type="primary" size="small" @click="handleView(row)">查看</el-button>
               <el-button 
+                v-if="hasMonthlyPermission()"
                 type="warning" 
                 size="small" 
                 @click="handleEdit(row)"
@@ -120,6 +121,7 @@
                 编辑
               </el-button>
               <el-button 
+                v-if="hasMonthlyPermission()"
                 type="info" 
                 size="small" 
                 @click="handleNotify(row)"
@@ -128,6 +130,7 @@
                 通知
               </el-button>
               <el-button 
+                v-if="hasMonthlyPermission()"
                 type="danger" 
                 size="small" 
                 @click="handleDelete(row)"
@@ -308,8 +311,11 @@
 import { ref, reactive, onMounted, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search, Refresh, Plus, Bell } from '@element-plus/icons-vue'
-import { monthlyTaskApi, professionApi } from '@/api/monthly'
+import { monthlyTaskApi } from '@/api/monthly'
 import { deptApi, userApi } from '@/api/system'
+import { getDictByType } from '@/api/monthlyRecord'
+import { gjbzDataApi } from '@/api/gjbz'
+import { hasMonthlyPermission } from '@/utils/permission'
 
 // 响应式数据
 const loading = ref(false)
@@ -480,7 +486,9 @@ const handleView = (row) => {
   currentTask.value = {
     ...row,
     // 映射专业ID为专业名称
-    professionName: professionOptions.value.find(p => p.id === row.professionId)?.dictLabel || row.professionId
+    professionName: professionOptions.value.find(p => p.id === row.professionId)?.dictLabel || row.professionId,
+    // 映射部门ID为部门名称
+    departmentName: row.departmentName || deptOptions.value.find(d => d.id === row.departmentId)?.deptName || '未知部门'
   }
   detailDialogVisible.value = true
 }
@@ -635,7 +643,7 @@ const loadOptions = async () => {
   try {
     const [deptResponse, professionResponse, userResponse] = await Promise.all([
       deptApi.getTree(),
-      professionApi.getList(),
+      gjbzDataApi.getTypes(),
       userApi.getPage({ size: 1000 }) // 获取所有用户
     ])
     
@@ -644,7 +652,11 @@ const loadOptions = async () => {
     }
     
     if (professionResponse.code === 200) {
-      professionOptions.value = professionResponse.data
+      professionOptions.value = professionResponse.data.map(item => ({
+        id: item,
+        professionName: item,
+        dictValue: item
+      }))
     }
     
     if (userResponse.code === 200) {

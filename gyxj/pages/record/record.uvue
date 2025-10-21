@@ -1,5 +1,16 @@
 <template>
-	<view class="container">
+	<scroll-view 
+		class="container" 
+		scroll-y="true" 
+		:style="{height: containerHeight + 'px'}"
+		enable-back-to-top="true"
+		refresher-enabled="true"
+		:refresher-triggered="isRefreshing"
+		refresher-default-style="black"
+		refresher-background="#f5f5f5"
+		@refresherrefresh="onRefresh"
+		@refresherrestore="onRefreshRestore"
+	>
 		<!-- 页面标题 -->
 		<view class="header">
 			<text class="title">问题列表</text>
@@ -7,7 +18,6 @@
 		</view>
 		
 		<!-- 记录列表 -->
-		<scroll-view class="record-list" scroll-y="true" enable-back-to-top="true" @scrolltolower="handleScrollToLower">
 			<view class="record-item" v-for="record in recordList" :key="record.id" @click="goToDetail(record)" @longpress="showDeleteConfirm(record.id, record.problemDescription)">
 				<view class="record-content">
 					<!-- 左侧内容区域 -->
@@ -41,14 +51,12 @@
 				<text class="loading-text">加载中...</text>
 			</view>
 			
-			<!-- 加载更多 -->
-			<view v-if="hasMore && recordList.length > 0" class="load-more" @click="loadMore">
-				<text class="load-more-text">{{loadingMore ? '加载中...' : '加载更多'}}</text>
-			</view>
-		</scroll-view>
-		
+		<!-- 加载更多 -->
+		<view v-if="hasMore && recordList.length > 0" class="load-more" @click="loadMore">
+			<text class="load-more-text">{{loadingMore ? '加载中...' : '加载更多'}}</text>
+		</view>
 
-	</view>
+	</scroll-view>
 </template>
 
 <script lang="uts">
@@ -80,7 +88,9 @@
 				pageSize: 20,
 				status: '0', // 默认显示待整改记录
 				isDelayed: false, // 是否是延迟整改
-				isReviewed: false // 是否是已复查记录
+				isReviewed: false, // 是否是已复查记录
+				isRefreshing: false, // 下拉刷新状态
+				containerHeight: 0 // 容器高度
 			}
 		},
 		onLoad(options: OnLoadOptions) {
@@ -98,6 +108,7 @@
 					this.isReviewed = true
 					this.status = '2' // 设置状态为已复查
 				}
+				this.initContainerHeight()
 				this.loadRecords()
 			
 			// 监听全局事件，当记录更新时刷新数据
@@ -136,6 +147,14 @@
 				this.refreshRecords()
 			},
 			
+			// 初始化容器高度
+			initContainerHeight() {
+				uni.getSystemInfo({
+					success: (res) => {
+						this.containerHeight = res.windowHeight
+					}
+				})
+			},
 
 			
 			async loadRecords() {
@@ -147,12 +166,25 @@
 			
 				const token = uni.getStorageSync('token')
 				
+				// 获取用户部门信息
+				let departmentId = ''
+				const userInfoData = uni.getStorageSync('userInfo')
+				const userInfoStr = userInfoData != null ? userInfoData as string : ''
+				if (userInfoStr != null && userInfoStr != '' && userInfoStr != 'null' && userInfoStr != 'undefined') {
+					try {
+					const parsedUserInfo = JSON.parse(userInfoStr) as UTSJSONObject
+					departmentId = parsedUserInfo.getString('deptId') ?? ''
+					} catch (error) {
+						console.error('用户信息JSON解析失败:', error)
+					}
+				}
+				
 				// 根据是否是延迟整改选择不同的API
 				let apiUrl = ''
 				if (this.isDelayed) {
-					apiUrl = getApiUrl(`/inspection-record/delayed?current=${this.pageNum}&size=${this.pageSize}`)
+					apiUrl = getApiUrl(`/inspection-record/delayed?current=${this.pageNum}&size=${this.pageSize}${departmentId != null && departmentId != '' ? '&departmentId=' + departmentId : ''}`)
 				} else {
-					apiUrl = getApiUrl(`/inspection-record/page?current=${this.pageNum}&size=${this.pageSize}&status=${this.status}`)
+					apiUrl = getApiUrl(`/inspection-record/page?current=${this.pageNum}&size=${this.pageSize}&status=${this.status}${departmentId != null && departmentId != '' ? '&departmentId=' + departmentId : ''}`)
 				}
 				
 				uni.request({
@@ -262,9 +294,9 @@
 			goToDetail(record: InspectionRecord) {
 				// 根据页面模式和记录状态进行不同的跳转
 				if (this.isDelayed) {
-					// 延迟整改模式：跳转到review.uvue页面（只读模式）
+					// 延迟整改模式：跳转到detail.uvue页面进行整改效果录入
 					uni.navigateTo({
-						url: `/pages/record/review?id=${record.id}&delayed=true`
+						url: `/pages/record/detail?id=${record.id}&delayed=true`
 					})
 				} else if (this.isReviewed) {
 					// 已复查记录模式：与延迟整改使用相同逻辑跳转到review.uvue页面
@@ -295,6 +327,25 @@
 				this.hasMore = true
 				this.loadRecords()
 				uni.stopPullDownRefresh()
+			},
+			
+			// 下拉刷新
+			onRefresh() {
+			this.isRefreshing = true
+			this.refreshRecords()
+			
+			// 设置定时器，3秒后自动关闭刷新状态
+			setTimeout(() => {
+				if (this.isRefreshing) {
+					this.isRefreshing = false
+					uni.stopPullDownRefresh()
+				}
+			}, 1500)
+		},
+			
+			// 下拉刷新恢复
+			onRefreshRestore() {
+				this.isRefreshing = false
 			},
 			
 			loadMore() {
@@ -375,11 +426,8 @@
 
 <style>
 	.container {
-		padding: 0;
 		background-color: #f5f5f5;
-		height: 100vh;
-		display: flex;
-		flex-direction: column;
+		width: 100%;
 	}
 	
 	.header {
@@ -400,17 +448,13 @@
 		color: #666;
 	}
 	
-	.record-list {
-		flex: 2;
-		padding: 10px;
-		padding-bottom: 280px;
-	}
-	
 	.record-item {
 		background: #fff;
+		margin: 10px;
 		margin-bottom: 1px;
 		padding: 15px 20px;
 		border-bottom: 1px solid #f0f0f0;
+		border-radius: 8px;
 	}
 	
 	.record-content {

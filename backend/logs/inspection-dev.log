@@ -1,0 +1,236 @@
+2025-09-16 11:53:47 [main] INFO  com.gjxt.inspection.InspectionSystemApplication - Starting InspectionSystemApplication using Java 1.8.0_391 on ���뷲������ with PID 47272 (F:\gjxt\backend\target\classes started by 174344 in F:\gjxt\backend)
+2025-09-16 11:53:47 [main] DEBUG com.gjxt.inspection.InspectionSystemApplication - Running with Spring Boot v2.7.18, Spring v5.3.31
+2025-09-16 11:53:47 [main] INFO  com.gjxt.inspection.InspectionSystemApplication - The following 1 profile is active: "dev"
+2025-09-16 11:53:47 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Identified candidate component class: file [F:\gjxt\backend\target\classes\com\gjxt\inspection\mapper\GjbzDataMapper.class]
+2025-09-16 11:53:47 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Identified candidate component class: file [F:\gjxt\backend\target\classes\com\gjxt\inspection\mapper\MonthlyInspectionRecordMapper.class]
+2025-09-16 11:53:47 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Identified candidate component class: file [F:\gjxt\backend\target\classes\com\gjxt\inspection\mapper\MonthlyInspectionTaskMapper.class]
+2025-09-16 11:53:47 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Identified candidate component class: file [F:\gjxt\backend\target\classes\com\gjxt\inspection\mapper\SysDeptMapper.class]
+2025-09-16 11:53:47 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Identified candidate component class: file [F:\gjxt\backend\target\classes\com\gjxt\inspection\mapper\SysDictionaryMapper.class]
+2025-09-16 11:53:47 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Identified candidate component class: file [F:\gjxt\backend\target\classes\com\gjxt\inspection\mapper\SysInspectionRecordMapper.class]
+2025-09-16 11:53:47 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Identified candidate component class: file [F:\gjxt\backend\target\classes\com\gjxt\inspection\mapper\SysInspectionTaskMapper.class]
+2025-09-16 11:53:47 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Identified candidate component class: file [F:\gjxt\backend\target\classes\com\gjxt\inspection\mapper\SysUserMapper.class]
+2025-09-16 11:53:47 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Creating MapperFactoryBean with name 'gjbzDataMapper' and 'com.gjxt.inspection.mapper.GjbzDataMapper' mapperInterface
+2025-09-16 11:53:47 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Enabling autowire by type for MapperFactoryBean with name 'gjbzDataMapper'.
+2025-09-16 11:53:47 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Creating MapperFactoryBean with name 'monthlyInspectionRecordMapper' and 'com.gjxt.inspection.mapper.MonthlyInspectionRecordMapper' mapperInterface
+2025-09-16 11:53:47 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Enabling autowire by type for MapperFactoryBean with name 'monthlyInspectionRecordMapper'.
+2025-09-16 11:53:47 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Creating MapperFactoryBean with name 'monthlyInspectionTaskMapper' and 'com.gjxt.inspection.mapper.MonthlyInspectionTaskMapper' mapperInterface
+2025-09-16 11:53:47 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Enabling autowire by type for MapperFactoryBean with name 'monthlyInspectionTaskMapper'.
+2025-09-16 11:53:47 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Creating MapperFactoryBean with name 'sysDeptMapper' and 'com.gjxt.inspection.mapper.SysDeptMapper' mapperInterface
+2025-09-16 11:53:47 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Enabling autowire by type for MapperFactoryBean with name 'sysDeptMapper'.
+2025-09-16 11:53:47 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Creating MapperFactoryBean with name 'sysDictionaryMapper' and 'com.gjxt.inspection.mapper.SysDictionaryMapper' mapperInterface
+2025-09-16 11:53:47 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Enabling autowire by type for MapperFactoryBean with name 'sysDictionaryMapper'.
+2025-09-16 11:53:47 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Creating MapperFactoryBean with name 'sysInspectionRecordMapper' and 'com.gjxt.inspection.mapper.SysInspectionRecordMapper' mapperInterface
+2025-09-16 11:53:47 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Enabling autowire by type for MapperFactoryBean with name 'sysInspectionRecordMapper'.
+2025-09-16 11:53:47 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Creating MapperFactoryBean with name 'sysInspectionTaskMapper' and 'com.gjxt.inspection.mapper.SysInspectionTaskMapper' mapperInterface
+2025-09-16 11:53:47 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Enabling autowire by type for MapperFactoryBean with name 'sysInspectionTaskMapper'.
+2025-09-16 11:53:47 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Creating MapperFactoryBean with name 'sysUserMapper' and 'com.gjxt.inspection.mapper.SysUserMapper' mapperInterface
+2025-09-16 11:53:47 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Enabling autowire by type for MapperFactoryBean with name 'sysUserMapper'.
+2025-09-16 11:53:49 [main] INFO  o.s.boot.web.embedded.tomcat.TomcatWebServer - Tomcat initialized with port(s): 8081 (http)
+2025-09-16 11:53:49 [main] INFO  org.apache.catalina.core.StandardService - Starting service [Tomcat]
+2025-09-16 11:53:49 [main] INFO  org.apache.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/9.0.83]
+2025-09-16 11:53:49 [main] INFO  o.a.c.c.ContainerBase.[Tomcat].[localhost].[/api] - Initializing Spring embedded WebApplicationContext
+2025-09-16 11:53:49 [main] INFO  o.s.b.w.s.c.ServletWebServerApplicationContext - Root WebApplicationContext: initialization completed in 1893 ms
+2025-09-16 11:53:49 [main] INFO  c.a.d.s.b.a.DruidDataSourceAutoConfigure - Init DruidDataSource
+2025-09-16 11:53:49 [main] INFO  com.alibaba.druid.pool.DruidDataSource - {dataSource-1} inited
+2025-09-16 11:53:51 [main] WARN  o.s.b.a.s.s.UserDetailsServiceAutoConfiguration - 
+
+Using generated security password: eff1cbe7-881f-44e4-a012-7ba8b744d178
+
+This generated password is for development use only. Your security configuration must be updated before running your application in production.
+
+2025-09-16 11:53:51 [main] DEBUG o.s.s.w.a.e.ExpressionBasedFilterInvocationSecurityMetadataSource - Adding web access control expression [permitAll] for any request
+2025-09-16 11:53:51 [main] INFO  o.s.security.web.DefaultSecurityFilterChain - Will secure any request with [org.springframework.security.web.session.DisableEncodeUrlFilter@fe87ddd, org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter@4eea94a4, org.springframework.security.web.context.SecurityContextPersistenceFilter@cedee22, org.springframework.security.web.header.HeaderWriterFilter@1faf386c, org.springframework.security.web.authentication.logout.LogoutFilter@40ac6b76, org.springframework.security.web.savedrequest.RequestCacheAwareFilter@5b47731f, org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter@787508ca, org.springframework.security.web.authentication.AnonymousAuthenticationFilter@7c281eb8, org.springframework.security.web.session.SessionManagementFilter@796f632b, org.springframework.security.web.access.ExceptionTranslationFilter@483b0690, org.springframework.security.web.access.intercept.FilterSecurityInterceptor@889a8a8]
+2025-09-16 11:53:52 [main] INFO  org.quartz.impl.StdSchedulerFactory - Using default implementation for ThreadExecutor
+2025-09-16 11:53:52 [main] INFO  org.quartz.core.SchedulerSignalerImpl - Initialized Scheduler Signaller of type: class org.quartz.core.SchedulerSignalerImpl
+2025-09-16 11:53:52 [main] INFO  org.quartz.core.QuartzScheduler - Quartz Scheduler v.2.3.2 created.
+2025-09-16 11:53:52 [main] INFO  org.quartz.simpl.RAMJobStore - RAMJobStore initialized.
+2025-09-16 11:53:52 [main] INFO  org.quartz.core.QuartzScheduler - Scheduler meta-data: Quartz Scheduler (v2.3.2) 'quartzScheduler' with instanceId 'NON_CLUSTERED'
+  Scheduler class: 'org.quartz.core.QuartzScheduler' - running locally.
+  NOT STARTED.
+  Currently in standby mode.
+  Number of jobs executed: 0
+  Using thread pool 'org.quartz.simpl.SimpleThreadPool' - with 10 threads.
+  Using job-store 'org.quartz.simpl.RAMJobStore' - which does not support persistence. and is not clustered.
+
+2025-09-16 11:53:52 [main] INFO  org.quartz.impl.StdSchedulerFactory - Quartz scheduler 'quartzScheduler' initialized from an externally provided properties instance.
+2025-09-16 11:53:52 [main] INFO  org.quartz.impl.StdSchedulerFactory - Quartz scheduler version: 2.3.2
+2025-09-16 11:53:52 [main] INFO  org.quartz.core.QuartzScheduler - JobFactory set to: org.springframework.scheduling.quartz.SpringBeanJobFactory@2c30c81d
+2025-09-16 11:53:52 [main] INFO  o.s.boot.web.embedded.tomcat.TomcatWebServer - Tomcat started on port(s): 8081 (http) with context path '/api'
+2025-09-16 11:53:52 [main] INFO  o.s.scheduling.quartz.SchedulerFactoryBean - Starting Quartz Scheduler now
+2025-09-16 11:53:52 [main] INFO  org.quartz.core.QuartzScheduler - Scheduler quartzScheduler_$_NON_CLUSTERED started.
+2025-09-16 11:53:52 [main] INFO  com.gjxt.inspection.InspectionSystemApplication - Started InspectionSystemApplication in 5.481 seconds (JVM running for 5.851)
+2025-09-16 11:54:18 [http-nio- 192.168.75.128-8081-exec-1] INFO  o.a.c.c.ContainerBase.[Tomcat].[localhost].[/api] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+2025-09-16 11:54:18 [http-nio- 192.168.75.128-8081-exec-1] INFO  org.springframework.web.servlet.DispatcherServlet - Initializing Servlet 'dispatcherServlet'
+2025-09-16 11:54:18 [http-nio- 192.168.75.128-8081-exec-1] INFO  org.springframework.web.servlet.DispatcherServlet - Completed initialization in 1 ms
+2025-09-16 11:54:18 [http-nio- 192.168.75.128-8081-exec-1] DEBUG org.springframework.security.web.FilterChainProxy - Securing GET /files/images/20250831/a48c795f232f4627bace90641467c6ed.jpg
+2025-09-16 11:54:18 [http-nio- 192.168.75.128-8081-exec-1] DEBUG o.s.s.web.context.SecurityContextPersistenceFilter - Set SecurityContextHolder to empty SecurityContext
+2025-09-16 11:54:18 [http-nio- 192.168.75.128-8081-exec-1] DEBUG o.s.s.w.a.AnonymousAuthenticationFilter - Set SecurityContextHolder to anonymous SecurityContext
+2025-09-16 11:54:18 [http-nio- 192.168.75.128-8081-exec-1] DEBUG o.s.s.w.access.intercept.FilterSecurityInterceptor - Authorized filter invocation [GET /files/images/20250831/a48c795f232f4627bace90641467c6ed.jpg] with attributes [permitAll]
+2025-09-16 11:54:18 [http-nio- 192.168.75.128-8081-exec-1] DEBUG org.springframework.security.web.FilterChainProxy - Secured GET /files/images/20250831/a48c795f232f4627bace90641467c6ed.jpg
+2025-09-16 11:54:18 [http-nio- 192.168.75.128-8081-exec-1] DEBUG o.s.s.w.c.HttpSessionSecurityContextRepository - Did not store anonymous SecurityContext
+2025-09-16 11:54:18 [http-nio- 192.168.75.128-8081-exec-1] DEBUG o.s.s.w.c.HttpSessionSecurityContextRepository - Did not store anonymous SecurityContext
+2025-09-16 11:54:18 [http-nio- 192.168.75.128-8081-exec-1] DEBUG o.s.s.web.context.SecurityContextPersistenceFilter - Cleared SecurityContextHolder to complete request
+2025-09-16 11:54:18 [http-nio- 192.168.75.128-8081-exec-1] DEBUG org.springframework.security.web.FilterChainProxy - Securing GET /error
+2025-09-16 11:54:18 [http-nio- 192.168.75.128-8081-exec-1] DEBUG o.s.s.web.context.SecurityContextPersistenceFilter - Set SecurityContextHolder to empty SecurityContext
+2025-09-16 11:54:18 [http-nio- 192.168.75.128-8081-exec-1] DEBUG o.s.s.w.a.AnonymousAuthenticationFilter - Set SecurityContextHolder to anonymous SecurityContext
+2025-09-16 11:54:18 [http-nio- 192.168.75.128-8081-exec-1] DEBUG org.springframework.security.web.FilterChainProxy - Secured GET /error
+2025-09-16 11:54:19 [http-nio- 192.168.75.128-8081-exec-1] DEBUG o.s.s.w.c.HttpSessionSecurityContextRepository - Did not store anonymous SecurityContext
+2025-09-16 11:54:19 [http-nio- 192.168.75.128-8081-exec-1] DEBUG o.s.s.w.c.HttpSessionSecurityContextRepository - Did not store anonymous SecurityContext
+2025-09-16 11:54:19 [http-nio- 192.168.75.128-8081-exec-1] DEBUG o.s.s.web.context.SecurityContextPersistenceFilter - Cleared SecurityContextHolder to complete request
+2025-09-16 11:54:37 [http-nio- 192.168.75.128-8081-exec-2] DEBUG org.springframework.security.web.FilterChainProxy - Securing GET /files/images/20250831/a48c795f232f4627bace90641467c6ed.jpg
+2025-09-16 11:54:37 [http-nio- 192.168.75.128-8081-exec-2] DEBUG o.s.s.web.context.SecurityContextPersistenceFilter - Set SecurityContextHolder to empty SecurityContext
+2025-09-16 11:54:37 [http-nio- 192.168.75.128-8081-exec-2] DEBUG o.s.s.w.a.AnonymousAuthenticationFilter - Set SecurityContextHolder to anonymous SecurityContext
+2025-09-16 11:54:37 [http-nio- 192.168.75.128-8081-exec-2] DEBUG o.s.s.w.access.intercept.FilterSecurityInterceptor - Authorized filter invocation [GET /files/images/20250831/a48c795f232f4627bace90641467c6ed.jpg] with attributes [permitAll]
+2025-09-16 11:54:37 [http-nio- 192.168.75.128-8081-exec-2] DEBUG org.springframework.security.web.FilterChainProxy - Secured GET /files/images/20250831/a48c795f232f4627bace90641467c6ed.jpg
+2025-09-16 11:54:37 [http-nio- 192.168.75.128-8081-exec-2] DEBUG o.s.s.w.c.HttpSessionSecurityContextRepository - Did not store anonymous SecurityContext
+2025-09-16 11:54:37 [http-nio- 192.168.75.128-8081-exec-2] DEBUG o.s.s.w.c.HttpSessionSecurityContextRepository - Did not store anonymous SecurityContext
+2025-09-16 11:54:37 [http-nio- 192.168.75.128-8081-exec-2] DEBUG o.s.s.web.context.SecurityContextPersistenceFilter - Cleared SecurityContextHolder to complete request
+2025-09-16 11:54:37 [http-nio- 192.168.75.128-8081-exec-2] DEBUG org.springframework.security.web.FilterChainProxy - Securing GET /error
+2025-09-16 11:54:37 [http-nio- 192.168.75.128-8081-exec-2] DEBUG o.s.s.web.context.SecurityContextPersistenceFilter - Set SecurityContextHolder to empty SecurityContext
+2025-09-16 11:54:37 [http-nio- 192.168.75.128-8081-exec-2] DEBUG o.s.s.w.a.AnonymousAuthenticationFilter - Set SecurityContextHolder to anonymous SecurityContext
+2025-09-16 11:54:37 [http-nio- 192.168.75.128-8081-exec-2] DEBUG org.springframework.security.web.FilterChainProxy - Secured GET /error
+2025-09-16 11:54:37 [http-nio- 192.168.75.128-8081-exec-2] DEBUG o.s.s.w.c.HttpSessionSecurityContextRepository - Did not store anonymous SecurityContext
+2025-09-16 11:54:37 [http-nio- 192.168.75.128-8081-exec-2] DEBUG o.s.s.w.c.HttpSessionSecurityContextRepository - Did not store anonymous SecurityContext
+2025-09-16 11:54:37 [http-nio- 192.168.75.128-8081-exec-2] DEBUG o.s.s.web.context.SecurityContextPersistenceFilter - Cleared SecurityContextHolder to complete request
+2025-09-16 11:56:03 [http-nio- 192.168.75.128-8081-exec-4] DEBUG org.springframework.security.web.FilterChainProxy - Securing GET /files/images/20250831/a48c795f232f4627bace90641467c6ed.jpg
+2025-09-16 11:56:03 [http-nio- 192.168.75.128-8081-exec-4] DEBUG o.s.s.web.context.SecurityContextPersistenceFilter - Set SecurityContextHolder to empty SecurityContext
+2025-09-16 11:56:03 [http-nio- 192.168.75.128-8081-exec-4] DEBUG o.s.s.w.a.AnonymousAuthenticationFilter - Set SecurityContextHolder to anonymous SecurityContext
+2025-09-16 11:56:03 [http-nio- 192.168.75.128-8081-exec-4] DEBUG o.s.s.w.access.intercept.FilterSecurityInterceptor - Authorized filter invocation [GET /files/images/20250831/a48c795f232f4627bace90641467c6ed.jpg] with attributes [permitAll]
+2025-09-16 11:56:03 [http-nio- 192.168.75.128-8081-exec-4] DEBUG org.springframework.security.web.FilterChainProxy - Secured GET /files/images/20250831/a48c795f232f4627bace90641467c6ed.jpg
+2025-09-16 11:56:03 [http-nio- 192.168.75.128-8081-exec-4] DEBUG o.s.s.w.c.HttpSessionSecurityContextRepository - Did not store anonymous SecurityContext
+2025-09-16 11:56:03 [http-nio- 192.168.75.128-8081-exec-4] DEBUG o.s.s.w.c.HttpSessionSecurityContextRepository - Did not store anonymous SecurityContext
+2025-09-16 11:56:03 [http-nio- 192.168.75.128-8081-exec-4] DEBUG o.s.s.web.context.SecurityContextPersistenceFilter - Cleared SecurityContextHolder to complete request
+2025-09-16 11:56:03 [http-nio- 192.168.75.128-8081-exec-4] DEBUG org.springframework.security.web.FilterChainProxy - Securing GET /error
+2025-09-16 11:56:03 [http-nio- 192.168.75.128-8081-exec-4] DEBUG o.s.s.web.context.SecurityContextPersistenceFilter - Set SecurityContextHolder to empty SecurityContext
+2025-09-16 11:56:03 [http-nio- 192.168.75.128-8081-exec-4] DEBUG o.s.s.w.a.AnonymousAuthenticationFilter - Set SecurityContextHolder to anonymous SecurityContext
+2025-09-16 11:56:03 [http-nio- 192.168.75.128-8081-exec-4] DEBUG org.springframework.security.web.FilterChainProxy - Secured GET /error
+2025-09-16 11:56:03 [http-nio- 192.168.75.128-8081-exec-4] DEBUG o.s.s.w.c.HttpSessionSecurityContextRepository - Did not store anonymous SecurityContext
+2025-09-16 11:56:03 [http-nio- 192.168.75.128-8081-exec-4] DEBUG o.s.s.w.c.HttpSessionSecurityContextRepository - Did not store anonymous SecurityContext
+2025-09-16 11:56:03 [http-nio- 192.168.75.128-8081-exec-4] DEBUG o.s.s.web.context.SecurityContextPersistenceFilter - Cleared SecurityContextHolder to complete request
+2025-09-16 11:56:19 [http-nio- 192.168.75.128-8081-exec-5] DEBUG org.springframework.security.web.FilterChainProxy - Securing GET /dictionary/type/���ʽ綨
+2025-09-16 11:56:19 [http-nio- 192.168.75.128-8081-exec-8] DEBUG org.springframework.security.web.FilterChainProxy - Securing GET /inspection-record/page?current=1&size=20&problemDescription=&responsiblePerson=&professionId=&natureId=&departmentId=&status=0,1,2
+2025-09-16 11:56:19 [http-nio- 192.168.75.128-8081-exec-6] DEBUG org.springframework.security.web.FilterChainProxy - Securing GET /dept/list
+2025-09-16 11:56:19 [http-nio- 192.168.75.128-8081-exec-7] DEBUG org.springframework.security.web.FilterChainProxy - Securing GET /dictionary/type/רҵ
+2025-09-16 11:56:19 [http-nio- 192.168.75.128-8081-exec-5] DEBUG o.s.s.web.context.SecurityContextPersistenceFilter - Set SecurityContextHolder to empty SecurityContext
+2025-09-16 11:56:19 [http-nio- 192.168.75.128-8081-exec-8] DEBUG o.s.s.web.context.SecurityContextPersistenceFilter - Set SecurityContextHolder to empty SecurityContext
+2025-09-16 11:56:19 [http-nio- 192.168.75.128-8081-exec-6] DEBUG o.s.s.web.context.SecurityContextPersistenceFilter - Set SecurityContextHolder to empty SecurityContext
+2025-09-16 11:56:19 [http-nio- 192.168.75.128-8081-exec-8] DEBUG o.s.s.w.a.AnonymousAuthenticationFilter - Set SecurityContextHolder to anonymous SecurityContext
+2025-09-16 11:56:19 [http-nio- 192.168.75.128-8081-exec-5] DEBUG o.s.s.w.a.AnonymousAuthenticationFilter - Set SecurityContextHolder to anonymous SecurityContext
+2025-09-16 11:56:19 [http-nio- 192.168.75.128-8081-exec-7] DEBUG o.s.s.web.context.SecurityContextPersistenceFilter - Set SecurityContextHolder to empty SecurityContext
+2025-09-16 11:56:19 [http-nio- 192.168.75.128-8081-exec-6] DEBUG o.s.s.w.a.AnonymousAuthenticationFilter - Set SecurityContextHolder to anonymous SecurityContext
+2025-09-16 11:56:19 [http-nio- 192.168.75.128-8081-exec-7] DEBUG o.s.s.w.a.AnonymousAuthenticationFilter - Set SecurityContextHolder to anonymous SecurityContext
+2025-09-16 11:56:19 [http-nio- 192.168.75.128-8081-exec-5] DEBUG o.s.s.w.access.intercept.FilterSecurityInterceptor - Authorized filter invocation [GET /dictionary/type/���ʽ綨] with attributes [permitAll]
+2025-09-16 11:56:19 [http-nio- 192.168.75.128-8081-exec-6] DEBUG o.s.s.w.access.intercept.FilterSecurityInterceptor - Authorized filter invocation [GET /dept/list] with attributes [permitAll]
+2025-09-16 11:56:19 [http-nio- 192.168.75.128-8081-exec-5] DEBUG org.springframework.security.web.FilterChainProxy - Secured GET /dictionary/type/���ʽ綨
+2025-09-16 11:56:19 [http-nio- 192.168.75.128-8081-exec-7] DEBUG o.s.s.w.access.intercept.FilterSecurityInterceptor - Authorized filter invocation [GET /dictionary/type/רҵ] with attributes [permitAll]
+2025-09-16 11:56:19 [http-nio- 192.168.75.128-8081-exec-8] DEBUG o.s.s.w.access.intercept.FilterSecurityInterceptor - Authorized filter invocation [GET /inspection-record/page?current=1&size=20&problemDescription=&responsiblePerson=&professionId=&natureId=&departmentId=&status=0,1,2] with attributes [permitAll]
+2025-09-16 11:56:19 [http-nio- 192.168.75.128-8081-exec-6] DEBUG org.springframework.security.web.FilterChainProxy - Secured GET /dept/list
+2025-09-16 11:56:19 [http-nio- 192.168.75.128-8081-exec-7] DEBUG org.springframework.security.web.FilterChainProxy - Secured GET /dictionary/type/רҵ
+2025-09-16 11:56:19 [http-nio- 192.168.75.128-8081-exec-8] DEBUG org.springframework.security.web.FilterChainProxy - Secured GET /inspection-record/page?current=1&size=20&problemDescription=&responsiblePerson=&professionId=&natureId=&departmentId=&status=0,1,2
+2025-09-16 11:56:20 [http-nio- 192.168.75.128-8081-exec-9] DEBUG org.springframework.security.web.FilterChainProxy - Securing GET /dept/list
+2025-09-16 11:56:20 [http-nio- 192.168.75.128-8081-exec-1] DEBUG org.springframework.security.web.FilterChainProxy - Securing GET /dictionary/type/���ʽ綨
+2025-09-16 11:56:20 [http-nio- 192.168.75.128-8081-exec-10] DEBUG org.springframework.security.web.FilterChainProxy - Securing GET /dictionary/type/רҵ
+2025-09-16 11:56:20 [http-nio- 192.168.75.128-8081-exec-2] DEBUG org.springframework.security.web.FilterChainProxy - Securing GET /inspection-record/page?current=1&size=20&problemDescription=&responsiblePerson=&professionId=&natureId=&departmentId=&status=0,1,2
+2025-09-16 11:56:20 [http-nio- 192.168.75.128-8081-exec-9] DEBUG o.s.s.web.context.SecurityContextPersistenceFilter - Set SecurityContextHolder to empty SecurityContext
+2025-09-16 11:56:20 [http-nio- 192.168.75.128-8081-exec-1] DEBUG o.s.s.web.context.SecurityContextPersistenceFilter - Set SecurityContextHolder to empty SecurityContext
+2025-09-16 11:56:20 [http-nio- 192.168.75.128-8081-exec-10] DEBUG o.s.s.web.context.SecurityContextPersistenceFilter - Set SecurityContextHolder to empty SecurityContext
+2025-09-16 11:56:20 [http-nio- 192.168.75.128-8081-exec-1] DEBUG o.s.s.w.a.AnonymousAuthenticationFilter - Set SecurityContextHolder to anonymous SecurityContext
+2025-09-16 11:56:20 [http-nio- 192.168.75.128-8081-exec-2] DEBUG o.s.s.web.context.SecurityContextPersistenceFilter - Set SecurityContextHolder to empty SecurityContext
+2025-09-16 11:56:20 [http-nio- 192.168.75.128-8081-exec-10] DEBUG o.s.s.w.a.AnonymousAuthenticationFilter - Set SecurityContextHolder to anonymous SecurityContext
+2025-09-16 11:56:20 [http-nio- 192.168.75.128-8081-exec-9] DEBUG o.s.s.w.a.AnonymousAuthenticationFilter - Set SecurityContextHolder to anonymous SecurityContext
+2025-09-16 11:56:20 [http-nio- 192.168.75.128-8081-exec-2] DEBUG o.s.s.w.a.AnonymousAuthenticationFilter - Set SecurityContextHolder to anonymous SecurityContext
+2025-09-16 11:56:20 [http-nio- 192.168.75.128-8081-exec-1] DEBUG o.s.s.w.access.intercept.FilterSecurityInterceptor - Authorized filter invocation [GET /dictionary/type/���ʽ綨] with attributes [permitAll]
+2025-09-16 11:56:20 [http-nio- 192.168.75.128-8081-exec-10] DEBUG o.s.s.w.access.intercept.FilterSecurityInterceptor - Authorized filter invocation [GET /dictionary/type/רҵ] with attributes [permitAll]
+2025-09-16 11:56:20 [http-nio- 192.168.75.128-8081-exec-9] DEBUG o.s.s.w.access.intercept.FilterSecurityInterceptor - Authorized filter invocation [GET /dept/list] with attributes [permitAll]
+2025-09-16 11:56:20 [http-nio- 192.168.75.128-8081-exec-2] DEBUG o.s.s.w.access.intercept.FilterSecurityInterceptor - Authorized filter invocation [GET /inspection-record/page?current=1&size=20&problemDescription=&responsiblePerson=&professionId=&natureId=&departmentId=&status=0,1,2] with attributes [permitAll]
+2025-09-16 11:56:20 [http-nio- 192.168.75.128-8081-exec-1] DEBUG org.springframework.security.web.FilterChainProxy - Secured GET /dictionary/type/���ʽ綨
+2025-09-16 11:56:20 [http-nio- 192.168.75.128-8081-exec-10] DEBUG org.springframework.security.web.FilterChainProxy - Secured GET /dictionary/type/רҵ
+2025-09-16 11:56:20 [http-nio- 192.168.75.128-8081-exec-9] DEBUG org.springframework.security.web.FilterChainProxy - Secured GET /dept/list
+2025-09-16 11:56:20 [http-nio- 192.168.75.128-8081-exec-2] DEBUG org.springframework.security.web.FilterChainProxy - Secured GET /inspection-record/page?current=1&size=20&problemDescription=&responsiblePerson=&professionId=&natureId=&departmentId=&status=0,1,2
+2025-09-16 11:56:20 [http-nio- 192.168.75.128-8081-exec-3] DEBUG org.springframework.security.web.FilterChainProxy - Securing GET /files/images/20250831/a48c795f232f4627bace90641467c6ed.jpg
+2025-09-16 11:56:20 [http-nio- 192.168.75.128-8081-exec-3] DEBUG o.s.s.web.context.SecurityContextPersistenceFilter - Set SecurityContextHolder to empty SecurityContext
+2025-09-16 11:56:20 [http-nio- 192.168.75.128-8081-exec-3] DEBUG o.s.s.w.a.AnonymousAuthenticationFilter - Set SecurityContextHolder to anonymous SecurityContext
+2025-09-16 11:56:20 [http-nio- 192.168.75.128-8081-exec-3] DEBUG o.s.s.w.access.intercept.FilterSecurityInterceptor - Authorized filter invocation [GET /files/images/20250831/a48c795f232f4627bace90641467c6ed.jpg] with attributes [permitAll]
+2025-09-16 11:56:20 [http-nio- 192.168.75.128-8081-exec-3] DEBUG org.springframework.security.web.FilterChainProxy - Secured GET /files/images/20250831/a48c795f232f4627bace90641467c6ed.jpg
+2025-09-16 11:56:20 [http-nio- 192.168.75.128-8081-exec-3] DEBUG o.s.s.w.c.HttpSessionSecurityContextRepository - Did not store anonymous SecurityContext
+2025-09-16 11:56:20 [http-nio- 192.168.75.128-8081-exec-3] DEBUG o.s.s.w.c.HttpSessionSecurityContextRepository - Did not store anonymous SecurityContext
+2025-09-16 11:56:20 [http-nio- 192.168.75.128-8081-exec-3] DEBUG o.s.s.web.context.SecurityContextPersistenceFilter - Cleared SecurityContextHolder to complete request
+2025-09-16 11:56:20 [http-nio- 192.168.75.128-8081-exec-3] DEBUG org.springframework.security.web.FilterChainProxy - Securing GET /error
+2025-09-16 11:56:20 [http-nio- 192.168.75.128-8081-exec-3] DEBUG o.s.s.web.context.SecurityContextPersistenceFilter - Set SecurityContextHolder to empty SecurityContext
+2025-09-16 11:56:20 [http-nio- 192.168.75.128-8081-exec-3] DEBUG o.s.s.w.a.AnonymousAuthenticationFilter - Set SecurityContextHolder to anonymous SecurityContext
+2025-09-16 11:56:20 [http-nio- 192.168.75.128-8081-exec-3] DEBUG org.springframework.security.web.FilterChainProxy - Secured GET /error
+2025-09-16 11:56:20 [http-nio- 192.168.75.128-8081-exec-3] DEBUG o.s.s.w.c.HttpSessionSecurityContextRepository - Did not store anonymous SecurityContext
+2025-09-16 11:56:20 [http-nio- 192.168.75.128-8081-exec-3] DEBUG o.s.s.w.c.HttpSessionSecurityContextRepository - Did not store anonymous SecurityContext
+2025-09-16 11:56:20 [http-nio- 192.168.75.128-8081-exec-3] DEBUG o.s.s.web.context.SecurityContextPersistenceFilter - Cleared SecurityContextHolder to complete request
+2025-09-16 11:56:20 [http-nio- 192.168.75.128-8081-exec-1] DEBUG o.s.s.w.c.HttpSessionSecurityContextRepository - Did not store anonymous SecurityContext
+2025-09-16 11:56:20 [http-nio- 192.168.75.128-8081-exec-5] DEBUG o.s.s.w.c.HttpSessionSecurityContextRepository - Did not store anonymous SecurityContext
+2025-09-16 11:56:20 [http-nio- 192.168.75.128-8081-exec-7] DEBUG o.s.s.w.c.HttpSessionSecurityContextRepository - Did not store anonymous SecurityContext
+2025-09-16 11:56:20 [http-nio- 192.168.75.128-8081-exec-10] DEBUG o.s.s.w.c.HttpSessionSecurityContextRepository - Did not store anonymous SecurityContext
+2025-09-16 11:56:20 [http-nio- 192.168.75.128-8081-exec-6] DEBUG o.s.s.w.c.HttpSessionSecurityContextRepository - Did not store anonymous SecurityContext
+2025-09-16 11:56:20 [http-nio- 192.168.75.128-8081-exec-9] DEBUG o.s.s.w.c.HttpSessionSecurityContextRepository - Did not store anonymous SecurityContext
+2025-09-16 11:56:20 [http-nio- 192.168.75.128-8081-exec-7] DEBUG o.s.s.w.c.HttpSessionSecurityContextRepository - Did not store anonymous SecurityContext
+2025-09-16 11:56:20 [http-nio- 192.168.75.128-8081-exec-1] DEBUG o.s.s.w.c.HttpSessionSecurityContextRepository - Did not store anonymous SecurityContext
+2025-09-16 11:56:20 [http-nio- 192.168.75.128-8081-exec-10] DEBUG o.s.s.w.c.HttpSessionSecurityContextRepository - Did not store anonymous SecurityContext
+2025-09-16 11:56:20 [http-nio- 192.168.75.128-8081-exec-5] DEBUG o.s.s.w.c.HttpSessionSecurityContextRepository - Did not store anonymous SecurityContext
+2025-09-16 11:56:20 [http-nio- 192.168.75.128-8081-exec-6] DEBUG o.s.s.w.c.HttpSessionSecurityContextRepository - Did not store anonymous SecurityContext
+2025-09-16 11:56:20 [http-nio- 192.168.75.128-8081-exec-9] DEBUG o.s.s.w.c.HttpSessionSecurityContextRepository - Did not store anonymous SecurityContext
+2025-09-16 11:56:20 [http-nio- 192.168.75.128-8081-exec-9] DEBUG o.s.s.web.context.SecurityContextPersistenceFilter - Cleared SecurityContextHolder to complete request
+2025-09-16 11:56:20 [http-nio- 192.168.75.128-8081-exec-7] DEBUG o.s.s.web.context.SecurityContextPersistenceFilter - Cleared SecurityContextHolder to complete request
+2025-09-16 11:56:20 [http-nio- 192.168.75.128-8081-exec-1] DEBUG o.s.s.web.context.SecurityContextPersistenceFilter - Cleared SecurityContextHolder to complete request
+2025-09-16 11:56:20 [http-nio- 192.168.75.128-8081-exec-10] DEBUG o.s.s.web.context.SecurityContextPersistenceFilter - Cleared SecurityContextHolder to complete request
+2025-09-16 11:56:20 [http-nio- 192.168.75.128-8081-exec-5] DEBUG o.s.s.web.context.SecurityContextPersistenceFilter - Cleared SecurityContextHolder to complete request
+2025-09-16 11:56:20 [http-nio- 192.168.75.128-8081-exec-6] DEBUG o.s.s.web.context.SecurityContextPersistenceFilter - Cleared SecurityContextHolder to complete request
+2025-09-16 11:56:20 [http-nio- 192.168.75.128-8081-exec-3] DEBUG org.springframework.security.web.FilterChainProxy - Securing GET /dictionary/type/���ʽ綨
+2025-09-16 11:56:20 [http-nio- 192.168.75.128-8081-exec-3] DEBUG o.s.s.web.context.SecurityContextPersistenceFilter - Set SecurityContextHolder to empty SecurityContext
+2025-09-16 11:56:20 [http-nio- 192.168.75.128-8081-exec-3] DEBUG o.s.s.w.a.AnonymousAuthenticationFilter - Set SecurityContextHolder to anonymous SecurityContext
+2025-09-16 11:56:20 [http-nio- 192.168.75.128-8081-exec-3] DEBUG o.s.s.w.access.intercept.FilterSecurityInterceptor - Authorized filter invocation [GET /dictionary/type/���ʽ綨] with attributes [permitAll]
+2025-09-16 11:56:20 [http-nio- 192.168.75.128-8081-exec-3] DEBUG org.springframework.security.web.FilterChainProxy - Secured GET /dictionary/type/���ʽ綨
+2025-09-16 11:56:20 [http-nio- 192.168.75.128-8081-exec-3] DEBUG o.s.s.w.c.HttpSessionSecurityContextRepository - Did not store anonymous SecurityContext
+2025-09-16 11:56:20 [http-nio- 192.168.75.128-8081-exec-3] DEBUG o.s.s.w.c.HttpSessionSecurityContextRepository - Did not store anonymous SecurityContext
+2025-09-16 11:56:20 [http-nio- 192.168.75.128-8081-exec-3] DEBUG o.s.s.web.context.SecurityContextPersistenceFilter - Cleared SecurityContextHolder to complete request
+2025-09-16 11:56:20 [http-nio- 192.168.75.128-8081-exec-2] DEBUG o.s.s.w.c.HttpSessionSecurityContextRepository - Did not store anonymous SecurityContext
+2025-09-16 11:56:20 [http-nio- 192.168.75.128-8081-exec-8] DEBUG o.s.s.w.c.HttpSessionSecurityContextRepository - Did not store anonymous SecurityContext
+2025-09-16 11:56:20 [http-nio- 192.168.75.128-8081-exec-8] DEBUG o.s.s.w.c.HttpSessionSecurityContextRepository - Did not store anonymous SecurityContext
+2025-09-16 11:56:20 [http-nio- 192.168.75.128-8081-exec-8] DEBUG o.s.s.web.context.SecurityContextPersistenceFilter - Cleared SecurityContextHolder to complete request
+2025-09-16 11:56:20 [http-nio- 192.168.75.128-8081-exec-4] DEBUG org.springframework.security.web.FilterChainProxy - Securing GET /dictionary/type/רҵ
+2025-09-16 11:56:20 [http-nio- 192.168.75.128-8081-exec-2] DEBUG o.s.s.w.c.HttpSessionSecurityContextRepository - Did not store anonymous SecurityContext
+2025-09-16 11:56:20 [http-nio- 192.168.75.128-8081-exec-4] DEBUG o.s.s.web.context.SecurityContextPersistenceFilter - Set SecurityContextHolder to empty SecurityContext
+2025-09-16 11:56:20 [http-nio- 192.168.75.128-8081-exec-2] DEBUG o.s.s.web.context.SecurityContextPersistenceFilter - Cleared SecurityContextHolder to complete request
+2025-09-16 11:56:20 [http-nio- 192.168.75.128-8081-exec-4] DEBUG o.s.s.w.a.AnonymousAuthenticationFilter - Set SecurityContextHolder to anonymous SecurityContext
+2025-09-16 11:56:20 [http-nio- 192.168.75.128-8081-exec-4] DEBUG o.s.s.w.access.intercept.FilterSecurityInterceptor - Authorized filter invocation [GET /dictionary/type/רҵ] with attributes [permitAll]
+2025-09-16 11:56:20 [http-nio- 192.168.75.128-8081-exec-4] DEBUG org.springframework.security.web.FilterChainProxy - Secured GET /dictionary/type/רҵ
+2025-09-16 11:56:20 [http-nio- 192.168.75.128-8081-exec-4] DEBUG o.s.s.w.c.HttpSessionSecurityContextRepository - Did not store anonymous SecurityContext
+2025-09-16 11:56:20 [http-nio- 192.168.75.128-8081-exec-4] DEBUG o.s.s.w.c.HttpSessionSecurityContextRepository - Did not store anonymous SecurityContext
+2025-09-16 11:56:20 [http-nio- 192.168.75.128-8081-exec-4] DEBUG o.s.s.web.context.SecurityContextPersistenceFilter - Cleared SecurityContextHolder to complete request
+2025-09-16 11:56:20 [http-nio- 192.168.75.128-8081-exec-9] DEBUG org.springframework.security.web.FilterChainProxy - Securing GET /dictionary/type/���ʽ綨
+2025-09-16 11:56:20 [http-nio- 192.168.75.128-8081-exec-9] DEBUG o.s.s.web.context.SecurityContextPersistenceFilter - Set SecurityContextHolder to empty SecurityContext
+2025-09-16 11:56:20 [http-nio- 192.168.75.128-8081-exec-9] DEBUG o.s.s.w.a.AnonymousAuthenticationFilter - Set SecurityContextHolder to anonymous SecurityContext
+2025-09-16 11:56:20 [http-nio- 192.168.75.128-8081-exec-9] DEBUG o.s.s.w.access.intercept.FilterSecurityInterceptor - Authorized filter invocation [GET /dictionary/type/���ʽ綨] with attributes [permitAll]
+2025-09-16 11:56:20 [http-nio- 192.168.75.128-8081-exec-9] DEBUG org.springframework.security.web.FilterChainProxy - Secured GET /dictionary/type/���ʽ綨
+2025-09-16 11:56:20 [http-nio- 192.168.75.128-8081-exec-9] DEBUG o.s.s.w.c.HttpSessionSecurityContextRepository - Did not store anonymous SecurityContext
+2025-09-16 11:56:20 [http-nio- 192.168.75.128-8081-exec-9] DEBUG o.s.s.w.c.HttpSessionSecurityContextRepository - Did not store anonymous SecurityContext
+2025-09-16 11:56:20 [http-nio- 192.168.75.128-8081-exec-9] DEBUG o.s.s.web.context.SecurityContextPersistenceFilter - Cleared SecurityContextHolder to complete request
+2025-09-16 11:56:20 [http-nio- 192.168.75.128-8081-exec-7] DEBUG org.springframework.security.web.FilterChainProxy - Securing GET /dictionary/type/רҵ
+2025-09-16 11:56:20 [http-nio- 192.168.75.128-8081-exec-7] DEBUG o.s.s.web.context.SecurityContextPersistenceFilter - Set SecurityContextHolder to empty SecurityContext
+2025-09-16 11:56:20 [http-nio- 192.168.75.128-8081-exec-7] DEBUG o.s.s.w.a.AnonymousAuthenticationFilter - Set SecurityContextHolder to anonymous SecurityContext
+2025-09-16 11:56:20 [http-nio- 192.168.75.128-8081-exec-7] DEBUG o.s.s.w.access.intercept.FilterSecurityInterceptor - Authorized filter invocation [GET /dictionary/type/רҵ] with attributes [permitAll]
+2025-09-16 11:56:20 [http-nio- 192.168.75.128-8081-exec-7] DEBUG org.springframework.security.web.FilterChainProxy - Secured GET /dictionary/type/רҵ
+2025-09-16 11:56:20 [http-nio- 192.168.75.128-8081-exec-7] DEBUG o.s.s.w.c.HttpSessionSecurityContextRepository - Did not store anonymous SecurityContext
+2025-09-16 11:56:20 [http-nio- 192.168.75.128-8081-exec-7] DEBUG o.s.s.w.c.HttpSessionSecurityContextRepository - Did not store anonymous SecurityContext
+2025-09-16 11:56:20 [http-nio- 192.168.75.128-8081-exec-7] DEBUG o.s.s.web.context.SecurityContextPersistenceFilter - Cleared SecurityContextHolder to complete request
+2025-09-16 11:56:20 [http-nio- 192.168.75.128-8081-exec-1] DEBUG org.springframework.security.web.FilterChainProxy - Securing GET /dept/list
+2025-09-16 11:56:20 [http-nio- 192.168.75.128-8081-exec-1] DEBUG o.s.s.web.context.SecurityContextPersistenceFilter - Set SecurityContextHolder to empty SecurityContext
+2025-09-16 11:56:20 [http-nio- 192.168.75.128-8081-exec-1] DEBUG o.s.s.w.a.AnonymousAuthenticationFilter - Set SecurityContextHolder to anonymous SecurityContext
+2025-09-16 11:56:20 [http-nio- 192.168.75.128-8081-exec-1] DEBUG o.s.s.w.access.intercept.FilterSecurityInterceptor - Authorized filter invocation [GET /dept/list] with attributes [permitAll]
+2025-09-16 11:56:20 [http-nio- 192.168.75.128-8081-exec-1] DEBUG org.springframework.security.web.FilterChainProxy - Secured GET /dept/list
+2025-09-16 11:56:20 [http-nio- 192.168.75.128-8081-exec-1] DEBUG o.s.s.w.c.HttpSessionSecurityContextRepository - Did not store anonymous SecurityContext
+2025-09-16 11:56:20 [http-nio- 192.168.75.128-8081-exec-1] DEBUG o.s.s.w.c.HttpSessionSecurityContextRepository - Did not store anonymous SecurityContext
+2025-09-16 11:56:20 [http-nio- 192.168.75.128-8081-exec-1] DEBUG o.s.s.web.context.SecurityContextPersistenceFilter - Cleared SecurityContextHolder to complete request
+2025-09-16 11:56:21 [http-nio- 192.168.75.128-8081-exec-10] DEBUG org.springframework.security.web.FilterChainProxy - Securing GET /dept/list
+2025-09-16 11:56:21 [http-nio- 192.168.75.128-8081-exec-10] DEBUG o.s.s.web.context.SecurityContextPersistenceFilter - Set SecurityContextHolder to empty SecurityContext
+2025-09-16 11:56:21 [http-nio- 192.168.75.128-8081-exec-10] DEBUG o.s.s.w.a.AnonymousAuthenticationFilter - Set SecurityContextHolder to anonymous SecurityContext
+2025-09-16 11:56:21 [http-nio- 192.168.75.128-8081-exec-10] DEBUG o.s.s.w.access.intercept.FilterSecurityInterceptor - Authorized filter invocation [GET /dept/list] with attributes [permitAll]
+2025-09-16 11:56:21 [http-nio- 192.168.75.128-8081-exec-10] DEBUG org.springframework.security.web.FilterChainProxy - Secured GET /dept/list
+2025-09-16 11:56:21 [http-nio- 192.168.75.128-8081-exec-10] DEBUG o.s.s.w.c.HttpSessionSecurityContextRepository - Did not store anonymous SecurityContext
+2025-09-16 11:56:21 [http-nio- 192.168.75.128-8081-exec-10] DEBUG o.s.s.w.c.HttpSessionSecurityContextRepository - Did not store anonymous SecurityContext
+2025-09-16 11:56:21 [http-nio- 192.168.75.128-8081-exec-10] DEBUG o.s.s.web.context.SecurityContextPersistenceFilter - Cleared SecurityContextHolder to complete request

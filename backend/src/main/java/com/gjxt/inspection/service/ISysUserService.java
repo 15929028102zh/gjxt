@@ -148,4 +148,22 @@ public interface ISysUserService extends IService<SysUser> {
      */
     boolean updateImageUrlByUsername(String username, String imageUrl);
 
+    /**
+     * 更新用户权限
+     *
+     * @param id 用户ID
+     * @param weeklyPermission 周检权限（0:允许编辑删除, 1:禁用编辑删除）
+     * @param monthlyPermission 月检权限（0:允许编辑删除, 1:禁用编辑删除）
+     * @return 是否成功
+     */
+    boolean updateUserPermissions(String id, Integer weeklyPermission, Integer monthlyPermission);
+
+    /**
+     * 根据用户ID获取用户权限信息
+     *
+     * @param userId 用户ID
+     * @return 用户权限信息
+     */
+    SysUser getUserPermissions(String userId);
+
 }

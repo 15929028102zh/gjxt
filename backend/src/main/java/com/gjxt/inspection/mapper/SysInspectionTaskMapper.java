@@ -32,7 +32,7 @@ public interface SysInspectionTaskMapper extends BaseMapper<SysInspectionTask> {
                                             @Param("taskNo") String taskNo,
                                             @Param("taskName") String taskName,
                                             @Param("status") String status,
-                                            @Param("assigneeId") Long assigneeId,
+                                            @Param("assigneeId") String assigneeId,
                                             @Param("startDate") String startDate,
                                             @Param("endDate") String endDate);
 
@@ -53,7 +53,7 @@ public interface SysInspectionTaskMapper extends BaseMapper<SysInspectionTask> {
      * @return 分页结果
      */
     IPage<SysInspectionTask> selectUserTasks(Page<SysInspectionTask> page,
-                                             @Param("userId") Long userId,
+                                             @Param("userId") String userId,
                                              @Param("status") String status);
 
     /**

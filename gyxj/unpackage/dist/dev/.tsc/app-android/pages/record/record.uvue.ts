@@ -1,12 +1,12 @@
 
 	import { getApiUrl } from '@/config/api.uts'
-	type RecordStatusTab = { __$originalPosition?: UTSSourceMapPosition<"RecordStatusTab", "pages/record/record.uvue", 56, 7>;
+	type RecordStatusTab = { __$originalPosition?: UTSSourceMapPosition<"RecordStatusTab", "pages/record/record.uvue", 64, 7>;
 		key: string
 		label: string
 		value: string
 	}
 
-	type InspectionRecord = { __$originalPosition?: UTSSourceMapPosition<"InspectionRecord", "pages/record/record.uvue", 62, 7>;
+	type InspectionRecord = { __$originalPosition?: UTSSourceMapPosition<"InspectionRecord", "pages/record/record.uvue", 70, 7>;
 		id: string
 		problemDescription: string
 		responsiblePerson: string
@@ -27,7 +27,9 @@
 				pageSize: 20,
 				status: '0', // 默认显示待整改记录
 				isDelayed: false, // 是否是延迟整改
-				isReviewed: false // 是否是已复查记录
+				isReviewed: false, // 是否是已复查记录
+				isRefreshing: false, // 下拉刷新状态
+				containerHeight: 0 // 容器高度
 			}
 		},
 		onLoad(options: OnLoadOptions) {
@@ -45,6 +47,7 @@
 					this.isReviewed = true
 					this.status = '2' // 设置状态为已复查
 				}
+				this.initContainerHeight()
 				this.loadRecords()
 			
 			// 监听全局事件，当记录更新时刷新数据
@@ -79,10 +82,18 @@
 			
 			// 处理记录更新事件
 			handleRecordUpdated() {
-				console.log('接收到记录更新事件，开始刷新数据', " at pages/record/record.uvue:135")
+				console.log('接收到记录更新事件，开始刷新数据', " at pages/record/record.uvue:146")
 				this.refreshRecords()
 			},
 			
+			// 初始化容器高度
+			initContainerHeight() {
+				uni.getSystemInfo({
+					success: (res) => {
+						this.containerHeight = res.windowHeight
+					}
+				})
+			},
 
 			
 			async loadRecords() {
@@ -94,12 +105,25 @@
 			
 				const token = uni.getStorageSync('token')
 				
+				// 获取用户部门信息
+				let departmentId = ''
+				const userInfoData = uni.getStorageSync('userInfo')
+				const userInfoStr = userInfoData != null ? userInfoData as string : ''
+				if (userInfoStr != null && userInfoStr != '' && userInfoStr != 'null' && userInfoStr != 'undefined') {
+					try {
+					const parsedUserInfo = UTSAndroid.consoleDebugError(JSON.parse(userInfoStr), " at pages/record/record.uvue:175") as UTSJSONObject
+					departmentId = parsedUserInfo.getString('deptId') ?? ''
+					} catch (error) {
+						console.error('用户信息JSON解析失败:', error, " at pages/record/record.uvue:178")
+					}
+				}
+				
 				// 根据是否是延迟整改选择不同的API
 				let apiUrl = ''
 				if (this.isDelayed) {
-					apiUrl = getApiUrl(`/inspection-record/delayed?current=${this.pageNum}&size=${this.pageSize}`)
+					apiUrl = getApiUrl(`/inspection-record/delayed?current=${this.pageNum}&size=${this.pageSize}${departmentId != null && departmentId != '' ? '&departmentId=' + departmentId : ''}`)
 				} else {
-					apiUrl = getApiUrl(`/inspection-record/page?current=${this.pageNum}&size=${this.pageSize}&status=${this.status}`)
+					apiUrl = getApiUrl(`/inspection-record/page?current=${this.pageNum}&size=${this.pageSize}&status=${this.status}${departmentId != null && departmentId != '' ? '&departmentId=' + departmentId : ''}`)
 				}
 				
 				uni.request({
@@ -119,8 +143,8 @@
 								for (let i = 0; i < records.length; i++) {
 									const item = records[i]
 									// 打印原始数据对象，检查字段内容
-									console.log('原始数据对象:', item, " at pages/record/record.uvue:175")
-									console.log('problemDescription字段:', item.getString('problemDescription'), " at pages/record/record.uvue:176")
+									console.log('原始数据对象:', item, " at pages/record/record.uvue:207")
+									console.log('problemDescription字段:', item.getString('problemDescription'), " at pages/record/record.uvue:208")
 									
 									const createTime = item.getString('createTime') ?? ''
 									const record: InspectionRecord = {
@@ -132,7 +156,7 @@
 										status: item.getNumber('status') ?? 0
 									}
 									// 打印处理后的记录对象
-									console.log('处理后的记录对象:', record, " at pages/record/record.uvue:188")
+									console.log('处理后的记录对象:', record, " at pages/record/record.uvue:220")
 									newRecords.push(record)
 								}
 							}
@@ -156,7 +180,7 @@
 					this.loadingMore = false
 				},
 				fail: (error) => {
-					console.error('加载记录失败:', error, " at pages/record/record.uvue:212")
+					console.error('加载记录失败:', error, " at pages/record/record.uvue:244")
 					uni.showToast({
 						title: '网络错误',
 						icon: 'none'
@@ -169,7 +193,7 @@
 			
 		getStatusText(status: number | null): string {
 			if (status == null) return '未知'
-			const statusMap: UTSJSONObject = {__$originalPosition: new UTSSourceMapPosition("statusMap", "pages/record/record.uvue", 225, 10),
+			const statusMap: UTSJSONObject = {__$originalPosition: new UTSSourceMapPosition("statusMap", "pages/record/record.uvue", 257, 10),
 				"0": '待整改',
 				"1": '已整改',
 				"2": '已复查'
@@ -189,7 +213,7 @@
 			
 		getStatusClass(status: number | null): string {
 				if (status == null) return 'status-unknown'
-				const classMap: UTSJSONObject = {__$originalPosition: new UTSSourceMapPosition("classMap", "pages/record/record.uvue", 245, 11),
+				const classMap: UTSJSONObject = {__$originalPosition: new UTSSourceMapPosition("classMap", "pages/record/record.uvue", 277, 11),
 					"0": 'status-pending',
 					"1": 'status-completed',
 					"2": 'status-accepted'
@@ -209,9 +233,9 @@
 			goToDetail(record: InspectionRecord) {
 				// 根据页面模式和记录状态进行不同的跳转
 				if (this.isDelayed) {
-					// 延迟整改模式：跳转到review.uvue页面（只读模式）
+					// 延迟整改模式：跳转到detail.uvue页面进行整改效果录入
 					uni.navigateTo({
-						url: `/pages/record/review?id=${record.id}&delayed=true`
+						url: `/pages/record/detail?id=${record.id}&delayed=true`
 					})
 				} else if (this.isReviewed) {
 					// 已复查记录模式：与延迟整改使用相同逻辑跳转到review.uvue页面
@@ -242,6 +266,25 @@
 				this.hasMore = true
 				this.loadRecords()
 				uni.stopPullDownRefresh()
+			},
+			
+			// 下拉刷新
+			onRefresh() {
+			this.isRefreshing = true
+			this.refreshRecords()
+			
+			// 设置定时器，3秒后自动关闭刷新状态
+			setTimeout(() => {
+				if (this.isRefreshing) {
+					this.isRefreshing = false
+					uni.stopPullDownRefresh()
+				}
+			}, 1500)
+		},
+			
+			// 下拉刷新恢复
+			onRefreshRestore() {
+				this.isRefreshing = false
 			},
 			
 			loadMore() {
@@ -308,7 +351,7 @@
 					},
 					fail: (error) => {
 						uni.hideLoading()
-						console.error('删除记录失败:', error, " at pages/record/record.uvue:364")
+						console.error('删除记录失败:', error, " at pages/record/record.uvue:415")
 						uni.showToast({
 							title: '网络错误',
 							icon: 'none'
@@ -323,70 +366,74 @@ export default __sfc__
 function GenPagesRecordRecordRender(this: InstanceType<typeof __sfc__>): any | null {
 const _ctx = this
 const _cache = this.$.renderCache
-  return _cE("view", _uM({ class: "container" }), [
+  return _cE("scroll-view", _uM({
+    class: "container",
+    "scroll-y": "true",
+    style: _nS(_uM({height: _ctx.containerHeight + 'px'})),
+    "enable-back-to-top": "true",
+    "refresher-enabled": "true",
+    "refresher-triggered": _ctx.isRefreshing,
+    "refresher-default-style": "black",
+    "refresher-background": "#f5f5f5",
+    onRefresherrefresh: _ctx.onRefresh,
+    onRefresherrestore: _ctx.onRefreshRestore
+  }), [
     _cE("view", _uM({ class: "header" }), [
       _cE("text", _uM({ class: "title" }), "问题列表"),
       _cE("text", _uM({ class: "subtitle" }), "共 " + _tD(_ctx.totalCount) + " 条" + _tD(_ctx.getStatusTitle()) + "问题", 1 /* TEXT */)
     ]),
-    _cE("scroll-view", _uM({
-      class: "record-list",
-      "scroll-y": "true",
-      "enable-back-to-top": "true",
-      onScrolltolower: _ctx.handleScrollToLower
-    }), [
-      _cE(Fragment, null, RenderHelpers.renderList(_ctx.recordList, (record, __key, __index, _cached): any => {
-        return _cE("view", _uM({
-          class: "record-item",
-          key: record.id,
-          onClick: () => {_ctx.goToDetail(record)},
-          onLongpress: () => {_ctx.showDeleteConfirm(record.id, record.problemDescription)}
+    _cE(Fragment, null, RenderHelpers.renderList(_ctx.recordList, (record, __key, __index, _cached): any => {
+      return _cE("view", _uM({
+        class: "record-item",
+        key: record.id,
+        onClick: () => {_ctx.goToDetail(record)},
+        onLongpress: () => {_ctx.showDeleteConfirm(record.id, record.problemDescription)}
+      }), [
+        _cE("view", _uM({ class: "record-content" }), [
+          _cE("view", _uM({ class: "left-content" }), [
+            _cE("view", _uM({ class: "name-problem-row" }), [
+              _cE("text", _uM({ class: "responsible-name" }), _tD(record.responsiblePerson), 1 /* TEXT */)
+            ])
+          ]),
+          _cE("view", _uM({ class: "right-info" }), [
+            _cE("text", _uM({ class: "inspector-info" }), "检查人：" + _tD(record.inspectorName), 1 /* TEXT */),
+            _cE("text", _uM({ class: "date-text" }), _tD(record.createDate), 1 /* TEXT */),
+            _cE("view", _uM({
+              class: _nC(["status-tag", _ctx.getStatusClass(record.status)])
+            }), [
+              _cE("text", _uM({ class: "status-text" }), _tD(_ctx.getStatusText(record.status)), 1 /* TEXT */)
+            ], 2 /* CLASS */)
+          ]),
+          _cE("text", _uM({ class: "problem-text" }), _tD(record.problemDescription), 1 /* TEXT */)
+        ])
+      ], 40 /* PROPS, NEED_HYDRATION */, ["onClick", "onLongpress"])
+    }), 128 /* KEYED_FRAGMENT */),
+    isTrue(_ctx.recordList.length === 0 && !_ctx.loading)
+      ? _cE("view", _uM({
+          key: 0,
+          class: "empty-state"
         }), [
-          _cE("view", _uM({ class: "record-content" }), [
-            _cE("view", _uM({ class: "left-content" }), [
-              _cE("view", _uM({ class: "name-problem-row" }), [
-                _cE("text", _uM({ class: "responsible-name" }), _tD(record.responsiblePerson), 1 /* TEXT */)
-              ])
-            ]),
-            _cE("view", _uM({ class: "right-info" }), [
-              _cE("text", _uM({ class: "inspector-info" }), "检查人：" + _tD(record.inspectorName), 1 /* TEXT */),
-              _cE("text", _uM({ class: "date-text" }), _tD(record.createDate), 1 /* TEXT */),
-              _cE("view", _uM({
-                class: _nC(["status-tag", _ctx.getStatusClass(record.status)])
-              }), [
-                _cE("text", _uM({ class: "status-text" }), _tD(_ctx.getStatusText(record.status)), 1 /* TEXT */)
-              ], 2 /* CLASS */)
-            ]),
-            _cE("text", _uM({ class: "problem-text" }), _tD(record.problemDescription), 1 /* TEXT */)
-          ])
-        ], 40 /* PROPS, NEED_HYDRATION */, ["onClick", "onLongpress"])
-      }), 128 /* KEYED_FRAGMENT */),
-      isTrue(_ctx.recordList.length === 0 && !_ctx.loading)
-        ? _cE("view", _uM({
-            key: 0,
-            class: "empty-state"
-          }), [
-            _cE("text", _uM({ class: "empty-icon" }), "📝"),
-            _cE("text", _uM({ class: "empty-text" }), "暂无记录")
-          ])
-        : _cC("v-if", true),
-      isTrue(_ctx.loading)
-        ? _cE("view", _uM({
-            key: 1,
-            class: "loading-state"
-          }), [
-            _cE("text", _uM({ class: "loading-text" }), "加载中...")
-          ])
-        : _cC("v-if", true),
-      isTrue(_ctx.hasMore && _ctx.recordList.length > 0)
-        ? _cE("view", _uM({
-            key: 2,
-            class: "load-more",
-            onClick: _ctx.loadMore
-          }), [
-            _cE("text", _uM({ class: "load-more-text" }), _tD(_ctx.loadingMore ? '加载中...' : '加载更多'), 1 /* TEXT */)
-          ], 8 /* PROPS */, ["onClick"])
-        : _cC("v-if", true)
-    ], 40 /* PROPS, NEED_HYDRATION */, ["onScrolltolower"])
-  ])
+          _cE("text", _uM({ class: "empty-icon" }), "📝"),
+          _cE("text", _uM({ class: "empty-text" }), "暂无记录")
+        ])
+      : _cC("v-if", true),
+    isTrue(_ctx.loading)
+      ? _cE("view", _uM({
+          key: 1,
+          class: "loading-state"
+        }), [
+          _cE("text", _uM({ class: "loading-text" }), "加载中...")
+        ])
+      : _cC("v-if", true),
+    isTrue(_ctx.hasMore && _ctx.recordList.length > 0)
+      ? _cE("view", _uM({
+          key: 2,
+          class: "load-more",
+          onClick: _ctx.loadMore
+        }), [
+          _cE("text", _uM({ class: "load-more-text" }), _tD(_ctx.loadingMore ? '加载中...' : '加载更多'), 1 /* TEXT */)
+        ], 8 /* PROPS */, ["onClick"])
+      : _cC("v-if", true)
+  ], 44 /* STYLE, PROPS, NEED_HYDRATION */, ["refresher-triggered", "onRefresherrefresh", "onRefresherrestore"])
 }
-const GenPagesRecordRecordStyles = [_uM([["container", _pS(_uM([["paddingTop", 0], ["paddingRight", 0], ["paddingBottom", 0], ["paddingLeft", 0], ["backgroundColor", "#f5f5f5"], ["display", "flex"], ["flexDirection", "column"]]))], ["header", _pS(_uM([["paddingTop", 20], ["paddingRight", 20], ["paddingBottom", 20], ["paddingLeft", 20], ["backgroundImage", "none"], ["backgroundColor", "#ffffff"], ["borderBottomWidth", 1], ["borderBottomStyle", "solid"], ["borderBottomColor", "#e0e0e0"]]))], ["title", _pS(_uM([["fontSize", 18], ["fontWeight", "bold"], ["color", "#333333"], ["marginBottom", 5]]))], ["subtitle", _pS(_uM([["fontSize", 14], ["color", "#666666"]]))], ["record-list", _pS(_uM([["flex", 2], ["paddingTop", 10], ["paddingRight", 10], ["paddingBottom", 280], ["paddingLeft", 10]]))], ["record-item", _pS(_uM([["backgroundImage", "none"], ["backgroundColor", "#ffffff"], ["marginBottom", 1], ["paddingTop", 15], ["paddingRight", 20], ["paddingBottom", 15], ["paddingLeft", 20], ["borderBottomWidth", 1], ["borderBottomStyle", "solid"], ["borderBottomColor", "#f0f0f0"]]))], ["record-content", _pS(_uM([["display", "flex"], ["justifyContent", "space-between"], ["alignItems", "flex-start"], ["marginBottom", 10], ["width", "100%"]]))], ["left-content", _pS(_uM([["flex", 1], ["marginRight", 15], ["display", "flex"], ["flexDirection", "column"], ["gap", "2px"]]))], ["problem-text", _pS(_uM([["fontSize", 15], ["color", "#666666"], ["lineHeight", 1.3], ["fontWeight", "400"], ["marginTop", 2]]))], ["right-info", _pS(_uM([["flexShrink", 0], ["textAlign", "right"], ["display", "flex"], ["flexDirection", "column"], ["alignItems", "flex-end"], ["justifyContent", "flex-start"], ["minWidth", 120], ["maxWidth", 150], ["gap", "6px"], ["marginLeft", "auto"]]))], ["inspector-info", _pS(_uM([["fontSize", 13], ["color", "#333333"], ["textAlign", "right"]]))], ["date-text", _pS(_uM([["fontSize", 13], ["color", "#666666"]]))], ["status-row", _pS(_uM([["marginTop", 8]]))], ["status-tag", _pS(_uM([["paddingTop", 3], ["paddingRight", 10], ["paddingBottom", 3], ["paddingLeft", 10], ["borderTopLeftRadius", 12], ["borderTopRightRadius", 12], ["borderBottomRightRadius", 12], ["borderBottomLeftRadius", 12], ["fontSize", 12], ["alignSelf", "flex-end"]]))], ["status-text", _pS(_uM([["color", "#ffffff"], ["fontSize", 12]]))], ["status-pending", _pS(_uM([["backgroundImage", "none"], ["backgroundColor", "#ff6b6b"]]))], ["status-processing", _pS(_uM([["backgroundImage", "none"], ["backgroundColor", "#ffa726"]]))], ["status-completed", _pS(_uM([["backgroundImage", "none"], ["backgroundColor", "#66bb6a"]]))], ["status-accepted", _pS(_uM([["backgroundImage", "none"], ["backgroundColor", "#42a5f5"]]))], ["name-problem-row", _pS(_uM([["display", "flex"], ["alignItems", "center"], ["marginBottom", 2]]))], ["responsible-name", _pS(_uM([["fontSize", 16], ["color", "#333333"], ["fontWeight", "700"], ["marginTop", 0], ["marginRight", 0], ["marginBottom", 0], ["marginLeft", 0]]))], ["empty-state", _pS(_uM([["textAlign", "center"], ["paddingTop", 60], ["paddingRight", 20], ["paddingBottom", 60], ["paddingLeft", 20]]))], ["empty-icon", _pS(_uM([["fontSize", 48], ["marginBottom", 15], ["color", "#cccccc"]]))], ["empty-text", _pS(_uM([["fontSize", 16], ["color", "#999999"]]))], ["loading-state", _pS(_uM([["textAlign", "center"], ["paddingTop", 40], ["paddingRight", 20], ["paddingBottom", 40], ["paddingLeft", 20]]))], ["loading-text", _pS(_uM([["fontSize", 14], ["color", "#999999"]]))], ["load-more", _pS(_uM([["textAlign", "center"], ["paddingTop", 20], ["paddingRight", 20], ["paddingBottom", 20], ["paddingLeft", 20], ["backgroundImage", "none"], ["backgroundColor", "#ffffff"], ["borderTopWidth", 1], ["borderTopStyle", "solid"], ["borderTopColor", "#f0f0f0"]]))], ["load-more-text", _pS(_uM([["fontSize", 14], ["color", "#666666"]]))]])]
+const GenPagesRecordRecordStyles = [_uM([["container", _pS(_uM([["backgroundColor", "#f5f5f5"], ["width", "100%"]]))], ["header", _pS(_uM([["paddingTop", 20], ["paddingRight", 20], ["paddingBottom", 20], ["paddingLeft", 20], ["backgroundImage", "none"], ["backgroundColor", "#ffffff"], ["borderBottomWidth", 1], ["borderBottomStyle", "solid"], ["borderBottomColor", "#e0e0e0"]]))], ["title", _pS(_uM([["fontSize", 18], ["fontWeight", "bold"], ["color", "#333333"], ["marginBottom", 5]]))], ["subtitle", _pS(_uM([["fontSize", 14], ["color", "#666666"]]))], ["record-item", _pS(_uM([["backgroundImage", "none"], ["backgroundColor", "#ffffff"], ["marginTop", 10], ["marginRight", 10], ["marginBottom", 1], ["marginLeft", 10], ["paddingTop", 15], ["paddingRight", 20], ["paddingBottom", 15], ["paddingLeft", 20], ["borderBottomWidth", 1], ["borderBottomStyle", "solid"], ["borderBottomColor", "#f0f0f0"], ["borderTopLeftRadius", 8], ["borderTopRightRadius", 8], ["borderBottomRightRadius", 8], ["borderBottomLeftRadius", 8]]))], ["record-content", _pS(_uM([["display", "flex"], ["justifyContent", "space-between"], ["alignItems", "flex-start"], ["marginBottom", 10], ["width", "100%"]]))], ["left-content", _pS(_uM([["flex", 1], ["marginRight", 15], ["display", "flex"], ["flexDirection", "column"], ["gap", "2px"]]))], ["problem-text", _pS(_uM([["fontSize", 15], ["color", "#666666"], ["lineHeight", 1.3], ["fontWeight", "400"], ["marginTop", 2]]))], ["right-info", _pS(_uM([["flexShrink", 0], ["textAlign", "right"], ["display", "flex"], ["flexDirection", "column"], ["alignItems", "flex-end"], ["justifyContent", "flex-start"], ["minWidth", 120], ["maxWidth", 150], ["gap", "6px"], ["marginLeft", "auto"]]))], ["inspector-info", _pS(_uM([["fontSize", 13], ["color", "#333333"], ["textAlign", "right"]]))], ["date-text", _pS(_uM([["fontSize", 13], ["color", "#666666"]]))], ["status-row", _pS(_uM([["marginTop", 8]]))], ["status-tag", _pS(_uM([["paddingTop", 3], ["paddingRight", 10], ["paddingBottom", 3], ["paddingLeft", 10], ["borderTopLeftRadius", 12], ["borderTopRightRadius", 12], ["borderBottomRightRadius", 12], ["borderBottomLeftRadius", 12], ["fontSize", 12], ["alignSelf", "flex-end"]]))], ["status-text", _pS(_uM([["color", "#ffffff"], ["fontSize", 12]]))], ["status-pending", _pS(_uM([["backgroundImage", "none"], ["backgroundColor", "#ff6b6b"]]))], ["status-processing", _pS(_uM([["backgroundImage", "none"], ["backgroundColor", "#ffa726"]]))], ["status-completed", _pS(_uM([["backgroundImage", "none"], ["backgroundColor", "#66bb6a"]]))], ["status-accepted", _pS(_uM([["backgroundImage", "none"], ["backgroundColor", "#42a5f5"]]))], ["name-problem-row", _pS(_uM([["display", "flex"], ["alignItems", "center"], ["marginBottom", 2]]))], ["responsible-name", _pS(_uM([["fontSize", 16], ["color", "#333333"], ["fontWeight", "700"], ["marginTop", 0], ["marginRight", 0], ["marginBottom", 0], ["marginLeft", 0]]))], ["empty-state", _pS(_uM([["textAlign", "center"], ["paddingTop", 60], ["paddingRight", 20], ["paddingBottom", 60], ["paddingLeft", 20]]))], ["empty-icon", _pS(_uM([["fontSize", 48], ["marginBottom", 15], ["color", "#cccccc"]]))], ["empty-text", _pS(_uM([["fontSize", 16], ["color", "#999999"]]))], ["loading-state", _pS(_uM([["textAlign", "center"], ["paddingTop", 40], ["paddingRight", 20], ["paddingBottom", 40], ["paddingLeft", 20]]))], ["loading-text", _pS(_uM([["fontSize", 14], ["color", "#999999"]]))], ["load-more", _pS(_uM([["textAlign", "center"], ["paddingTop", 20], ["paddingRight", 20], ["paddingBottom", 20], ["paddingLeft", 20], ["backgroundImage", "none"], ["backgroundColor", "#ffffff"], ["borderTopWidth", 1], ["borderTopStyle", "solid"], ["borderTopColor", "#f0f0f0"]]))], ["load-more-text", _pS(_uM([["fontSize", 14], ["color", "#666666"]]))]])]

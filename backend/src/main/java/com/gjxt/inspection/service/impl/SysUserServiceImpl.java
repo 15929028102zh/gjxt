@@ -53,7 +53,7 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
         }
 
         // 生成JWT Token
-        return jwtUtil.generateToken(Long.valueOf(user.getId()), user.getUsername(), user.getRole());
+        return jwtUtil.generateToken(user.getId(), user.getUsername(), user.getRole(), user.getIsAdmin());
     }
 
     @Override
@@ -150,9 +150,17 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
     @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean resetPassword(String id, String newPassword) {
+        // 获取用户信息
+        SysUser existingUser = this.getById(id);
+        if (existingUser == null) {
+            throw new RuntimeException(ResultCode.USER_NOT_FOUND.getMessage());
+        }
+        
         SysUser user = new SysUser();
         user.setId(id);
-        user.setPassword(passwordEncoder.encode(StringUtils.isNotBlank(newPassword) ? newPassword : "123456"));
+        // 如果没有指定新密码，则重置为用户名（明文存储）
+        String passwordToSet = StringUtils.isNotBlank(newPassword) ? newPassword : existingUser.getUsername();
+        user.setPassword(passwordToSet);
         user.setUpdateTime(LocalDateTime.now());
         return this.updateById(user);
     }
@@ -221,9 +229,27 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
     @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean updateImageUrlByUsername(String username, String imageUrl) {
-        // 直接根据用户名更新头像URL
-        int result = baseMapper.updateImageUrlByUsername(username, imageUrl, LocalDateTime.now());
-        return result > 0;
+        return baseMapper.updateImageUrlByUsername(username, imageUrl, LocalDateTime.now()) > 0;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public boolean updateUserPermissions(String id, Integer weeklyPermission, Integer monthlyPermission) {
+        SysUser user = new SysUser();
+        user.setId(id);
+        user.setWeeklyPermission(weeklyPermission);
+        user.setMonthlyPermission(monthlyPermission);
+        user.setUpdateTime(LocalDateTime.now());
+        return this.updateById(user);
+    }
+
+    @Override
+    public SysUser getUserPermissions(String userId) {
+        LambdaQueryWrapper<SysUser> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(SysUser::getId, userId)
+                   .select(SysUser::getId, SysUser::getUsername, SysUser::getRole, 
+                          SysUser::getWeeklyPermission, SysUser::getMonthlyPermission, SysUser::getIsAdmin);
+        return this.getOne(queryWrapper);
     }
 
 }

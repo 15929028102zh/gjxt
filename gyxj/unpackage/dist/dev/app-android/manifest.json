@@ -1,10 +1,10 @@
 {
-  "id": "__UNI__630A075",
-  "name": "工业巡检",
+  "id": "__UNI__B5A0920",
+  "name": "榆林公司岗检系统",
   "description": "",
   "version": {
-    "name": "1.0.0",
-    "code": "100"
+    "name": "1.0.1",
+    "code": "101"
   },
   "uni-app-x": {
     "compilerVersion": "4.76"
@@ -13,14 +13,20 @@
     "distribute": {
       "modules": {},
       "icons": {
-        "hdpi": "",
-        "xhdpi": "",
-        "xxhdpi": "",
-        "xxxhdpi": ""
+        "hdpi": "C:/Users/17434/Desktop/中石油.png",
+        "xhdpi": "C:/Users/17434/Desktop/中石油.png",
+        "xxhdpi": "C:/Users/17434/Desktop/中石油.png",
+        "xxxhdpi": "C:/Users/17434/Desktop/中石油.png"
       },
       "splashScreens": {
         "default": {}
-      }
+      },
+      "abiFilters": [
+        "x86",
+        "x86_64",
+        "arm64-v8a",
+        "armeabi-v7a"
+      ]
     },
     "permissions": [
       "<uses-permission android:name=\"android.permission.INTERNET\" />",

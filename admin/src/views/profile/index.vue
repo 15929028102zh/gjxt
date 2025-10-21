@@ -100,6 +100,71 @@
                 </el-form-item>
               </el-form>
             </el-card>
+            
+            <!-- 修改密码卡片 -->
+            <el-card class="password-form-card" style="margin-top: 20px;">
+              <template #header>
+                <div class="card-header">
+                  <span>修改密码</span>
+                </div>
+              </template>
+              
+              <el-form
+                ref="passwordFormRef"
+                :model="passwordForm"
+                :rules="passwordRules"
+                label-width="100px"
+                label-position="left"
+                size="default"
+                class="password-form"
+              >
+                <el-form-item label="当前密码" prop="oldPassword">
+                  <el-input 
+                    v-model="passwordForm.oldPassword" 
+                    type="password"
+                    placeholder="请输入当前密码"
+                    show-password
+                    clearable
+                    maxlength="50"
+                  />
+                </el-form-item>
+                
+                <el-form-item label="新密码" prop="newPassword">
+                  <el-input 
+                    v-model="passwordForm.newPassword" 
+                    type="password"
+                    placeholder="请输入新密码"
+                    show-password
+                    clearable
+                    maxlength="50"
+                  />
+                </el-form-item>
+                
+                <el-form-item label="确认密码" prop="confirmPassword">
+                  <el-input 
+                    v-model="passwordForm.confirmPassword" 
+                    type="password"
+                    placeholder="请再次输入新密码"
+                    show-password
+                    clearable
+                    maxlength="50"
+                  />
+                </el-form-item>
+                
+                <el-form-item>
+                  <el-button 
+                    type="primary" 
+                    @click="changePassword"
+                    :loading="passwordLoading"
+                  >
+                    修改密码
+                  </el-button>
+                  <el-button @click="resetPasswordForm">
+                    重置
+                  </el-button>
+                </el-form-item>
+              </el-form>
+            </el-card>
           </el-col>
         </el-row>
       </div>
@@ -117,29 +182,20 @@
           <h4>当前头像</h4>
           <el-avatar 
             :size="80" 
-            :src="userInfo.imageUrl || '/default-avatar.svg'"
+            :src="convertToHttpUrl(userInfo.imageUrl) || '/default-avatar.svg'"
           />
         </div>
         
         <div class="upload-area">
           <h4>选择新头像</h4>
-          <el-upload
-            ref="uploadRef"
-            class="avatar-uploader"
-            :action="uploadUrl"
-            :headers="uploadHeaders"
+          <DragUpload
+            v-model="avatarFileList"
+            :limit="1"
             :show-file-list="false"
-            :on-success="handleAvatarSuccess"
-            :on-error="handleAvatarError"
-            :before-upload="beforeAvatarUpload"
-            accept="image/*"
-          >
-            <div class="upload-placeholder">
-              <el-icon class="upload-icon"><Plus /></el-icon>
-              <div class="upload-text">点击上传头像</div>
-              <div class="upload-tip">支持 JPG、PNG 格式，文件大小不超过 2MB</div>
-            </div>
-          </el-upload>
+            tip="支持 JPG、PNG 格式，文件大小不超过 2MB"
+            @success="handleAvatarSuccess"
+            @error="handleAvatarError"
+          />
         </div>
       </div>
       
@@ -158,12 +214,17 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
 import { userApi } from '@/api/system'
 import { getToken } from '@/utils/token'
+import { convertToHttpUrl, getImageUploadUrl } from '@/config/api'
+import DragUpload from '@/components/DragUpload.vue'
 
 // 响应式数据
 const formRef = ref()
+const passwordFormRef = ref()
 const uploadRef = ref()
 const saveLoading = ref(false)
+const passwordLoading = ref(false)
 const showAvatarDialog = ref(false)
+const avatarFileList = ref([])
 
 // 用户信息
 const userInfo = ref({
@@ -183,6 +244,13 @@ const editForm = reactive({
   username: ''
 })
 
+// 修改密码表单
+const passwordForm = reactive({
+  oldPassword: '',
+  newPassword: '',
+  confirmPassword: ''
+})
+
 // 表单验证规则
 const formRules = {
   realName: [
@@ -192,14 +260,40 @@ const formRules = {
   phone: [
     { required: true, message: '请输入手机号码', trigger: 'blur' },
     { pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号码', trigger: 'blur' }
+  ]
+}
+
+// 密码验证规则
+const passwordRules = {
+  oldPassword: [
+    { required: true, message: '请输入当前密码', trigger: 'blur' }
   ],
-  email: [
-    { type: 'email', message: '请输入正确的邮箱地址', trigger: 'blur' }
+  newPassword: [
+    { required: true, message: '请输入新密码', trigger: 'blur' },
+    { min: 6, max: 50, message: '密码长度在 6 到 50 个字符', trigger: 'blur' },
+    { 
+      pattern: /^(?=.*[a-zA-Z])(?=.*\d)[a-zA-Z\d@$!%*?&]{6,}$/, 
+      message: '密码必须包含字母和数字', 
+      trigger: 'blur' 
+    }
+  ],
+  confirmPassword: [
+    { required: true, message: '请确认新密码', trigger: 'blur' },
+    {
+      validator: (rule, value, callback) => {
+        if (value !== passwordForm.newPassword) {
+          callback(new Error('两次输入的密码不一致'))
+        } else {
+          callback()
+        }
+      },
+      trigger: 'blur'
+    }
   ]
 }
 
 // 上传配置
-const uploadUrl = import.meta.env.VITE_API_BASE_URL + '/file/upload'
+const uploadUrl = getImageUploadUrl()
 const uploadHeaders = {
   'Authorization': 'Bearer ' + getToken()
 }
@@ -344,23 +438,45 @@ const resetAvatarDialog = () => {
   uploadRef.value?.clearFiles()
 }
 
-// 将相对路径转换为HTTP访问路径
-const convertToHttpUrl = (relativePath) => {
-  if (!relativePath || relativePath.trim() === '') {
-    return ''
+// 修改密码
+const changePassword = async () => {
+  try {
+    // 表单验证
+    await passwordFormRef.value.validate()
+    
+    passwordLoading.value = true
+    
+    // 调用修改密码API
+    const response = await userApi.changePassword(
+      userInfo.value.id,
+      passwordForm.oldPassword,
+      passwordForm.newPassword
+    )
+    
+    if (response.code === 200) {
+      ElMessage.success('密码修改成功')
+      resetPasswordForm()
+    } else {
+      ElMessage.error(response.message || '密码修改失败')
+    }
+  } catch (error) {
+    console.error('修改密码失败:', error)
+    ElMessage.error('密码修改失败')
+  } finally {
+    passwordLoading.value = false
   }
-  
-  // 如果已经是完整的HTTP/HTTPS URL，直接返回
-  if (relativePath.startsWith('http://') || relativePath.startsWith('https://')) {
-    return relativePath
-  }
-  
-  // 直接拼接完整的HTTP URL
-  // 后端返回相对路径，如: /files/images/20250831/xxx.jpg
-  const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://192.168.244.128:8080'
-  const fullUrl = `${baseUrl}/api${relativePath}`
-  return fullUrl
 }
+
+// 重置密码表单
+const resetPasswordForm = () => {
+  passwordForm.oldPassword = ''
+  passwordForm.newPassword = ''
+  passwordForm.confirmPassword = ''
+  
+  passwordFormRef.value?.clearValidate()
+}
+
+
 
 // 组件挂载时加载数据
 onMounted(() => {

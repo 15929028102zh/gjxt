@@ -60,6 +60,7 @@
             v-model="searchForm.departmentId" 
             placeholder="请选择部门" 
             clearable 
+            :disabled="!isAdminUser"
             style="width: 120px;"
           >
             <el-option
@@ -114,6 +115,7 @@
         导出Excel
       </el-button>
       <el-button 
+        v-if="hasWeeklyPermission()"
         type="danger" 
         @click="handleBatchDelete" 
         :disabled="selectedIds.length === 0"
@@ -161,6 +163,7 @@
               查看
             </el-button>
             <el-button 
+              v-if="hasWeeklyPermission()"
               size="small" 
               type="warning" 
               @click="handleRectification(row)" 
@@ -171,6 +174,7 @@
               确认整改
             </el-button>
             <el-button 
+              v-if="hasWeeklyPermission()"
               size="small" 
               type="success" 
               @click="handleReview(row)" 
@@ -181,6 +185,7 @@
               确认复查
             </el-button>
             <el-button 
+              v-if="hasWeeklyPermission()"
               size="small" 
               type="danger" 
               @click="handleDelete(row)" 
@@ -249,6 +254,7 @@ import {
   Download 
 } from '@element-plus/icons-vue'
 import { inspectionApi, getDictByType, getDeptList } from '@/api/inspection'
+import { hasWeeklyPermission } from '@/utils/permission'
 import AddDialog from './components/AddDialog.vue'
 import RectificationDialog from './components/RectificationDialog.vue'
 import ReviewDialog from './components/ReviewDialog.vue'
@@ -264,6 +270,7 @@ const rectificationDialogVisible = ref(false)
 const reviewDialogVisible = ref(false)
 const viewDialogVisible = ref(false)
 const currentRecord = ref({})
+const isAdminUser = ref(false)
 
 // 搜索表单
 const searchForm = reactive({
@@ -335,6 +342,11 @@ const getTableData = async () => {
       params.endTime = searchForm.dateRange[1]
     }
     delete params.dateRange
+    
+    // 添加状态过滤，仅显示待整改、已整改、已复查的记录
+      if (!params.status) {
+        params.status = '0,1,2' // 0-待整改，1-已整改，2-已复查
+      }
     
     const response = await inspectionApi.getPage(params)
     if (response.code === 200) {
@@ -483,7 +495,12 @@ const handleExport = async () => {
     
     // 构建导出参数，使用当前搜索条件
     const params = {
-      ...searchForm
+      problemDescription: searchForm.problemDescription || undefined,
+      responsiblePerson: searchForm.responsiblePerson || undefined,
+      professionId: searchForm.professionId || undefined,
+      natureId: searchForm.natureId || undefined,
+      departmentId: searchForm.departmentId || undefined,
+      status: searchForm.status !== '' && searchForm.status !== null && searchForm.status !== undefined ? searchForm.status : undefined
     }
     
     // 处理时间范围参数
@@ -491,7 +508,6 @@ const handleExport = async () => {
       params.startTime = searchForm.dateRange[0]
       params.endTime = searchForm.dateRange[1]
     }
-    delete params.dateRange
     
     const response = await inspectionApi.exportRecords(params)
     
@@ -586,9 +602,31 @@ const formatDate = (dateStr) => {
   return new Date(dateStr).toLocaleString('zh-CN')
 }
 
+// 获取当前用户部门信息并设置到搜索表单
+const setCurrentUserDepartment = () => {
+  try {
+    // 从localStorage获取用户信息
+    const userInfoStr = localStorage.getItem('userInfo')
+    if (userInfoStr) {
+      const userInfo = JSON.parse(userInfoStr)
+      
+      // 判断是否为admin用户
+      isAdminUser.value = userInfo.username === 'admin'
+      
+      // 如果不是admin用户且有部门信息，自动设置到搜索表单
+      if (!isAdminUser.value && userInfo.deptId) {
+        searchForm.departmentId = userInfo.deptId
+      }
+    }
+  } catch (error) {
+    console.error('获取用户部门信息失败:', error)
+  }
+}
+
 // 页面加载时获取数据
 onMounted(() => {
   loadOptions()
+  setCurrentUserDepartment() // 设置当前用户部门
   getTableData()
 })
 </script>

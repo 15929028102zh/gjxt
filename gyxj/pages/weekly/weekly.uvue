@@ -154,8 +154,22 @@
 				console.log('开始加载统计数据')
 				const token = uni.getStorageSync('token')
 				
-				// 获取待整改数量（状态为0）
-				const pendingUrl = getApiUrl('/inspection-record/weekly-count?status=0')
+				// 获取用户部门信息
+				let departmentId = ''
+				const userInfoData = uni.getStorageSync('userInfo')
+				const userInfoStr = userInfoData != null ? userInfoData as string : ''
+				if (userInfoStr != null && userInfoStr != '' && userInfoStr != 'null' && userInfoStr != 'undefined') {
+					try {
+					const parsedUserInfo = JSON.parse(userInfoStr) as UTSJSONObject
+					departmentId = parsedUserInfo.getString('deptId') ?? ''
+					console.log("获取到的部门id",departmentId)
+					} catch (error) {
+						console.error('用户信息JSON解析失败:', error)
+					}
+				}
+				
+				// 获取待整改数量（状态为0）- 使用分页查询API获取准确数量
+				const pendingUrl = getApiUrl(`/inspection-record/page?current=1&size=1&status=0${departmentId != null && departmentId != '' ? '&departmentId=' + departmentId : ''}`)
 				console.log('待整改数量请求URL:', pendingUrl)
 				uni.request({
 					url: pendingUrl,
@@ -167,7 +181,8 @@
 						console.log('待整改数量请求成功:', res)
 						const response = res.data as UTSJSONObject
 						if (res.statusCode == 200 && (response.getNumber('code') ?? 0) == 200) {
-							this.statistics.pendingIssues = response.getNumber('data') ?? 0
+							const data = response.getJSON('data') as UTSJSONObject
+							this.statistics.pendingIssues = data.getNumber('total') ?? 0
 							console.log('待整改数量:', this.statistics.pendingIssues)
 						} else {
 							console.log('待整改数量请求失败:', response)
@@ -178,8 +193,8 @@
 					}
 				})
 				
-				// 获取已整改数量（状态为1）
-				const completedUrl = getApiUrl('/inspection-record/weekly-count?status=1')
+				// 获取已整改数量（状态为1）- 使用分页查询API获取准确数量
+				const completedUrl = getApiUrl(`/inspection-record/page?current=1&size=1&status=1${departmentId != null && departmentId != '' ? '&departmentId=' + departmentId : ''}`)
 				console.log('已整改数量请求URL:', completedUrl)
 				uni.request({
 					url: completedUrl,
@@ -191,7 +206,8 @@
 						console.log('已整改数量请求成功:', res)
 						const response = res.data as UTSJSONObject
 						if (res.statusCode == 200 && (response.getNumber('code') ?? 0) == 200) {
-							this.statistics.completedIssues = response.getNumber('data') ?? 0
+							const data = response.getJSON('data') as UTSJSONObject
+							this.statistics.completedIssues = data.getNumber('total') ?? 0
 							console.log('已整改数量:', this.statistics.completedIssues)
 						} else {
 							console.log('已整改数量请求失败:', response)
@@ -202,8 +218,8 @@
 					}
 				})
 				
-				// 获取已复查数量（状态为2）
-				const reviewedUrl = getApiUrl('/inspection-record/weekly-count?status=2')
+				// 获取已复查数量（状态为2）- 使用分页查询API获取准确数量
+				const reviewedUrl = getApiUrl(`/inspection-record/page?current=1&size=1&status=2${departmentId != null && departmentId != '' ? '&departmentId=' + departmentId : ''}`)
 				console.log('已复查数量请求URL:', reviewedUrl)
 				uni.request({
 					url: reviewedUrl,
@@ -215,7 +231,8 @@
 						console.log('已复查数量请求成功:', res)
 						const response = res.data as UTSJSONObject
 						if (res.statusCode == 200 && (response.getNumber('code') ?? 0) == 200) {
-							this.statistics.reviewedCount = response.getNumber('data') ?? 0
+							const data = response.getJSON('data') as UTSJSONObject
+							this.statistics.reviewedCount = data.getNumber('total') ?? 0
 							console.log('已复查数量:', this.statistics.reviewedCount)
 						} else {
 							console.log('已复查数量请求失败:', response)
@@ -229,7 +246,21 @@
 			
 			loadRecentRecords() {
 				const token = uni.getStorageSync('token')
-				const apiUrl = getApiUrl('/inspection-record/page?current=1&size=5&status=0')
+				
+				// 获取用户部门信息
+				let departmentId = ''
+				const userInfoData = uni.getStorageSync('userInfo')
+				const userInfoStr = userInfoData != null ? userInfoData as string : ''
+				if (userInfoStr != null && userInfoStr != '' && userInfoStr != 'null' && userInfoStr != 'undefined') {
+					try {
+						const parsedUserInfo = JSON.parse(userInfoStr) as UTSJSONObject
+						departmentId = parsedUserInfo.getString('deptId') ?? ''
+					} catch (error) {
+						console.error('用户信息JSON解析失败:', error)
+					}
+				}
+				
+				const apiUrl = getApiUrl(`/inspection-record/page?current=1&size=5&status=0${departmentId != null && departmentId != '' ? '&departmentId=' + departmentId : ''}`)
 				console.log('请求URL:', apiUrl)
 				uni.request({
 				url: apiUrl,

@@ -144,9 +144,9 @@ mvn spring-boot:run
 
 ### 5. 访问系统
 
-- 系统地址：http://localhost:8080/api
-- Swagger文档：http://localhost:8080/api/swagger-ui.html
-- Druid监控：http://localhost:8080/api/druid/index.html
+- 系统地址：http://localhost:8081/api
+- Swagger文档：http://localhost:8081/api/swagger-ui.html
+- Druid监控：http://localhost:8081/api/druid/index.html
 
 ### 6. 默认账号
 

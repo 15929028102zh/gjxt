@@ -12,7 +12,7 @@ const routes = [
   {
     path: '/',
     component: Layout,
-    redirect: '/home',
+    redirect: 'home',
     meta: { title: '首页', icon: 'House' },
     children: [
       {
@@ -34,6 +34,18 @@ const routes = [
         name: 'WeeklyInspection',
         component: () => import('@/views/inspection/weekly/index.vue'),
         meta: { title: '周检记录录入', icon: 'EditPen' }
+      },
+      {
+        path: 'submit',
+        name: 'WeeklySubmit',
+        component: () => import('@/views/inspection/submit/index.vue'),
+        meta: { title: '周检提交', icon: 'Upload' }
+      },
+      {
+        path: 'delayed',
+        name: 'DelayedRectification',
+        component: () => import('@/views/inspection/delayed/index.vue'),
+        meta: { title: '延迟整改', icon: 'Warning' }
       }
     ]
   },
@@ -50,6 +62,18 @@ const routes = [
         meta: { title: '月检任务', icon: 'Document' }
       },
       {
+        path: 'record',
+        name: 'MonthlyRecord',
+        component: () => import('@/views/inspection/monthly/index.vue'),
+        meta: { title: '月检记录录入', icon: 'EditPen' }
+      },
+      {
+        path: 'submit',
+        name: 'MonthlySubmit',
+        component: () => import('@/views/inspection/monthlySubmit/index.vue'),
+        meta: { title: '月检提交', icon: 'Upload' }
+      },
+      {
         path: 'gjbz',
         name: 'GjbzData',
         component: () => import('@/views/monthly/gjbz/index.vue'),
@@ -61,25 +85,25 @@ const routes = [
     path: '/system',
     component: Layout,
     redirect: '/system/user',
-    meta: { title: '系统设置', icon: 'Setting' },
+    meta: { title: '系统设置', icon: 'Setting', requiresAdmin: true },
     children: [
       {
         path: 'user',
         name: 'User',
         component: () => import('@/views/system/user/index.vue'),
-        meta: { title: '用户管理', icon: 'User' }
+        meta: { title: '用户管理', icon: 'User', requiresAdmin: true }
       },
       {
         path: 'dept',
         name: 'Dept',
         component: () => import('@/views/system/dept/index.vue'),
-        meta: { title: '部门管理', icon: 'OfficeBuilding' }
+        meta: { title: '部门管理', icon: 'OfficeBuilding', requiresAdmin: true }
       },
       {
         path: 'dict',
         name: 'Dict',
         component: () => import('@/views/system/dict/index.vue'),
-        meta: { title: '字典管理', icon: 'Collection' }
+        meta: { title: '字典管理', icon: 'Collection', requiresAdmin: true }
       }
     ]
   },
@@ -103,26 +127,44 @@ const router = createRouter({
   routes
 })
 
-// 路由守卫
+// 全局前置守卫
 router.beforeEach((to, from, next) => {
-  console.log('路由守卫触发: 从', from.path, '到', to.path)
-  
   // 设置页面标题
-  if (to.meta.title) {
-    document.title = to.meta.title
+  document.title = to.meta.title ? `${to.meta.title} - 榆林公司岗检系统` : '榆林公司岗检系统'
+  
+  // 检查是否需要登录
+  if (to.path !== '/login') {
+    if (!isTokenValid()) {
+      next('/login')
+      return
+    }
+    
+    // 检查是否需要管理员权限
+    if (to.meta?.requiresAdmin) {
+      try {
+        const userInfoStr = localStorage.getItem('userInfo')
+        if (userInfoStr) {
+          const userInfo = JSON.parse(userInfoStr)
+          // 检查isAdmin字段：1=是管理员，0=不是管理员
+          if (userInfo.isAdmin !== 1 && userInfo.username !== 'admin') {
+            // 非管理员用户访问需要管理员权限的页面，重定向到首页
+            next('/')
+            return
+          }
+        } else {
+          // 没有用户信息，重定向到首页
+          next('/')
+          return
+        }
+      } catch (error) {
+        console.error('权限检查失败:', error)
+        next('/')
+        return
+      }
+    }
   }
   
-  // 登录验证 - 检查token是否有效且未过期
-  const tokenValid = isTokenValid()
-  console.log('Token验证结果:', tokenValid)
-  
-  if (to.path !== '/login' && !tokenValid) {
-    console.log('Token无效，重定向到登录页')
-    next('/login')
-  } else {
-    console.log('允许导航到:', to.path)
-    next()
-  }
+  next()
 })
 
 export default router

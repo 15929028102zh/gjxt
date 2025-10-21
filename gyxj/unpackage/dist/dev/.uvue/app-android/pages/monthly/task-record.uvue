@@ -1,6 +1,6 @@
-import { getApiUrl } from '@/config/api.uts';
+import { getApiUrl, apiConfig } from '@/config/api.uts';
 type TaskInfo = {
-    __$originalPosition?: UTSSourceMapPosition<"TaskInfo", "pages/monthly/task-record.uvue", 374, 7>;
+    __$originalPosition?: UTSSourceMapPosition<"TaskInfo", "pages/monthly/task-record.uvue", 360, 7>;
     taskNumber: string;
     inspectionDate: string;
     department: string;
@@ -9,23 +9,21 @@ type TaskInfo = {
     deputyLeader: string;
 };
 type FormData = {
-    __$originalPosition?: UTSSourceMapPosition<"FormData", "pages/monthly/task-record.uvue", 383, 7>;
+    __$originalPosition?: UTSSourceMapPosition<"FormData", "pages/monthly/task-record.uvue", 369, 7>;
     problemType: string;
-    problemLevel: string;
     problemDescription: string;
     location: string;
-    suggestion: string;
     photos: string[];
-    deductionScore: string;
-    safetyScoreItem: string;
+    safetyScore: string;
     rectificationDate: string;
     module: string;
     responsibility: string;
     issue: string;
     quality: string;
+    inspector: string;
 };
 type OptionItem = {
-    __$originalPosition?: UTSSourceMapPosition<"OptionItem", "pages/monthly/task-record.uvue", 399, 7>;
+    __$originalPosition?: UTSSourceMapPosition<"OptionItem", "pages/monthly/task-record.uvue", 383, 7>;
     id: string;
     name: string;
     value?: string;
@@ -37,11 +35,8 @@ const __sfc__ = defineComponent({
         containerHeight: number;
         scrollTop: number;
         showProblemTypeModal: boolean;
-        showProblemLevelModal: boolean;
         selectedProblemType: string;
-        selectedProblemLevel: string;
         problemTypes: any[];
-        problemLevels: any[];
         // 级联选择器相关
         showTypePopup: boolean;
         showModulePopup: boolean;
@@ -64,7 +59,21 @@ const __sfc__ = defineComponent({
         responsibilitySearchKeyword: string;
         issueSearchKeyword: string;
         qualitySearchKeyword: string;
+        // 日期选择器相关
+        datePickerVisible: boolean;
+        pickerValue: number[];
+        years: number[];
+        months: number[];
+        days: number[];
+        selectedYear: number;
+        selectedMonth: number;
+        selectedDay: number;
+        pickerDebounceTimer: number | null;
     } {
+        // 计算默认整改时间（当前日期往后推7天）
+        const defaultDate = new Date();
+        defaultDate.setDate(defaultDate.getDate() + 7);
+        const defaultDateStr = `${defaultDate.getFullYear()}-${(defaultDate.getMonth() + 1).toString(10).padStart(2, '0')}-${defaultDate.getDate().toString(10).padStart(2, '0')}`;
         return {
             taskInfo: {
                 taskNumber: '',
@@ -76,25 +85,21 @@ const __sfc__ = defineComponent({
             } as TaskInfo,
             formData: {
                 problemType: '',
-                problemLevel: '',
                 problemDescription: '',
                 location: '',
-                suggestion: '',
                 photos: [],
-                deductionScore: '',
-                safetyScoreItem: '',
-                rectificationDate: '',
+                safetyScore: '',
+                rectificationDate: defaultDateStr,
                 module: '',
                 responsibility: '',
                 issue: '',
-                quality: ''
+                quality: '',
+                inspector: ''
             } as FormData,
             containerHeight: 0,
             scrollTop: 0,
             showProblemTypeModal: false,
-            showProblemLevelModal: false,
             selectedProblemType: '',
-            selectedProblemLevel: '',
             problemTypes: [
                 '安全隐患',
                 '设备故障',
@@ -103,7 +108,6 @@ const __sfc__ = defineComponent({
                 '制度缺失',
                 '其他问题'
             ],
-            problemLevels: [] as any[],
             // 级联选择器相关
             showTypePopup: false,
             showModulePopup: false,
@@ -125,21 +129,49 @@ const __sfc__ = defineComponent({
             moduleSearchKeyword: '',
             responsibilitySearchKeyword: '',
             issueSearchKeyword: '',
-            qualitySearchKeyword: ''
+            qualitySearchKeyword: '',
+            // 日期选择器相关
+            datePickerVisible: false,
+            pickerValue: [0, 0, 0],
+            years: [] as number[],
+            months: [] as number[],
+            days: [] as number[],
+            selectedYear: ((): number => {
+                const tempDate = new Date();
+                tempDate.setDate(tempDate.getDate() + 7);
+                return tempDate.getFullYear();
+            })() as number,
+            selectedMonth: ((): number => {
+                const tempDate = new Date();
+                tempDate.setDate(tempDate.getDate() + 7);
+                return tempDate.getMonth() + 1;
+            })() as number,
+            selectedDay: ((): number => {
+                const tempDate = new Date();
+                tempDate.setDate(tempDate.getDate() + 7);
+                return tempDate.getDate();
+            })() as number,
+            // 防抖定时器
+            pickerDebounceTimer: null as number | null
         };
     },
+    // 预览照片
+    previewPhoto(photo: string) {
+        uni.previewImage({
+            current: this.convertToHttpUrl(photo),
+            urls: this.formData.photos.map((p: string): string => this.convertToHttpUrl(p)) as string[]
+        });
+    },
     onLoad(options: UTSJSONObject) {
-        const taskId = options.getString('taskNo');
-        console.log(taskId, " at pages/monthly/task-record.uvue:505");
+        const taskId = options.getString('taskId');
+        console.log(taskId, " at pages/monthly/task-record.uvue:531");
         if (taskId != null && taskId != '') {
             this.loadTaskInfo(taskId);
         }
         // 初始化级联选择器数据
         this.loadTypeOptions();
-        // 初始化问题等级数据
-        this.loadProblemLevels();
-        // 初始化整改期限默认值
-        this.formData.rectificationDate = this.getDefaultRectificationDate();
+        // 初始化日期选择器数据
+        this.initDateArrays();
     },
     onReady() {
         this.initContainerHeight();
@@ -185,8 +217,6 @@ const __sfc__ = defineComponent({
         // 获取默认整改期限（当前日期往后推三个月）
         getDefaultRectificationDate(): string {
             const now = new Date();
-            // 往后推三个月
-            now.setMonth(now.getMonth() + 3);
             const year = now.getFullYear();
             const month = (now.getMonth() + 1).toString(10);
             const day = now.getDate().toString(10);
@@ -195,6 +225,19 @@ const __sfc__ = defineComponent({
                 return num.length < 2 ? `0${num}` : num;
             };
             return `${year}-${padZero(month)}-${padZero(day)}`;
+        },
+        // 将相对路径转换为HTTP访问路径
+        convertToHttpUrl(relativePath: string): string {
+            console.log('相对路径:', relativePath, " at pages/monthly/task-record.uvue:606");
+            // 如果已经是HTTP路径，直接返回
+            if (relativePath.startsWith('http://') || relativePath.startsWith('https://')) {
+                return relativePath;
+            }
+            // 直接拼接完整的HTTP URL
+            // 后端已返回相对路径，如: /files/images/20250818/xxx.jpg
+            const httpUrl = `${apiConfig.baseUrl}/api${relativePath}`;
+            console.log('转换后的HTTP URL:', httpUrl, " at pages/monthly/task-record.uvue:615");
+            return httpUrl;
         },
         // 初始化容器高度
         initContainerHeight() {
@@ -205,7 +248,7 @@ const __sfc__ = defineComponent({
         loadTaskInfo(taskId: string) {
             try {
                 const token = uni.getStorageSync('token');
-                console.log(taskId, " at pages/monthly/task-record.uvue:593");
+                console.log(taskId, " at pages/monthly/task-record.uvue:628");
                 uni.request({
                     url: getApiUrl(`/monthly-inspection-task/${taskId}`),
                     method: 'GET',
@@ -216,10 +259,10 @@ const __sfc__ = defineComponent({
                         const respdata = res.data as UTSJSONObject;
                         if (respdata.getNumber('code') === 200) {
                             const taskInfo = respdata.getJSON('data');
-                            console.log("获取到的数据:", taskInfo, " at pages/monthly/task-record.uvue:604");
+                            console.log("获取到的数据:", taskInfo, " at pages/monthly/task-record.uvue:639");
                             if (taskInfo != null) {
                                 this.taskInfo = {
-                                    taskNumber: taskInfo.getString('taskNo') ?? '',
+                                    taskNumber: taskInfo.getString('id') ?? '',
                                     inspectionDate: taskInfo.getString('inspectionTime') ?? '',
                                     department: taskInfo.getString('departmentName') ?? '',
                                     profession: taskInfo.getString('professionId') ?? '',
@@ -232,7 +275,7 @@ const __sfc__ = defineComponent({
                         }
                     },
                     fail: (error) => {
-                        console.error('加载任务信息失败:', error, " at pages/monthly/task-record.uvue:620");
+                        console.error('加载任务信息失败:', error, " at pages/monthly/task-record.uvue:655");
                         // 模拟数据
                         this.taskInfo = {
                             taskNumber: 'YJ202401001',
@@ -248,7 +291,7 @@ const __sfc__ = defineComponent({
                 });
             }
             catch (error: any) {
-                console.error('加载任务信息失败:', error, " at pages/monthly/task-record.uvue:635");
+                console.error('加载任务信息失败:', error, " at pages/monthly/task-record.uvue:670");
                 // 模拟数据
                 this.taskInfo = {
                     taskNumber: 'YJ202401001',
@@ -281,39 +324,39 @@ const __sfc__ = defineComponent({
         },
         // 自动填充性质界定
         autoFillProfession() {
-            console.log('开始自动填充性质界定', " at pages/monthly/task-record.uvue:673");
-            console.log('taskInfo:', this.taskInfo, " at pages/monthly/task-record.uvue:674");
-            console.log('typeOptions:', this.typeOptions, " at pages/monthly/task-record.uvue:675");
+            console.log('开始自动填充性质界定', " at pages/monthly/task-record.uvue:708");
+            console.log('taskInfo:', this.taskInfo, " at pages/monthly/task-record.uvue:709");
+            console.log('typeOptions:', this.typeOptions, " at pages/monthly/task-record.uvue:710");
             if (this.taskInfo != null && this.taskInfo.profession != '' && this.typeOptions.length > 0) {
-                console.log('查找性质界定:', this.taskInfo.profession, " at pages/monthly/task-record.uvue:678");
+                console.log('查找性质界定:', this.taskInfo.profession, " at pages/monthly/task-record.uvue:713");
                 const index = this.typeOptions.findIndex((item: OptionItem): boolean => item.name === this.taskInfo.profession);
-                console.log('找到的性质界定索引:', index, " at pages/monthly/task-record.uvue:680");
+                console.log('找到的性质界定索引:', index, " at pages/monthly/task-record.uvue:715");
                 if (index !== -1) {
                     this.selectedTypeIndex = index;
-                    console.log('已设置性质界定索引:', this.selectedTypeIndex, " at pages/monthly/task-record.uvue:684");
+                    console.log('已设置性质界定索引:', this.selectedTypeIndex, " at pages/monthly/task-record.uvue:719");
                     // 自动加载模块选项
                     this.loadModuleOptions((this.typeOptions[index] as OptionItem).id);
                 }
                 else {
-                    console.warn('未找到匹配的性质界定:', this.taskInfo.profession, " at pages/monthly/task-record.uvue:688");
+                    console.warn('未找到匹配的性质界定:', this.taskInfo.profession, " at pages/monthly/task-record.uvue:723");
                     // 尝试模糊匹配
                     const fuzzyIndex = this.typeOptions.findIndex((item: OptionItem): boolean => item.name.includes(this.taskInfo.profession) || this.taskInfo.profession.includes(item.name));
                     if (fuzzyIndex !== -1) {
                         this.selectedTypeIndex = fuzzyIndex;
-                        console.log('模糊匹配到性质界定索引:', this.selectedTypeIndex, " at pages/monthly/task-record.uvue:695");
+                        console.log('模糊匹配到性质界定索引:', this.selectedTypeIndex, " at pages/monthly/task-record.uvue:730");
                         this.loadModuleOptions((this.typeOptions[fuzzyIndex] as OptionItem).id);
                     }
                 }
             }
             else {
                 if (this.taskInfo == null) {
-                    console.log('taskInfo为空，等待任务信息加载', " at pages/monthly/task-record.uvue:701");
+                    console.log('taskInfo为空，等待任务信息加载', " at pages/monthly/task-record.uvue:736");
                 }
                 else if (this.taskInfo.profession == '') {
-                    console.log('专业信息为空', " at pages/monthly/task-record.uvue:703");
+                    console.log('专业信息为空', " at pages/monthly/task-record.uvue:738");
                 }
                 else if (this.typeOptions.length === 0) {
-                    console.log('性质界定选项未加载，等待加载完成', " at pages/monthly/task-record.uvue:705");
+                    console.log('性质界定选项未加载，等待加载完成', " at pages/monthly/task-record.uvue:740");
                 }
             }
             // 自动加载对应性质界定的岗检标准项
@@ -332,7 +375,7 @@ const __sfc__ = defineComponent({
                     const respdata = res.data as UTSJSONObject;
                     if (respdata.getNumber('code') === 200) {
                         const data = respdata.getArray('data');
-                        console.log("获取到的专业类别数据", data, " at pages/monthly/task-record.uvue:726");
+                        console.log("获取到的专业类别数据", data, " at pages/monthly/task-record.uvue:761");
                         if (data != null) {
                             const options: OptionItem[] = [];
                             for (let i = 0; i < data.length; i++) {
@@ -343,18 +386,18 @@ const __sfc__ = defineComponent({
                                 } as OptionItem);
                             }
                             this.typeOptions = options;
-                            console.log("专业类别选项已加载:", this.typeOptions, " at pages/monthly/task-record.uvue:737");
+                            console.log("专业类别选项已加载:", this.typeOptions, " at pages/monthly/task-record.uvue:772");
                             // 自动填充专业类别
                             this.autoFillProfession();
                         }
                     }
                     else {
-                        console.error('加载专业类别失败:', respdata.getString('message'), " at pages/monthly/task-record.uvue:742");
+                        console.error('加载专业类别失败:', respdata.getString('message'), " at pages/monthly/task-record.uvue:777");
                         this.loadFallbackTypeOptions();
                     }
                 },
                 fail: (error) => {
-                    console.error('加载专业类别失败:', error, " at pages/monthly/task-record.uvue:747");
+                    console.error('加载专业类别失败:', error, " at pages/monthly/task-record.uvue:782");
                     this.loadFallbackTypeOptions();
                 }
             });
@@ -368,59 +411,9 @@ const __sfc__ = defineComponent({
                 { id: '4', name: '安全专业' } as OptionItem,
                 { id: '5', name: '环保专业' } as OptionItem
             ];
-            console.log("使用备用专业类别数据:", this.typeOptions, " at pages/monthly/task-record.uvue:762");
+            console.log("使用备用专业类别数据:", this.typeOptions, " at pages/monthly/task-record.uvue:797");
             // 自动填充专业类别
             this.autoFillProfession();
-        },
-        // 加载问题等级选项
-        loadProblemLevels() {
-            const token = uni.getStorageSync('token');
-            uni.request({
-                url: getApiUrl('/dictionary/items/问题等级'),
-                method: 'GET',
-                header: {
-                    'Authorization': `Bearer ${token}`
-                },
-                success: (res) => {
-                    const respdata = res.data as UTSJSONObject;
-                    if (respdata.getNumber('code') === 200) {
-                        const data = respdata.getArray('data');
-                        console.log("获取到的问题等级数据", data, " at pages/monthly/task-record.uvue:780");
-                        if (data != null) {
-                            const levels: any[] = [];
-                            for (let i = 0; i < data.length; i++) {
-                                const item = data[i] as UTSJSONObject;
-                                const desc = item.getString('description');
-                                levels.push({
-                                    value: item.getString('value'),
-                                    name: item.getString('label'),
-                                    desc: desc != null ? desc : ''
-                                } as UTSJSONObject);
-                            }
-                            this.problemLevels = levels;
-                            console.log("问题等级选项已加载:", this.problemLevels, " at pages/monthly/task-record.uvue:793");
-                        }
-                    }
-                    else {
-                        console.error('加载问题等级失败:', respdata.getString('message'), " at pages/monthly/task-record.uvue:796");
-                        this.loadFallbackProblemLevels();
-                    }
-                },
-                fail: (error) => {
-                    console.error('加载问题等级失败:', error, " at pages/monthly/task-record.uvue:801");
-                    this.loadFallbackProblemLevels();
-                }
-            });
-        },
-        // 加载备用问题等级数据
-        loadFallbackProblemLevels() {
-            this.problemLevels = [
-                { value: 'critical', name: '严重', desc: '可能造成重大安全事故' },
-                { value: 'major', name: '重要', desc: '可能造成一般安全事故' },
-                { value: 'minor', name: '一般', desc: '需要及时整改' },
-                { value: 'suggestion', name: '建议', desc: '改进建议' }
-            ];
-            console.log("使用备用问题等级数据:", this.problemLevels, " at pages/monthly/task-record.uvue:815");
         },
         // 根据专业信息加载岗检标准项
         loadGjbzDataByProfession() {
@@ -429,7 +422,7 @@ const __sfc__ = defineComponent({
             }
             const token = uni.getStorageSync('token');
             uni.request({
-                url: getApiUrl(`/gjbz-data/by-profession/${UTSAndroid.consoleDebugError(encodeURIComponent(this.taskInfo.profession), " at pages/monthly/task-record.uvue:826")}`),
+                url: getApiUrl(`/gjbz-data/by-profession/${UTSAndroid.consoleDebugError(encodeURIComponent(this.taskInfo.profession), " at pages/monthly/task-record.uvue:812")}`),
                 method: 'GET',
                 header: {
                     'Authorization': `Bearer ${token}`
@@ -439,20 +432,20 @@ const __sfc__ = defineComponent({
                     if (respdata.getNumber('code') === 200) {
                         const data = respdata.getArray('data');
                         if (data != null && data.length > 0) {
-                            console.log(`找到${data.length}个与专业"${this.taskInfo.profession}"相关的岗检标准项`, " at pages/monthly/task-record.uvue:836");
+                            console.log(`找到${data.length}个与专业"${this.taskInfo.profession}"相关的岗检标准项`, " at pages/monthly/task-record.uvue:822");
                             // 这里可以将数据存储到组件的数据中，供后续使用
                             // 例如：this.gjbzDataList = data
                         }
                         else {
-                            console.log(`未找到与专业"${this.taskInfo.profession}"相关的岗检标准项`, " at pages/monthly/task-record.uvue:840");
+                            console.log(`未找到与专业"${this.taskInfo.profession}"相关的岗检标准项`, " at pages/monthly/task-record.uvue:826");
                         }
                     }
                     else {
-                        console.error('加载岗检标准项失败:', respdata.getString('message'), " at pages/monthly/task-record.uvue:843");
+                        console.error('加载岗检标准项失败:', respdata.getString('message'), " at pages/monthly/task-record.uvue:829");
                     }
                 },
                 fail: (error) => {
-                    console.error('加载岗检标准项失败:', error, " at pages/monthly/task-record.uvue:847");
+                    console.error('加载岗检标准项失败:', error, " at pages/monthly/task-record.uvue:833");
                 }
             });
         },
@@ -460,29 +453,6 @@ const __sfc__ = defineComponent({
         confirmProblemType() {
             this.formData.problemType = this.selectedProblemType;
             this.hideProblemTypePicker();
-        },
-        // 显示问题等级选择器
-        showProblemLevelPicker() {
-            this.selectedProblemLevel = this.formData.problemLevel;
-            this.showProblemLevelModal = true;
-        },
-        // 隐藏问题等级选择器
-        hideProblemLevelPicker() {
-            this.showProblemLevelModal = false;
-        },
-        // 选择问题等级
-        selectProblemLevel(level: string) {
-            this.selectedProblemLevel = level;
-        },
-        // 确认问题等级
-        confirmProblemLevel() {
-            const level = this.problemLevels.find((item: any): boolean => {
-                const l = item as UTSJSONObject;
-                const value = l.getString('value');
-                return value != null && value === this.selectedProblemLevel;
-            }) as UTSJSONObject | null;
-            this.formData.problemLevel = level != null ? level['name'] as string : '';
-            this.hideProblemLevelPicker();
         },
         // 专业类别选择器方法
         showTypePicker() {
@@ -655,7 +625,7 @@ const __sfc__ = defineComponent({
                     }
                 },
                 fail: (error) => {
-                    console.error('加载模块选项失败:', error, " at pages/monthly/task-record.uvue:1061");
+                    console.error('加载模块选项失败:', error, " at pages/monthly/task-record.uvue:1024");
                     this.moduleOptions = [
                         { id: 'module1', name: '模块1' } as OptionItem,
                         { id: 'module2', name: '模块2' } as OptionItem,
@@ -691,7 +661,7 @@ const __sfc__ = defineComponent({
                     }
                 },
                 fail: (error) => {
-                    console.error('加载责任选项失败:', error, " at pages/monthly/task-record.uvue:1098");
+                    console.error('加载责任选项失败:', error, " at pages/monthly/task-record.uvue:1061");
                     this.responsibilityOptions = [
                         { id: 'resp1', name: '责任1' } as OptionItem,
                         { id: 'resp2', name: '责任2' } as OptionItem,
@@ -727,7 +697,7 @@ const __sfc__ = defineComponent({
                     }
                 },
                 fail: (error) => {
-                    console.error('加载问题选项失败:', error, " at pages/monthly/task-record.uvue:1135");
+                    console.error('加载问题选项失败:', error, " at pages/monthly/task-record.uvue:1098");
                     this.issueOptions = [
                         { id: 'issue1', name: '问题1' } as OptionItem,
                         { id: 'issue2', name: '问题2' } as OptionItem,
@@ -740,35 +710,51 @@ const __sfc__ = defineComponent({
         loadQualityOptions() {
             const token = uni.getStorageSync('token');
             uni.request({
-                url: getApiUrl('/gjbz-data/options/qualities'),
+                url: getApiUrl('/dictionary/type/性质界定'),
                 method: 'GET',
                 header: {
-                    'Authorization': `Bearer ${token}`
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
                 },
                 success: (res) => {
-                    const respdata = res.data as UTSJSONObject;
-                    if (respdata.getNumber('code') === 200) {
-                        const data = respdata.getArray('data');
-                        if (data != null) {
-                            const options: OptionItem[] = [];
-                            for (let i = 0; i < data.length; i++) {
-                                const item = data[i] as string;
-                                options.push({
-                                    id: (i + 1).toString(10),
-                                    name: item
-                                } as OptionItem);
+                    const data = res.data as UTSJSONObject;
+                    const code = data.getNumber('code');
+                    if (res.statusCode === 200 && code === 200) {
+                        // 将API返回的字典数据转换为选择器需要的格式
+                        const dataArray = data.getArray('data');
+                        if (dataArray != null) {
+                            this.qualityOptions = [];
+                            for (let i = 0; i < dataArray.length; i++) {
+                                const item = dataArray[i] as UTSJSONObject;
+                                const id = item.getString('id') ?? '';
+                                const dictValue = item.getString('dictValue') ?? '';
+                                const dictLabel = item.getString('dictLabel') ?? '';
+                                const name = dictValue !== '' ? dictValue : dictLabel;
+                                this.qualityOptions.push({ id: id, name: name } as OptionItem);
                             }
-                            this.qualityOptions = options;
                         }
+                        console.log('性质界定选项加载完成:', this.qualityOptions, " at pages/monthly/task-record.uvue:1135");
+                    }
+                    else {
+                        const message = data.getString('message') ?? '未知错误';
+                        console.error('获取性质界定数据失败:', message, " at pages/monthly/task-record.uvue:1138");
+                        // 使用默认数据作为备选
+                        this.qualityOptions = [
+                            { id: '1', name: '一般问题' } as OptionItem,
+                            { id: '2', name: '较大问题' } as OptionItem,
+                            { id: '3', name: '严重问题' } as OptionItem,
+                            { id: '4', name: '重大问题' } as OptionItem
+                        ] as OptionItem[];
                     }
                 },
                 fail: (error) => {
-                    console.error('加载性质界定选项失败:', error, " at pages/monthly/task-record.uvue:1172");
+                    console.error('请求性质界定数据失败:', error, " at pages/monthly/task-record.uvue:1149");
+                    // 使用默认数据作为备选
                     this.qualityOptions = [
-                        { id: 'quality1', name: '一般问题' } as OptionItem,
-                        { id: 'quality2', name: '中等问题' } as OptionItem,
-                        { id: 'quality3', name: '严重问题' } as OptionItem,
-                        { id: 'quality4', name: '重大问题' } as OptionItem
+                        { id: '1', name: '一般问题' } as OptionItem,
+                        { id: '2', name: '较大问题' } as OptionItem,
+                        { id: '3', name: '严重问题' } as OptionItem,
+                        { id: '4', name: '重大问题' } as OptionItem
                     ] as OptionItem[];
                 }
             });
@@ -779,57 +765,149 @@ const __sfc__ = defineComponent({
             setTimeout(() => {
                 switch (qualityId) {
                     case 'quality1':
-                        this.formData.deductionScore = '5';
-                        this.formData.safetyScoreItem = '一般安全记分';
+                        this.formData.safetyScore = '5分 - 一般安全记分';
                         break;
                     case 'quality2':
-                        this.formData.deductionScore = '10';
-                        this.formData.safetyScoreItem = '严重安全记分';
+                        this.formData.safetyScore = '10分 - 严重安全记分';
                         break;
                     case 'quality3':
-                        this.formData.deductionScore = '20';
-                        this.formData.safetyScoreItem = '重大安全记分';
+                        this.formData.safetyScore = '20分 - 重大安全记分';
                         break;
                     default:
-                        this.formData.deductionScore = '';
-                        this.formData.safetyScoreItem = '';
+                        this.formData.safetyScore = '';
                 }
             }, 100);
         },
         // 根据选择的问题自动填充问题性质和对应分数
         autoFillIssueDetails(issueId: string, issueName: string) {
-            console.log('开始自动填充问题详情:', issueId, issueName, " at pages/monthly/task-record.uvue:1209");
+            console.log('开始自动填充问题详情:', issueId, issueName, " at pages/monthly/task-record.uvue:1183");
             // 首先加载性质界定选项（如果还没有加载）
             if (this.qualityOptions.length === 0) {
-                this.loadQualityOptions();
+                this.loadQualityOptionsAndFill(issueId, issueName);
+                return;
             }
+            this.performAutoFill(issueId, issueName);
+        },
+        // 加载性质界定选项并执行自动填充
+        loadQualityOptionsAndFill(issueId: string, issueName: string) {
+            const token = uni.getStorageSync('token');
+            uni.request({
+                url: getApiUrl('/dictionary/type/性质界定'),
+                method: 'GET',
+                header: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                success: (res) => {
+                    const data = res.data as UTSJSONObject;
+                    const code = data.getNumber('code');
+                    if (res.statusCode === 200 && code === 200) {
+                        // 将API返回的字典数据转换为选择器需要的格式
+                        const dataArray = data.getArray('data');
+                        if (dataArray != null) {
+                            this.qualityOptions = [];
+                            for (let i = 0; i < dataArray.length; i++) {
+                                const item = dataArray[i] as UTSJSONObject;
+                                const id = item.getString('id') ?? '';
+                                const dictValue = item.getString('dictValue') ?? '';
+                                const dictLabel = item.getString('dictLabel') ?? '';
+                                const name = dictValue !== '' ? dictValue : dictLabel;
+                                this.qualityOptions.push({ id: id, name: name } as OptionItem);
+                            }
+                            // 加载完成后执行自动填充
+                            this.performAutoFill(issueId, issueName);
+                        }
+                    }
+                    else {
+                        const message = data.getString('message') ?? '未知错误';
+                        console.error('获取性质界定数据失败:', message, " at pages/monthly/task-record.uvue:1225");
+                        // 使用备用数据
+                        this.qualityOptions = [
+                            { id: '1', name: '一般问题' } as OptionItem,
+                            { id: '2', name: '较大问题' } as OptionItem,
+                            { id: '3', name: '严重问题' } as OptionItem,
+                            { id: '4', name: '重大问题' } as OptionItem
+                        ] as OptionItem[];
+                        // 执行自动填充
+                        this.performAutoFill(issueId, issueName);
+                    }
+                },
+                fail: (error) => {
+                    console.error('请求性质界定数据失败:', error, " at pages/monthly/task-record.uvue:1238");
+                    // 使用备用数据
+                    this.qualityOptions = [
+                        { id: '1', name: '一般问题' } as OptionItem,
+                        { id: '2', name: '较大问题' } as OptionItem,
+                        { id: '3', name: '严重问题' } as OptionItem,
+                        { id: '4', name: '重大问题' } as OptionItem
+                    ] as OptionItem[];
+                    // 执行自动填充
+                    this.performAutoFill(issueId, issueName);
+                }
+            });
+        },
+        // 执行自动填充逻辑
+        performAutoFill(issueId: string, issueName: string) {
             // 根据问题名称智能匹配问题性质和分数
             const issueMapping = this.getIssueQualityMapping(issueName) as UTSJSONObject | null;
             if (issueMapping != null) {
-                // 设置问题性质
-                this.formData.quality = issueMapping.getString('quality') ?? '';
-                // 查找对应的性质界定索引
-                const qualityIndex = this.qualityOptions.findIndex((item: OptionItem): boolean => item.name === (issueMapping.getString('quality') ?? ''));
+                const qualityName = issueMapping.getString('quality') ?? '';
+                const safetyScoreText = issueMapping.getString('safetyScore') ?? '';
+                // 智能匹配性质界定
+                let qualityIndex = -1;
+                let matchedQualityName = '';
+                // 首先尝试精确匹配
+                qualityIndex = this.qualityOptions.findIndex((item: OptionItem): boolean => item.name === qualityName);
+                // 如果精确匹配失败，尝试模糊匹配
+                if (qualityIndex === -1) {
+                    // 根据关键词匹配性质界定
+                    if (qualityName.includes('严重') || qualityName.includes('重大')) {
+                        qualityIndex = this.qualityOptions.findIndex((item: OptionItem): boolean => item.name.includes('严重') || item.name.includes('重大') || item.name.includes('重要'));
+                    }
+                    else if (qualityName.includes('一般') || qualityName.includes('轻微')) {
+                        qualityIndex = this.qualityOptions.findIndex((item: OptionItem): boolean => item.name.includes('一般') || item.name.includes('轻微') || item.name.includes('普通'));
+                    }
+                    else if (qualityName.includes('中等') || qualityName.includes('较大')) {
+                        qualityIndex = this.qualityOptions.findIndex((item: OptionItem): boolean => item.name.includes('中等') || item.name.includes('较大') || item.name.includes('中'));
+                    }
+                }
+                // 设置性质界定
                 if (qualityIndex !== -1) {
                     this.selectedQualityIndex = qualityIndex;
+                    matchedQualityName = (this.qualityOptions[qualityIndex] as OptionItem).name;
+                    this.formData.quality = matchedQualityName;
                 }
-                // 设置扣分值和安全记分关联项
-                this.formData.deductionScore = issueMapping.getString('deductionScore') ?? '';
-                this.formData.safetyScoreItem = issueMapping.getString('safetyScoreItem') ?? '';
+                else {
+                    // 如果都没有匹配到，使用第一个选项作为默认值
+                    if (this.qualityOptions.length > 0) {
+                        this.selectedQualityIndex = 0;
+                        matchedQualityName = (this.qualityOptions[0] as OptionItem).name;
+                        this.formData.quality = matchedQualityName;
+                    }
+                }
+                // 设置安全记分 - 只提取数字部分
+                const scoreMatch = safetyScoreText.match(/(\d+)分/);
+                if (scoreMatch != null && scoreMatch.length > 1 && scoreMatch[1] != null) {
+                    this.formData.safetyScore = scoreMatch[1] as string;
+                }
+                else {
+                    this.formData.safetyScore = '5'; // 默认值
+                }
                 console.log('自动填充完成:', {
-                    quality: this.formData.quality,
-                    deductionScore: this.formData.deductionScore,
-                    safetyScoreItem: this.formData.safetyScoreItem
-                }, " at pages/monthly/task-record.uvue:1232");
+                    originalQuality: qualityName,
+                    matchedQuality: matchedQualityName,
+                    safetyScore: this.formData.safetyScore,
+                    selectedQualityIndex: this.selectedQualityIndex
+                }, " at pages/monthly/task-record.uvue:1305");
                 // 显示提示信息
                 uni.showToast({
-                    title: `已自动填充：${issueMapping["quality"]}，扣${issueMapping["deductionScore"]}分`,
+                    title: `已自动填充：${matchedQualityName}，${this.formData.safetyScore}分`,
                     icon: 'success',
                     duration: 2000
                 });
             }
             else {
-                console.log('未找到匹配的问题映射规则', " at pages/monthly/task-record.uvue:1245");
+                console.log('未找到匹配的问题映射规则', " at pages/monthly/task-record.uvue:1319");
             }
         },
         // 获取问题与性质界定的映射关系
@@ -837,14 +915,14 @@ const __sfc__ = defineComponent({
             // 定义问题与性质界定的映射规则
             const mappingRules = [
                 // 严重问题类型
-                { keywords: ['违章', '违规', '严重', '重大', '危险', '安全隐患'], quality: '严重问题', deductionScore: '15', safetyScoreItem: '严重安全记分' },
-                { keywords: ['火灾', '爆炸', '中毒', '触电', '高空坠落'], quality: '重大问题', deductionScore: '25', safetyScoreItem: '重大安全记分' },
+                { keywords: ['违章', '违规', '严重', '重大', '危险', '安全隐患'], quality: '严重问题', safetyScore: '15分 - 严重安全记分' },
+                { keywords: ['火灾', '爆炸', '中毒', '触电', '高空坠落'], quality: '重大问题', safetyScore: '25分 - 重大安全记分' },
                 // 一般问题类型
-                { keywords: ['轻微', '一般', '小问题', '不规范', '不完善'], quality: '一般问题', deductionScore: '5', safetyScoreItem: '一般安全记分' },
-                { keywords: ['标识', '标牌', '记录', '台账', '文档'], quality: '一般问题', deductionScore: '3', safetyScoreItem: '一般安全记分' },
+                { keywords: ['轻微', '一般', '小问题', '不规范', '不完善'], quality: '一般问题', safetyScore: '5分 - 一般安全记分' },
+                { keywords: ['标识', '标牌', '记录', '台账', '文档'], quality: '一般问题', safetyScore: '3分 - 一般安全记分' },
                 // 中等问题类型
-                { keywords: ['设备', '工具', '防护', '操作', '流程'], quality: '中等问题', deductionScore: '10', safetyScoreItem: '中等安全记分' },
-                { keywords: ['环境', '卫生', '整理', '整顿'], quality: '中等问题', deductionScore: '8', safetyScoreItem: '中等安全记分' }
+                { keywords: ['设备', '工具', '防护', '操作', '流程'], quality: '中等问题', safetyScore: '10分 - 中等安全记分' },
+                { keywords: ['环境', '卫生', '整理', '整顿'], quality: '中等问题', safetyScore: '8分 - 中等安全记分' }
             ] as UTSJSONObject[];
             // 查找匹配的规则
             for (let i = 0; i < mappingRules.length; i++) {
@@ -855,8 +933,7 @@ const __sfc__ = defineComponent({
                     if (issueName.includes(keyword)) {
                         return {
                             quality: rule["quality"],
-                            deductionScore: rule["deductionScore"],
-                            safetyScoreItem: rule["safetyScoreItem"]
+                            safetyScore: rule["safetyScore"]
                         };
                     }
                 }
@@ -864,8 +941,7 @@ const __sfc__ = defineComponent({
             // 如果没有匹配到，返回默认值
             return {
                 quality: '一般问题',
-                deductionScore: '5',
-                safetyScoreItem: '一般安全记分'
+                safetyScore: '5分 - 一般安全记分'
             };
         },
         // 添加照片
@@ -875,7 +951,76 @@ const __sfc__ = defineComponent({
                 sizeType: ['compressed'],
                 sourceType: ['camera', 'album'],
                 success: (res) => {
-                    this.formData.photos.push(...res.tempFilePaths);
+                    // 逐个上传选择的图片
+                    res.tempFilePaths.forEach(tempPath => {
+                        this.uploadImage(tempPath);
+                    });
+                }
+            });
+        },
+        // 上传图片到服务器
+        uploadImage(imagePath: string) {
+            console.log('=== 移动端图片上传调试信息 ===', " at pages/monthly/task-record.uvue:1379");
+            console.log('选择的图片路径:', imagePath, " at pages/monthly/task-record.uvue:1380");
+            uni.showLoading({
+                title: '上传中...'
+            });
+            uni.uploadFile({
+                url: getApiUrl('/upload/image'),
+                filePath: imagePath,
+                name: 'file',
+                header: {
+                    'Authorization': uni.getStorageSync('token')
+                },
+                success: (uploadRes) => {
+                    uni.hideLoading();
+                    console.log('上传响应状态码:', uploadRes.statusCode, " at pages/monthly/task-record.uvue:1395");
+                    console.log('上传响应数据:', uploadRes.data, " at pages/monthly/task-record.uvue:1396");
+                    try {
+                        const result = UTSAndroid.consoleDebugError(JSON.parse(uploadRes.data), " at pages/monthly/task-record.uvue:1399") as UTSJSONObject;
+                        console.log('解析后的响应数据:', result, " at pages/monthly/task-record.uvue:1400");
+                        const code = result.getNumber('code');
+                        if (code === 200) {
+                            // 上传成功，将服务器返回的URL添加到photos数组
+                            const data = result.getJSON('data');
+                            if (data != null) {
+                                const url = data.getString('url');
+                                console.log('服务器返回的图片URL:', url, " at pages/monthly/task-record.uvue:1408");
+                                if (url != null) {
+                                    this.formData.photos.push(url);
+                                    console.log('当前photos数组:', this.formData.photos, " at pages/monthly/task-record.uvue:1411");
+                                }
+                            }
+                        }
+                        else {
+                            let message = result.getString('message');
+                            if (message == null) {
+                                message = '上传失败';
+                            }
+                            console.error('上传失败，服务器响应:', result, " at pages/monthly/task-record.uvue:1419");
+                            uni.showToast({
+                                title: message,
+                                icon: 'none'
+                            });
+                        }
+                    }
+                    catch (e: any) {
+                        console.error('解析响应数据失败:', e, " at pages/monthly/task-record.uvue:1426");
+                        console.error('原始响应数据:', uploadRes.data, " at pages/monthly/task-record.uvue:1427");
+                        uni.showToast({
+                            title: '上传失败',
+                            icon: 'none'
+                        });
+                    }
+                    console.log('=== 移动端图片上传调试信息结束 ===', " at pages/monthly/task-record.uvue:1433");
+                },
+                fail: (error) => {
+                    uni.hideLoading();
+                    console.error('图片上传失败:', error, " at pages/monthly/task-record.uvue:1437");
+                    uni.showToast({
+                        title: '上传失败',
+                        icon: 'none'
+                    });
                 }
             });
         },
@@ -886,19 +1031,31 @@ const __sfc__ = defineComponent({
         // 预览照片
         previewPhoto(photo: string) {
             uni.previewImage({
-                current: photo,
-                urls: this.formData.photos
+                current: this.convertToHttpUrl(photo),
+                urls: this.formData.photos.map((p: string): string => this.convertToHttpUrl(p)) as string[]
             });
         },
         // 保存记录
         saveRecord() {
             // 表单验证
-            if (this.formData.problemType == '') {
-                uni.showToast({ title: '请选择问题类型', icon: 'none' });
+            if (this.selectedTypeIndex === -1) {
+                uni.showToast({ title: '请选择专业类别', icon: 'none' });
                 return;
             }
-            if (this.formData.problemLevel == '') {
-                uni.showToast({ title: '请选择问题等级', icon: 'none' });
+            if (this.selectedModuleIndex === -1) {
+                uni.showToast({ title: '请选择模块', icon: 'none' });
+                return;
+            }
+            if (this.selectedResponsibilityIndex === -1) {
+                uni.showToast({ title: '请选择责任', icon: 'none' });
+                return;
+            }
+            if (this.selectedIssueIndex === -1) {
+                uni.showToast({ title: '请选择问题', icon: 'none' });
+                return;
+            }
+            if (this.selectedQualityIndex === -1) {
+                uni.showToast({ title: '请选择性质界定', icon: 'none' });
                 return;
             }
             if (this.formData.problemDescription.trim() == '') {
@@ -909,15 +1066,60 @@ const __sfc__ = defineComponent({
                 uni.showToast({ title: '请输入发现位置', icon: 'none' });
                 return;
             }
+            if (this.formData.rectificationDate == '') {
+                uni.showToast({ title: '请选择整改期限', icon: 'none' });
+                return;
+            }
+            if (this.formData.inspector.trim() == '') {
+                uni.showToast({ title: '请输入检查人', icon: 'none' });
+                return;
+            }
             try {
                 uni.showLoading({ title: '保存中...' });
-                // 模拟API调用
+                // 获取用户信息
+                const userInfoStr = uni.getStorageSync('userInfo') as string;
+                let userId = '';
+                if (userInfoStr != null && userInfoStr != '') {
+                    try {
+                        const userInfo = UTSAndroid.consoleDebugError(JSON.parse(userInfoStr), " at pages/monthly/task-record.uvue:1515") as UTSJSONObject;
+                        userId = userInfo.getString('id') ?? '';
+                    }
+                    catch (e: any) {
+                        console.error('解析用户信息失败:', e, " at pages/monthly/task-record.uvue:1518");
+                    }
+                }
+                if (userId == '') {
+                    uni.hideLoading();
+                    uni.showToast({ title: '获取用户信息失败，请重新登录', icon: 'none' });
+                    return;
+                }
+                // 构建保存数据
+                const saveData = { __$originalPosition: new UTSSourceMapPosition("saveData", "pages/monthly/task-record.uvue", 1529, 13),
+                    taskId: this.taskInfo.taskNumber,
+                    professionalCategory: this.selectedTypeIndex !== -1 && this.typeOptions[this.selectedTypeIndex] != null ? this.typeOptions[this.selectedTypeIndex].name : '',
+                    module: this.selectedModuleIndex !== -1 && this.moduleOptions[this.selectedModuleIndex] != null ? this.moduleOptions[this.selectedModuleIndex].name : '',
+                    responsibility: this.selectedResponsibilityIndex !== -1 && this.responsibilityOptions[this.selectedResponsibilityIndex] != null ? this.responsibilityOptions[this.selectedResponsibilityIndex].name : '',
+                    issue: this.selectedIssueIndex !== -1 && this.issueOptions[this.selectedIssueIndex] != null ? this.issueOptions[this.selectedIssueIndex].name : '',
+                    qualityDetermination: this.selectedQualityIndex !== -1 && this.qualityOptions[this.selectedQualityIndex] != null ? this.qualityOptions[this.selectedQualityIndex].name : '',
+                    problemDescription: this.formData.problemDescription,
+                    location: this.formData.location,
+                    rectificationDate: this.formData.rectificationDate,
+                    inspector: this.formData.inspector,
+                    safetyScore: this.formData.safetyScore,
+                    photos: this.formData.photos
+                } as UTSJSONObject;
+                // 调用月检记录保存接口
                 uni.request({
-                    url: '/api/monthly/problem/save',
+                    url: getApiUrl('/monthly-inspection-record'),
                     method: 'POST',
+                    header: {
+                        'Content-Type': 'application/json',
+                        'Authorization': uni.getStorageSync('token') != null ? uni.getStorageSync('token') as string : '',
+                        'userId': userId
+                    },
                     data: {
-                        taskId: this.taskInfo.taskNumber,
-                        ...this.formData
+                        ...saveData,
+                        photos: this.formData.photos.join(',') // 将数组转换为逗号分隔的字符串
                     },
                     success: (res) => {
                         uni.hideLoading();
@@ -935,16 +1137,166 @@ const __sfc__ = defineComponent({
                     },
                     fail: (error) => {
                         uni.hideLoading();
-                        console.error('保存失败:', error, " at pages/monthly/task-record.uvue:1364");
+                        console.error('保存失败:', error, " at pages/monthly/task-record.uvue:1572");
                         uni.showToast({ title: '保存失败', icon: 'none' });
                     }
                 });
             }
             catch (error: any) {
                 uni.hideLoading();
-                console.error('保存失败:', error, " at pages/monthly/task-record.uvue:1370");
+                console.error('保存失败:', error, " at pages/monthly/task-record.uvue:1578");
                 uni.showToast({ title: '保存失败', icon: 'none' });
             }
+        },
+        // 初始化日期数组
+        initDateArrays() {
+            // 生成年份数组（当前年份到未来2年）
+            const currentYear = new Date().getFullYear();
+            this.years = [];
+            for (let i = currentYear; i <= currentYear + 2; i++) {
+                this.years.push(i);
+            }
+            // 生成月份数组
+            this.months = [];
+            for (let i = 1; i <= 12; i++) {
+                this.months.push(i);
+            }
+            // 生成日期数组
+            this.updateDays();
+            // 设置默认选择值
+            const yearIndex = this.years.findIndex((year): boolean => year === this.selectedYear);
+            const monthIndex = (this.selectedMonth as number) - 1;
+            const dayIndex = this.days.findIndex((day): boolean => day === this.selectedDay);
+            this.pickerValue = [yearIndex >= 0 ? yearIndex : 0, monthIndex, dayIndex >= 0 ? dayIndex : 0];
+            console.log('初始化日期数组:', {
+                selectedYear: this.selectedYear,
+                selectedMonth: this.selectedMonth,
+                selectedDay: this.selectedDay,
+                yearIndex, monthIndex, dayIndex,
+                pickerValue: this.pickerValue,
+                daysArray: this.days
+            }, " at pages/monthly/task-record.uvue:1607");
+        },
+        // 更新日期数组
+        updateDays() {
+            const daysInMonth = new Date(this.selectedYear, this.selectedMonth, 0).getDate();
+            this.days = [];
+            for (let i = 1; i <= daysInMonth; i++) {
+                this.days.push(i);
+            }
+        },
+        // 显示日期选择器
+        showDatePicker() {
+            // 如果当前有设置的日期，使用该日期作为选择器的默认值
+            if (this.formData.rectificationDate !== '') {
+                const dateParts = this.formData.rectificationDate.split('-');
+                if (dateParts.length === 3) {
+                    this.selectedYear = parseInt(dateParts[0]);
+                    this.selectedMonth = parseInt(dateParts[1]);
+                    this.selectedDay = parseInt(dateParts[2]);
+                }
+            }
+            // 更新日期数组
+            this.updateDays();
+            // 设置picker的默认选择值
+            const yearIndex = this.years.findIndex((year): boolean => year === this.selectedYear);
+            const monthIndex = this.selectedMonth - 1;
+            let dayIndex = this.days.findIndex((day): boolean => day === this.selectedDay);
+            // 如果找不到对应的日期（比如选择了31号但当前月只有30天），则选择最后一天
+            if (dayIndex < 0) {
+                dayIndex = (this.days.length - 1) as Int;
+                this.selectedDay = this.days[dayIndex];
+                console.log('日期不存在，调整为月末:', this.selectedDay, " at pages/monthly/task-record.uvue:1650");
+            }
+            this.pickerValue = [yearIndex >= 0 ? yearIndex : 0, monthIndex, dayIndex];
+            console.log('显示日期选择器:', {
+                selectedDate: this.formData.rectificationDate,
+                selectedYear: this.selectedYear,
+                selectedMonth: this.selectedMonth,
+                selectedDay: this.selectedDay,
+                yearIndex, monthIndex, dayIndex,
+                pickerValue: this.pickerValue
+            }, " at pages/monthly/task-record.uvue:1655");
+            this.datePickerVisible = true;
+        },
+        // 隐藏日期选择器
+        hideDatePicker() {
+            this.datePickerVisible = false;
+        },
+        // picker-view变化事件
+        onPickerChange(e: UniPickerViewChangeEvent) {
+            const value = e.detail.value as number[];
+            const oldDaysLength = this.days.length;
+            console.log('picker原始变化事件:', {
+                value: value,
+                oldSelectedYear: this.selectedYear,
+                oldSelectedMonth: this.selectedMonth,
+                oldSelectedDay: this.selectedDay,
+                oldDaysLength: oldDaysLength
+            }, " at pages/monthly/task-record.uvue:1677");
+            // 更新选择的年月日
+            this.selectedYear = this.years[value[0]];
+            this.selectedMonth = value[1] + 1; // 月份索引从0开始，实际月份从1开始
+            // 更新日期数组（因为年月变化可能影响该月的天数）
+            this.updateDays();
+            // 处理日期变化
+            let newDayIndex = value[2];
+            if (newDayIndex >= this.days.length) {
+                // 如果选择的日期超出了当前月的天数，调整为月末
+                newDayIndex = this.days.length - 1;
+                console.log('日期超出范围，调整为月末:', this.days[newDayIndex], " at pages/monthly/task-record.uvue:1697");
+            }
+            this.selectedDay = this.days[newDayIndex];
+            // 如果天数数组长度发生变化，需要延迟更新pickerValue以避免冲突
+            if (oldDaysLength !== this.days.length) {
+                // 使用防抖机制，避免频繁更新
+                const timer = this.pickerDebounceTimer;
+                if (timer != null) {
+                    clearTimeout(timer);
+                }
+                this.pickerDebounceTimer = setTimeout(() => {
+                    this.pickerValue = [value[0], value[1], newDayIndex];
+                    console.log('延迟更新pickerValue:', {
+                        newPickerValue: this.pickerValue,
+                        selectedYear: this.selectedYear,
+                        selectedMonth: this.selectedMonth,
+                        selectedDay: this.selectedDay
+                    }, " at pages/monthly/task-record.uvue:1712");
+                }, 50); // 50ms延迟，提供更快速的平滑视觉效果
+            }
+            else {
+                // 直接更新
+                this.pickerValue = [value[0], value[1], newDayIndex];
+                console.log('直接更新pickerValue:', {
+                    newPickerValue: this.pickerValue,
+                    selectedYear: this.selectedYear,
+                    selectedMonth: this.selectedMonth,
+                    selectedDay: this.selectedDay
+                }, " at pages/monthly/task-record.uvue:1722");
+            }
+        },
+        // 确认日期选择
+        confirmDatePicker() {
+            // 直接从pickerValue索引获取实际选择的值
+            const selectedYear = this.years[this.pickerValue[0]];
+            const selectedMonth = this.pickerValue[1] + 1; // 月份索引从0开始，实际月份从1开始
+            const selectedDay = this.days[this.pickerValue[2]];
+            const year = selectedYear.toString(10).padStart(4, '0');
+            const month = selectedMonth.toString(10).padStart(2, '0');
+            const day = selectedDay.toString(10).padStart(2, '0');
+            const newDate = `${year}-${month}-${day}`;
+            console.log('确认日期选择:', {
+                pickerValue: this.pickerValue,
+                yearsArray: this.years,
+                monthsArray: this.months,
+                daysArray: this.days,
+                selectedYear: selectedYear,
+                selectedMonth: selectedMonth,
+                selectedDay: selectedDay,
+                formattedDate: newDate
+            }, " at pages/monthly/task-record.uvue:1743");
+            this.formData.rectificationDate = newDate;
+            this.hideDatePicker();
         }
     }
 });
@@ -952,6 +1304,8 @@ export default __sfc__;
 function GenPagesMonthlyTaskRecordRender(this: InstanceType<typeof __sfc__>): any | null {
     const _ctx = this;
     const _cache = this.$.renderCache;
+    const _component_picker_view_column = resolveComponent("picker-view-column");
+    const _component_picker_view = resolveComponent("picker-view");
     return _cE("scroll-view", _uM({
         class: "container",
         "scroll-y": "true",
@@ -998,97 +1352,70 @@ function GenPagesMonthlyTaskRecordRender(this: InstanceType<typeof __sfc__>): an
                 _cE("text", _uM({ class: "title-text" }), "问题录入"),
                 _cE("text", _uM({ class: "required-mark" }), "*")
             ]),
-            _cE("view", _uM({ class: "form-item-inline" }), [
-                _cE("text", _uM({ class: "form-label-inline" }), "专业类别"),
+            _cE("view", _uM({ class: "form-item" }), [
+                _cE("text", _uM({ class: "form-label-left" }), "专业类别"),
                 _cE("view", _uM({
-                    class: _nC(["picker-wrapper-inline", _uM({ disabled: _ctx.typeOptions.length === 0 })]),
+                    class: _nC(["custom-picker-full", _uM({ disabled: _ctx.typeOptions.length === 0 })]),
                     onClick: _ctx.showTypePicker
                 }), [
                     _cE("text", _uM({
-                        class: _nC(["picker-text", _uM({ placeholder: _ctx.selectedTypeIndex === -1 })])
-                    }), _tD(_ctx.selectedTypeIndex === -1 ? '请选择专业类别' : (_ctx.selectedTypeIndex < _ctx.typeOptions.length ? (_ctx.typeOptions[_ctx.selectedTypeIndex] as OptionItem).name : '请选择专业类别')), 3 /* TEXT, CLASS */),
-                    _cE("text", _uM({ class: "picker-arrow" }), "›")
+                        class: _nC(["picker-text-full", _uM({ placeholder: _ctx.selectedTypeIndex === -1 })])
+                    }), _tD(_ctx.selectedTypeIndex === -1 ? '请选择专业类别' : (_ctx.selectedTypeIndex < _ctx.typeOptions.length ? (_ctx.typeOptions[_ctx.selectedTypeIndex] as OptionItem).name : '请选择专业类别')), 3 /* TEXT, CLASS */)
                 ], 10 /* CLASS, PROPS */, ["onClick"])
             ]),
-            _cE("view", _uM({ class: "form-item-inline" }), [
-                _cE("text", _uM({ class: "form-label-inline" }), "模块"),
+            _cE("view", _uM({ class: "form-item" }), [
+                _cE("text", _uM({ class: "form-label-left" }), "模块"),
                 _cE("view", _uM({
-                    class: _nC(["picker-wrapper-inline", _uM({ disabled: _ctx.moduleOptions.length === 0 })]),
+                    class: _nC(["custom-picker-full", _uM({ disabled: _ctx.moduleOptions.length === 0 })]),
                     onClick: _ctx.showModulePicker
                 }), [
                     _cE("text", _uM({
-                        class: _nC(["picker-text", _uM({ placeholder: _ctx.selectedModuleIndex === -1 })])
-                    }), _tD(_ctx.selectedModuleIndex === -1 ? '请选择模块' : (_ctx.selectedModuleIndex < _ctx.moduleOptions.length ? (_ctx.moduleOptions[_ctx.selectedModuleIndex] as OptionItem).name : '请选择模块')), 3 /* TEXT, CLASS */),
-                    _cE("text", _uM({ class: "picker-arrow" }), "›")
+                        class: _nC(["picker-text-full", _uM({ placeholder: _ctx.selectedModuleIndex === -1 })])
+                    }), _tD(_ctx.selectedModuleIndex === -1 ? '请选择模块' : (_ctx.selectedModuleIndex < _ctx.moduleOptions.length ? (_ctx.moduleOptions[_ctx.selectedModuleIndex] as OptionItem).name : '请选择模块')), 3 /* TEXT, CLASS */)
                 ], 10 /* CLASS, PROPS */, ["onClick"])
             ]),
-            _cE("view", _uM({ class: "form-item-inline" }), [
-                _cE("text", _uM({ class: "form-label-inline" }), "责任"),
+            _cE("view", _uM({ class: "form-item" }), [
+                _cE("text", _uM({ class: "form-label-left" }), "责任"),
                 _cE("view", _uM({
-                    class: _nC(["picker-wrapper-inline", _uM({ disabled: _ctx.responsibilityOptions.length === 0 })]),
+                    class: _nC(["custom-picker-full", _uM({ disabled: _ctx.responsibilityOptions.length === 0 })]),
                     onClick: _ctx.showResponsibilityPicker
                 }), [
                     _cE("text", _uM({
-                        class: _nC(["picker-text", _uM({ placeholder: _ctx.selectedResponsibilityIndex === -1 })])
-                    }), _tD(_ctx.selectedResponsibilityIndex === -1 ? '请选择责任' : (_ctx.selectedResponsibilityIndex < _ctx.responsibilityOptions.length ? (_ctx.responsibilityOptions[_ctx.selectedResponsibilityIndex] as OptionItem).name : '请选择责任')), 3 /* TEXT, CLASS */),
-                    _cE("text", _uM({ class: "picker-arrow" }), "›")
+                        class: _nC(["picker-text-full", _uM({ placeholder: _ctx.selectedResponsibilityIndex === -1 })])
+                    }), _tD(_ctx.selectedResponsibilityIndex === -1 ? '请选择责任' : (_ctx.selectedResponsibilityIndex < _ctx.responsibilityOptions.length ? (_ctx.responsibilityOptions[_ctx.selectedResponsibilityIndex] as OptionItem).name : '请选择责任')), 3 /* TEXT, CLASS */)
                 ], 10 /* CLASS, PROPS */, ["onClick"])
             ]),
-            _cE("view", _uM({ class: "form-item-inline" }), [
-                _cE("text", _uM({ class: "form-label-inline" }), "问题"),
+            _cE("view", _uM({ class: "form-item" }), [
+                _cE("text", _uM({ class: "form-label-left" }), "问题"),
                 _cE("view", _uM({
-                    class: _nC(["picker-wrapper-inline", _uM({ disabled: _ctx.issueOptions.length === 0 })]),
+                    class: _nC(["custom-picker-full", _uM({ disabled: _ctx.issueOptions.length === 0 })]),
                     onClick: _ctx.showIssuePicker
                 }), [
                     _cE("text", _uM({
-                        class: _nC(["picker-text", _uM({ placeholder: _ctx.selectedIssueIndex === -1 })])
-                    }), _tD(_ctx.selectedIssueIndex === -1 ? '请选择问题' : (_ctx.selectedIssueIndex < _ctx.issueOptions.length ? (_ctx.issueOptions[_ctx.selectedIssueIndex] as OptionItem).name : '请选择问题')), 3 /* TEXT, CLASS */),
-                    _cE("text", _uM({ class: "picker-arrow" }), "›")
+                        class: _nC(["picker-text-full", _uM({ placeholder: _ctx.selectedIssueIndex === -1 })])
+                    }), _tD(_ctx.selectedIssueIndex === -1 ? '请选择问题' : (_ctx.selectedIssueIndex < _ctx.issueOptions.length ? (_ctx.issueOptions[_ctx.selectedIssueIndex] as OptionItem).name : '请选择问题')), 3 /* TEXT, CLASS */)
                 ], 10 /* CLASS, PROPS */, ["onClick"])
             ]),
-            _cE("view", _uM({ class: "form-item-inline" }), [
-                _cE("text", _uM({ class: "form-label-inline" }), "性质界定"),
+            _cE("view", _uM({ class: "form-item" }), [
+                _cE("text", _uM({ class: "form-label-left" }), "性质界定"),
                 _cE("view", _uM({
-                    class: _nC(["picker-wrapper-inline", _uM({ disabled: _ctx.qualityOptions.length === 0 })]),
+                    class: _nC(["custom-picker-full", _uM({ disabled: _ctx.qualityOptions.length === 0 })]),
                     onClick: _ctx.showQualityPicker
                 }), [
                     _cE("text", _uM({
-                        class: _nC(["picker-text", _uM({ placeholder: _ctx.selectedQualityIndex === -1 })])
-                    }), _tD(_ctx.selectedQualityIndex === -1 ? '请选择性质界定' : (_ctx.selectedQualityIndex < _ctx.qualityOptions.length ? (_ctx.qualityOptions[_ctx.selectedQualityIndex] as OptionItem).name : '请选择性质界定')), 3 /* TEXT, CLASS */),
-                    _cE("text", _uM({ class: "picker-arrow" }), "›")
+                        class: _nC(["picker-text-full", _uM({ placeholder: _ctx.selectedQualityIndex === -1 })])
+                    }), _tD(_ctx.selectedQualityIndex === -1 ? '请选择性质界定' : (_ctx.selectedQualityIndex < _ctx.qualityOptions.length ? (_ctx.qualityOptions[_ctx.selectedQualityIndex] as OptionItem).name : '请选择性质界定')), 3 /* TEXT, CLASS */)
                 ], 10 /* CLASS, PROPS */, ["onClick"])
             ]),
-            _cE("view", _uM({ class: "form-item-inline" }), [
-                _cE("text", _uM({ class: "form-label-inline" }), "扣分值"),
+            _cE("view", _uM({ class: "form-item" }), [
+                _cE("text", _uM({ class: "form-label-left" }), "安全记分"),
                 _cE("input", _uM({
-                    class: "text-input-inline",
-                    modelValue: _ctx.formData.deductionScore,
-                    onInput: ($event: UniInputEvent) => { (_ctx.formData.deductionScore) = $event.detail.value; },
-                    placeholder: "自动带出扣分值",
+                    class: "form-input",
+                    modelValue: _ctx.formData.safetyScore,
+                    onInput: ($event: UniInputEvent) => { (_ctx.formData.safetyScore) = $event.detail.value; },
+                    placeholder: "自动带出安全记分",
                     readonly: ""
                 }), null, 40 /* PROPS, NEED_HYDRATION */, ["modelValue", "onInput"])
-            ]),
-            _cE("view", _uM({ class: "form-item-inline" }), [
-                _cE("text", _uM({ class: "form-label-inline" }), "安全记分关联项"),
-                _cE("input", _uM({
-                    class: "text-input-inline",
-                    modelValue: _ctx.formData.safetyScoreItem,
-                    onInput: ($event: UniInputEvent) => { (_ctx.formData.safetyScoreItem) = $event.detail.value; },
-                    placeholder: "自动带出安全记分关联项",
-                    readonly: ""
-                }), null, 40 /* PROPS, NEED_HYDRATION */, ["modelValue", "onInput"])
-            ]),
-            _cE("view", _uM({ class: "form-item-inline" }), [
-                _cE("text", _uM({ class: "form-label-inline" }), "问题等级"),
-                _cE("view", _uM({
-                    class: "picker-wrapper-inline",
-                    onClick: _ctx.showProblemLevelPicker
-                }), [
-                    _cE("text", _uM({
-                        class: _nC(["picker-text", _uM({ placeholder: _ctx.formData.problemLevel === '' })])
-                    }), _tD(_ctx.formData.problemLevel !== '' ? _ctx.formData.problemLevel : '请选择问题等级'), 3 /* TEXT, CLASS */),
-                    _cE("text", _uM({ class: "picker-arrow" }), "›")
-                ], 8 /* PROPS */, ["onClick"])
             ]),
             _cE("view", _uM({ class: "form-item" }), [
                 _cE("text", _uM({ class: "form-label" }), "问题描述"),
@@ -1101,34 +1428,106 @@ function GenPagesMonthlyTaskRecordRender(this: InstanceType<typeof __sfc__>): an
                 }), null, 40 /* PROPS, NEED_HYDRATION */, ["modelValue", "onInput"]),
                 _cE("text", _uM({ class: "char-count" }), _tD(_ctx.formData.problemDescription.length) + "/500", 1 /* TEXT */)
             ]),
-            _cE("view", _uM({ class: "form-item-inline" }), [
-                _cE("text", _uM({ class: "form-label-inline" }), "发现位置"),
+            _cE("view", _uM({ class: "form-item" }), [
+                _cE("text", _uM({ class: "form-label-left" }), "发现位置"),
                 _cE("input", _uM({
-                    class: "text-input-inline",
+                    class: "form-input",
                     modelValue: _ctx.formData.location,
                     onInput: ($event: UniInputEvent) => { (_ctx.formData.location) = $event.detail.value; },
                     placeholder: "请输入问题发现的具体位置"
                 }), null, 40 /* PROPS, NEED_HYDRATION */, ["modelValue", "onInput"])
             ]),
             _cE("view", _uM({ class: "form-item" }), [
-                _cE("text", _uM({ class: "form-label" }), "整改建议"),
-                _cE("textarea", _uM({
-                    class: "textarea-input",
-                    modelValue: _ctx.formData.suggestion,
-                    onInput: ($event: UniInputEvent) => { (_ctx.formData.suggestion) = $event.detail.value; },
-                    placeholder: "请提出整改建议",
-                    maxlength: "300"
-                }), null, 40 /* PROPS, NEED_HYDRATION */, ["modelValue", "onInput"]),
-                _cE("text", _uM({ class: "char-count" }), _tD(_ctx.formData.suggestion.length) + "/300", 1 /* TEXT */)
+                _cE("text", _uM({ class: "form-label-left" }), "整改期限"),
+                _cE("view", _uM({
+                    class: "picker-container",
+                    onClick: _ctx.showDatePicker
+                }), [
+                    _cE("text", _uM({
+                        class: _nC(["picker-text-full", _uM({ placeholder: _ctx.formData.rectificationDate === '' })])
+                    }), _tD(_ctx.formData.rectificationDate !== '' ? _ctx.formData.rectificationDate : '请选择整改期限'), 3 /* TEXT, CLASS */)
+                ], 8 /* PROPS */, ["onClick"]),
+                isTrue(_ctx.datePickerVisible)
+                    ? _cE("view", _uM({
+                        key: 0,
+                        class: "date-picker-modal",
+                        onClick: _ctx.hideDatePicker
+                    }), [
+                        _cE("view", _uM({
+                            class: "date-picker-content",
+                            onClick: withModifiers(() => { }, ["stop"])
+                        }), [
+                            _cE("view", _uM({ class: "date-picker-header" }), [
+                                _cE("text", _uM({
+                                    class: "date-picker-cancel",
+                                    onClick: _ctx.hideDatePicker
+                                }), "取消", 8 /* PROPS */, ["onClick"]),
+                                _cE("text", _uM({ class: "date-picker-title" }), "选择日期"),
+                                _cE("text", _uM({
+                                    class: "date-picker-confirm",
+                                    onClick: _ctx.confirmDatePicker
+                                }), "确定", 8 /* PROPS */, ["onClick"])
+                            ]),
+                            _cV(_component_picker_view, _uM({
+                                class: "date-picker-view",
+                                value: _ctx.pickerValue,
+                                onChange: _ctx.onPickerChange,
+                                "indicator-style": "height: 70px; top: 20%; margin-top: -20px;"
+                            }), _uM({
+                                default: withSlotCtx((): any[] => [
+                                    _cV(_component_picker_view_column, null, _uM({
+                                        default: withSlotCtx((): any[] => [
+                                            _cE(Fragment, null, RenderHelpers.renderList(_ctx.years, (year, index, __index, _cached): any => {
+                                                return _cE("view", _uM({
+                                                    key: index,
+                                                    class: _nC(["picker-item", _uM({ selected: index === _ctx.pickerValue[0] })])
+                                                }), _tD(year) + "年 ", 3 /* TEXT, CLASS */);
+                                            }), 128 /* KEYED_FRAGMENT */)
+                                        ]),
+                                        _: 1 /* STABLE */
+                                    })),
+                                    _cV(_component_picker_view_column, null, _uM({
+                                        default: withSlotCtx((): any[] => [
+                                            _cE(Fragment, null, RenderHelpers.renderList(_ctx.months, (month, index, __index, _cached): any => {
+                                                return _cE("view", _uM({
+                                                    key: index,
+                                                    class: _nC(["picker-item", _uM({ selected: index === _ctx.pickerValue[1] })])
+                                                }), _tD(month) + "月 ", 3 /* TEXT, CLASS */);
+                                            }), 128 /* KEYED_FRAGMENT */)
+                                        ]),
+                                        _: 1 /* STABLE */
+                                    })),
+                                    _cV(_component_picker_view_column, null, _uM({
+                                        default: withSlotCtx((): any[] => [
+                                            _cE(Fragment, null, RenderHelpers.renderList(_ctx.days, (day, index, __index, _cached): any => {
+                                                return _cE("view", _uM({
+                                                    key: index,
+                                                    class: _nC(["picker-item", _uM({ selected: index === _ctx.pickerValue[2] })])
+                                                }), _tD(day) + "日 ", 3 /* TEXT, CLASS */);
+                                            }), 128 /* KEYED_FRAGMENT */),
+                                            _cE(Fragment, null, RenderHelpers.renderList(2, (i, __key, __index, _cached): any => {
+                                                return _cE("view", _uM({
+                                                    key: 'empty-day-' + i,
+                                                    class: "picker-item picker-item-spacer"
+                                                }));
+                                            }), 64 /* STABLE_FRAGMENT */)
+                                        ]),
+                                        _: 1 /* STABLE */
+                                    }))
+                                ]),
+                                _: 1 /* STABLE */
+                            }), 8 /* PROPS */, ["value", "onChange"])
+                        ], 8 /* PROPS */, ["onClick"])
+                    ], 8 /* PROPS */, ["onClick"])
+                    : _cC("v-if", true)
             ]),
-            _cE("view", _uM({ class: "form-item-inline" }), [
-                _cE("text", _uM({ class: "form-label-inline" }), "整改期限"),
+            _cE("view", _uM({ class: "form-item" }), [
+                _cE("text", _uM({ class: "form-label-left" }), "检查人"),
                 _cE("input", _uM({
-                    class: "text-input-inline",
-                    type: "date",
-                    modelValue: _ctx.formData.rectificationDate,
-                    onInput: ($event: UniInputEvent) => { (_ctx.formData.rectificationDate) = $event.detail.value; },
-                    placeholder: "请选择整改期限"
+                    class: "form-input",
+                    modelValue: _ctx.formData.inspector,
+                    onInput: ($event: UniInputEvent) => { (_ctx.formData.inspector) = $event.detail.value; },
+                    placeholder: "请输入检查人姓名"
                 }), null, 40 /* PROPS, NEED_HYDRATION */, ["modelValue", "onInput"])
             ]),
             _cE("view", _uM({ class: "form-item" }), [
@@ -1140,7 +1539,7 @@ function GenPagesMonthlyTaskRecordRender(this: InstanceType<typeof __sfc__>): an
                             class: "photo-item"
                         }), [
                             _cE("image", _uM({
-                                src: photo,
+                                src: _ctx.convertToHttpUrl(photo),
                                 class: "photo-preview",
                                 onClick: () => { _ctx.previewPhoto(photo); }
                             }), null, 8 /* PROPS */, ["src", "onClick"]),
@@ -1215,53 +1614,9 @@ function GenPagesMonthlyTaskRecordRender(this: InstanceType<typeof __sfc__>): an
                 ], 8 /* PROPS */, ["onClick"])
             ], 8 /* PROPS */, ["onClick"])
             : _cC("v-if", true),
-        isTrue(_ctx.showProblemLevelModal)
-            ? _cE("view", _uM({
-                key: 1,
-                class: "picker-modal",
-                onClick: _ctx.hideProblemLevelPicker
-            }), [
-                _cE("view", _uM({
-                    class: "picker-content",
-                    onClick: withModifiers(() => { }, ["stop"])
-                }), [
-                    _cE("view", _uM({ class: "picker-header" }), [
-                        _cE("text", _uM({
-                            class: "picker-cancel",
-                            onClick: _ctx.hideProblemLevelPicker
-                        }), "取消", 8 /* PROPS */, ["onClick"]),
-                        _cE("text", _uM({ class: "picker-title" }), "选择问题等级"),
-                        _cE("text", _uM({
-                            class: "picker-confirm",
-                            onClick: _ctx.confirmProblemLevel
-                        }), "确定", 8 /* PROPS */, ["onClick"])
-                    ]),
-                    _cE("view", _uM({ class: "picker-list" }), [
-                        _cE(Fragment, null, RenderHelpers.renderList(_ctx.problemLevels, (level, index, __index, _cached): any => {
-                            return _cE("view", _uM({
-                                key: index,
-                                class: _nC(["picker-item", _uM({ selected: _ctx.selectedProblemLevel === (level as UTSJSONObject)['value'] })]),
-                                onClick: () => { _ctx.selectProblemLevel((level as UTSJSONObject)['value'] as string); }
-                            }), [
-                                _cE("view", _uM({ class: "level-item" }), [
-                                    _cE("text", _uM({ class: "level-name" }), _tD((level as UTSJSONObject)['name']), 1 /* TEXT */),
-                                    _cE("text", _uM({ class: "level-desc" }), _tD((level as UTSJSONObject)['desc']), 1 /* TEXT */)
-                                ]),
-                                _ctx.selectedProblemLevel === (level as UTSJSONObject)['value']
-                                    ? _cE("text", _uM({
-                                        key: 0,
-                                        class: "picker-check"
-                                    }), "✓")
-                                    : _cC("v-if", true)
-                            ], 10 /* CLASS, PROPS */, ["onClick"]);
-                        }), 128 /* KEYED_FRAGMENT */)
-                    ])
-                ], 8 /* PROPS */, ["onClick"])
-            ], 8 /* PROPS */, ["onClick"])
-            : _cC("v-if", true),
         isTrue(_ctx.showTypePopup)
             ? _cE("view", _uM({
-                key: 2,
+                key: 1,
                 class: "popup-overlay",
                 onClick: _ctx.hideTypePicker
             }), [
@@ -1316,7 +1671,7 @@ function GenPagesMonthlyTaskRecordRender(this: InstanceType<typeof __sfc__>): an
             : _cC("v-if", true),
         isTrue(_ctx.showModulePopup)
             ? _cE("view", _uM({
-                key: 3,
+                key: 2,
                 class: "popup-overlay",
                 onClick: _ctx.hideModulePicker
             }), [
@@ -1378,7 +1733,7 @@ function GenPagesMonthlyTaskRecordRender(this: InstanceType<typeof __sfc__>): an
             : _cC("v-if", true),
         isTrue(_ctx.showResponsibilityPopup)
             ? _cE("view", _uM({
-                key: 4,
+                key: 3,
                 class: "popup-overlay",
                 onClick: _ctx.hideResponsibilityPicker
             }), [
@@ -1440,7 +1795,7 @@ function GenPagesMonthlyTaskRecordRender(this: InstanceType<typeof __sfc__>): an
             : _cC("v-if", true),
         isTrue(_ctx.showIssuePopup)
             ? _cE("view", _uM({
-                key: 5,
+                key: 4,
                 class: "popup-overlay",
                 onClick: _ctx.hideIssuePicker
             }), [
@@ -1502,7 +1857,7 @@ function GenPagesMonthlyTaskRecordRender(this: InstanceType<typeof __sfc__>): an
             : _cC("v-if", true),
         isTrue(_ctx.showQualityPopup)
             ? _cE("view", _uM({
-                key: 6,
+                key: 5,
                 class: "popup-overlay",
                 onClick: _ctx.hideQualityPicker
             }), [
@@ -1564,5 +1919,5 @@ function GenPagesMonthlyTaskRecordRender(this: InstanceType<typeof __sfc__>): an
             : _cC("v-if", true)
     ], 12 /* STYLE, PROPS */, ["scroll-top"]);
 }
-const GenPagesMonthlyTaskRecordStyles = [_uM([["container", _pS(_uM([["backgroundColor", "#f5f5f5"], ["position", "relative"], ["zIndex", 1]]))], ["header", _pS(_uM([["display", "flex"], ["justifyContent", "space-between"], ["alignItems", "center"], ["paddingTop", 20], ["paddingRight", 20], ["paddingBottom", 20], ["paddingLeft", 20], ["backgroundColor", "#ffffff"], ["borderBottomWidth", 1], ["borderBottomStyle", "solid"], ["borderBottomColor", "#f0f0f0"]]))], ["header-left", _pS(_uM([["display", "flex"], ["alignItems", "center"], ["gap", "5px"]]))], ["back-icon", _pS(_uM([["fontSize", 24], ["color", "#007AFF"]]))], ["back-text", _pS(_uM([["fontSize", 16], ["color", "#007AFF"]]))], ["header-title", _pS(_uM([["fontSize", 18], ["fontWeight", "bold"], ["color", "#333333"]]))], ["header-right", _pS(_uM([["display", "flex"], ["alignItems", "center"]]))], ["save-btn", _pS(_uM([["fontSize", 16], ["color", "#007AFF"]]))], ["task-info", _pS(_uM([["backgroundColor", "#ffffff"], ["marginTop", 10], ["marginRight", 20], ["marginBottom", 10], ["marginLeft", 20], ["borderTopLeftRadius", 8], ["borderTopRightRadius", 8], ["borderBottomRightRadius", 8], ["borderBottomLeftRadius", 8], ["paddingTop", 20], ["paddingRight", 20], ["paddingBottom", 20], ["paddingLeft", 20]]))], ["info-item", _pS(_uM([["display", "flex"], ["justifyContent", "space-between"], ["alignItems", "center"], ["paddingTop", 10], ["paddingRight", 0], ["paddingBottom", 10], ["paddingLeft", 0], ["borderBottomWidth", 1], ["borderBottomStyle", "solid"], ["borderBottomColor", "#f0f0f0"], ["borderBottomWidth:last-child", "medium"], ["borderBottomStyle:last-child", "none"], ["borderBottomColor:last-child", "#000000"]]))], ["info-label", _pS(_uM([["fontSize", 14], ["color", "#666666"]]))], ["info-value", _pS(_uM([["fontSize", 14], ["color", "#333333"]]))], ["form-section", _pS(_uM([["backgroundColor", "#ffffff"], ["marginTop", 10], ["marginRight", 20], ["marginBottom", 10], ["marginLeft", 20], ["borderTopLeftRadius", 8], ["borderTopRightRadius", 8], ["borderBottomRightRadius", 8], ["borderBottomLeftRadius", 8], ["paddingTop", 20], ["paddingRight", 20], ["paddingBottom", 20], ["paddingLeft", 20]]))], ["section-title", _pS(_uM([["display", "flex"], ["alignItems", "center"], ["marginBottom", 20]]))], ["title-text", _pS(_uM([["fontSize", 16], ["fontWeight", "bold"], ["color", "#333333"]]))], ["required-mark", _pS(_uM([["fontSize", 16], ["color", "#ff4757"], ["marginLeft", 4]]))], ["form-item", _pS(_uM([["marginBottom", 20], ["marginBottom:last-child", 0]]))], ["form-item-inline", _pS(_uM([["marginBottom", 20], ["display", "flex"], ["flexDirection", "column"], ["gap", "8px"], ["paddingTop", 0], ["paddingRight", 20], ["paddingBottom", 0], ["paddingLeft", 20]]))], ["form-label", _pS(_uM([["fontSize", 14], ["color", "#333333"], ["marginBottom", 8]]))], ["form-label-inline", _pS(_uM([["fontSize", 14], ["color", "#333333"], ["marginBottom", 0]]))], ["picker-wrapper", _pS(_uM([["display", "flex"], ["justifyContent", "space-between"], ["alignItems", "center"], ["paddingTop", 12], ["paddingRight", 15], ["paddingBottom", 12], ["paddingLeft", 15], ["borderTopWidth", 1], ["borderRightWidth", 1], ["borderBottomWidth", 1], ["borderLeftWidth", 1], ["borderTopStyle", "solid"], ["borderRightStyle", "solid"], ["borderBottomStyle", "solid"], ["borderLeftStyle", "solid"], ["borderTopColor", "#e9ecef"], ["borderRightColor", "#e9ecef"], ["borderBottomColor", "#e9ecef"], ["borderLeftColor", "#e9ecef"], ["borderTopLeftRadius", 6], ["borderTopRightRadius", 6], ["borderBottomRightRadius", 6], ["borderBottomLeftRadius", 6], ["backgroundColor", "#ffffff"]]))], ["picker-wrapper-inline", _uM([["", _uM([["display", "flex"], ["justifyContent", "space-between"], ["alignItems", "center"], ["paddingTop", 12], ["paddingRight", 15], ["paddingBottom", 12], ["paddingLeft", 15], ["borderTopWidth", 1], ["borderRightWidth", 1], ["borderBottomWidth", 1], ["borderLeftWidth", 1], ["borderTopStyle", "solid"], ["borderRightStyle", "solid"], ["borderBottomStyle", "solid"], ["borderLeftStyle", "solid"], ["borderTopColor", "#e9ecef"], ["borderRightColor", "#e9ecef"], ["borderBottomColor", "#e9ecef"], ["borderLeftColor", "#e9ecef"], ["borderTopLeftRadius", 6], ["borderTopRightRadius", 6], ["borderBottomRightRadius", 6], ["borderBottomLeftRadius", 6], ["backgroundColor", "#ffffff"], ["width", "100%"], ["transitionProperty", "all"], ["transitionDuration", "0.3s"], ["transitionTimingFunction", "ease"], ["cursor", "pointer"], ["borderTopColor:hover", "#667eea"], ["borderRightColor:hover", "#667eea"], ["borderBottomColor:hover", "#667eea"], ["borderLeftColor:hover", "#667eea"], ["boxShadow:hover", "0 0 0 2px rgba(102, 126, 234, 0.1)"], ["transform:active", "scale(0.98)"]])], [".disabled", _uM([["backgroundColor", "#f5f5f5"], ["color", "#999999"], ["cursor", "not-allowed"], ["opacity", 0.6]])], [".disabled:hover", _uM([["borderTopColor", "#e9ecef"], ["borderRightColor", "#e9ecef"], ["borderBottomColor", "#e9ecef"], ["borderLeftColor", "#e9ecef"], ["boxShadow", "none"]])]])], ["text-input-inline", _pS(_uM([["paddingTop", 12], ["paddingRight", 15], ["paddingBottom", 12], ["paddingLeft", 15], ["borderTopWidth", 1], ["borderRightWidth", 1], ["borderBottomWidth", 1], ["borderLeftWidth", 1], ["borderTopStyle", "solid"], ["borderRightStyle", "solid"], ["borderBottomStyle", "solid"], ["borderLeftStyle", "solid"], ["borderTopColor", "#e9ecef"], ["borderRightColor", "#e9ecef"], ["borderBottomColor", "#e9ecef"], ["borderLeftColor", "#e9ecef"], ["borderTopLeftRadius", 6], ["borderTopRightRadius", 6], ["borderBottomRightRadius", 6], ["borderBottomLeftRadius", 6], ["fontSize", 14], ["color", "#333333"], ["backgroundColor", "#ffffff"], ["flex", 1]]))], ["bottom-save-container", _pS(_uM([["paddingTop", "30rpx"], ["paddingRight", "30rpx"], ["paddingBottom", "30rpx"], ["paddingLeft", "30rpx"], ["marginTop", "40rpx"], ["borderTopWidth", "1rpx"], ["borderTopStyle", "solid"], ["borderTopColor", "#f0f0f0"], ["backgroundColor", "#ffffff"]]))], ["bottom-save-btn", _pS(_uM([["width", "100%"], ["height", "88rpx"], ["backgroundImage", "linear-gradient(135deg, #667eea 0%, #764ba2 100%)"], ["backgroundColor", "rgba(0,0,0,0)"], ["borderTopLeftRadius", "12rpx"], ["borderTopRightRadius", "12rpx"], ["borderBottomRightRadius", "12rpx"], ["borderBottomLeftRadius", "12rpx"], ["display", "flex"], ["alignItems", "center"], ["justifyContent", "center"], ["boxShadow", "0 8rpx 20rpx rgba(102, 126, 234, 0.3)"], ["transitionProperty", "all"], ["transitionDuration", "0.3s"], ["transitionTimingFunction", "ease"], ["transform:active", "translateY(2rpx)"], ["boxShadow:active", "0 4rpx 12rpx rgba(102, 126, 234, 0.2)"]]))], ["bottom-save-text", _pS(_uM([["color", "#ffffff"], ["fontSize", "32rpx"], ["letterSpacing", "2rpx"]]))], ["picker-text", _uM([["", _uM([["fontSize", 14], ["color", "#333333"]])], [".placeholder", _uM([["color", "#999999"]])]])], ["picker-arrow", _pS(_uM([["fontSize", 16], ["color", "#cccccc"]]))], ["text-input", _pS(_uM([["paddingTop", 12], ["paddingRight", 15], ["paddingBottom", 12], ["paddingLeft", 15], ["borderTopWidth", 1], ["borderRightWidth", 1], ["borderBottomWidth", 1], ["borderLeftWidth", 1], ["borderTopStyle", "solid"], ["borderRightStyle", "solid"], ["borderBottomStyle", "solid"], ["borderLeftStyle", "solid"], ["borderTopColor", "#e9ecef"], ["borderRightColor", "#e9ecef"], ["borderBottomColor", "#e9ecef"], ["borderLeftColor", "#e9ecef"], ["borderTopLeftRadius", 6], ["borderTopRightRadius", 6], ["borderBottomRightRadius", 6], ["borderBottomLeftRadius", 6], ["fontSize", 14], ["color", "#333333"], ["backgroundColor", "#ffffff"]]))], ["textarea-input", _pS(_uM([["paddingTop", 12], ["paddingRight", 15], ["paddingBottom", 12], ["paddingLeft", 15], ["borderTopWidth", 1], ["borderRightWidth", 1], ["borderBottomWidth", 1], ["borderLeftWidth", 1], ["borderTopStyle", "solid"], ["borderRightStyle", "solid"], ["borderBottomStyle", "solid"], ["borderLeftStyle", "solid"], ["borderTopColor", "#e9ecef"], ["borderRightColor", "#e9ecef"], ["borderBottomColor", "#e9ecef"], ["borderLeftColor", "#e9ecef"], ["borderTopLeftRadius", 6], ["borderTopRightRadius", 6], ["borderBottomRightRadius", 6], ["borderBottomLeftRadius", 6], ["fontSize", 14], ["color", "#333333"], ["backgroundColor", "#ffffff"], ["minHeight", 80], ["resize", "none"]]))], ["char-count", _pS(_uM([["fontSize", 12], ["color", "#999999"], ["textAlign", "right"], ["marginTop", 5]]))], ["photo-upload", _pS(_uM([["display", "flex"], ["flexWrap", "wrap"], ["gap", "10px"], ["marginBottom", 5]]))], ["photo-item", _pS(_uM([["position", "relative"], ["width", 80], ["height", 80]]))], ["photo-preview", _pS(_uM([["width", "100%"], ["height", "100%"], ["borderTopLeftRadius", 6], ["borderTopRightRadius", 6], ["borderBottomRightRadius", 6], ["borderBottomLeftRadius", 6], ["objectFit", "cover"]]))], ["photo-delete", _pS(_uM([["position", "absolute"], ["top", -5], ["right", -5], ["width", 20], ["height", 20], ["backgroundColor", "#ff4757"], ["borderTopLeftRadius", 10], ["borderTopRightRadius", 10], ["borderBottomRightRadius", 10], ["borderBottomLeftRadius", 10], ["display", "flex"], ["alignItems", "center"], ["justifyContent", "center"]]))], ["delete-icon", _pS(_uM([["fontSize", 12], ["color", "#ffffff"], ["fontWeight", "bold"]]))], ["photo-add", _pS(_uM([["width", 80], ["height", 80], ["borderTopWidth", 1], ["borderRightWidth", 1], ["borderBottomWidth", 1], ["borderLeftWidth", 1], ["borderTopStyle", "dashed"], ["borderRightStyle", "dashed"], ["borderBottomStyle", "dashed"], ["borderLeftStyle", "dashed"], ["borderTopColor", "#cccccc"], ["borderRightColor", "#cccccc"], ["borderBottomColor", "#cccccc"], ["borderLeftColor", "#cccccc"], ["borderTopLeftRadius", 6], ["borderTopRightRadius", 6], ["borderBottomRightRadius", 6], ["borderBottomLeftRadius", 6], ["display", "flex"], ["flexDirection", "column"], ["alignItems", "center"], ["justifyContent", "center"], ["backgroundColor", "#f8f9fa"]]))], ["add-icon", _pS(_uM([["fontSize", 24], ["color", "#999999"], ["marginBottom", 4]]))], ["add-text", _pS(_uM([["fontSize", 12], ["color", "#999999"]]))], ["photo-tip", _pS(_uM([["fontSize", 12], ["color", "#999999"]]))], ["popup-overlay", _pS(_uM([["!position", "fixed"], ["!top", 0], ["!left", 0], ["!width", "100%"], ["!height", "100%"], ["backgroundColor", "rgba(0,0,0,0.5)"], ["display", "flex"], ["alignItems", "center"], ["justifyContent", "center"], ["!zIndex", 9999], ["animation", "fadeIn 0.3s ease"], ["pointerEvents", "auto"]]))], ["picker-modal", _pS(_uM([["!position", "fixed"], ["!top", 0], ["!left", 0], ["!width", "100%"], ["!height", "100%"], ["backgroundColor", "rgba(0,0,0,0.5)"], ["display", "flex"], ["alignItems", "center"], ["justifyContent", "center"], ["!zIndex", 9999], ["animation", "fadeIn 0.3s ease"], ["pointerEvents", "auto"]]))], ["popup-content", _pS(_uM([["!width", "90%"], ["maxWidth", 500], ["backgroundColor", "#ffffff"], ["borderTopLeftRadius", 12], ["borderTopRightRadius", 12], ["borderBottomRightRadius", 12], ["borderBottomLeftRadius", 12], ["overflow", "hidden"], ["animation", "scaleIn 0.3s ease"], ["boxShadow", "0 8px 32px rgba(0, 0, 0, 0.2)"], ["position", "relative"], ["zIndex", 10000]]))], ["picker-content", _pS(_uM([["!width", "90%"], ["maxWidth", 500], ["backgroundColor", "#ffffff"], ["borderTopLeftRadius", 12], ["borderTopRightRadius", 12], ["borderBottomRightRadius", 12], ["borderBottomLeftRadius", 12], ["overflow", "hidden"], ["animation", "scaleIn 0.3s ease"], ["boxShadow", "0 8px 32px rgba(0, 0, 0, 0.2)"], ["position", "relative"], ["zIndex", 10000]]))], ["popup-header", _pS(_uM([["display", "flex"], ["justifyContent", "space-between"], ["alignItems", "center"], ["paddingTop", 15], ["paddingRight", 20], ["paddingBottom", 15], ["paddingLeft", 20], ["borderBottomWidth", 1], ["borderBottomStyle", "solid"], ["borderBottomColor", "#e9ecef"], ["backgroundImage", "linear-gradient(135deg, #667eea 0%, #764ba2 100%)"], ["backgroundColor", "rgba(0,0,0,0)"], ["position", "relative"]]))], ["picker-header", _pS(_uM([["display", "flex"], ["justifyContent", "space-between"], ["alignItems", "center"], ["paddingTop", 15], ["paddingRight", 20], ["paddingBottom", 15], ["paddingLeft", 20], ["borderBottomWidth", 1], ["borderBottomStyle", "solid"], ["borderBottomColor", "#e9ecef"], ["backgroundImage", "linear-gradient(135deg, #667eea 0%, #764ba2 100%)"], ["backgroundColor", "rgba(0,0,0,0)"], ["position", "relative"], ["content::after", "''"], ["position::after", "absolute"], ["bottom::after", 0], ["left::after", "50%"], ["transform::after", "translateX(-50%)"], ["width::after", 30], ["height::after", 3], ["backgroundColor::after", "rgba(255,255,255,0.3)"], ["borderTopLeftRadius::after", 2], ["borderTopRightRadius::after", 2], ["borderBottomRightRadius::after", 2], ["borderBottomLeftRadius::after", 2]]))], ["picker-cancel", _pS(_uM([["fontSize", 16], ["color", "rgba(255,255,255,0.8)"]]))], ["picker-title", _pS(_uM([["fontSize", 16], ["color", "#ffffff"], ["letterSpacing", 1]]))], ["picker-confirm", _pS(_uM([["fontSize", 16], ["color", "#ffffff"], ["backgroundColor", "rgba(255,255,255,0.2)"], ["paddingTop", 6], ["paddingRight", 12], ["paddingBottom", 6], ["paddingLeft", 12], ["borderTopLeftRadius", 15], ["borderTopRightRadius", 15], ["borderBottomRightRadius", 15], ["borderBottomLeftRadius", 15], ["transitionProperty", "all"], ["transitionDuration", "0.2s"], ["transitionTimingFunction", "ease"], ["backgroundColor:active", "rgba(255,255,255,0.3)"], ["transform:active", "scale(0.95)"]]))], ["popup-title", _pS(_uM([["fontSize", 16], ["color", "#ffffff"], ["letterSpacing", 1]]))], ["popup-close", _pS(_uM([["fontSize", 24], ["color", "rgba(255,255,255,0.8)"], ["width", 30], ["height", 30], ["display", "flex"], ["alignItems", "center"], ["justifyContent", "center"], ["borderTopLeftRadius", 15], ["borderTopRightRadius", 15], ["borderBottomRightRadius", 15], ["borderBottomLeftRadius", 15], ["transitionProperty", "all"], ["transitionDuration", "0.2s"], ["transitionTimingFunction", "ease"], ["backgroundColor:active", "rgba(255,255,255,0.2)"], ["transform:active", "scale(0.9)"]]))], ["popup-search", _pS(_uM([["paddingTop", 15], ["paddingRight", 20], ["paddingBottom", 15], ["paddingLeft", 20], ["borderBottomWidth", 1], ["borderBottomStyle", "solid"], ["borderBottomColor", "#e9ecef"], ["backgroundColor", "#f8f9fa"]]))], ["search-input", _pS(_uM([["width", "100%"], ["height", 40], ["paddingTop", 0], ["paddingRight", 15], ["paddingBottom", 0], ["paddingLeft", 15], ["borderTopWidth", 1], ["borderRightWidth", 1], ["borderBottomWidth", 1], ["borderLeftWidth", 1], ["borderTopStyle", "solid"], ["borderRightStyle", "solid"], ["borderBottomStyle", "solid"], ["borderLeftStyle", "solid"], ["borderTopColor", "#dddddd"], ["borderRightColor", "#dddddd"], ["borderBottomColor", "#dddddd"], ["borderLeftColor", "#dddddd"], ["borderTopLeftRadius", 20], ["borderTopRightRadius", 20], ["borderBottomRightRadius", 20], ["borderBottomLeftRadius", 20], ["fontSize", 14], ["backgroundColor", "#ffffff"], ["outline", "none"], ["transitionProperty", "all"], ["transitionDuration", "0.2s"], ["transitionTimingFunction", "ease"], ["borderTopColor:focus", "#667eea"], ["borderRightColor:focus", "#667eea"], ["borderBottomColor:focus", "#667eea"], ["borderLeftColor:focus", "#667eea"], ["boxShadow:focus", "0 0 0 2px rgba(102, 126, 234, 0.2)"]]))], ["popup-list", _pS(_uM([["maxHeight", 350], ["overflowY", "auto"]]))], ["popup-empty", _pS(_uM([["paddingTop", 40], ["paddingRight", 20], ["paddingBottom", 40], ["paddingLeft", 20], ["textAlign", "center"]]))], ["empty-text", _pS(_uM([["fontSize", 14], ["color", "#999999"]]))], ["picker-list", _pS(_uM([["maxHeight", 300], ["overflowY", "auto"]]))], ["picker-item", _uM([["", _uM([["display", "flex"], ["justifyContent", "space-between"], ["alignItems", "center"], ["paddingTop", 15], ["paddingRight", 20], ["paddingBottom", 15], ["paddingLeft", 20], ["borderBottomWidth", 1], ["borderBottomStyle", "solid"], ["borderBottomColor", "#f0f0f0"], ["transitionProperty", "all"], ["transitionDuration", "0.2s"], ["transitionTimingFunction", "ease"], ["cursor", "pointer"], ["position", "relative"], ["backgroundColor:hover", "#f8f9fa"], ["color:hover", "#667eea"], ["backgroundColor:active", "#e9ecef"], ["transform:active", "scale(0.98)"], ["borderBottomWidth:last-child", "medium"], ["borderBottomStyle:last-child", "none"], ["borderBottomColor:last-child", "#000000"]])], [".selected", _uM([["backgroundColor", "#f8f9ff"]])]])], ["popup-item", _pS(_uM([["display", "flex"], ["justifyContent", "space-between"], ["alignItems", "center"], ["paddingTop", 15], ["paddingRight", 20], ["paddingBottom", 15], ["paddingLeft", 20], ["borderBottomWidth", 1], ["borderBottomStyle", "solid"], ["borderBottomColor", "#f0f0f0"], ["transitionProperty", "all"], ["transitionDuration", "0.2s"], ["transitionTimingFunction", "ease"], ["cursor", "pointer"], ["backgroundColor:hover", "#f8f9fa"]]))], ["popup-item-selected", _pS(_uM([["backgroundColor", "#e8f2ff"], ["borderLeftWidth", 4], ["borderLeftStyle", "solid"], ["borderLeftColor", "#667eea"], ["paddingLeft", 16], ["backgroundColor:hover", "#ddeeff"]]))], ["popup-item-text", _pS(_uM([["fontSize", 16], ["color", "#333333"], ["fontWeight", "400"]]))], ["picker-item-text", _pS(_uM([["fontSize", 16], ["color", "#333333"]]))], ["level-item", _pS(_uM([["flex", 1]]))], ["level-name", _pS(_uM([["fontSize", 16], ["color", "#333333"], ["marginBottom", 4]]))], ["level-desc", _pS(_uM([["fontSize", 12], ["color", "#999999"]]))], ["popup-item-check", _pS(_uM([["fontSize", 18], ["color", "#667eea"], ["fontWeight", "bold"], ["animation", "checkIn 0.3s ease"]]))], ["popup-loading", _pS(_uM([["display", "flex"], ["justifyContent", "center"], ["alignItems", "center"], ["paddingTop", 40], ["paddingRight", 20], ["paddingBottom", 40], ["paddingLeft", 20]]))], ["loading-text", _pS(_uM([["fontSize", 14], ["color", "#999999"]]))], ["@FONT-FACE", _uM([["0", _uM([])], ["1", _uM([])], ["2", _uM([])], ["3", _uM([])]])], ["@TRANSITION", _uM([["picker-wrapper-inline", _uM([["property", "all"], ["duration", "0.3s"], ["timingFunction", "ease"]])], ["bottom-save-btn", _uM([["property", "all"], ["duration", "0.3s"], ["timingFunction", "ease"]])], ["picker-confirm", _uM([["property", "all"], ["duration", "0.2s"], ["timingFunction", "ease"]])], ["popup-close", _uM([["property", "all"], ["duration", "0.2s"], ["timingFunction", "ease"]])], ["search-input", _uM([["property", "all"], ["duration", "0.2s"], ["timingFunction", "ease"]])], ["picker-item", _uM([["property", "all"], ["duration", "0.2s"], ["timingFunction", "ease"]])], ["popup-item", _uM([["property", "all"], ["duration", "0.2s"], ["timingFunction", "ease"]])]])]])];
+const GenPagesMonthlyTaskRecordStyles = [_uM([["container", _pS(_uM([["backgroundColor", "#f5f5f5"], ["position", "relative"], ["zIndex", 1], ["paddingBottom", "180rpx"]]))], ["header", _pS(_uM([["display", "flex"], ["justifyContent", "space-between"], ["alignItems", "center"], ["paddingTop", 20], ["paddingRight", 20], ["paddingBottom", 20], ["paddingLeft", 20], ["backgroundColor", "#ffffff"], ["borderBottomWidth", 1], ["borderBottomStyle", "solid"], ["borderBottomColor", "#f0f0f0"]]))], ["header-left", _pS(_uM([["display", "flex"], ["alignItems", "center"], ["gap", "5px"]]))], ["back-icon", _pS(_uM([["fontSize", 24], ["color", "#007AFF"]]))], ["back-text", _pS(_uM([["fontSize", 16], ["color", "#007AFF"]]))], ["header-title", _pS(_uM([["fontSize", 18], ["fontWeight", "bold"], ["color", "#333333"]]))], ["header-right", _pS(_uM([["display", "flex"], ["alignItems", "center"]]))], ["save-btn", _pS(_uM([["fontSize", 16], ["color", "#007AFF"]]))], ["task-info", _pS(_uM([["backgroundColor", "#ffffff"], ["marginTop", 10], ["marginRight", 20], ["marginBottom", 10], ["marginLeft", 20], ["borderTopLeftRadius", 8], ["borderTopRightRadius", 8], ["borderBottomRightRadius", 8], ["borderBottomLeftRadius", 8], ["paddingTop", 20], ["paddingRight", 20], ["paddingBottom", 20], ["paddingLeft", 20]]))], ["info-item", _pS(_uM([["display", "flex"], ["paddingTop", 12], ["paddingRight", 0], ["paddingBottom", 12], ["paddingLeft", 0], ["borderBottomWidth", 1], ["borderBottomStyle", "solid"], ["borderBottomColor", "#f0f0f0"], ["borderBottomWidth:last-child", "medium"], ["borderBottomStyle:last-child", "none"], ["borderBottomColor:last-child", "#000000"]]))], ["info-label", _pS(_uM([["fontSize", 14], ["color", "#666666"], ["width", 100], ["flexShrink", 0], ["textAlign", "left"], ["marginRight", 12]]))], ["info-value", _pS(_uM([["fontSize", 14], ["color", "#333333"], ["flex", 1], ["textAlign", "left"]]))], ["form-section", _pS(_uM([["backgroundColor", "#ffffff"], ["marginTop", 10], ["marginRight", 20], ["marginBottom", 10], ["marginLeft", 20], ["borderTopLeftRadius", 8], ["borderTopRightRadius", 8], ["borderBottomRightRadius", 8], ["borderBottomLeftRadius", 8], ["paddingTop", 20], ["paddingRight", 20], ["paddingBottom", 20], ["paddingLeft", 20]]))], ["section-title", _pS(_uM([["display", "flex"], ["alignItems", "center"], ["marginBottom", 20]]))], ["title-text", _pS(_uM([["fontSize", 16], ["fontWeight", "bold"], ["color", "#333333"]]))], ["required-mark", _pS(_uM([["fontSize", 16], ["color", "#ff4757"], ["marginLeft", 4]]))], ["form-item", _pS(_uM([["marginBottom", 20], ["marginBottom:last-child", 0]]))], ["form-item-inline", _pS(_uM([["marginBottom", 20], ["display", "flex"], ["flexDirection", "column"], ["gap", "8px"], ["paddingTop", 0], ["paddingRight", 20], ["paddingBottom", 0], ["paddingLeft", 20]]))], ["form-label", _pS(_uM([["fontSize", 14], ["color", "#333333"], ["marginBottom", 8]]))], ["form-label-inline", _pS(_uM([["fontSize", 14], ["color", "#333333"], ["marginBottom", 0]]))], ["picker-wrapper", _pS(_uM([["display", "flex"], ["justifyContent", "space-between"], ["alignItems", "center"], ["paddingTop", 12], ["paddingRight", 15], ["paddingBottom", 12], ["paddingLeft", 15], ["borderTopWidth", 1], ["borderRightWidth", 1], ["borderBottomWidth", 1], ["borderLeftWidth", 1], ["borderTopStyle", "solid"], ["borderRightStyle", "solid"], ["borderBottomStyle", "solid"], ["borderLeftStyle", "solid"], ["borderTopColor", "#e9ecef"], ["borderRightColor", "#e9ecef"], ["borderBottomColor", "#e9ecef"], ["borderLeftColor", "#e9ecef"], ["borderTopLeftRadius", 6], ["borderTopRightRadius", 6], ["borderBottomRightRadius", 6], ["borderBottomLeftRadius", 6], ["backgroundColor", "#ffffff"]]))], ["picker-wrapper-inline", _uM([["", _uM([["display", "flex"], ["justifyContent", "space-between"], ["alignItems", "center"], ["paddingTop", 12], ["paddingRight", 15], ["paddingBottom", 12], ["paddingLeft", 15], ["borderTopWidth", 1], ["borderRightWidth", 1], ["borderBottomWidth", 1], ["borderLeftWidth", 1], ["borderTopStyle", "solid"], ["borderRightStyle", "solid"], ["borderBottomStyle", "solid"], ["borderLeftStyle", "solid"], ["borderTopColor", "#e9ecef"], ["borderRightColor", "#e9ecef"], ["borderBottomColor", "#e9ecef"], ["borderLeftColor", "#e9ecef"], ["borderTopLeftRadius", 6], ["borderTopRightRadius", 6], ["borderBottomRightRadius", 6], ["borderBottomLeftRadius", 6], ["backgroundColor", "#ffffff"], ["width", "100%"], ["transitionProperty", "all"], ["transitionDuration", "0.3s"], ["transitionTimingFunction", "ease"], ["cursor", "pointer"], ["borderTopColor:hover", "#667eea"], ["borderRightColor:hover", "#667eea"], ["borderBottomColor:hover", "#667eea"], ["borderLeftColor:hover", "#667eea"], ["boxShadow:hover", "0 0 0 2px rgba(102, 126, 234, 0.1)"], ["transform:active", "scale(0.98)"]])], [".disabled", _uM([["backgroundColor", "#f5f5f5"], ["color", "#999999"], ["cursor", "not-allowed"], ["opacity", 0.6]])], [".disabled:hover", _uM([["borderTopColor", "#e9ecef"], ["borderRightColor", "#e9ecef"], ["borderBottomColor", "#e9ecef"], ["borderLeftColor", "#e9ecef"], ["boxShadow", "none"]])]])], ["text-input-inline", _pS(_uM([["paddingTop", 12], ["paddingRight", 15], ["paddingBottom", 12], ["paddingLeft", 15], ["borderTopWidth", 1], ["borderRightWidth", 1], ["borderBottomWidth", 1], ["borderLeftWidth", 1], ["borderTopStyle", "solid"], ["borderRightStyle", "solid"], ["borderBottomStyle", "solid"], ["borderLeftStyle", "solid"], ["borderTopColor", "#e9ecef"], ["borderRightColor", "#e9ecef"], ["borderBottomColor", "#e9ecef"], ["borderLeftColor", "#e9ecef"], ["borderTopLeftRadius", 6], ["borderTopRightRadius", 6], ["borderBottomRightRadius", 6], ["borderBottomLeftRadius", 6], ["fontSize", 14], ["color", "#333333"], ["backgroundColor", "#ffffff"], ["flex", 1]]))], ["bottom-save-container", _pS(_uM([["position", "fixed"], ["bottom", 0], ["left", 0], ["right", 0], ["paddingTop", "20rpx"], ["paddingRight", "30rpx"], ["paddingBottom", "40rpx"], ["paddingLeft", "30rpx"], ["backgroundImage", "linear-gradient(to top, rgba(85, 170, 255, 1.0) 0%, rgba(85, 170, 255, 0.9) 100%)"], ["backgroundColor", "rgba(0,0,0,0)"], ["backdropFilter", "blur(10rpx)"], ["borderTopWidth", "1rpx"], ["borderTopStyle", "solid"], ["borderTopColor", "rgba(240,240,240,0.8)"], ["zIndex", 999]]))], ["bottom-save-btn", _pS(_uM([["width", "100%"], ["height", "96rpx"], ["backgroundImage", "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)"], ["backgroundColor", "rgba(0,0,0,0)"], ["borderTopLeftRadius", "48rpx"], ["borderTopRightRadius", "48rpx"], ["borderBottomRightRadius", "48rpx"], ["borderBottomLeftRadius", "48rpx"], ["display", "flex"], ["alignItems", "center"], ["justifyContent", "center"], ["boxShadow", "0 12rpx 32rpx rgba(79, 172, 254, 0.4)"], ["transitionProperty", "all"], ["transitionDuration", "0.3s"], ["transitionTimingFunction", "cubic-bezier(0.4,0,0.2,1)"], ["position", "relative"], ["overflow", "hidden"], ["content::before", "''"], ["position::before", "absolute"], ["top::before", 0], ["left::before", "-100%"], ["width::before", "100%"], ["height::before", "100%"], ["backgroundImage::before", "linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent)"], ["backgroundColor::before", "rgba(0,0,0,0)"], ["transitionProperty::before", "left"], ["transitionDuration::before", "0.6s"], ["transform:active", "translateY(2rpx) scale(0.98)"], ["boxShadow:active", "0 8rpx 24rpx rgba(79, 172, 254, 0.3)"], ["left:active::before", "100%"]]))], ["bottom-save-text", _pS(_uM([["color", "#000000"], ["fontSize", "34rpx"], ["fontWeight", "700"], ["letterSpacing", "3rpx"], ["position", "relative"], ["zIndex", 1]]))], ["picker-text", _uM([["", _uM([["fontSize", 14], ["color", "#333333"]])], [".placeholder", _uM([["color", "#999999"]])]])], ["picker-arrow", _pS(_uM([["fontSize", 16], ["color", "#cccccc"]]))], ["text-input", _pS(_uM([["paddingTop", 12], ["paddingRight", 15], ["paddingBottom", 12], ["paddingLeft", 15], ["borderTopWidth", 1], ["borderRightWidth", 1], ["borderBottomWidth", 1], ["borderLeftWidth", 1], ["borderTopStyle", "solid"], ["borderRightStyle", "solid"], ["borderBottomStyle", "solid"], ["borderLeftStyle", "solid"], ["borderTopColor", "#e9ecef"], ["borderRightColor", "#e9ecef"], ["borderBottomColor", "#e9ecef"], ["borderLeftColor", "#e9ecef"], ["borderTopLeftRadius", 6], ["borderTopRightRadius", 6], ["borderBottomRightRadius", 6], ["borderBottomLeftRadius", 6], ["fontSize", 14], ["color", "#333333"], ["backgroundColor", "#ffffff"]]))], ["textarea-input", _pS(_uM([["paddingTop", 12], ["paddingRight", 15], ["paddingBottom", 12], ["paddingLeft", 15], ["borderTopWidth", 1], ["borderRightWidth", 1], ["borderBottomWidth", 1], ["borderLeftWidth", 1], ["borderTopStyle", "solid"], ["borderRightStyle", "solid"], ["borderBottomStyle", "solid"], ["borderLeftStyle", "solid"], ["borderTopColor", "#e9ecef"], ["borderRightColor", "#e9ecef"], ["borderBottomColor", "#e9ecef"], ["borderLeftColor", "#e9ecef"], ["borderTopLeftRadius", 6], ["borderTopRightRadius", 6], ["borderBottomRightRadius", 6], ["borderBottomLeftRadius", 6], ["fontSize", 14], ["color", "#333333"], ["backgroundColor", "#ffffff"], ["minHeight", 80], ["resize", "none"]]))], ["char-count", _pS(_uM([["fontSize", 12], ["color", "#999999"], ["textAlign", "right"], ["marginTop", 5]]))], ["photo-upload", _pS(_uM([["display", "flex"], ["flexWrap", "wrap"], ["gap", "10px"], ["marginBottom", 5]]))], ["photo-item", _pS(_uM([["position", "relative"], ["width", 80], ["height", 80]]))], ["photo-preview", _pS(_uM([["width", "100%"], ["height", "100%"], ["borderTopLeftRadius", 6], ["borderTopRightRadius", 6], ["borderBottomRightRadius", 6], ["borderBottomLeftRadius", 6], ["objectFit", "cover"]]))], ["photo-delete", _pS(_uM([["position", "absolute"], ["top", -5], ["right", -5], ["width", 20], ["height", 20], ["backgroundColor", "#ff4757"], ["borderTopLeftRadius", 10], ["borderTopRightRadius", 10], ["borderBottomRightRadius", 10], ["borderBottomLeftRadius", 10], ["display", "flex"], ["alignItems", "center"], ["justifyContent", "center"]]))], ["delete-icon", _pS(_uM([["fontSize", 12], ["color", "#ffffff"], ["fontWeight", "bold"]]))], ["photo-add", _pS(_uM([["width", 80], ["height", 80], ["borderTopWidth", 1], ["borderRightWidth", 1], ["borderBottomWidth", 1], ["borderLeftWidth", 1], ["borderTopStyle", "dashed"], ["borderRightStyle", "dashed"], ["borderBottomStyle", "dashed"], ["borderLeftStyle", "dashed"], ["borderTopColor", "#cccccc"], ["borderRightColor", "#cccccc"], ["borderBottomColor", "#cccccc"], ["borderLeftColor", "#cccccc"], ["borderTopLeftRadius", 6], ["borderTopRightRadius", 6], ["borderBottomRightRadius", 6], ["borderBottomLeftRadius", 6], ["display", "flex"], ["flexDirection", "column"], ["alignItems", "center"], ["justifyContent", "center"], ["backgroundColor", "#f8f9fa"]]))], ["add-icon", _pS(_uM([["fontSize", 24], ["color", "#999999"], ["marginBottom", 4]]))], ["add-text", _pS(_uM([["fontSize", 12], ["color", "#999999"]]))], ["photo-tip", _pS(_uM([["fontSize", 12], ["color", "#999999"]]))], ["popup-overlay", _pS(_uM([["!position", "fixed"], ["!top", 0], ["!left", 0], ["!width", "100%"], ["!height", "100%"], ["backgroundColor", "rgba(0,0,0,0.5)"], ["display", "flex"], ["alignItems", "center"], ["justifyContent", "center"], ["!zIndex", 9999], ["animation", "fadeIn 0.3s ease"], ["pointerEvents", "auto"]]))], ["picker-modal", _pS(_uM([["!position", "fixed"], ["!top", 0], ["!left", 0], ["!width", "100%"], ["!height", "100%"], ["backgroundColor", "rgba(0,0,0,0.5)"], ["display", "flex"], ["alignItems", "center"], ["justifyContent", "center"], ["!zIndex", 9999], ["animation", "fadeIn 0.3s ease"], ["pointerEvents", "auto"]]))], ["popup-content", _pS(_uM([["!width", "90%"], ["maxWidth", 500], ["backgroundColor", "#ffffff"], ["borderTopLeftRadius", 12], ["borderTopRightRadius", 12], ["borderBottomRightRadius", 12], ["borderBottomLeftRadius", 12], ["overflow", "hidden"], ["animation", "scaleIn 0.3s ease"], ["boxShadow", "0 8px 32px rgba(0, 0, 0, 0.2)"], ["position", "relative"], ["zIndex", 10000]]))], ["picker-content", _pS(_uM([["!width", "90%"], ["maxWidth", 500], ["backgroundColor", "#ffffff"], ["borderTopLeftRadius", 12], ["borderTopRightRadius", 12], ["borderBottomRightRadius", 12], ["borderBottomLeftRadius", 12], ["overflow", "hidden"], ["animation", "scaleIn 0.3s ease"], ["boxShadow", "0 8px 32px rgba(0, 0, 0, 0.2)"], ["position", "relative"], ["zIndex", 10000]]))], ["popup-header", _pS(_uM([["display", "flex"], ["justifyContent", "space-between"], ["alignItems", "center"], ["paddingTop", 15], ["paddingRight", 20], ["paddingBottom", 15], ["paddingLeft", 20], ["borderBottomWidth", 1], ["borderBottomStyle", "solid"], ["borderBottomColor", "#e9ecef"], ["backgroundImage", "linear-gradient(135deg, #667eea 0%, #764ba2 100%)"], ["backgroundColor", "rgba(0,0,0,0)"], ["position", "relative"]]))], ["picker-header", _pS(_uM([["display", "flex"], ["justifyContent", "space-between"], ["alignItems", "center"], ["paddingTop", 15], ["paddingRight", 20], ["paddingBottom", 15], ["paddingLeft", 20], ["borderBottomWidth", 1], ["borderBottomStyle", "solid"], ["borderBottomColor", "#e9ecef"], ["backgroundImage", "linear-gradient(135deg, #667eea 0%, #764ba2 100%)"], ["backgroundColor", "rgba(0,0,0,0)"], ["position", "relative"], ["content::after", "''"], ["position::after", "absolute"], ["bottom::after", 0], ["left::after", "50%"], ["transform::after", "translateX(-50%)"], ["width::after", 30], ["height::after", 3], ["backgroundColor::after", "rgba(255,255,255,0.3)"], ["borderTopLeftRadius::after", 2], ["borderTopRightRadius::after", 2], ["borderBottomRightRadius::after", 2], ["borderBottomLeftRadius::after", 2]]))], ["picker-cancel", _pS(_uM([["fontSize", 16], ["color", "rgba(255,255,255,0.8)"]]))], ["picker-title", _pS(_uM([["fontSize", 16], ["color", "#ffffff"], ["letterSpacing", 1]]))], ["picker-confirm", _pS(_uM([["fontSize", 16], ["color", "#ffffff"], ["backgroundColor", "rgba(255,255,255,0.2)"], ["paddingTop", 6], ["paddingRight", 12], ["paddingBottom", 6], ["paddingLeft", 12], ["borderTopLeftRadius", 15], ["borderTopRightRadius", 15], ["borderBottomRightRadius", 15], ["borderBottomLeftRadius", 15], ["transitionProperty", "all"], ["transitionDuration", "0.2s"], ["transitionTimingFunction", "ease"], ["backgroundColor:active", "rgba(255,255,255,0.3)"], ["transform:active", "scale(0.95)"]]))], ["popup-title", _pS(_uM([["fontSize", 16], ["color", "#ffffff"], ["letterSpacing", 1]]))], ["popup-close", _pS(_uM([["fontSize", 24], ["color", "rgba(255,255,255,0.8)"], ["width", 30], ["height", 30], ["display", "flex"], ["alignItems", "center"], ["justifyContent", "center"], ["borderTopLeftRadius", 15], ["borderTopRightRadius", 15], ["borderBottomRightRadius", 15], ["borderBottomLeftRadius", 15], ["transitionProperty", "all"], ["transitionDuration", "0.2s"], ["transitionTimingFunction", "ease"], ["backgroundColor:active", "rgba(255,255,255,0.2)"], ["transform:active", "scale(0.9)"]]))], ["popup-search", _pS(_uM([["paddingTop", 15], ["paddingRight", 20], ["paddingBottom", 15], ["paddingLeft", 20], ["borderBottomWidth", 1], ["borderBottomStyle", "solid"], ["borderBottomColor", "#e9ecef"], ["backgroundColor", "#f8f9fa"]]))], ["search-input", _pS(_uM([["width", "100%"], ["height", 40], ["paddingTop", 0], ["paddingRight", 15], ["paddingBottom", 0], ["paddingLeft", 15], ["borderTopWidth", 1], ["borderRightWidth", 1], ["borderBottomWidth", 1], ["borderLeftWidth", 1], ["borderTopStyle", "solid"], ["borderRightStyle", "solid"], ["borderBottomStyle", "solid"], ["borderLeftStyle", "solid"], ["borderTopColor", "#dddddd"], ["borderRightColor", "#dddddd"], ["borderBottomColor", "#dddddd"], ["borderLeftColor", "#dddddd"], ["borderTopLeftRadius", 20], ["borderTopRightRadius", 20], ["borderBottomRightRadius", 20], ["borderBottomLeftRadius", 20], ["fontSize", 14], ["backgroundColor", "#ffffff"], ["outline", "none"], ["transitionProperty", "all"], ["transitionDuration", "0.2s"], ["transitionTimingFunction", "ease"], ["borderTopColor:focus", "#667eea"], ["borderRightColor:focus", "#667eea"], ["borderBottomColor:focus", "#667eea"], ["borderLeftColor:focus", "#667eea"], ["boxShadow:focus", "0 0 0 2px rgba(102, 126, 234, 0.2)"]]))], ["popup-list", _pS(_uM([["maxHeight", 350], ["overflowY", "auto"]]))], ["popup-empty", _pS(_uM([["paddingTop", 40], ["paddingRight", 20], ["paddingBottom", 40], ["paddingLeft", 20], ["textAlign", "center"]]))], ["empty-text", _pS(_uM([["fontSize", 14], ["color", "#999999"]]))], ["picker-list", _pS(_uM([["maxHeight", 300], ["overflowY", "auto"]]))], ["picker-item", _uM([["", _uM([["display", "flex"], ["justifyContent", "center"], ["alignItems", "center"], ["paddingTop", 15], ["paddingRight", 20], ["paddingBottom", 15], ["paddingLeft", 20], ["borderBottomWidth", 1], ["borderBottomStyle", "solid"], ["borderBottomColor", "#f0f0f0"], ["transitionProperty", "all"], ["transitionDuration", "0.3s"], ["transitionTimingFunction", "cubic-bezier(0.4,0,0.2,1)"], ["cursor", "pointer"], ["position", "relative"], ["backgroundColor:hover", "#f0f8ff"], ["color:hover", "#007AFF"], ["backgroundColor:active", "#e9ecef"], ["transform:active", "scale(0.98)"], ["borderBottomWidth:last-child", "medium"], ["borderBottomStyle:last-child", "none"], ["borderBottomColor:last-child", "#000000"], ["height", 60], ["fontSize", 16], ["color", "#666666"], ["borderTopLeftRadius", 8], ["borderTopRightRadius", 8], ["borderBottomRightRadius", 8], ["borderBottomLeftRadius", 8], ["marginTop", 4], ["marginRight", 8], ["marginBottom", 4], ["marginLeft", 8], ["zIndex", 2], ["opacity", 0.6], ["backgroundColor", "rgba(0,0,0,0.02)"]])], [".selected", _uM([["backgroundColor", "rgba(0,0,0,0)"], ["backgroundImage", "linear-gradient(135deg, #007AFF 0%, #0056CC 100%)"], ["color", "#ffffff"], ["fontWeight", "700"], ["boxShadow", "0 4px 12px rgba(0, 122, 255, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2)"], ["transform", "scale(1.05)"], ["zIndex", 3], ["opacity", 1], ["fontSize", 18], ["borderTopWidth", 2], ["borderRightWidth", 2], ["borderBottomWidth", 2], ["borderLeftWidth", 2], ["borderTopStyle", "solid"], ["borderRightStyle", "solid"], ["borderBottomStyle", "solid"], ["borderLeftStyle", "solid"], ["borderTopColor", "#ffffff"], ["borderRightColor", "#ffffff"], ["borderBottomColor", "#ffffff"], ["borderLeftColor", "#ffffff"], ["textShadow", "0 1px 2px rgba(0, 0, 0, 0.3)"]])]])], ["popup-item", _pS(_uM([["display", "flex"], ["justifyContent", "space-between"], ["alignItems", "center"], ["paddingTop", 15], ["paddingRight", 20], ["paddingBottom", 15], ["paddingLeft", 20], ["borderBottomWidth", 1], ["borderBottomStyle", "solid"], ["borderBottomColor", "#f0f0f0"], ["transitionProperty", "all"], ["transitionDuration", "0.2s"], ["transitionTimingFunction", "ease"], ["cursor", "pointer"], ["backgroundColor:hover", "#f8f9fa"]]))], ["popup-item-selected", _pS(_uM([["backgroundColor", "#e8f2ff"], ["borderLeftWidth", 4], ["borderLeftStyle", "solid"], ["borderLeftColor", "#667eea"], ["paddingLeft", 16], ["backgroundColor:hover", "#ddeeff"]]))], ["popup-item-text", _pS(_uM([["fontSize", 16], ["color", "#333333"], ["fontWeight", "400"]]))], ["picker-item-text", _pS(_uM([["fontSize", 16], ["color", "#333333"]]))], ["level-item", _pS(_uM([["flex", 1]]))], ["level-name", _pS(_uM([["fontSize", 16], ["color", "#333333"], ["marginBottom", 4]]))], ["level-desc", _pS(_uM([["fontSize", 12], ["color", "#999999"]]))], ["popup-item-check", _pS(_uM([["fontSize", 18], ["color", "#667eea"], ["fontWeight", "bold"], ["animation", "checkIn 0.3s ease"]]))], ["popup-loading", _pS(_uM([["display", "flex"], ["justifyContent", "center"], ["alignItems", "center"], ["paddingTop", 40], ["paddingRight", 20], ["paddingBottom", 40], ["paddingLeft", 20]]))], ["loading-text", _pS(_uM([["fontSize", 14], ["color", "#999999"]]))], ["form-label-left", _pS(_uM([["fontSize", 16], ["color", "#333333"], ["marginBottom", 10], ["fontWeight", "400"], ["textAlign", "left"]]))], ["custom-picker-full", _uM([["", _uM([["width", "100%"], ["paddingTop", "20rpx"], ["paddingRight", "20rpx"], ["paddingBottom", "20rpx"], ["paddingLeft", "20rpx"], ["borderTopWidth", 1], ["borderRightWidth", 1], ["borderBottomWidth", 1], ["borderLeftWidth", 1], ["borderTopStyle", "solid"], ["borderRightStyle", "solid"], ["borderBottomStyle", "solid"], ["borderLeftStyle", "solid"], ["borderTopColor", "#dddddd"], ["borderRightColor", "#dddddd"], ["borderBottomColor", "#dddddd"], ["borderLeftColor", "#dddddd"], ["borderTopLeftRadius", "8rpx"], ["borderTopRightRadius", "8rpx"], ["borderBottomRightRadius", "8rpx"], ["borderBottomLeftRadius", "8rpx"], ["backgroundColor", "#ffffff"], ["minHeight", "80rpx"], ["display", "flex"], ["alignItems", "center"]])], [".disabled", _uM([["backgroundImage", "none"], ["backgroundColor", "#f5f5f5"], ["borderTopColor", "#dddddd"], ["borderRightColor", "#dddddd"], ["borderBottomColor", "#dddddd"], ["borderLeftColor", "#dddddd"], ["opacity", 0.6]])]])], ["picker-container", _pS(_uM([["width", "100%"], ["paddingTop", "20rpx"], ["paddingRight", "20rpx"], ["paddingBottom", "20rpx"], ["paddingLeft", "20rpx"], ["borderTopWidth", 1], ["borderRightWidth", 1], ["borderBottomWidth", 1], ["borderLeftWidth", 1], ["borderTopStyle", "solid"], ["borderRightStyle", "solid"], ["borderBottomStyle", "solid"], ["borderLeftStyle", "solid"], ["borderTopColor", "#dddddd"], ["borderRightColor", "#dddddd"], ["borderBottomColor", "#dddddd"], ["borderLeftColor", "#dddddd"], ["borderTopLeftRadius", "8rpx"], ["borderTopRightRadius", "8rpx"], ["borderBottomRightRadius", "8rpx"], ["borderBottomLeftRadius", "8rpx"], ["backgroundColor", "#ffffff"], ["minHeight", "80rpx"], ["display", "flex"], ["alignItems", "center"]]))], ["picker-text-full", _uM([["", _uM([["fontSize", "32rpx"], ["color", "#333333"], ["width", "100%"], ["textAlign", "left"]])], [".placeholder", _uM([["color", "#999999"]])]])], ["date-picker-modal", _pS(_uM([["position", "fixed"], ["top", 0], ["left", 0], ["right", 0], ["bottom", 0], ["backgroundColor", "rgba(0,0,0,0.5)"], ["display", "flex"], ["alignItems", "flex-end"], ["zIndex", 1000]]))], ["date-picker-content", _pS(_uM([["width", "100%"], ["backgroundColor", "#ffffff"], ["borderTopLeftRadius", 16], ["borderTopRightRadius", 16], ["borderBottomRightRadius", 0], ["borderBottomLeftRadius", 0], ["paddingBottom", "env(safe-area-inset-bottom)"]]))], ["date-picker-header", _pS(_uM([["display", "flex"], ["justifyContent", "space-between"], ["alignItems", "center"], ["paddingTop", 16], ["paddingRight", 20], ["paddingBottom", 16], ["paddingLeft", 20], ["borderBottomWidth", 1], ["borderBottomStyle", "solid"], ["borderBottomColor", "#f0f0f0"]]))], ["date-picker-cancel", _pS(_uM([["fontSize", 16], ["color", "#999999"]]))], ["date-picker-title", _pS(_uM([["fontSize", 18], ["color", "#333333"]]))], ["date-picker-confirm", _pS(_uM([["fontSize", 16], ["color", "#007AFF"]]))], ["date-picker-view", _pS(_uM([["height", 320], ["paddingTop", 0], ["paddingRight", 20], ["paddingBottom", 20], ["paddingLeft", 20], ["position", "relative"]]))], ["picker-item-spacer", _pS(_uM([["pointerEvents", "none"], ["opacity", 0], ["!backgroundImage", "none"], ["!backgroundColor", "rgba(0,0,0,0)"]]))], ["form-input", _pS(_uM([["flex", 1], ["paddingTop", 12], ["paddingRight", 15], ["paddingBottom", 12], ["paddingLeft", 15], ["backgroundImage", "none"], ["backgroundColor", "#f8f9fa"], ["borderTopLeftRadius", 8], ["borderTopRightRadius", 8], ["borderBottomRightRadius", 8], ["borderBottomLeftRadius", 8], ["borderTopWidth", 1], ["borderRightWidth", 1], ["borderBottomWidth", 1], ["borderLeftWidth", 1], ["borderTopStyle", "solid"], ["borderRightStyle", "solid"], ["borderBottomStyle", "solid"], ["borderLeftStyle", "solid"], ["borderTopColor", "#e9ecef"], ["borderRightColor", "#e9ecef"], ["borderBottomColor", "#e9ecef"], ["borderLeftColor", "#e9ecef"], ["fontSize", 16], ["color", "#333333"], ["boxSizing", "border-box"], ["width", "100%"]]))], ["@FONT-FACE", _uM([["0", _uM([])], ["1", _uM([])], ["2", _uM([])], ["3", _uM([])]])], ["@TRANSITION", _uM([["picker-wrapper-inline", _uM([["property", "all"], ["duration", "0.3s"], ["timingFunction", "ease"]])], ["bottom-save-btn", _uM([["property", "all"], ["duration", "0.3s"], ["timingFunction", "cubic-bezier(0.4,0,0.2,1)"], ["property::before", "left"], ["duration::before", "0.6s"]])], ["picker-confirm", _uM([["property", "all"], ["duration", "0.2s"], ["timingFunction", "ease"]])], ["popup-close", _uM([["property", "all"], ["duration", "0.2s"], ["timingFunction", "ease"]])], ["search-input", _uM([["property", "all"], ["duration", "0.2s"], ["timingFunction", "ease"]])], ["picker-item", _uM([["property", "all"], ["duration", "0.3s"], ["timingFunction", "cubic-bezier(0.4,0,0.2,1)"]])], ["popup-item", _uM([["property", "all"], ["duration", "0.2s"], ["timingFunction", "ease"]])]])]])];
 //# sourceMappingURL=task-record.uvue.map

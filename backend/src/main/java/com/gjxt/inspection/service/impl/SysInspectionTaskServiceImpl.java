@@ -31,7 +31,7 @@ public class SysInspectionTaskServiceImpl extends ServiceImpl<SysInspectionTaskM
 
     @Override
     public PageResult<SysInspectionTask> getTaskPage(Long current, Long size, String taskNo, String taskName, 
-                                                    Long professionId, Long locationId, Long assignedUserId, 
+                                                    Long professionId, Long locationId, String assignedUserId, 
                                                     String status, String startTime, String endTime) {
         Page<SysInspectionTask> page = new Page<>(current, size);
         
@@ -141,7 +141,7 @@ public class SysInspectionTaskServiceImpl extends ServiceImpl<SysInspectionTaskM
         }
         
         // 更新任务信息
-        task.setUserId(Long.valueOf(assignedUserId));
+        task.setUserId(assignedUserId);
         task.setStatus("in_progress"); // in_progress-进行中
         if (StringUtils.hasText(plannedInspectionTime)) {
             // 这里可以解析plannedInspectionTime字符串并设置到scheduleTime字段
@@ -174,7 +174,7 @@ public class SysInspectionTaskServiceImpl extends ServiceImpl<SysInspectionTaskM
     }
 
     @Override
-    public PageResult<SysInspectionTask> getUserTasks(Long userId, Long current, Long size, String status) {
+    public PageResult<SysInspectionTask> getUserTasks(String userId, Long current, Long size, String status) {
         Page<SysInspectionTask> page = new Page<>(current, size);
         IPage<SysInspectionTask> pageResult = taskMapper.selectUserTasks(page, userId, status);
         return PageResult.build(pageResult);
@@ -252,7 +252,7 @@ public class SysInspectionTaskServiceImpl extends ServiceImpl<SysInspectionTaskM
     @Override
     public List<SysInspectionTask> getUserInspectionTasks(String userId) {
         LambdaQueryWrapper<SysInspectionTask> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.eq(SysInspectionTask::getUserId, Long.valueOf(userId))
+        queryWrapper.eq(SysInspectionTask::getUserId, userId)
                    .eq(SysInspectionTask::getDeleted, 0)
                    .orderByDesc(SysInspectionTask::getCreateTime);
         return this.list(queryWrapper);
@@ -270,7 +270,7 @@ public class SysInspectionTaskServiceImpl extends ServiceImpl<SysInspectionTaskM
             queryWrapper.eq(SysInspectionTask::getLocationId, locationId);
         }
         if (StringUtils.hasText(assignedUserId)) {
-            queryWrapper.eq(SysInspectionTask::getUserId, Long.valueOf(assignedUserId));
+            queryWrapper.eq(SysInspectionTask::getUserId, assignedUserId);
         }
         if (status != null) {
             queryWrapper.eq(SysInspectionTask::getStatus, status);

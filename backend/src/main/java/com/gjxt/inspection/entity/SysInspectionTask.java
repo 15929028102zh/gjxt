@@ -49,7 +49,7 @@ public class SysInspectionTask extends BaseEntity {
      * 接收任务用户ID，外键，关联sys_user表
      */
     @TableField("user_id")
-    private Long userId;
+    private String userId;
 
     /**
      * 计划巡检时间
@@ -135,11 +135,11 @@ public class SysInspectionTask extends BaseEntity {
         this.locationId = locationId;
     }
 
-    public Long getUserId() {
+    public String getUserId() {
         return userId;
     }
 
-    public void setUserId(Long userId) {
+    public void setUserId(String userId) {
         this.userId = userId;
     }
 

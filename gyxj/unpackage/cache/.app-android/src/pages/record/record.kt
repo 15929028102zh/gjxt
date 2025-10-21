@@ -1,5 +1,5 @@
 @file:Suppress("UNCHECKED_CAST", "USELESS_CAST", "INAPPLICABLE_JVM_NAME", "UNUSED_ANONYMOUS_PARAMETER", "NAME_SHADOWING", "UNNECESSARY_NOT_NULL_ASSERTION")
-package uni.UNI630A075
+package uni.UNIB5A0920
 import io.dcloud.uniapp.*
 import io.dcloud.uniapp.extapi.*
 import io.dcloud.uniapp.framework.*
@@ -14,6 +14,7 @@ import io.dcloud.uts.UTSAndroid
 import io.dcloud.uniapp.extapi.`$off` as uni__off
 import io.dcloud.uniapp.extapi.`$on` as uni__on
 import io.dcloud.uniapp.extapi.getStorageSync as uni_getStorageSync
+import io.dcloud.uniapp.extapi.getSystemInfo as uni_getSystemInfo
 import io.dcloud.uniapp.extapi.hideLoading as uni_hideLoading
 import io.dcloud.uniapp.extapi.navigateTo as uni_navigateTo
 import io.dcloud.uniapp.extapi.reLaunch as uni_reLaunch
@@ -36,6 +37,7 @@ open class GenPagesRecordRecord : BasePage {
                 this.isReviewed = true
                 this.status = "2"
             }
+            this.initContainerHeight()
             this.loadRecords()
             uni__on("recordUpdated", this.handleRecordUpdated)
         }
@@ -63,77 +65,77 @@ open class GenPagesRecordRecord : BasePage {
     override fun `$render`(): Any? {
         val _ctx = this
         val _cache = this.`$`.renderCache
-        return _cE("view", _uM("class" to "container"), _uA(
+        return _cE("scroll-view", _uM("class" to "container", "scroll-y" to "true", "style" to _nS(_uM("height" to (_ctx.containerHeight + "px"))), "enable-back-to-top" to "true", "refresher-enabled" to "true", "refresher-triggered" to _ctx.isRefreshing, "refresher-default-style" to "black", "refresher-background" to "#f5f5f5", "onRefresherrefresh" to _ctx.onRefresh, "onRefresherrestore" to _ctx.onRefreshRestore), _uA(
             _cE("view", _uM("class" to "header"), _uA(
                 _cE("text", _uM("class" to "title"), "问题列表"),
                 _cE("text", _uM("class" to "subtitle"), "共 " + _tD(_ctx.totalCount) + " 条" + _tD(_ctx.getStatusTitle()) + "问题", 1)
             )),
-            _cE("scroll-view", _uM("class" to "record-list", "scroll-y" to "true", "enable-back-to-top" to "true", "onScrolltolower" to _ctx.handleScrollToLower), _uA(
-                _cE(Fragment, null, RenderHelpers.renderList(_ctx.recordList, fun(record, __key, __index, _cached): Any {
-                    return _cE("view", _uM("class" to "record-item", "key" to record.id, "onClick" to fun(){
-                        _ctx.goToDetail(record)
-                    }
-                    , "onLongpress" to fun(){
-                        _ctx.showDeleteConfirm(record.id, record.problemDescription)
-                    }
-                    ), _uA(
-                        _cE("view", _uM("class" to "record-content"), _uA(
-                            _cE("view", _uM("class" to "left-content"), _uA(
-                                _cE("view", _uM("class" to "name-problem-row"), _uA(
-                                    _cE("text", _uM("class" to "responsible-name"), _tD(record.responsiblePerson), 1)
-                                ))
-                            )),
-                            _cE("view", _uM("class" to "right-info"), _uA(
-                                _cE("text", _uM("class" to "inspector-info"), "检查人：" + _tD(record.inspectorName), 1),
-                                _cE("text", _uM("class" to "date-text"), _tD(record.createDate), 1),
-                                _cE("view", _uM("class" to _nC(_uA(
-                                    "status-tag",
-                                    _ctx.getStatusClass(record.status)
-                                ))), _uA(
-                                    _cE("text", _uM("class" to "status-text"), _tD(_ctx.getStatusText(record.status)), 1)
-                                ), 2)
-                            )),
-                            _cE("text", _uM("class" to "problem-text"), _tD(record.problemDescription), 1)
-                        ))
-                    ), 40, _uA(
-                        "onClick",
-                        "onLongpress"
-                    ))
+            _cE(Fragment, null, RenderHelpers.renderList(_ctx.recordList, fun(record, __key, __index, _cached): Any {
+                return _cE("view", _uM("class" to "record-item", "key" to record.id, "onClick" to fun(){
+                    _ctx.goToDetail(record)
                 }
-                ), 128),
-                if (isTrue(_ctx.recordList.length === 0 && !_ctx.loading)) {
-                    _cE("view", _uM("key" to 0, "class" to "empty-state"), _uA(
-                        _cE("text", _uM("class" to "empty-icon"), "📝"),
-                        _cE("text", _uM("class" to "empty-text"), "暂无记录")
-                    ))
-                } else {
-                    _cC("v-if", true)
+                , "onLongpress" to fun(){
+                    _ctx.showDeleteConfirm(record.id, record.problemDescription)
                 }
-                ,
-                if (isTrue(_ctx.loading)) {
-                    _cE("view", _uM("key" to 1, "class" to "loading-state"), _uA(
-                        _cE("text", _uM("class" to "loading-text"), "加载中...")
+                ), _uA(
+                    _cE("view", _uM("class" to "record-content"), _uA(
+                        _cE("view", _uM("class" to "left-content"), _uA(
+                            _cE("view", _uM("class" to "name-problem-row"), _uA(
+                                _cE("text", _uM("class" to "responsible-name"), _tD(record.responsiblePerson), 1)
+                            ))
+                        )),
+                        _cE("view", _uM("class" to "right-info"), _uA(
+                            _cE("text", _uM("class" to "inspector-info"), "检查人：" + _tD(record.inspectorName), 1),
+                            _cE("text", _uM("class" to "date-text"), _tD(record.createDate), 1),
+                            _cE("view", _uM("class" to _nC(_uA(
+                                "status-tag",
+                                _ctx.getStatusClass(record.status)
+                            ))), _uA(
+                                _cE("text", _uM("class" to "status-text"), _tD(_ctx.getStatusText(record.status)), 1)
+                            ), 2)
+                        )),
+                        _cE("text", _uM("class" to "problem-text"), _tD(record.problemDescription), 1)
                     ))
-                } else {
-                    _cC("v-if", true)
-                }
-                ,
-                if (isTrue(_ctx.hasMore && _ctx.recordList.length > 0)) {
-                    _cE("view", _uM("key" to 2, "class" to "load-more", "onClick" to _ctx.loadMore), _uA(
-                        _cE("text", _uM("class" to "load-more-text"), _tD(if (_ctx.loadingMore) {
-                            "加载中..."
-                        } else {
-                            "加载更多"
-                        }), 1)
-                    ), 8, _uA(
-                        "onClick"
-                    ))
-                } else {
-                    _cC("v-if", true)
-                }
-            ), 40, _uA(
-                "onScrolltolower"
-            ))
+                ), 40, _uA(
+                    "onClick",
+                    "onLongpress"
+                ))
+            }
+            ), 128),
+            if (isTrue(_ctx.recordList.length === 0 && !_ctx.loading)) {
+                _cE("view", _uM("key" to 0, "class" to "empty-state"), _uA(
+                    _cE("text", _uM("class" to "empty-icon"), "📝"),
+                    _cE("text", _uM("class" to "empty-text"), "暂无记录")
+                ))
+            } else {
+                _cC("v-if", true)
+            }
+            ,
+            if (isTrue(_ctx.loading)) {
+                _cE("view", _uM("key" to 1, "class" to "loading-state"), _uA(
+                    _cE("text", _uM("class" to "loading-text"), "加载中...")
+                ))
+            } else {
+                _cC("v-if", true)
+            }
+            ,
+            if (isTrue(_ctx.hasMore && _ctx.recordList.length > 0)) {
+                _cE("view", _uM("key" to 2, "class" to "load-more", "onClick" to _ctx.loadMore), _uA(
+                    _cE("text", _uM("class" to "load-more-text"), _tD(if (_ctx.loadingMore) {
+                        "加载中..."
+                    } else {
+                        "加载更多"
+                    }), 1)
+                ), 8, _uA(
+                    "onClick"
+                ))
+            } else {
+                _cC("v-if", true)
+            }
+        ), 44, _uA(
+            "refresher-triggered",
+            "onRefresherrefresh",
+            "onRefresherrestore"
         ))
     }
     open var recordList: UTSArray<InspectionRecord> by `$data`
@@ -146,9 +148,11 @@ open class GenPagesRecordRecord : BasePage {
     open var status: String by `$data`
     open var isDelayed: Boolean by `$data`
     open var isReviewed: Boolean by `$data`
+    open var isRefreshing: Boolean by `$data`
+    open var containerHeight: Number by `$data`
     @Suppress("USELESS_CAST")
     override fun data(): Map<String, Any?> {
-        return _uM("recordList" to _uA<InspectionRecord>(), "loading" to false, "loadingMore" to false, "hasMore" to true, "totalCount" to 0, "pageNum" to 1, "pageSize" to 20, "status" to "0", "isDelayed" to false, "isReviewed" to false)
+        return _uM("recordList" to _uA<InspectionRecord>(), "loading" to false, "loadingMore" to false, "hasMore" to true, "totalCount" to 0, "pageNum" to 1, "pageSize" to 20, "status" to "0", "isDelayed" to false, "isReviewed" to false, "isRefreshing" to false, "containerHeight" to 0)
     }
     open var checkLogin = ::gen_checkLogin_fn
     open fun gen_checkLogin_fn() {
@@ -164,8 +168,15 @@ open class GenPagesRecordRecord : BasePage {
     }
     open var handleRecordUpdated = ::gen_handleRecordUpdated_fn
     open fun gen_handleRecordUpdated_fn() {
-        console.log("接收到记录更新事件，开始刷新数据", " at pages/record/record.uvue:135")
+        console.log("接收到记录更新事件，开始刷新数据", " at pages/record/record.uvue:146")
         this.refreshRecords()
+    }
+    open var initContainerHeight = ::gen_initContainerHeight_fn
+    open fun gen_initContainerHeight_fn() {
+        uni_getSystemInfo(GetSystemInfoOptions(success = fun(res){
+            this.containerHeight = res.windowHeight
+        }
+        ))
     }
     open var loadRecords = ::gen_loadRecords_fn
     open fun gen_loadRecords_fn(): UTSPromise<Unit> {
@@ -176,11 +187,36 @@ open class GenPagesRecordRecord : BasePage {
                     this.loadingMore = true
                 }
                 val token = uni_getStorageSync("token")
+                var departmentId = ""
+                val userInfoData = uni_getStorageSync("userInfo")
+                val userInfoStr = if (userInfoData != null) {
+                    userInfoData as String
+                } else {
+                    ""
+                }
+                if (userInfoStr != null && userInfoStr != "" && userInfoStr != "null" && userInfoStr != "undefined") {
+                    try {
+                        val parsedUserInfo = UTSAndroid.consoleDebugError(JSON.parse(userInfoStr), " at pages/record/record.uvue:175") as UTSJSONObject
+                        departmentId = parsedUserInfo.getString("deptId") ?: ""
+                    }
+                     catch (error: Throwable) {
+                        console.error("用户信息JSON解析失败:", error, " at pages/record/record.uvue:178")
+                    }
+                }
                 var apiUrl = ""
                 if (this.isDelayed) {
-                    apiUrl = getApiUrl("/inspection-record/delayed?current=" + this.pageNum + "&size=" + this.pageSize)
+                    apiUrl = getApiUrl("/inspection-record/delayed?current=" + this.pageNum + "&size=" + this.pageSize + (if (departmentId != null && departmentId != "") {
+                        "&departmentId=" + departmentId
+                    } else {
+                        ""
+                    }))
                 } else {
-                    apiUrl = getApiUrl("/inspection-record/page?current=" + this.pageNum + "&size=" + this.pageSize + "&status=" + this.status)
+                    apiUrl = getApiUrl("/inspection-record/page?current=" + this.pageNum + "&size=" + this.pageSize + "&status=" + this.status + (if (departmentId != null && departmentId != "") {
+                        "&departmentId=" + departmentId
+                    } else {
+                        ""
+                    }
+                    ))
                 }
                 uni_request<Any>(RequestOptions(url = apiUrl, method = "GET", header = object : UTSJSONObject() {
                     var Authorization = "Bearer " + token
@@ -195,11 +231,11 @@ open class GenPagesRecordRecord : BasePage {
                                 var i: Number = 0
                                 while(i < records.length){
                                     val item = records[i]
-                                    console.log("原始数据对象:", item, " at pages/record/record.uvue:175")
-                                    console.log("problemDescription字段:", item.getString("problemDescription"), " at pages/record/record.uvue:176")
+                                    console.log("原始数据对象:", item, " at pages/record/record.uvue:207")
+                                    console.log("problemDescription字段:", item.getString("problemDescription"), " at pages/record/record.uvue:208")
                                     val createTime = item.getString("createTime") ?: ""
                                     val record = InspectionRecord(id = item.getString("id") ?: "", problemDescription = item.getString("problemDescription") ?: "", responsiblePerson = item.getString("responsiblePerson") ?: "", inspectorName = item.getString("inspector") ?: "", createDate = this.formatDate(createTime), status = item.getNumber("status") ?: 0)
-                                    console.log("处理后的记录对象:", record, " at pages/record/record.uvue:188")
+                                    console.log("处理后的记录对象:", record, " at pages/record/record.uvue:220")
                                     newRecords.push(record)
                                     i++
                                 }
@@ -225,7 +261,7 @@ open class GenPagesRecordRecord : BasePage {
                     this.loadingMore = false
                 }
                 , fail = fun(error){
-                    console.error("加载记录失败:", error, " at pages/record/record.uvue:212")
+                    console.error("加载记录失败:", error, " at pages/record/record.uvue:244")
                     uni_showToast(ShowToastOptions(title = "网络错误", icon = "none"))
                     this.loading = false
                     this.loadingMore = false
@@ -238,7 +274,7 @@ open class GenPagesRecordRecord : BasePage {
         if (status == null) {
             return "未知"
         }
-        val statusMap: UTSJSONObject = object : UTSJSONObject(UTSSourceMapPosition("statusMap", "pages/record/record.uvue", 225, 10)) {
+        val statusMap: UTSJSONObject = object : UTSJSONObject(UTSSourceMapPosition("statusMap", "pages/record/record.uvue", 257, 10)) {
             var `0` = "待整改"
             var `1` = "已整改"
             var `2` = "已复查"
@@ -265,7 +301,7 @@ open class GenPagesRecordRecord : BasePage {
         if (status == null) {
             return "status-unknown"
         }
-        val classMap: UTSJSONObject = object : UTSJSONObject(UTSSourceMapPosition("classMap", "pages/record/record.uvue", 245, 11)) {
+        val classMap: UTSJSONObject = object : UTSJSONObject(UTSSourceMapPosition("classMap", "pages/record/record.uvue", 277, 11)) {
             var `0` = "status-pending"
             var `1` = "status-completed"
             var `2` = "status-accepted"
@@ -296,7 +332,7 @@ open class GenPagesRecordRecord : BasePage {
     open var goToDetail = ::gen_goToDetail_fn
     open fun gen_goToDetail_fn(record: InspectionRecord) {
         if (this.isDelayed) {
-            uni_navigateTo(NavigateToOptions(url = "/pages/record/review?id=" + record.id + "&delayed=true"))
+            uni_navigateTo(NavigateToOptions(url = "/pages/record/detail?id=" + record.id + "&delayed=true"))
         } else if (this.isReviewed) {
             uni_navigateTo(NavigateToOptions(url = "/pages/record/review?id=" + record.id + "&reviewed=true"))
         } else if (record.status === 0) {
@@ -314,6 +350,22 @@ open class GenPagesRecordRecord : BasePage {
         this.hasMore = true
         this.loadRecords()
         uni_stopPullDownRefresh()
+    }
+    open var onRefresh = ::gen_onRefresh_fn
+    open fun gen_onRefresh_fn() {
+        this.isRefreshing = true
+        this.refreshRecords()
+        setTimeout(fun(){
+            if (this.isRefreshing) {
+                this.isRefreshing = false
+                uni_stopPullDownRefresh()
+            }
+        }
+        , 1500)
+    }
+    open var onRefreshRestore = ::gen_onRefreshRestore_fn
+    open fun gen_onRefreshRestore_fn() {
+        this.isRefreshing = false
     }
     open var loadMore = ::gen_loadMore_fn
     open fun gen_loadMore_fn() {
@@ -360,7 +412,7 @@ open class GenPagesRecordRecord : BasePage {
         }
         , fail = fun(error){
             uni_hideLoading()
-            console.error("删除记录失败:", error, " at pages/record/record.uvue:364")
+            console.error("删除记录失败:", error, " at pages/record/record.uvue:415")
             uni_showToast(ShowToastOptions(title = "网络错误", icon = "none"))
         }
         ))
@@ -375,7 +427,7 @@ open class GenPagesRecordRecord : BasePage {
         }
         val styles0: Map<String, Map<String, Map<String, Any>>>
             get() {
-                return _uM("container" to _pS(_uM("paddingTop" to 0, "paddingRight" to 0, "paddingBottom" to 0, "paddingLeft" to 0, "backgroundColor" to "#f5f5f5", "display" to "flex", "flexDirection" to "column")), "header" to _pS(_uM("paddingTop" to 20, "paddingRight" to 20, "paddingBottom" to 20, "paddingLeft" to 20, "backgroundImage" to "none", "backgroundColor" to "#ffffff", "borderBottomWidth" to 1, "borderBottomStyle" to "solid", "borderBottomColor" to "#e0e0e0")), "title" to _pS(_uM("fontSize" to 18, "fontWeight" to "bold", "color" to "#333333", "marginBottom" to 5)), "subtitle" to _pS(_uM("fontSize" to 14, "color" to "#666666")), "record-list" to _pS(_uM("flex" to 2, "paddingTop" to 10, "paddingRight" to 10, "paddingBottom" to 280, "paddingLeft" to 10)), "record-item" to _pS(_uM("backgroundImage" to "none", "backgroundColor" to "#ffffff", "marginBottom" to 1, "paddingTop" to 15, "paddingRight" to 20, "paddingBottom" to 15, "paddingLeft" to 20, "borderBottomWidth" to 1, "borderBottomStyle" to "solid", "borderBottomColor" to "#f0f0f0")), "record-content" to _pS(_uM("display" to "flex", "justifyContent" to "space-between", "alignItems" to "flex-start", "marginBottom" to 10, "width" to "100%")), "left-content" to _pS(_uM("flex" to 1, "marginRight" to 15, "display" to "flex", "flexDirection" to "column", "gap" to "2px")), "problem-text" to _pS(_uM("fontSize" to 15, "color" to "#666666", "lineHeight" to 1.3, "fontWeight" to "400", "marginTop" to 2)), "right-info" to _pS(_uM("flexShrink" to 0, "textAlign" to "right", "display" to "flex", "flexDirection" to "column", "alignItems" to "flex-end", "justifyContent" to "flex-start", "minWidth" to 120, "maxWidth" to 150, "gap" to "6px", "marginLeft" to "auto")), "inspector-info" to _pS(_uM("fontSize" to 13, "color" to "#333333", "textAlign" to "right")), "date-text" to _pS(_uM("fontSize" to 13, "color" to "#666666")), "status-row" to _pS(_uM("marginTop" to 8)), "status-tag" to _pS(_uM("paddingTop" to 3, "paddingRight" to 10, "paddingBottom" to 3, "paddingLeft" to 10, "borderTopLeftRadius" to 12, "borderTopRightRadius" to 12, "borderBottomRightRadius" to 12, "borderBottomLeftRadius" to 12, "fontSize" to 12, "alignSelf" to "flex-end")), "status-text" to _pS(_uM("color" to "#ffffff", "fontSize" to 12)), "status-pending" to _pS(_uM("backgroundImage" to "none", "backgroundColor" to "#ff6b6b")), "status-processing" to _pS(_uM("backgroundImage" to "none", "backgroundColor" to "#ffa726")), "status-completed" to _pS(_uM("backgroundImage" to "none", "backgroundColor" to "#66bb6a")), "status-accepted" to _pS(_uM("backgroundImage" to "none", "backgroundColor" to "#42a5f5")), "name-problem-row" to _pS(_uM("display" to "flex", "alignItems" to "center", "marginBottom" to 2)), "responsible-name" to _pS(_uM("fontSize" to 16, "color" to "#333333", "fontWeight" to "700", "marginTop" to 0, "marginRight" to 0, "marginBottom" to 0, "marginLeft" to 0)), "empty-state" to _pS(_uM("textAlign" to "center", "paddingTop" to 60, "paddingRight" to 20, "paddingBottom" to 60, "paddingLeft" to 20)), "empty-icon" to _pS(_uM("fontSize" to 48, "marginBottom" to 15, "color" to "#cccccc")), "empty-text" to _pS(_uM("fontSize" to 16, "color" to "#999999")), "loading-state" to _pS(_uM("textAlign" to "center", "paddingTop" to 40, "paddingRight" to 20, "paddingBottom" to 40, "paddingLeft" to 20)), "loading-text" to _pS(_uM("fontSize" to 14, "color" to "#999999")), "load-more" to _pS(_uM("textAlign" to "center", "paddingTop" to 20, "paddingRight" to 20, "paddingBottom" to 20, "paddingLeft" to 20, "backgroundImage" to "none", "backgroundColor" to "#ffffff", "borderTopWidth" to 1, "borderTopStyle" to "solid", "borderTopColor" to "#f0f0f0")), "load-more-text" to _pS(_uM("fontSize" to 14, "color" to "#666666")))
+                return _uM("container" to _pS(_uM("backgroundColor" to "#f5f5f5", "width" to "100%")), "header" to _pS(_uM("paddingTop" to 20, "paddingRight" to 20, "paddingBottom" to 20, "paddingLeft" to 20, "backgroundImage" to "none", "backgroundColor" to "#ffffff", "borderBottomWidth" to 1, "borderBottomStyle" to "solid", "borderBottomColor" to "#e0e0e0")), "title" to _pS(_uM("fontSize" to 18, "fontWeight" to "bold", "color" to "#333333", "marginBottom" to 5)), "subtitle" to _pS(_uM("fontSize" to 14, "color" to "#666666")), "record-item" to _pS(_uM("backgroundImage" to "none", "backgroundColor" to "#ffffff", "marginTop" to 10, "marginRight" to 10, "marginBottom" to 1, "marginLeft" to 10, "paddingTop" to 15, "paddingRight" to 20, "paddingBottom" to 15, "paddingLeft" to 20, "borderBottomWidth" to 1, "borderBottomStyle" to "solid", "borderBottomColor" to "#f0f0f0", "borderTopLeftRadius" to 8, "borderTopRightRadius" to 8, "borderBottomRightRadius" to 8, "borderBottomLeftRadius" to 8)), "record-content" to _pS(_uM("display" to "flex", "justifyContent" to "space-between", "alignItems" to "flex-start", "marginBottom" to 10, "width" to "100%")), "left-content" to _pS(_uM("flex" to 1, "marginRight" to 15, "display" to "flex", "flexDirection" to "column", "gap" to "2px")), "problem-text" to _pS(_uM("fontSize" to 15, "color" to "#666666", "lineHeight" to 1.3, "fontWeight" to "400", "marginTop" to 2)), "right-info" to _pS(_uM("flexShrink" to 0, "textAlign" to "right", "display" to "flex", "flexDirection" to "column", "alignItems" to "flex-end", "justifyContent" to "flex-start", "minWidth" to 120, "maxWidth" to 150, "gap" to "6px", "marginLeft" to "auto")), "inspector-info" to _pS(_uM("fontSize" to 13, "color" to "#333333", "textAlign" to "right")), "date-text" to _pS(_uM("fontSize" to 13, "color" to "#666666")), "status-row" to _pS(_uM("marginTop" to 8)), "status-tag" to _pS(_uM("paddingTop" to 3, "paddingRight" to 10, "paddingBottom" to 3, "paddingLeft" to 10, "borderTopLeftRadius" to 12, "borderTopRightRadius" to 12, "borderBottomRightRadius" to 12, "borderBottomLeftRadius" to 12, "fontSize" to 12, "alignSelf" to "flex-end")), "status-text" to _pS(_uM("color" to "#ffffff", "fontSize" to 12)), "status-pending" to _pS(_uM("backgroundImage" to "none", "backgroundColor" to "#ff6b6b")), "status-processing" to _pS(_uM("backgroundImage" to "none", "backgroundColor" to "#ffa726")), "status-completed" to _pS(_uM("backgroundImage" to "none", "backgroundColor" to "#66bb6a")), "status-accepted" to _pS(_uM("backgroundImage" to "none", "backgroundColor" to "#42a5f5")), "name-problem-row" to _pS(_uM("display" to "flex", "alignItems" to "center", "marginBottom" to 2)), "responsible-name" to _pS(_uM("fontSize" to 16, "color" to "#333333", "fontWeight" to "700", "marginTop" to 0, "marginRight" to 0, "marginBottom" to 0, "marginLeft" to 0)), "empty-state" to _pS(_uM("textAlign" to "center", "paddingTop" to 60, "paddingRight" to 20, "paddingBottom" to 60, "paddingLeft" to 20)), "empty-icon" to _pS(_uM("fontSize" to 48, "marginBottom" to 15, "color" to "#cccccc")), "empty-text" to _pS(_uM("fontSize" to 16, "color" to "#999999")), "loading-state" to _pS(_uM("textAlign" to "center", "paddingTop" to 40, "paddingRight" to 20, "paddingBottom" to 40, "paddingLeft" to 20)), "loading-text" to _pS(_uM("fontSize" to 14, "color" to "#999999")), "load-more" to _pS(_uM("textAlign" to "center", "paddingTop" to 20, "paddingRight" to 20, "paddingBottom" to 20, "paddingLeft" to 20, "backgroundImage" to "none", "backgroundColor" to "#ffffff", "borderTopWidth" to 1, "borderTopStyle" to "solid", "borderTopColor" to "#f0f0f0")), "load-more-text" to _pS(_uM("fontSize" to 14, "color" to "#666666")))
             }
         var inheritAttrs = true
         var inject: Map<String, Map<String, Any?>> = _uM()

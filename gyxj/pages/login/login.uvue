@@ -2,8 +2,7 @@
 	<view class="login-container">
 		<view class="login-header">
 			<image class="logo" src="/static/logo.png"></image>
-			<text class="title">石油工业园区设备巡检系统</text>
-			<text class="subtitle">请登录您的账号</text>
+			<text class="system-title">榆林公司岗检系统</text>
 		</view>
 		
 		<view class="login-form">
@@ -249,26 +248,28 @@
 	.login-header {
 		text-align: center;
 		margin-bottom: 60px;
+		align-items: center;
+		justify-content: center;
 	}
 	
 	.logo {
-		width: 80px;
-		height: 80px;
-		border-radius: 16px;
-		margin-bottom: 20px;
+		width: 120px;
+		height: 120px;
+		border-radius: 20px;
+		margin-bottom: 30px;
+		align-self: center;
 	}
 	
-	.title {
-		font-size: 24px;
+	.system-title {
+		font-size: 28px;
 		font-weight: bold;
-		color: #ffffff;
-		margin-bottom: 8px;
+		color:rgb(31, 29, 29);
+		margin-bottom: 12px;
+		text-align: center;
+		letter-spacing: 2px;
 	}
 	
-	.subtitle {
-		font-size: 16px;
-		color: rgba(255, 255, 255, 0.8);
-	}
+	
 	
 	.login-form {
 		width: 100%;

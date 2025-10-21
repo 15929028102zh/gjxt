@@ -7,9 +7,9 @@
 		<view v-else-if="recordDetail" class="detail-content">
 			<!-- 状态标题 -->
 			<view class="status-header">
-				<text class="page-title">问题详情</text>
+				<text class="page-title">{{isDelayed ? '延迟整改录入' : '问题详情'}}</text>
 				<view class="record-status" :class="getStatusClass(recordDetail?.status ?? 0)">
-					<text>{{getStatusText(recordDetail?.status ?? 0)}}</text>
+					<text>{{isDelayed ? '延迟整改' : getStatusText(recordDetail?.status ?? 0)}}</text>
 				</view>
 			</view>
 			
@@ -254,22 +254,11 @@
 				</view>
 			</view>
 			
-			<!-- 整改图片调试信息 -->
-			<view class="form-item" v-if="rectificationImages.length > 0">
-				<text class="form-label">🔍 整改图片调试信息</text>
-				<view class="form-input-wrapper">
-					<view class="form-display-text">
-						<text v-for="(image, index) in rectificationImages" :key="index">
-							整改图片{{index + 1}}: {{image}}\n
-						</text>
-					</view>
-				</view>
-			</view>
 			
 			<!-- 保存整改信息按钮 -->
 			<view class="save-button-wrapper">
 				<button class="save-btn" @click="saveRectificationInfo" :disabled="saving">
-					{{saving ? '保存中...' : '保存整改信息'}}
+					{{saving ? (isDelayed ? '确认中...' : '保存中...') : (isDelayed ? '确认整改' : '保存整改信息')}}
 				</button>
 			</view>
 		</view>
@@ -346,6 +335,7 @@
 				saving: false,
 				scrollTop: 0,
 				containerHeight: 0,
+				isDelayed: false, // 是否为延迟整改模式
 				// 下拉选择框相关数据
 				natureOptions: [] as NatureOption[],
 				professionOptions: [] as ProfessionOption[],
@@ -363,6 +353,7 @@
 	},
 		onLoad(options: UTSJSONObject) {
 			this.recordId = options.getString('id') ?? ''
+			this.isDelayed = options.getString('delayed') === 'true' // 检查是否为延迟整改模式
 			this.checkLogin()
 			// 重置数据加载计数器
 			this.loadedDataCount = 0
@@ -497,49 +488,13 @@
 						// 处理整改图片
 								const rectificationImages = this.recordDetail?.rectificationImageUrls
 								if (rectificationImages != null && rectificationImages != '') {
-									try {
-										let urlList: Array<string> = []
-										if (typeof rectificationImages === 'string') {
-											const parsed = JSON.parse(rectificationImages as string)
-											if (Array.isArray(parsed)) {
-												urlList = parsed as Array<string>
-											}
-										} else if (Array.isArray(rectificationImages)) {
-											urlList = rectificationImages as Array<string>
-										}
-										
-										// 为整改图片URL添加完整的HTTP地址
-										this.rectificationImages = urlList.map(url => this.convertToHttpUrl(url))
-									} catch (e) {
-										if (typeof rectificationImages === 'string') {
-											const urlList = (rectificationImages as string).split(',')
-											this.rectificationImages = urlList.map(url => this.convertToHttpUrl(url.trim()))
-										}
-									}
+									this.rectificationImages = this.processImageUrls(rectificationImages as string)
 								}
 						
 						// 处理图片URL
 						const imageUrls = this.recordDetail?.problemImageUrls
 						if (imageUrls != null && imageUrls != '') {
-							try {
-								let urlList: Array<string> = []
-								if (typeof imageUrls === 'string') {
-									const parsed = JSON.parse(imageUrls as string)
-									if (Array.isArray(parsed)) {
-										urlList = parsed as Array<string>
-									}
-								} else if (Array.isArray(imageUrls)) {
-									urlList = imageUrls as Array<string>
-								}
-								
-								// 为图片URL添加完整的HTTP地址
-								this.imageList = urlList.map(url => this.convertToHttpUrl(url))
-							} catch (e) {
-								if (typeof imageUrls === 'string') {
-									const urlList = (imageUrls as string).split(',')
-									this.imageList = urlList.map(url => this.convertToHttpUrl(url.trim()))
-								}
-							}
+							this.imageList = this.processImageUrls(imageUrls as string)
 						} else {
 							this.imageList = []
 						}
@@ -558,7 +513,7 @@
 						
 						// 设置页面标题
 						uni.setNavigationBarTitle({
-							title: '记录详情'
+							title: this.isDelayed ? '延迟整改录入' : '记录详情'
 						})
 						
 						// 记录详情加载完成
@@ -746,6 +701,29 @@
 			const fullUrl = `${apiConfig.baseUrl}/api${relativePath}`
 			return fullUrl
 		},
+		
+		// 处理图片URL数组，支持JSON数组格式和逗号分隔字符串格式
+    processImageUrls(imageUrls: string): string[] {
+     if (imageUrls == null || imageUrls.trim() === '') {
+				return []
+			}
+			
+			try {
+				// 尝试解析为JSON数组
+				if (imageUrls.trim().startsWith('[') && imageUrls.trim().endsWith(']')) {
+					const parsed = JSON.parse(imageUrls) as string[]
+					return parsed.map(url => this.convertToHttpUrl(url)).filter(url => url !== '')
+				}
+			} catch (e) {
+				console.log('JSON解析失败，尝试按逗号分隔处理:', e)
+			}
+			
+			// 按逗号分隔处理
+			return imageUrls.split(',')
+				.map(url => url.trim())
+				.filter(url => url !== '')
+				.map(url => this.convertToHttpUrl(url))
+		},
 
 		async saveRectificationInfo() {
 			if (this.saving) return
@@ -827,7 +805,7 @@
 						const data = response.data as UTSJSONObject
 						if (response.statusCode === 200 && (data.getNumber('code') ?? 0) === 200) {
 							uni.showToast({
-								title: '保存成功',
+								title: this.isDelayed ? '确认整改成功' : '保存成功',
 								icon: 'success',
 								duration: 1500
 							})

@@ -1,0 +1,63 @@
+import { TuiGuid } from '../../libs/common';
+import { TuiCharts } from '../../index';
+const __sfc__ = defineComponent({
+    __name: 'tui-xechars',
+    emits: ['initFinished', 'select'],
+    setup(__props) {
+        const __ins = getCurrentInstance()!;
+        const _ctx = __ins.proxy as InstanceType<typeof __sfc__>;
+        const _cache = __ins.renderCache;
+        const guid: string = `tui${TuiGuid(20)}`;
+        function emits(event: string, ...do_not_transform_spread: Array<any | null>) {
+            __ins.emit(event, ...do_not_transform_spread);
+        }
+        const charts = new TuiCharts();
+        const ins = getCurrentInstance()?.proxy as ComponentPublicInstance;
+        onMounted(() => {
+            nextTick(() => {
+                (uni.getElementById(guid) as UniElement).getBoundingClientRectAsync()?.then((rst: DOMRect) => {
+                    uni.createCanvasContextAsync({
+                        id: guid,
+                        component: ins,
+                        success: (context: CanvasContext) => {
+                            const ctx = context.getContext('2d')!;
+                            const canvas = ctx.canvas;
+                            const dpr = uni.getWindowInfo().pixelRatio;
+                            canvas.width = canvas.offsetWidth * dpr;
+                            canvas.height = canvas.offsetHeight * dpr;
+                            ctx.scale(dpr, dpr);
+                            charts.setInsMethod(ins, rst);
+                            charts.setContext(context);
+                            emits('initFinished', charts);
+                        }
+                    });
+                });
+            });
+        });
+        function touchStart(e: UniTouchEvent) {
+            charts.touchStart(e);
+        }
+        function touchMove(e: UniTouchEvent) {
+            charts.touchMove(e);
+        }
+        function touchEnd(e: UniTouchEvent) {
+            charts.touchEnd(e);
+        }
+        function tap(e: UniPointerEvent) {
+            charts.tap(e);
+        }
+        return (): any | null => {
+            return _cE("canvas", _uM({
+                class: "tui-xcharts-main",
+                id: guid,
+                onClick: tap,
+                onTouchstart: touchStart,
+                onTouchmove: touchMove,
+                onTouchend: touchEnd
+            }), null, 32 /* NEED_HYDRATION */);
+        };
+    }
+});
+export default __sfc__;
+export type TuiXecharsComponentPublicInstance = InstanceType<typeof __sfc__>;
+const GenUniModulesTuiXecharsComponentsTuiXecharsTuiXecharsStyles = [_uM([["tui-xcharts-main", _pS(_uM([["width", "690rpx"], ["height", "500rpx"]]))]])];

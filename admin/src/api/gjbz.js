@@ -74,7 +74,7 @@ export const gjbzDataApi = {
   // 获取类型选项
   getTypes() {
     return request({
-      url: '/gjbz-data/types',
+      url: '/gjbz-data/options/types',
       method: 'get'
     })
   },

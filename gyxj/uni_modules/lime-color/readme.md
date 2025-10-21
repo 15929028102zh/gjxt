@@ -393,7 +393,7 @@ tinyColor('#f00').shade(100).toString(); // "#000000"
 
 ```ts
 tinyColor('#f00').desaturate().toString(); // "#f20d0d"
-tinyColor('#f00').desaturate(100).toString(); // "#808080"
+tinyColor('#f00').desaturate(100).toString(); // "#808180"
 ```
 
 ### saturate
@@ -409,7 +409,7 @@ tinyColor('hsl(0, 10%, 50%)').saturate().toString(); // "hsl(0, 20%, 50%)"
 `greyscale: function() -> TinyColor`. 完全降低颜色的饱和度，使其变为灰度。与调用`desaturate(100)`相同。
 
 ```ts
-tinyColor('#f00').greyscale().toString(); // "#808080"
+tinyColor('#f00').greyscale().toString(); // "#808180"
 ```
 
 ### spin
@@ -434,7 +434,7 @@ tinyColor('#f00').spin(360).toString(); // "#ff0000"
 let color1 = tinyColor('#f0f');
 let color2 = tinyColor('#0f0');
 
-color1.mix(color2).toHexString(); // #808080
+color1.mix(color2).toHexString(); // #808180
 ```
 
 ### 颜色组合

@@ -17,7 +17,7 @@
         active-text-color="#409EFF"
       >
         <template v-for="route in menuRoutes" :key="route.path">
-          <el-sub-menu v-if="route.children && route.children.length > 0" :index="route.path">
+          <el-sub-menu v-if="route.children && route.children.length > 0 && !shouldHideRoute(route)" :index="route.path">
             <template #title>
               <el-icon><component :is="route.meta.icon" /></el-icon>
               <span>{{ route.meta.title }}</span>
@@ -25,8 +25,8 @@
             <el-menu-item
               v-for="child in route.children"
               :key="child.path"
-              :index="route.path + '/' + child.path"
-              v-show="!child.meta?.hideInMenu"
+              :index="route.path === '/' ? '/' + child.path : route.path + '/' + child.path"
+              v-show="!child.meta?.hideInMenu && !shouldHideRoute(child)"
             >
               <el-icon><component :is="child.meta.icon" /></el-icon>
               <span>{{ child.meta.title }}</span>
@@ -67,6 +67,18 @@
         </div>
         
         <div class="header-right">
+          <!-- 通知图标 -->
+          <div class="notification-wrapper" @click="showNotifications">
+            <el-icon class="notification-icon" :size="20">
+              <Bell />
+            </el-icon>
+            <el-badge 
+              v-if="notificationCount > 0" 
+              :value="notificationCount > 99 ? '99+' : notificationCount" 
+              class="notification-badge"
+            />
+          </div>
+          
           <el-dropdown @command="handleCommand">
             <span class="user-info">
               <el-avatar :size="32" :src="convertToHttpUrl(userInfo.imageUrl) || '/default-avatar.svg'" />
@@ -88,6 +100,42 @@
         <router-view />
       </el-main>
     </el-container>
+    
+    <!-- 通知弹窗 -->
+    <el-dialog
+      v-model="showNotificationModal"
+      title="通知消息"
+      width="500px"
+      :before-close="hideNotifications"
+    >
+      <div class="notification-header">
+        <el-button type="text" @click="markAllAsRead" class="mark-all-read">
+          全部已读
+        </el-button>
+      </div>
+      
+      <div class="notification-list">
+        <div v-if="notifications.length === 0" class="empty-notifications">
+          <el-empty description="暂无通知" />
+        </div>
+        
+        <div 
+          v-for="notification in notifications" 
+          :key="notification.id"
+          class="notification-item"
+          :class="{ unread: !notification.isRead }"
+          @click="handleNotificationClick(notification)"
+        >
+          <div class="notification-dot" v-if="!notification.isRead"></div>
+          <div class="notification-content">
+            <div class="notification-title">{{ notification.title }}</div>
+            <div class="notification-desc">{{ notification.content }}</div>
+            <div class="notification-time">{{ notification.createTime }}</div>
+          </div>
+          <el-icon class="notification-arrow"><ArrowRight /></el-icon>
+        </div>
+      </div>
+    </el-dialog>
   </el-container>
 </template>
 
@@ -95,9 +143,12 @@
 import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { Bell, ArrowRight } from '@element-plus/icons-vue'
 import { logout } from '@/api/auth'
 import { userApi } from '@/api/system'
+import { monthlyTaskApi } from '@/api/monthlyRecord'
 import { getToken } from '@/utils/token'
+import { convertToHttpUrl } from '@/config/api'
 
 const route = useRoute()
 const router = useRouter()
@@ -105,6 +156,9 @@ const router = useRouter()
 const isCollapse = ref(false)
 const visitedViews = ref([])
 const userInfo = ref({})
+const showNotificationModal = ref(false)
+const notifications = ref([])
+const notificationCount = ref(0)
 
 // 菜单路由 - 过滤掉登录页和标记为hideInMenu的页面
 const menuRoutes = computed(() => {
@@ -114,6 +168,15 @@ const menuRoutes = computed(() => {
            (route.meta?.title || (route.children && route.children.length > 0))
   })
 })
+
+// 判断是否应该隐藏路由（基于权限）
+const shouldHideRoute = (route) => {
+  // 如果路由需要管理员权限，但当前用户不是管理员，则隐藏
+  if (route.meta?.requiresAdmin && userInfo.value?.isAdmin !== 1 && userInfo.value?.username !== 'admin') {
+    return true
+  }
+  return false
+}
 
 // 当前激活的菜单
 const activeMenu = computed(() => {
@@ -205,28 +268,71 @@ watch(route, (newRoute) => {
   addVisitedView(newRoute)
 }, { immediate: true })
 
-// 将相对路径转换为HTTP访问路径
-const convertToHttpUrl = (relativePath) => {
-  if (!relativePath || relativePath.trim() === '') {
-    return ''
-  }
-  
-  // 如果已经是完整的HTTP/HTTPS URL，直接返回
-  if (relativePath.startsWith('http://') || relativePath.startsWith('https://')) {
-    return relativePath
-  }
-  
-  // 直接拼接完整的HTTP URL
-  // 后端返回相对路径，如: /files/images/20250831/xxx.jpg
-  const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://192.168.244.128:8080'
-  const fullUrl = `${baseUrl}/api${relativePath}`
-  return fullUrl
-}
+
 
 // 组件挂载时获取用户信息
 onMounted(() => {
   getUserInfo()
+  loadNotifications()
 })
+
+// 加载通知
+const loadNotifications = async () => {
+  try {
+    const token = getToken()
+    if (!token || !userInfo.value.id) return
+    
+    const response = await monthlyTaskApi.getUserTasks(userInfo.value.id)
+    if (response.code === 200) {
+      notifications.value = response.data.map(task => ({
+        id: task.id,
+        taskId: task.id,
+        taskNo: task.taskNo,
+        title: `月检任务通知 - ${task.taskNo}`,
+        content: `您有新的月检任务需要处理，任务编号：${task.taskNo}`,
+        createTime: task.createTime,
+        isRead: task.notificationRead || false
+      }))
+      
+      notificationCount.value = notifications.value.filter(n => !n.isRead).length
+    }
+  } catch (error) {
+    console.error('加载通知失败:', error)
+  }
+}
+
+// 显示通知弹窗
+const showNotifications = () => {
+  showNotificationModal.value = true
+}
+
+// 隐藏通知弹窗
+const hideNotifications = () => {
+  showNotificationModal.value = false
+}
+
+// 处理通知点击
+const handleNotificationClick = (notification) => {
+  // 标记为已读
+  notification.isRead = true
+  updateNotificationCount()
+  
+  // 跳转到月检记录录入页面
+  router.push(`/monthly/record?taskId=${notification.taskNo}`)
+  
+  hideNotifications()
+}
+
+// 更新通知数量
+const updateNotificationCount = () => {
+  notificationCount.value = notifications.value.filter(n => !n.isRead).length
+}
+
+// 全部标记为已读
+const markAllAsRead = () => {
+  notifications.value.forEach(n => n.isRead = true)
+  notificationCount.value = 0
+}
 
 // 切换侧边栏折叠
 const toggleCollapse = () => {
@@ -321,9 +427,97 @@ const handleCommand = async (command) => {
 }
 
 .header-right {
-  display: flex;
-  align-items: center;
-}
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    
+    .notification-icon {
+      cursor: pointer;
+      font-size: 18px;
+      color: #606266;
+      transition: color 0.3s;
+      
+      &:hover {
+        color: #409eff;
+      }
+    }
+  }
+  
+  .notification-header {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 16px;
+    
+    .mark-all-read {
+      color: #409eff;
+      font-size: 14px;
+    }
+  }
+  
+  .notification-list {
+    max-height: 400px;
+    overflow-y: auto;
+    
+    .notification-item {
+      display: flex;
+      align-items: center;
+      padding: 12px 0;
+      border-bottom: 1px solid #f0f0f0;
+      cursor: pointer;
+      position: relative;
+      transition: background-color 0.3s;
+      
+      &:hover {
+        background-color: #f5f7fa;
+      }
+      
+      &.unread {
+        background-color: #f0f9ff;
+      }
+      
+      .notification-dot {
+        width: 8px;
+        height: 8px;
+        background-color: #f56c6c;
+        border-radius: 50%;
+        margin-right: 12px;
+        flex-shrink: 0;
+      }
+      
+      .notification-content {
+        flex: 1;
+        
+        .notification-title {
+          font-size: 14px;
+          font-weight: 500;
+          color: #303133;
+          margin-bottom: 4px;
+        }
+        
+        .notification-desc {
+          font-size: 12px;
+          color: #909399;
+          margin-bottom: 4px;
+        }
+        
+        .notification-time {
+          font-size: 12px;
+          color: #c0c4cc;
+        }
+      }
+      
+      .notification-arrow {
+        color: #c0c4cc;
+        font-size: 14px;
+        margin-left: 8px;
+      }
+    }
+  }
+  
+  .empty-notifications {
+    text-align: center;
+    padding: 40px 0;
+  }
 
 .user-info {
   display: flex;

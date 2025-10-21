@@ -87,42 +87,17 @@
 			<!-- 考核情况 -->
 			<view class="form-item">
 				<text class="form-label-left">考核情况</text>
-				<view class="custom-picker-full" @click="showAssessmentPicker" :class="{disabled: assessmentOptions.length === 0}">
-					<text class="picker-text-full" :class="{placeholder: selectedAssessmentIndex === -1}">
-						{{selectedAssessmentIndex === -1 ? '请选择考核情况' : (selectedAssessmentIndex < assessmentOptions.length ? assessmentOptions[selectedAssessmentIndex].label : '请选择考核情况')}}
-					</text>
-				</view>
-			</view>
-			
-			<!-- 考核情况选择弹窗 -->
-			<view v-if="showAssessmentPopup" class="popup-overlay" @click="hideAssessmentPicker">
-				<view class="popup-content" @click.stop>
-					<view class="popup-header">
-						<text class="popup-title">选择考核情况</text>
-						<text class="popup-close" @click="hideAssessmentPicker">×</text>
-					</view>
-					<view class="popup-list">
-						<view v-for="(item, index) in assessmentOptions" :key="item.id" class="popup-item" @click="selectAssessment(index)">
-							<text class="popup-item-text">{{item.label}}</text>
-							<text v-if="selectedAssessmentIndex === index" class="popup-item-check">✓</text>
-						</view>
-					</view>
-				</view>
-			</view>
-			
-			<!-- 考核金额 -->
-			<view class="form-item">
-				<text class="form-label">考核金额</text>
 				<view class="form-input-wrapper">
 					<input 
-						v-model="formData.assessmentAmount"
-						class="form-input"
-						placeholder="请输入金额"
-						type="number"
+						class="form-input" 
+						v-model="formData.assessmentSituation" 
+						placeholder="请输入考核情况"
+						type="text"
 					/>
-					<text class="input-suffix">元</text>
 				</view>
 			</view>
+			
+
 			
 			<!-- 安全积分 -->
 			<view class="form-item">
@@ -156,12 +131,12 @@
 						<text class="popup-title">选择专业</text>
 						<text class="popup-close" @click="hideProfessionPicker">×</text>
 					</view>
-					<view class="popup-list">
+					<scroll-view class="popup-list" scroll-y="true" enable-back-to-top="false">
 						<view v-for="(item, index) in professionOptions" :key="item.id" class="popup-item" @click="selectProfession(index)">
 							<text class="popup-item-text">{{item.name}}</text>
 							<text v-if="selectedProfessionIndex === index" class="popup-item-check">✓</text>
 						</view>
-					</view>
+					</scroll-view>
 				</view>
 			</view>
 			
@@ -181,53 +156,17 @@
 			
 			<!-- 检查人 -->
 			<view class="form-item">
-				<text class="form-label-left">检查人</text>
-				<view class="custom-picker-full" @click="showInspectorPicker" :class="{disabled: inspectorOptions.length === 0}">
-					<text class="picker-text-full" :class="{placeholder: selectedInspectorIndex === -1}">
-						{{selectedInspectorIndex === -1 ? '请选择检查人' : (selectedInspectorIndex < inspectorOptions.length ? inspectorOptions[selectedInspectorIndex].name : '请选择检查人')}}
-					</text>
-				</view>
-			</view>
-			
-			<!-- 检查人选择弹窗 -->
-			<view v-if="showInspectorPopup" class="popup-overlay" @click="hideInspectorPicker">
-				<view class="popup-content" @click.stop>
-					<view class="popup-header">
-						<text class="popup-title">选择检查人</text>
-						<text class="popup-close" @click="hideInspectorPicker">×</text>
-					</view>
-					<view class="popup-list">
-						<view v-for="(item, index) in inspectorOptions" :key="item.id" class="popup-item" @click="selectInspector(index)">
-							<text class="popup-item-text">{{item.name}}</text>
-							<text v-if="selectedInspectorIndex === index" class="popup-item-check">✓</text>
-						</view>
-					</view>
-				</view>
-			</view>
-			
-			<!-- 检查组组长 -->
-			<view class="form-item">
-				<text class="form-label">检查组组长</text>
+				<text class="form-label">检查人</text>
 				<view class="form-input-wrapper">
 					<input 
-						v-model="formData.groupLeader"
+						v-model="formData.inspector"
 						class="form-input"
-						placeholder="请输入检查组组长姓名"
+						placeholder="请输入检查人姓名"
 					/>
 				</view>
 			</view>
 			
-			<!-- 检查组副组长 -->
-			<view class="form-item">
-				<text class="form-label">检查组副组长</text>
-				<view class="form-input-wrapper">
-					<input 
-						v-model="formData.deputyLeader"
-						class="form-input"
-						placeholder="请输入检查组副组长姓名"
-					/>
-				</view>
-			</view>
+
 			
 			<!-- 所属部门 -->
 			<view class="form-item">
@@ -246,12 +185,12 @@
 						<text class="popup-title">选择所属部门</text>
 						<text class="popup-close" @click="hideDepartmentPicker">×</text>
 					</view>
-					<view class="popup-list">
+					<scroll-view class="popup-list" scroll-y="true" enable-back-to-top="false">
 						<view v-for="(item, index) in departmentOptions" :key="item.id" class="popup-item" @click="selectDepartment(index)">
 							<text class="popup-item-text">{{item.name}}</text>
 							<text v-if="selectedDepartmentIndex === index" class="popup-item-check">✓</text>
 						</view>
-					</view>
+					</scroll-view>
 				</view>
 			</view>
 			
@@ -329,10 +268,7 @@
 		name: string
 	}
 	
-	type InspectorOption = {
-		id: string
-		name: string
-	}
+	
 	
 
 	type RecordFormData = {
@@ -340,16 +276,16 @@
 		responsiblePerson: string
 		natureId: string
 		scoreId: string
-		assessmentAmount: string
+		assessmentSituation: string
 		safetyScore: string
 		professionId: string
 		problemDescription: string
 		location: string
 		inspector: string
-		groupLeader: string
-		deputyLeader: string
 		departmentId: string
 		rectificationDate: string
+		groupLeader?: string
+		deputyLeader?: string
 	}
 	
 	export default {
@@ -359,18 +295,13 @@
 		data(): {
 			formData: RecordFormData
 			natureOptions: NatureOption[]
-			assessmentOptions: AssessmentOption[]
 			professionOptions: ProfessionOption[]
 			departmentOptions: DepartmentOption[]
 			selectedNatureIndex: number
-			selectedAssessmentIndex: number
 			selectedProfessionIndex: number
 			selectedDepartmentIndex: number
-			selectedInspectorIndex: number
 			showNaturePopup: boolean
-			showAssessmentPopup: boolean
 			showProfessionPopup: boolean
-			showInspectorPopup: boolean
 			showDepartmentPopup: boolean
 			showDatePopup: boolean
 			tempDate: string
@@ -378,7 +309,7 @@
 			submitting: boolean
 			scrollTop: number
 			containerHeight: number
-			inspectorOptions: InspectorOption[]
+
 			datePickerVisible: boolean
 			pickerValue: number[]
 			years: number[]
@@ -389,48 +320,35 @@
 			selectedDay: number
 
 		} {
-			// 计算默认整改时间（当前日期往后推三天）
+			// 计算默认整改时间（当前日期往后推7天）
 			const defaultDate = new Date()
-			defaultDate.setDate(defaultDate.getDate() + 3)
+			defaultDate.setDate(defaultDate.getDate() + 7)
 			const defaultDateStr = `${defaultDate.getFullYear()}-${(defaultDate.getMonth() + 1).toString().padStart(2, '0')}-${defaultDate.getDate().toString().padStart(2, '0')}`
 			
 			return {
 				formData: {
-				responsibleUnit: '',
-				responsiblePerson: '',
-				natureId: '',
-				scoreId: '',
-				assessmentAmount: '',
-				safetyScore: '',
-				professionId: '',
-				problemDescription: '',
-				location: '',
-				inspector: '',
-				groupLeader: '',
-				deputyLeader: '',
-				departmentId: '',
-				rectificationDate: defaultDateStr
-			} as RecordFormData,
+			responsibleUnit: '',
+			responsiblePerson: '',
+			natureId: '',
+			scoreId: '',
+			assessmentSituation: '',
+			safetyScore: '',
+			professionId: '',
+			problemDescription: '',
+			location: '',
+			inspector: '',
+			departmentId: '',
+			rectificationDate: defaultDateStr
+		} as RecordFormData,
 			natureOptions: [] as NatureOption[],
-			assessmentOptions: [
-				{id: '1', label: '提出警告', value: '提出警告'},
-				{id: '2', label: '-50', value: '-50'},
-				{id: '3', label: '-100', value: '-100'},
-				{id: '4', label: '-200', value: '-200'},
-				{id: '5', label: '-300', value: '-300'}
-			] as AssessmentOption[],
 			professionOptions: [] as ProfessionOption[],
 			departmentOptions: [] as DepartmentOption[],
-			inspectorOptions: [] as InspectorOption[],
+
 			selectedNatureIndex: -1,
-			selectedAssessmentIndex: -1,
 			selectedProfessionIndex: -1,
 			selectedDepartmentIndex: -1,
-			selectedInspectorIndex: -1,
 			showNaturePopup: false,
-			showAssessmentPopup: false,
 			showProfessionPopup: false,
-			showInspectorPopup: false,
 			showDepartmentPopup: false,
 			showDatePopup: false,
 			tempDate: '',
@@ -446,17 +364,17 @@
 			days: [] as number[],
 			selectedYear: (() => {
 				const tempDate = new Date()
-				tempDate.setDate(tempDate.getDate() + 3)
+				tempDate.setDate(tempDate.getDate() + 7)
 				return tempDate.getFullYear()
 			})() as number,
 			selectedMonth: (() => {
 				const tempDate = new Date()
-				tempDate.setDate(tempDate.getDate() + 3)
+				tempDate.setDate(tempDate.getDate() + 7)
 				return tempDate.getMonth() + 1
 			})() as number,
 			selectedDay: (() => {
 				const tempDate = new Date()
-				tempDate.setDate(tempDate.getDate() + 3)
+				tempDate.setDate(tempDate.getDate() + 7)
 				return tempDate.getDate()
 			})() as number,
 			// 防抖定时器
@@ -468,9 +386,8 @@
 			this.loadNatureOptions()
 			this.loadProfessionOptions()
 			this.loadDepartments()
-			this.loadInspectorOptions()
 			this.initDateArrays()
-			// setCurrentUserAsInspector 将在 loadInspectorOptions 成功后调用
+			this.setDefaultInspector()
 		},
 		onReady() {
 			this.initContainerHeight()
@@ -607,15 +524,8 @@
 			})
 		},
 		
-		// 加载检查人选项
-		loadInspectorOptions() {
-			const token = uni.getStorageSync('token')
-			if (token == null || token == '') {
-				console.error('未找到token')
-				return
-			}
-			
-			// 获取当前用户信息以确定部门
+		// 设置默认检查人为当前登录用户
+		setDefaultInspector() {
 			const userInfoStr = uni.getStorageSync('userInfo') as string
 			if (userInfoStr == null || userInfoStr == '') {
 				console.error('未找到用户信息')
@@ -623,175 +533,11 @@
 			}
 			
 			const userInfo = JSON.parse(userInfoStr) as UTSJSONObject
-			
-			// 获取当前用户的部门信息
-			console.log('当前用户信息:', userInfo)
-			let deptId = userInfo.getString('deptId') ?? userInfo.getString('dept_id') ?? ''
-			if (deptId === '') {
-				// 如果字符串获取失败，尝试数字类型
-				const deptIdNum = userInfo.getNumber('deptId') ?? userInfo.getNumber('dept_id')
-				if (deptIdNum != null) {
-					deptId = deptIdNum.toString()
-				}
-			}
-			console.log('用户部门ID:', deptId)
-			
-			if (deptId == '') {
-				console.warn('当前用户没有部门信息，将获取所有用户')
-				// 如果没有部门信息，调用获取所有用户的接口
-				uni.request({
-					url: getApiUrl('/user/page?current=1&size=100'),
-					method: 'GET',
-					header: {
-						'Authorization': `Bearer ${token}`
-					},
-					success: (res) => {
-						const response = res.data as UTSJSONObject
-						if (res.statusCode == 200 && (response.getNumber('code') ?? 0) == 200) {
-							const data = response.getJSON('data') as UTSJSONObject
-							const records = data.getArray('records')
-							if (records != null) {
-								this.inspectorOptions = []
-								for (let i = 0; i < records.length; i++) {
-									const item = records[i] as UTSJSONObject
-									const id = item.getString('id') ?? ''
-									const realName = item.getString('realName') ?? ''
-									if (id != '' && realName != '') {
-										this.inspectorOptions.push({ id: id, name: realName } as InspectorOption)
-									}
-								}
-							}
-						console.log('所有用户数据加载成功:', this.inspectorOptions)
-						// 数据加载完成后设置当前用户为默认检查人
-						this.setCurrentUserAsInspector()
-					} else {
-						const message = response.getString('message') ?? '未知错误'
-						console.error('获取用户列表失败:', message)
-						// 使用默认数据作为备选
-						this.inspectorOptions = [
-							{ id: '1', name: '张三' } as InspectorOption,
-							{ id: '2', name: '李四' } as InspectorOption,
-							{ id: '3', name: '王五' } as InspectorOption,
-							{ id: '4', name: '赵六' } as InspectorOption
-						]
-						// 使用默认数据后也设置当前用户
-						this.setCurrentUserAsInspector()
-					}
-					},
-					fail: (error) => {
-					console.error('请求用户列表失败:', error)
-					// 使用默认数据作为备选
-					this.inspectorOptions = [
-						{ id: '1', name: '张三' } as InspectorOption,
-						{ id: '2', name: '李四' } as InspectorOption,
-						{ id: '3', name: '王五' } as InspectorOption,
-						{ id: '4', name: '赵六' } as InspectorOption
-					]
-					// 使用默认数据后也设置当前用户
-					this.setCurrentUserAsInspector()
-				}
-				})
-				return
-			}
-			
-			// 从后台API按部门ID获取用户列表
-			uni.request({
-				url: getApiUrl(`/user/by-department?deptId=${encodeURIComponent(deptId)}`),
-				method: 'GET',
-				header: {
-					'Authorization': `Bearer ${token}`
-				},
-				success: (res) => {
-					const response = res.data as UTSJSONObject
-					if (res.statusCode == 200 && (response.getNumber('code') ?? 0) == 200) {
-						const data = response.getArray('data')
-						if (data != null) {
-							this.inspectorOptions = []
-							for (let i = 0; i < data.length; i++) {
-								const item = data[i] as UTSJSONObject
-								const id = item.getString('id') ?? ''
-								const realName = item.getString('realName') ?? ''
-								if (id != '' && realName != '') {
-									this.inspectorOptions.push({ id: id, name: realName } as InspectorOption)
-								}
-							}
-						}
-					console.log(`部门ID${deptId}的检查人数据加载成功:`, this.inspectorOptions)
-					// 数据加载完成后设置当前用户为默认检查人
-					this.setCurrentUserAsInspector()
-				} else {
-					const message = response.getString('message') ?? '未知错误'
-					console.error('获取部门用户列表失败:', message)
-					// 使用默认数据作为备选
-					this.inspectorOptions = [
-						{ id: '1', name: '张三' } as InspectorOption,
-						{ id: '2', name: '李四' } as InspectorOption,
-						{ id: '3', name: '王五' } as InspectorOption,
-						{ id: '4', name: '赵六' } as InspectorOption
-					]
-					// 使用默认数据后也设置当前用户
-					this.setCurrentUserAsInspector()
-				}
-				},
-				fail: (error) => {
-				console.error('请求部门用户列表失败:', error)
-				// 使用默认数据作为备选
-				this.inspectorOptions = [
-					{ id: '1', name: '张三' } as InspectorOption,
-					{ id: '2', name: '李四' } as InspectorOption,
-					{ id: '3', name: '王五' } as InspectorOption,
-					{ id: '4', name: '赵六' } as InspectorOption
-				]
-				// 使用默认数据后也设置当前用户
-				this.setCurrentUserAsInspector()
-			}
-			})
-		},
-		
-		// 设置当前登录用户为默认检查人
-		setCurrentUserAsInspector() {
-			const userInfoStr = uni.getStorageSync('userInfo') as string
-			if (userInfoStr == null || userInfoStr == '') {
-				console.error('未找到用户信息')
-				return
-			}
-			
-			const userInfo = JSON.parse(userInfoStr) as UTSJSONObject
-			console.log('当前用户信息:', userInfo)
-			
-			// 获取当前用户ID和姓名，尝试多个可能的字段
-			const currentUserId = userInfo.getString('id') ?? ''
 			const currentUserName = userInfo.getString('realName') ?? userInfo.getString('name') ?? userInfo.getString('username') ?? ''
 			
-			console.log('当前用户ID:', currentUserId, '姓名:', currentUserName)
-			console.log('检查人选项列表:', this.inspectorOptions)
-			
-			if (currentUserId == '' && currentUserName == '') {
-				console.error('无法获取当前用户信息')
-				return
-			}
-			
-			// 在检查人选项中查找当前用户，优先按ID匹配，其次按姓名匹配
-			let currentUserIndex = -1
-			
-			if (currentUserId != '') {
-				// 使用宽松比较，避免类型转换问题
-				currentUserIndex = this.inspectorOptions.findIndex(option => option.id == currentUserId)
-				console.log('按ID查找结果:', currentUserIndex, '查找ID:', currentUserId, '选项IDs:', this.inspectorOptions.map(opt => opt.id))
-			}
-			
-			if (currentUserIndex === -1 && currentUserName != '') {
-				currentUserIndex = this.inspectorOptions.findIndex(option => option.name == currentUserName)
-				console.log('按姓名查找结果:', currentUserIndex, '查找姓名:', currentUserName, '选项姓名:', this.inspectorOptions.map(opt => opt.name))
-			}
-			
-			if (currentUserIndex !== -1) {
-				this.selectedInspectorIndex = currentUserIndex
-				this.formData.inspector = this.inspectorOptions[currentUserIndex].name
-				console.log('已设置当前用户为默认检查人:', this.inspectorOptions[currentUserIndex].name)
-			} else {
-				console.warn('在检查人列表中未找到当前用户，ID:', currentUserId, '姓名:', currentUserName)
-				console.log('当前检查人选项:', this.inspectorOptions)
+			if (currentUserName != '') {
+				this.formData.inspector = currentUserName
+				console.log('已设置当前用户为默认检查人:', currentUserName)
 			}
 		},
 		
@@ -927,63 +673,9 @@
 			this.hideProfessionPicker()
 		},
 		
-		// 显示检查人选择弹窗
-		showInspectorPicker() {
-			console.log('点击检查人选择器')
-			// 如果没有数据，先加载数据
-			if (this.inspectorOptions.length === 0) {
-				console.log('检查人数据为空，开始加载数据')
-				this.loadInspectorOptions()
-			}
-			this.showInspectorPopup = true
-			console.log('显示检查人选择弹窗，当前选项数量:', this.inspectorOptions.length)
-		},
+
 		
-		// 隐藏检查人选择弹窗
-		hideInspectorPicker() {
-			this.showInspectorPopup = false
-			console.log('隐藏检查人选择弹窗')
-		},
-		
-		// 选择检查人
-		selectInspector(index: number) {
-			console.log('选择检查人，索引:', index)
-			this.selectedInspectorIndex = index
-			if (index !== -1) {
-				this.formData.inspector = this.inspectorOptions[index].name
-				console.log('选择的检查人:', this.inspectorOptions[index])
-			} else {
-				this.formData.inspector = ''
-			}
-			this.hideInspectorPicker()
-		},
-		
-		// 显示考核情况选择弹窗
-		showAssessmentPicker() {
-			if (this.assessmentOptions.length > 0) {
-				this.showAssessmentPopup = true
-				console.log('显示考核情况选择弹窗')
-			}
-		},
-		
-		// 隐藏考核情况选择弹窗
-		hideAssessmentPicker() {
-			this.showAssessmentPopup = false
-			console.log('隐藏考核情况选择弹窗')
-		},
-		
-		// 选择考核情况
-		selectAssessment(index: number) {
-			console.log('选择考核情况，索引:', index)
-			this.selectedAssessmentIndex = index
-			if (index !== -1) {
-				this.formData.scoreId = this.assessmentOptions[index].id
-				console.log('选择的考核情况:', this.assessmentOptions[index])
-			} else {
-				this.formData.scoreId = ''
-			}
-			this.hideAssessmentPicker()
-		},
+
 		
 		// 显示部门选择弹窗
 		showDepartmentPicker() {
@@ -1442,21 +1134,6 @@
 				return false
 			}
 			
-			if (this.formData.groupLeader == null || this.formData.groupLeader.trim() == '') {
-				uni.showToast({
-					title: '请输入检查组组长',
-					icon: 'none'
-				})
-				return false
-			}
-			
-			if (this.formData.deputyLeader == null || this.formData.deputyLeader.trim() == '') {
-				uni.showToast({
-					title: '请输入检查组副组长',
-					icon: 'none'
-				})
-				return false
-			}
 			
 			if (this.formData.departmentId == null || this.formData.departmentId == '') {
 				uni.showToast({
@@ -1585,17 +1262,12 @@
 					})
 					
 					const token = uni.getStorageSync('token')
-					// 获取选中的性质界定和考核情况的文本值
+					// 获取选中的性质界定的文本值
 				let natureDefinition = ''
-				let assessmentSituation = ''
 				
 				if (this.selectedNatureIndex >= 0 && this.selectedNatureIndex < this.natureOptions.length) {
 					natureDefinition = this.natureOptions[this.selectedNatureIndex].name
 				}
-				
-				if (this.selectedAssessmentIndex >= 0 && this.selectedAssessmentIndex < this.assessmentOptions.length) {
-				assessmentSituation = this.assessmentOptions[this.selectedAssessmentIndex].label
-			}
 				
 				// 处理整改期限日期格式，添加默认时间
 			let rectificationDeadline = this.formData.rectificationDate
@@ -1610,18 +1282,16 @@
 				responsibleUnit: this.formData.responsibleUnit,
 				responsiblePerson: this.formData.responsiblePerson,
 				natureDefinition: natureDefinition,
-				assessmentSituation: assessmentSituation,
-				assessmentAmount: this.formData.assessmentAmount,
+				assessmentSituation: this.formData.assessmentSituation,
 				safetyScore: this.formData.safetyScore,
 				professionId: this.formData.professionId,
 				problemDescription: this.formData.problemDescription,
 				location: this.formData.location,
 				inspector: this.formData.inspector,
-				groupLeader: this.formData.groupLeader,
-				deputyLeader: this.formData.deputyLeader,
 				departmentId: this.formData.departmentId,
 				rectificationDeadline: rectificationDeadline,
-				imageUrls: imageUrls.length > 0 ? JSON.stringify(imageUrls) : ''
+				imageUrls: imageUrls.join(','),
+				status: 4  // 设置状态为4已保存
 			}
 						
 				// 调试信息：检查提交的数据
@@ -1629,9 +1299,7 @@
 				console.log('调试：性质界定索引:', this.selectedNatureIndex)
 				console.log('调试：性质界定选项:', this.natureOptions)
 				console.log('调试：性质界定值:', natureDefinition)
-				console.log('调试：考核情况索引:', this.selectedAssessmentIndex)
-				console.log('调试：考核情况选项:', this.assessmentOptions)
-				console.log('调试：考核情况值:', assessmentSituation)
+				console.log('调试：考核情况值:', this.formData.assessmentSituation)
 				console.log('调试：部门ID字段:', this.formData.departmentId)
 				console.log('调试：当前选中的部门索引:', this.selectedDepartmentIndex)
 				if (this.selectedDepartmentIndex >= 0 && this.selectedDepartmentIndex < this.departmentOptions.length) {
@@ -1722,7 +1390,7 @@
 				responsiblePerson: '',
 				natureId: '',
 				scoreId: '',
-				assessmentAmount: '',
+				assessmentSituation: '',
 				safetyScore: '',
 				professionId: '',
 				problemDescription: '',
@@ -1739,10 +1407,8 @@
 			
 			// 重置选择器索引
 			this.selectedNatureIndex = -1
-			this.selectedAssessmentIndex = -1
 			this.selectedProfessionIndex = -1
 			this.selectedDepartmentIndex = -1
-			this.selectedInspectorIndex = -1
 			
 			// 重新设置当前用户的默认部门
 			this.setCurrentUserDepartment()
@@ -1978,6 +1644,8 @@
 	
 	.popup-list {
 		max-height: 300px;
+		overflow-y: auto;
+		overflow-x: hidden;
 	}
 	
 	.popup-item {

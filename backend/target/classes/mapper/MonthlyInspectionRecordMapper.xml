@@ -1,0 +1,189 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gjxt.inspection.mapper.MonthlyInspectionRecordMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.gjxt.inspection.entity.MonthlyInspectionRecord">
+        <id column="id" property="id" />
+        <result column="record_no" property="recordNo" />
+        <result column="task_id" property="taskId" />
+        <result column="professional_type_id" property="professionalTypeId" />
+        <result column="professional_type_name" property="professionalTypeName" />
+        <result column="module_id" property="moduleId" />
+        <result column="module_name" property="moduleName" />
+        <result column="responsibility_id" property="responsibilityId" />
+        <result column="responsibility_name" property="responsibilityName" />
+        <result column="issue_id" property="issueId" />
+        <result column="issue_name" property="issueName" />
+        <result column="quality_id" property="qualityId" />
+        <result column="quality_name" property="qualityName" />
+        <result column="problem_type" property="problemType" />
+        <result column="problem_description" property="problemDescription" />
+        <result column="location" property="location" />
+        <result column="suggestion" property="suggestion" />
+        <result column="photos" property="photos" />
+        <result column="rectification_date" property="rectificationDate" />
+        <result column="inspector" property="inspector" />
+        <result column="safety_score" property="safetyScore" />
+        <result column="record_status" property="recordStatus" />
+        <result column="create_user_id" property="createUserId" />
+        <result column="create_time" property="createTime" />
+        <result column="update_time" property="updateTime" />
+        <result column="deleted" property="deleted" />
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        id, record_no, task_id, professional_type_id, professional_type_name,
+        module_id, module_name, responsibility_id, responsibility_name, issue_id, issue_name,
+        quality_id, quality_name, problem_type, problem_description, location, suggestion,
+        photos, rectification_date, inspector, safety_score, record_status,
+        create_user_id, create_time, update_time, deleted
+    </sql>
+
+    <!-- 分页查询月检记录（带关联信息） -->
+    <select id="selectRecordPage" resultMap="BaseResultMap">
+        SELECT
+            r.*,
+            u.username as create_user_name,
+            d.dept_name as department_name
+        FROM sys_monthly_inspection_record r
+        LEFT JOIN sys_user u ON r.create_user_id = u.id
+        LEFT JOIN sys_dept d ON r.responsibility_id = d.id
+        WHERE r.deleted = 0
+        <if test="params.taskId != null and params.taskId != ''">
+            AND r.task_id = #{params.taskId}
+        </if>
+        <if test="params.professionalTypeId != null and params.professionalTypeId != ''">
+            AND r.professional_type_id = #{params.professionalTypeId}
+        </if>
+        <if test="params.responsibilityId != null and params.responsibilityId != ''">
+            AND r.responsibility_id = #{params.responsibilityId}
+        </if>
+        <if test="params.recordStatus != null">
+            AND r.record_status = #{params.recordStatus}
+        </if>
+        <if test="params.createUserId != null and params.createUserId != ''">
+            AND r.create_user_id = #{params.createUserId}
+        </if>
+        ORDER BY r.create_time DESC
+    </select>
+
+    <!-- 根据ID查询月检记录详情（带关联信息） -->
+    <select id="selectRecordById" resultType="com.gjxt.inspection.entity.MonthlyInspectionRecord">
+        SELECT r.*,
+               u.username as create_user_name,
+               task_dept.dept_name as department_name,
+               resp_dept.dept_name as responsibility_name,
+               t.task_no as task_no,
+               t.inspection_time as inspection_time,
+               r.rectification_date as rectification_deadline,
+               leader.username as group_leader_name,
+               deputy.username as deputy_leader_name
+        FROM sys_monthly_inspection_record r
+        LEFT JOIN sys_user u ON r.create_user_id = u.id
+        LEFT JOIN sys_dept resp_dept ON r.responsibility_id = resp_dept.id
+        LEFT JOIN sys_monthly_inspection_task t ON r.task_id = t.id
+        LEFT JOIN sys_dept task_dept ON t.department_id = task_dept.id
+        LEFT JOIN sys_user leader ON t.group_leader_id = leader.id
+        LEFT JOIN sys_user deputy ON t.deputy_leader_id = deputy.id
+        WHERE r.id = #{id} AND r.deleted = 0
+    </select>
+
+    <!-- 查询月检统计数据 -->
+    <select id="selectMonthlyStatistics" resultType="java.util.Map">
+        SELECT
+            COUNT(*) as total_count,
+            COUNT(CASE WHEN record_status = 0 THEN 1 END) as draft_count,
+            COUNT(CASE WHEN record_status = 1 THEN 1 END) as submitted_count,
+            COUNT(CASE WHEN record_status = 2 THEN 1 END) as audited_count,
+            AVG(safety_score) as avg_safety_score
+        FROM sys_monthly_inspection_record
+        WHERE deleted = 0
+        <if test="params.createUserId != null and params.createUserId != ''">
+            AND create_user_id = #{params.createUserId}
+        </if>
+        <if test="params.startDate != null and params.startDate != ''">
+            AND create_time &gt;= #{params.startDate}
+        </if>
+        <if test="params.endDate != null and params.endDate != ''">
+            AND create_time &lt;= #{params.endDate}
+        </if>
+    </select>
+
+    <!-- 查询月度趋势数据 -->
+    <select id="selectMonthlyTrend" resultType="java.util.Map">
+        SELECT
+            DATE_FORMAT(create_time, '%Y-%m') as month,
+            COUNT(*) as count,
+            AVG(safety_score) as avg_score
+        FROM sys_monthly_inspection_record
+        WHERE deleted = 0
+        <if test="params.createUserId != null and params.createUserId != ''">
+            AND create_user_id = #{params.createUserId}
+        </if>
+        <if test="params.startDate != null and params.startDate != ''">
+            AND create_time &gt;= #{params.startDate}
+        </if>
+        <if test="params.endDate != null and params.endDate != ''">
+            AND create_time &lt;= #{params.endDate}
+        </if>
+        GROUP BY DATE_FORMAT(create_time, '%Y-%m')
+        ORDER BY month DESC
+        LIMIT 12
+    </select>
+
+    <!-- 根据任务ID查询月检记录列表 -->
+    <select id="selectRecordsByTaskId" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM monthly_inspection_record
+        WHERE deleted = 0
+        AND task_id = #{taskId}
+        <if test="recordStatus != null">
+            AND record_status = #{recordStatus}
+        </if>
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 根据用户ID查询月检记录列表 -->
+    <select id="selectRecordsByUserId" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM monthly_inspection_record
+        WHERE deleted = 0
+        AND create_user_id = #{userId}
+        <if test="recordStatus != null">
+            AND record_status = #{recordStatus}
+        </if>
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 批量更新记录状态 -->
+    <update id="batchUpdateStatus">
+        UPDATE sys_monthly_inspection_record
+        SET record_status = #{status}, update_time = NOW()
+        WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+        AND deleted = 0
+    </update>
+
+    <!-- 根据用户ID查询记录数量 -->
+    <select id="countRecordsByUserId" resultType="int">
+        SELECT COUNT(*)
+        FROM sys_monthly_inspection_record
+        WHERE create_user_id = #{userId} AND deleted = 0
+    </select>
+
+    <!-- 查询最新的记录编号 -->
+    <select id="selectLatestRecordNo" resultType="string">
+        SELECT record_no
+        FROM sys_monthly_inspection_record
+        WHERE record_no IS NOT NULL
+        ORDER BY create_time DESC
+        LIMIT 1
+    </select>
+
+</mapper>

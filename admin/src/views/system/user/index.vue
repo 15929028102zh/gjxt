@@ -80,15 +80,30 @@
           <el-table-column prop="createTime" label="创建时间" width="160" />
           <el-table-column label="操作" width="250" fixed="right">
             <template #default="{ row }">
-              <el-button type="primary" size="small" @click="handleEdit(row)">编辑</el-button>
               <el-button 
+                v-if="canEditUser()" 
+                type="primary" 
+                size="small" 
+                @click="handleEdit(row)"
+              >
+                编辑
+              </el-button>
+              <el-button 
+                v-if="canManageUserStatus()"
                 :type="row.status === 1 ? 'warning' : 'success'" 
                 size="small" 
                 @click="handleToggleStatus(row)"
               >
                 {{ row.status === 1 ? '禁用' : '启用' }}
               </el-button>
-              <el-button type="warning" size="small" @click="handleResetPassword(row)">重置密码</el-button>
+              <el-button 
+                v-if="canResetPassword()"
+                type="warning" 
+                size="small" 
+                @click="handleResetPassword(row)"
+              >
+                重置密码
+              </el-button>
             </template>
           </el-table-column>
         </el-table>
@@ -174,6 +189,36 @@
           </el-col>
         </el-row>
         
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="管理员" prop="isAdmin">
+              <el-radio-group v-model="form.isAdmin">
+                <el-radio :label="1">是</el-radio>
+                <el-radio :label="0">否</el-radio>
+              </el-radio-group>
+            </el-form-item>
+          </el-col>
+        </el-row>
+        
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="周检权限" prop="weeklyPermission">
+              <el-radio-group v-model="form.weeklyPermission">
+                <el-radio :label="0">允许编辑删除</el-radio>
+                <el-radio :label="1">禁用编辑删除</el-radio>
+              </el-radio-group>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="月检权限" prop="monthlyPermission">
+              <el-radio-group v-model="form.monthlyPermission">
+                <el-radio :label="0">允许编辑删除</el-radio>
+                <el-radio :label="1">禁用编辑删除</el-radio>
+              </el-radio-group>
+            </el-form-item>
+          </el-col>
+        </el-row>
+        
 
       </el-form>
       
@@ -191,6 +236,7 @@
 import { ref, reactive, onMounted, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { userApi, deptApi } from '@/api/system'
+import { isAdmin, canEditUser, canDeleteUser, canManageUserStatus, canResetPassword } from '@/utils/permission'
 
 // 响应式数据
 const loading = ref(false)
@@ -227,7 +273,11 @@ const form = reactive({
   email: '',
   phone: '',
   deptId: null,
-  status: 1
+  department: '',
+  status: 1,
+  isAdmin: false,
+  weeklyPermission: 0,
+  monthlyPermission: 0
 })
 
 // 表单验证规则
@@ -239,10 +289,6 @@ const formRules = {
   ],
   nickname: [
     { required: true, message: '请输入昵称', trigger: 'blur' }
-  ],
-  email: [
-    { required: true, message: '请输入邮箱', trigger: 'blur' },
-    { type: 'email', message: '请输入正确的邮箱格式', trigger: 'blur' }
   ],
   phone: [
     { required: true, message: '请输入手机号', trigger: 'blur' },
@@ -316,7 +362,11 @@ const handleEdit = (row) => {
     email: row.email,
     phone: row.phone,
     deptId: row.deptId,
-    status: row.status
+    department: row.deptName || '',
+    status: row.status,
+    isAdmin: row.isAdmin || false,
+    weeklyPermission: row.weeklyPermission || 0,
+    monthlyPermission: row.monthlyPermission || 0
   })
   dialogVisible.value = true
 }
@@ -361,7 +411,7 @@ const handleResetPassword = async (row) => {
     )
     
     await userApi.resetPassword(row.id)
-    ElMessage.success('密码重置成功，新密码为：123456')
+    ElMessage.success('密码重置成功')
   } catch (error) {
     if (error !== 'cancel') {
       console.error('重置密码失败:', error)
@@ -403,6 +453,16 @@ const handleSubmit = async () => {
     
     const submitData = { ...form }
     
+    // 根据选择的部门ID设置部门名称
+    if (submitData.deptId) {
+      const selectedDept = deptOptions.value.find(dept => dept.id === submitData.deptId)
+      if (selectedDept) {
+        submitData.department = selectedDept.deptName
+      }
+    } else {
+      submitData.department = ''
+    }
+    
     if (form.id) {
       await userApi.update(submitData)
       ElMessage.success('更新成功')
@@ -431,7 +491,11 @@ const resetForm = () => {
     email: '',
     phone: '',
     deptId: null,
-    status: 1
+    department: '',
+    status: 1,
+    isAdmin: false,
+    weeklyPermission: 0,
+    monthlyPermission: 0
   })
   
   if (formRef.value) {

@@ -76,6 +76,21 @@ public class SysDeptServiceImpl extends ServiceImpl<SysDeptMapper, SysDept> impl
             dept.setParentId("0");
         }
         
+        // 计算并设置部门级别
+        if (dept.getDeptLevel() == null) {
+            if ("0".equals(dept.getParentId())) {
+                dept.setDeptLevel(1); // 一级部门
+            } else {
+                // 根据父部门级别计算当前部门级别
+                SysDept parentDept = getById(dept.getParentId());
+                if (parentDept != null && parentDept.getDeptLevel() != null) {
+                    dept.setDeptLevel(parentDept.getDeptLevel() + 1);
+                } else {
+                    dept.setDeptLevel(2); // 默认为二级部门
+                }
+            }
+        }
+        
         // 设置时间字段
         LocalDateTime now = LocalDateTime.now();
         dept.setCreateTime(now);
@@ -90,6 +105,21 @@ public class SysDeptServiceImpl extends ServiceImpl<SysDeptMapper, SysDept> impl
         // 检查部门名称是否重复
         if (checkDeptNameExists(dept.getDeptName(), dept.getId())) {
             throw new RuntimeException("部门名称已存在");
+        }
+        
+        // 计算并设置部门级别
+        if (dept.getDeptLevel() == null) {
+            if ("0".equals(dept.getParentId())) {
+                dept.setDeptLevel(1); // 一级部门
+            } else {
+                // 根据父部门级别计算当前部门级别
+                SysDept parentDept = getById(dept.getParentId());
+                if (parentDept != null && parentDept.getDeptLevel() != null) {
+                    dept.setDeptLevel(parentDept.getDeptLevel() + 1);
+                } else {
+                    dept.setDeptLevel(2); // 默认为二级部门
+                }
+            }
         }
         
         // 设置更新时间
@@ -169,11 +199,19 @@ public class SysDeptServiceImpl extends ServiceImpl<SysDeptMapper, SysDept> impl
                 
                 // 递归查找子部门
                 List<SysDept> children = buildDeptTree(allDepts, dept.getId());
-                // 这里可以设置children属性，如果SysDept实体类有children字段的话
+                // 设置子部门列表
+                dept.setChildren(children);
                 
                 result.add(dept);
             }
         }
+        
+        // 按排序字段排序
+        result.sort((a, b) -> {
+            Integer sortA = a.getSortOrder() != null ? a.getSortOrder() : 0;
+            Integer sortB = b.getSortOrder() != null ? b.getSortOrder() : 0;
+            return sortA.compareTo(sortB);
+        });
         
         return result;
     }

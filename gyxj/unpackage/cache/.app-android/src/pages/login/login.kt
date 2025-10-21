@@ -1,5 +1,5 @@
 @file:Suppress("UNCHECKED_CAST", "USELESS_CAST", "INAPPLICABLE_JVM_NAME", "UNUSED_ANONYMOUS_PARAMETER", "NAME_SHADOWING", "UNNECESSARY_NOT_NULL_ASSERTION")
-package uni.UNI630A075
+package uni.UNIB5A0920
 import io.dcloud.uniapp.*
 import io.dcloud.uniapp.extapi.*
 import io.dcloud.uniapp.framework.*
@@ -25,8 +25,7 @@ open class GenPagesLoginLogin : BasePage {
         return _cE("view", _uM("class" to "login-container"), _uA(
             _cE("view", _uM("class" to "login-header"), _uA(
                 _cE("image", _uM("class" to "logo", "src" to "/static/logo.png")),
-                _cE("text", _uM("class" to "title"), "石油工业园区设备巡检系统"),
-                _cE("text", _uM("class" to "subtitle"), "请登录您的账号")
+                _cE("text", _uM("class" to "system-title"), "榆林公司岗检系统")
             )),
             _cE("view", _uM("class" to "login-form"), _uA(
                 _cE("view", _uM("class" to "form-item"), _uA(
@@ -109,29 +108,29 @@ open class GenPagesLoginLogin : BasePage {
     open var getUserInfo = ::gen_getUserInfo_fn
     open fun gen_getUserInfo_fn(token: String) {
         val apiUrl = getApiUrl("/user/info?username=" + this.form.username)
-        console.log("获取用户信息API地址:", apiUrl, " at pages/login/login.uvue:96")
+        console.log("获取用户信息API地址:", apiUrl, " at pages/login/login.uvue:95")
         uni_request<Any>(RequestOptions(url = apiUrl, method = "GET", header = object : UTSJSONObject() {
             var `Content-Type` = "application/json"
             var Authorization = "Bearer " + token
         }, success = fun(res){
-            console.log("获取用户信息响应:", res, " at pages/login/login.uvue:105")
+            console.log("获取用户信息响应:", res, " at pages/login/login.uvue:104")
             val data = res.data as UTSJSONObject
-            console.log("响应数据:", data, " at pages/login/login.uvue:107")
+            console.log("响应数据:", data, " at pages/login/login.uvue:106")
             if (res.statusCode == 200 && (data.getNumber("code") ?: 0) == 200) {
                 val userInfo = data.getJSON("data")
-                console.log("从后端获取的用户信息:", userInfo, " at pages/login/login.uvue:111")
+                console.log("从后端获取的用户信息:", userInfo, " at pages/login/login.uvue:110")
                 if (userInfo != null) {
-                    console.log("保存用户信息到本地存储:", JSON.stringify(userInfo), " at pages/login/login.uvue:114")
+                    console.log("保存用户信息到本地存储:", JSON.stringify(userInfo), " at pages/login/login.uvue:113")
                     uni_setStorageSync("userInfo", JSON.stringify(userInfo))
                     this.updateUserAvatar(userInfo)
                 }
             } else {
-                console.log("获取用户信息失败，使用基本信息", " at pages/login/login.uvue:121")
+                console.log("获取用户信息失败，使用基本信息", " at pages/login/login.uvue:120")
                 uni_setStorageSync("userInfo", JSON.stringify(_uO("id" to ("temp_" + Date.now()), "username" to this.form.username, "realName" to this.form.username)))
             }
         }
         , fail = fun(error){
-            console.log("获取用户信息失败:", error, " at pages/login/login.uvue:131")
+            console.log("获取用户信息失败:", error, " at pages/login/login.uvue:130")
             uni_setStorageSync("userInfo", JSON.stringify(_uO("id" to ("temp_" + Date.now()), "username" to this.form.username, "realName" to this.form.username)))
         }
         ))
@@ -143,7 +142,7 @@ open class GenPagesLoginLogin : BasePage {
         }
         this.loading = true
         val loginUrl = getApiUrl("/user/login")
-        console.log("登录API地址:", loginUrl, " at pages/login/login.uvue:147")
+        console.log("登录API地址:", loginUrl, " at pages/login/login.uvue:146")
         uni_request<Any>(RequestOptions(url = loginUrl, method = "POST", header = object : UTSJSONObject() {
             var `Content-Type` = "application/json"
         }, data = JSON.stringify(this.form), success = fun(res){
@@ -162,7 +161,7 @@ open class GenPagesLoginLogin : BasePage {
             this.loading = false
         }
         , fail = fun(error){
-            console.log("登录请求失败:", error, " at pages/login/login.uvue:186")
+            console.log("登录请求失败:", error, " at pages/login/login.uvue:185")
             uni_showToast(ShowToastOptions(title = "网络请求失败", icon = "none"))
             this.loading = false
         }
@@ -172,23 +171,23 @@ open class GenPagesLoginLogin : BasePage {
     open fun gen_updateUserAvatar_fn(userInfo: UTSJSONObject) {
         val imageUrl = userInfo.getString("imageUrl")
         if (imageUrl != null && imageUrl != "") {
-            console.log("用户已有头像，设置头像:", imageUrl, " at pages/login/login.uvue:199")
+            console.log("用户已有头像，设置头像:", imageUrl, " at pages/login/login.uvue:198")
             val httpImageUrl = this.convertToHttpUrl(imageUrl)
             userInfo.set("avatar", httpImageUrl)
             uni_setStorageSync("userInfo", JSON.stringify(userInfo))
-            console.log("头像已更新到本地存储:", httpImageUrl, " at pages/login/login.uvue:205")
+            console.log("头像已更新到本地存储:", httpImageUrl, " at pages/login/login.uvue:204")
         } else {
-            console.log("用户暂无头像", " at pages/login/login.uvue:207")
+            console.log("用户暂无头像", " at pages/login/login.uvue:206")
         }
     }
     open var convertToHttpUrl = ::gen_convertToHttpUrl_fn
     open fun gen_convertToHttpUrl_fn(relativePath: String): String {
-        console.log("相对路径:", relativePath, " at pages/login/login.uvue:213")
+        console.log("相对路径:", relativePath, " at pages/login/login.uvue:212")
         if (relativePath.startsWith("http://") || relativePath.startsWith("https://")) {
             return relativePath
         }
         val httpUrl = "" + apiConfig.baseUrl + "/api" + relativePath
-        console.log("转换后的HTTP URL:", httpUrl, " at pages/login/login.uvue:222")
+        console.log("转换后的HTTP URL:", httpUrl, " at pages/login/login.uvue:221")
         return httpUrl
     }
     open var onLoad = ::gen_onLoad_fn
@@ -208,7 +207,7 @@ open class GenPagesLoginLogin : BasePage {
         }
         val styles0: Map<String, Map<String, Map<String, Any>>>
             get() {
-                return _uM("login-container" to _pS(_uM("minHeight" to 800, "backgroundImage" to "linear-gradient(135deg, #667eea 0%, #764ba2 100%)", "backgroundColor" to "rgba(0,0,0,0)", "flexDirection" to "column", "justifyContent" to "center", "alignItems" to "center", "paddingTop" to 40, "paddingRight" to 30, "paddingBottom" to 40, "paddingLeft" to 30)), "login-header" to _pS(_uM("textAlign" to "center", "marginBottom" to 60)), "logo" to _pS(_uM("width" to 80, "height" to 80, "borderTopLeftRadius" to 16, "borderTopRightRadius" to 16, "borderBottomRightRadius" to 16, "borderBottomLeftRadius" to 16, "marginBottom" to 20)), "title" to _pS(_uM("fontSize" to 24, "fontWeight" to "bold", "color" to "#ffffff", "marginBottom" to 8)), "subtitle" to _pS(_uM("fontSize" to 16, "color" to "rgba(255,255,255,0.8)")), "login-form" to _pS(_uM("width" to "100%", "maxWidth" to 400)), "form-item" to _pS(_uM("marginBottom" to 20)), "input-wrapper" to _pS(_uM("position" to "relative", "backgroundImage" to "none", "backgroundColor" to "rgba(255,255,255,0.9)", "borderTopLeftRadius" to 12, "borderTopRightRadius" to 12, "borderBottomRightRadius" to 12, "borderBottomLeftRadius" to 12, "flexDirection" to "row", "alignItems" to "center", "paddingTop" to 0, "paddingRight" to 20, "paddingBottom" to 0, "paddingLeft" to 20, "height" to 65, "width" to "100%", "boxSizing" to "border-box")), "icon" to _pS(_uM("fontSize" to 18, "marginRight" to 12, "color" to "#666666", "flexShrink" to 0)), "input" to _pS(_uM("flex" to 1, "height" to "100%", "borderTopWidth" to "medium", "borderRightWidth" to "medium", "borderBottomWidth" to "medium", "borderLeftWidth" to "medium", "borderTopStyle" to "none", "borderRightStyle" to "none", "borderBottomStyle" to "none", "borderLeftStyle" to "none", "borderTopColor" to "#000000", "borderRightColor" to "#000000", "borderBottomColor" to "#000000", "borderLeftColor" to "#000000", "backgroundImage" to "none", "backgroundColor" to "rgba(0,0,0,0)", "fontSize" to 16, "color" to "#333333", "paddingLeft" to 0)), "eye-icon" to _pS(_uM("fontSize" to 18, "color" to "#666666")), "login-btn" to _pS(_uM("width" to "100%", "height" to 50, "backgroundImage" to "none", "backgroundColor" to "#007AFF", "color" to "#ffffff", "borderTopWidth" to "medium", "borderRightWidth" to "medium", "borderBottomWidth" to "medium", "borderLeftWidth" to "medium", "borderTopStyle" to "none", "borderRightStyle" to "none", "borderBottomStyle" to "none", "borderLeftStyle" to "none", "borderTopColor" to "#000000", "borderRightColor" to "#000000", "borderBottomColor" to "#000000", "borderLeftColor" to "#000000", "borderTopLeftRadius" to 12, "borderTopRightRadius" to 12, "borderBottomRightRadius" to 12, "borderBottomLeftRadius" to 12, "fontSize" to 16, "fontWeight" to "bold", "marginTop" to 30, "marginBottom" to 20, "backgroundImage:disabled" to "none", "backgroundColor:disabled" to "#cccccc")), "tips" to _pS(_uM("textAlign" to "center")), "tip-text" to _pS(_uM("fontSize" to 14, "color" to "rgba(255,255,255,0.7)")))
+                return _uM("login-container" to _pS(_uM("minHeight" to 800, "backgroundImage" to "linear-gradient(135deg, #667eea 0%, #764ba2 100%)", "backgroundColor" to "rgba(0,0,0,0)", "flexDirection" to "column", "justifyContent" to "center", "alignItems" to "center", "paddingTop" to 40, "paddingRight" to 30, "paddingBottom" to 40, "paddingLeft" to 30)), "login-header" to _pS(_uM("textAlign" to "center", "marginBottom" to 60, "alignItems" to "center", "justifyContent" to "center")), "logo" to _pS(_uM("width" to 120, "height" to 120, "borderTopLeftRadius" to 20, "borderTopRightRadius" to 20, "borderBottomRightRadius" to 20, "borderBottomLeftRadius" to 20, "marginBottom" to 30, "alignSelf" to "center")), "system-title" to _pS(_uM("fontSize" to 28, "fontWeight" to "bold", "color" to "rgb(31,29,29)", "marginBottom" to 12, "textAlign" to "center", "letterSpacing" to 2)), "login-form" to _pS(_uM("width" to "100%", "maxWidth" to 400)), "form-item" to _pS(_uM("marginBottom" to 20)), "input-wrapper" to _pS(_uM("position" to "relative", "backgroundImage" to "none", "backgroundColor" to "rgba(255,255,255,0.9)", "borderTopLeftRadius" to 12, "borderTopRightRadius" to 12, "borderBottomRightRadius" to 12, "borderBottomLeftRadius" to 12, "flexDirection" to "row", "alignItems" to "center", "paddingTop" to 0, "paddingRight" to 20, "paddingBottom" to 0, "paddingLeft" to 20, "height" to 65, "width" to "100%", "boxSizing" to "border-box")), "icon" to _pS(_uM("fontSize" to 18, "marginRight" to 12, "color" to "#666666", "flexShrink" to 0)), "input" to _pS(_uM("flex" to 1, "height" to "100%", "borderTopWidth" to "medium", "borderRightWidth" to "medium", "borderBottomWidth" to "medium", "borderLeftWidth" to "medium", "borderTopStyle" to "none", "borderRightStyle" to "none", "borderBottomStyle" to "none", "borderLeftStyle" to "none", "borderTopColor" to "#000000", "borderRightColor" to "#000000", "borderBottomColor" to "#000000", "borderLeftColor" to "#000000", "backgroundImage" to "none", "backgroundColor" to "rgba(0,0,0,0)", "fontSize" to 16, "color" to "#333333", "paddingLeft" to 0)), "eye-icon" to _pS(_uM("fontSize" to 18, "color" to "#666666")), "login-btn" to _pS(_uM("width" to "100%", "height" to 50, "backgroundImage" to "none", "backgroundColor" to "#007AFF", "color" to "#ffffff", "borderTopWidth" to "medium", "borderRightWidth" to "medium", "borderBottomWidth" to "medium", "borderLeftWidth" to "medium", "borderTopStyle" to "none", "borderRightStyle" to "none", "borderBottomStyle" to "none", "borderLeftStyle" to "none", "borderTopColor" to "#000000", "borderRightColor" to "#000000", "borderBottomColor" to "#000000", "borderLeftColor" to "#000000", "borderTopLeftRadius" to 12, "borderTopRightRadius" to 12, "borderBottomRightRadius" to 12, "borderBottomLeftRadius" to 12, "fontSize" to 16, "fontWeight" to "bold", "marginTop" to 30, "marginBottom" to 20, "backgroundImage:disabled" to "none", "backgroundColor:disabled" to "#cccccc")), "tips" to _pS(_uM("textAlign" to "center")), "tip-text" to _pS(_uM("fontSize" to 14, "color" to "rgba(255,255,255,0.7)")))
             }
         var inheritAttrs = true
         var inject: Map<String, Map<String, Any?>> = _uM()

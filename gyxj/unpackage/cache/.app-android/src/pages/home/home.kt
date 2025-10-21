@@ -1,5 +1,5 @@
 @file:Suppress("UNCHECKED_CAST", "USELESS_CAST", "INAPPLICABLE_JVM_NAME", "UNUSED_ANONYMOUS_PARAMETER", "NAME_SHADOWING", "UNNECESSARY_NOT_NULL_ASSERTION")
-package uni.UNI630A075
+package uni.UNIB5A0920
 import io.dcloud.uniapp.*
 import io.dcloud.uniapp.extapi.*
 import io.dcloud.uniapp.framework.*
@@ -11,9 +11,6 @@ import io.dcloud.uts.*
 import io.dcloud.uts.Map
 import io.dcloud.uts.Set
 import io.dcloud.uts.UTSAndroid
-import uts.sdk.modules.tuiXechars.GenUniModulesTuiXecharsComponentsTuiXecharsTuiXecharsClass
-import uts.sdk.modules.tuiXechars.TuiCharts
-import uts.sdk.modules.tuiXechars.TuiDrawCharts
 import io.dcloud.uniapp.extapi.getStorageSync as uni_getStorageSync
 import io.dcloud.uniapp.extapi.getSystemInfo as uni_getSystemInfo
 import io.dcloud.uniapp.extapi.navigateTo as uni_navigateTo
@@ -132,6 +129,22 @@ open class GenPagesHomeHome : BasePage {
                 return wrapUTSPromise(suspend w@{
                         try {
                             val token = uni_getStorageSync("token")
+                            var departmentId = ""
+                            val userInfoData = uni_getStorageSync("userInfo")
+                            val userInfoStr = if (userInfoData != null) {
+                                userInfoData as String
+                            } else {
+                                ""
+                            }
+                            if (userInfoStr != null && userInfoStr != "" && userInfoStr != "null" && userInfoStr != "undefined") {
+                                try {
+                                    val parsedUserInfo = UTSAndroid.consoleDebugError(JSON.parse(userInfoStr), " at pages/home/home.uvue:301") as UTSJSONObject
+                                    departmentId = parsedUserInfo.getString("deptId") ?: ""
+                                }
+                                 catch (error: Throwable) {
+                                    console.error("用户信息JSON解析失败:", error, " at pages/home/home.uvue:304")
+                                }
+                            }
                             var pending: Number = 0
                             var completed: Number = 0
                             var reviewed: Number = 0
@@ -147,13 +160,25 @@ open class GenPagesHomeHome : BasePage {
                                 updateWeeklyChart()
                                 return@w
                             }
-                            uni_request<Any>(RequestOptions(url = getApiUrl("/inspection-record/weekly-count?status=0"), method = "GET", header = object : UTSJSONObject() {
+                            val deptParam = if (departmentId != null && departmentId != "") {
+                                "&departmentId=" + departmentId
+                            } else {
+                                ""
+                            }
+                            val pendingUrl = getApiUrl("/inspection-record/page?current=1&size=1&status=0" + (if (departmentId != null && departmentId != "") {
+                                "&departmentId=" + departmentId
+                            } else {
+                                ""
+                            }
+                            ))
+                            uni_request<Any>(RequestOptions(url = pendingUrl, method = "GET", header = object : UTSJSONObject() {
                                 var Authorization = "Bearer " + token
                             }, success = fun(res){
                                 if (res.statusCode === 200 && res.data != null) {
-                                    val pendingData = res.data as UTSJSONObject
-                                    if ((pendingData.getNumber("code") ?: 0) === 200) {
-                                        pending = pendingData.getNumber("data") ?: 0
+                                    val response = res.data as UTSJSONObject
+                                    if ((response.getNumber("code") ?: 0) === 200) {
+                                        val data = response.getJSON("data") as UTSJSONObject
+                                        pending = data.getNumber("total") ?: 0
                                     }
                                 }
                                 completedRequests++
@@ -162,20 +187,27 @@ open class GenPagesHomeHome : BasePage {
                                 }
                             }
                             , fail = fun(error){
-                                console.error("获取待整改数量失败:", error, " at pages/home/home.uvue:345")
+                                console.error("获取待整改数量失败:", error, " at pages/home/home.uvue:363")
                                 completedRequests++
                                 if (completedRequests === totalRequests) {
                                     updateWeeklyStats()
                                 }
                             }
                             ))
-                            uni_request<Any>(RequestOptions(url = getApiUrl("/inspection-record/weekly-count?status=1"), method = "GET", header = object : UTSJSONObject() {
+                            val completedUrl = getApiUrl("/inspection-record/page?current=1&size=1&status=1" + (if (departmentId != null && departmentId != "") {
+                                "&departmentId=" + departmentId
+                            } else {
+                                ""
+                            }
+                            ))
+                            uni_request<Any>(RequestOptions(url = completedUrl, method = "GET", header = object : UTSJSONObject() {
                                 var Authorization = "Bearer " + token
                             }, success = fun(res){
                                 if (res.statusCode === 200 && res.data != null) {
-                                    val completedData = res.data as UTSJSONObject
-                                    if ((completedData.getNumber("code") ?: 0) === 200) {
-                                        completed = completedData.getNumber("data") ?: 0
+                                    val response = res.data as UTSJSONObject
+                                    if ((response.getNumber("code") ?: 0) === 200) {
+                                        val data = response.getJSON("data") as UTSJSONObject
+                                        completed = data.getNumber("total") ?: 0
                                     }
                                 }
                                 completedRequests++
@@ -184,20 +216,27 @@ open class GenPagesHomeHome : BasePage {
                                 }
                             }
                             , fail = fun(error){
-                                console.error("获取已整改数量失败:", error, " at pages/home/home.uvue:373")
+                                console.error("获取已整改数量失败:", error, " at pages/home/home.uvue:393")
                                 completedRequests++
                                 if (completedRequests === totalRequests) {
                                     updateWeeklyStats()
                                 }
                             }
                             ))
-                            uni_request<Any>(RequestOptions(url = getApiUrl("/inspection-record/weekly-count?status=2"), method = "GET", header = object : UTSJSONObject() {
+                            val reviewedUrl = getApiUrl("/inspection-record/page?current=1&size=1&status=2" + (if (departmentId != null && departmentId != "") {
+                                "&departmentId=" + departmentId
+                            } else {
+                                ""
+                            }
+                            ))
+                            uni_request<Any>(RequestOptions(url = reviewedUrl, method = "GET", header = object : UTSJSONObject() {
                                 var Authorization = "Bearer " + token
                             }, success = fun(res){
                                 if (res.statusCode === 200 && res.data != null) {
-                                    val reviewedData = res.data as UTSJSONObject
-                                    if ((reviewedData.getNumber("code") ?: 0) === 200) {
-                                        reviewed = reviewedData.getNumber("data") ?: 0
+                                    val response = res.data as UTSJSONObject
+                                    if ((response.getNumber("code") ?: 0) === 200) {
+                                        val data = response.getJSON("data") as UTSJSONObject
+                                        reviewed = data.getNumber("total") ?: 0
                                     }
                                 }
                                 completedRequests++
@@ -206,20 +245,27 @@ open class GenPagesHomeHome : BasePage {
                                 }
                             }
                             , fail = fun(error){
-                                console.error("获取已复查数量失败:", error, " at pages/home/home.uvue:401")
+                                console.error("获取已复查数量失败:", error, " at pages/home/home.uvue:423")
                                 completedRequests++
                                 if (completedRequests === totalRequests) {
                                     updateWeeklyStats()
                                 }
                             }
                             ))
-                            uni_request<Any>(RequestOptions(url = getApiUrl("/inspection-record/weekly-count"), method = "GET", header = object : UTSJSONObject() {
+                            val totalUrl = getApiUrl("/inspection-record/page?current=1&size=1" + (if (departmentId != null && departmentId != "") {
+                                "&departmentId=" + departmentId
+                            } else {
+                                ""
+                            }
+                            ))
+                            uni_request<Any>(RequestOptions(url = totalUrl, method = "GET", header = object : UTSJSONObject() {
                                 var Authorization = "Bearer " + token
                             }, success = fun(res){
                                 if (res.statusCode === 200 && res.data != null) {
-                                    val totalData = res.data as UTSJSONObject
-                                    if ((totalData.getNumber("code") ?: 0) === 200) {
-                                        total = totalData.getNumber("data") ?: 0
+                                    val response = res.data as UTSJSONObject
+                                    if ((response.getNumber("code") ?: 0) === 200) {
+                                        val data = response.getJSON("data") as UTSJSONObject
+                                        total = data.getNumber("total") ?: 0
                                     }
                                 }
                                 completedRequests++
@@ -228,7 +274,7 @@ open class GenPagesHomeHome : BasePage {
                                 }
                             }
                             , fail = fun(error){
-                                console.error("获取总记录数量失败:", error, " at pages/home/home.uvue:429")
+                                console.error("获取总记录数量失败:", error, " at pages/home/home.uvue:453")
                                 completedRequests++
                                 if (completedRequests === totalRequests) {
                                     updateWeeklyStats()
@@ -237,7 +283,7 @@ open class GenPagesHomeHome : BasePage {
                             ))
                         }
                          catch (error: Throwable) {
-                            console.error("加载周检统计数据失败:", error, " at pages/home/home.uvue:438")
+                            console.error("加载周检统计数据失败:", error, " at pages/home/home.uvue:462")
                             weeklyStats.value = StatsData(total = 45, pending = 12, completed = 28, reviewed = 5)
                             updateWeeklyChart()
                         }
@@ -245,7 +291,28 @@ open class GenPagesHomeHome : BasePage {
             }
             val loadMonthlyStats = fun(): Unit {
                 val token = uni_getStorageSync("token")
-                uni_request<Any>(RequestOptions(url = getApiUrl("/statistics/monthly"), method = "GET", header = object : UTSJSONObject() {
+                var departmentId = ""
+                val userInfoData = uni_getStorageSync("userInfo")
+                val userInfoStr = if (userInfoData != null) {
+                    userInfoData as String
+                } else {
+                    ""
+                }
+                if (userInfoStr != null && userInfoStr != "" && userInfoStr != "null" && userInfoStr != "undefined") {
+                    try {
+                        val parsedUserInfo = UTSAndroid.consoleDebugError(JSON.parse(userInfoStr), " at pages/home/home.uvue:484") as UTSJSONObject
+                        departmentId = parsedUserInfo.getString("deptId") ?: ""
+                    }
+                     catch (error: Throwable) {
+                        console.error("用户信息JSON解析失败:", error, " at pages/home/home.uvue:487")
+                    }
+                }
+                val deptParam = if (departmentId != null && departmentId != "") {
+                    "&departmentId=" + departmentId
+                } else {
+                    ""
+                }
+                uni_request<Any>(RequestOptions(url = getApiUrl("/statistics/monthly?1=1" + deptParam), method = "GET", header = object : UTSJSONObject() {
                     var `Content-Type` = "application/json"
                     var Authorization = "Bearer " + token
                 }, success = fun(res){
@@ -258,7 +325,7 @@ open class GenPagesHomeHome : BasePage {
                     updateMonthlyChart()
                 }
                 , fail = fun(error){
-                    console.error("加载月检统计数据失败:", error, " at pages/home/home.uvue:476")
+                    console.error("加载月检统计数据失败:", error, " at pages/home/home.uvue:517")
                     monthlyStats.value = StatsData(total = 156, pending = 23, completed = 108, reviewed = 25)
                     updateMonthlyChart()
                 }
@@ -267,23 +334,23 @@ open class GenPagesHomeHome : BasePage {
             val checkLogin = fun(): Boolean {
                 val token = uni_getStorageSync("token")
                 if (token == null || token == "") {
-                    console.log("未登录，跳转到登录页面", " at pages/home/home.uvue:495")
+                    console.log("未登录，跳转到登录页面", " at pages/home/home.uvue:536")
                     uni_reLaunch(ReLaunchOptions(url = "/pages/login/login"))
                     return false
                 }
                 return true
             }
             val loadUserInfo = fun(): Unit {
-                console.log("=== 开始加载用户信息 ===", " at pages/home/home.uvue:506")
+                console.log("=== 开始加载用户信息 ===", " at pages/home/home.uvue:547")
                 val userInfoStr = uni_getStorageSync("userInfo") as String
-                console.log("本地存储原始数据:", userInfoStr, " at pages/home/home.uvue:510")
+                console.log("本地存储原始数据:", userInfoStr, " at pages/home/home.uvue:551")
                 if (userInfoStr != null && userInfoStr != "" && userInfoStr != "null" && userInfoStr != "undefined") {
                     try {
-                        val parsedUserInfo = UTSAndroid.consoleDebugError(JSON.parse(userInfoStr), " at pages/home/home.uvue:514") as UTSJSONObject
-                        console.log("解析后的对象:", parsedUserInfo, " at pages/home/home.uvue:515")
+                        val parsedUserInfo = UTSAndroid.consoleDebugError(JSON.parse(userInfoStr), " at pages/home/home.uvue:555") as UTSJSONObject
+                        console.log("解析后的对象:", parsedUserInfo, " at pages/home/home.uvue:556")
                         val realName = parsedUserInfo.getString("realName")
-                        console.log("realName字段值:", realName, " at pages/home/home.uvue:519")
-                        console.log("realName类型:", UTSAndroid.`typeof`(realName), " at pages/home/home.uvue:520")
+                        console.log("realName字段值:", realName, " at pages/home/home.uvue:560")
+                        console.log("realName类型:", UTSAndroid.`typeof`(realName), " at pages/home/home.uvue:561")
                         userInfo.value = parsedUserInfo
                         val realNameValue = parsedUserInfo.getString("realName")
                         userName.value = if (realNameValue != null) {
@@ -291,29 +358,29 @@ open class GenPagesHomeHome : BasePage {
                         } else {
                             "用户"
                         }
-                        console.log("设置后的 userInfo.value:", userInfo.value, " at pages/home/home.uvue:527")
-                        console.log("设置后的 userName.value:", userName.value, " at pages/home/home.uvue:528")
+                        console.log("设置后的 userInfo.value:", userInfo.value, " at pages/home/home.uvue:568")
+                        console.log("设置后的 userName.value:", userName.value, " at pages/home/home.uvue:569")
                         val testRealName = userInfo.value.getString("realName")
-                        console.log("验证: 设置后的realName:", testRealName, " at pages/home/home.uvue:532")
+                        console.log("验证: 设置后的realName:", testRealName, " at pages/home/home.uvue:573")
                         nextTick(fun(){
-                            console.log("界面更新后检查:", userInfo.value.getString("realName"), " at pages/home/home.uvue:536")
+                            console.log("界面更新后检查:", userInfo.value.getString("realName"), " at pages/home/home.uvue:577")
                             userInfo.value = UTSJSONObject.assign(UTSJSONObject(), userInfo.value)
                         })
                     } catch (error: Throwable) {
-                        console.error("用户信息JSON解析失败:", error, " at pages/home/home.uvue:542")
+                        console.error("用户信息JSON解析失败:", error, " at pages/home/home.uvue:583")
                         userInfo.value = object : UTSJSONObject() {
                             var realName = "解析失败用户"
                         }
                     }
                 } else {
-                    console.log("本地存储中没有有效的用户信息", " at pages/home/home.uvue:548")
+                    console.log("本地存储中没有有效的用户信息", " at pages/home/home.uvue:589")
                     userInfo.value = object : UTSJSONObject() {
                         var realName = "默认用户"
                         var avatar = ""
                     }
                     userName.value = "默认用户"
                 }
-                console.log("=== 用户信息加载完成 ===", " at pages/home/home.uvue:557")
+                console.log("=== 用户信息加载完成 ===", " at pages/home/home.uvue:598")
             }
             val initCurrentDate = fun(): Unit {
                 val now = Date()
@@ -347,7 +414,7 @@ open class GenPagesHomeHome : BasePage {
             }
             val reloadAllData = fun(): UTSPromise<Unit> {
                 return wrapUTSPromise(suspend {
-                        console.log("重新加载所有数据", " at pages/home/home.uvue:602")
+                        console.log("重新加载所有数据", " at pages/home/home.uvue:643")
                         try {
                             initCurrentDate()
                             loadUserInfo()
@@ -362,14 +429,14 @@ open class GenPagesHomeHome : BasePage {
                                 }
                                 )
                             )))
-                            console.log("所有数据加载完成", " at pages/home/home.uvue:623")
+                            console.log("所有数据加载完成", " at pages/home/home.uvue:664")
                         }
                          catch (error: Throwable) {
-                            console.error("数据加载失败:", error, " at pages/home/home.uvue:626")
+                            console.error("数据加载失败:", error, " at pages/home/home.uvue:667")
                         }
                          finally{
                             setTimeout(fun(){
-                                console.log("关闭刷新动画", " at pages/home/home.uvue:630")
+                                console.log("关闭刷新动画", " at pages/home/home.uvue:671")
                                 isRefreshing.value = false
                             }
                             , 500)
@@ -377,12 +444,12 @@ open class GenPagesHomeHome : BasePage {
                 })
             }
             val onRefresh = fun(): Unit {
-                console.log("开始下拉刷新", " at pages/home/home.uvue:638")
+                console.log("开始下拉刷新", " at pages/home/home.uvue:679")
                 isRefreshing.value = true
                 reloadAllData()
             }
             val onRefreshRestore = fun(): Unit {
-                console.log("刷新恢复", " at pages/home/home.uvue:647")
+                console.log("刷新恢复", " at pages/home/home.uvue:688")
                 isRefreshing.value = false
             }
             onMounted(fun(){
@@ -407,7 +474,7 @@ open class GenPagesHomeHome : BasePage {
             )
             val onWeeklyChartInit = fun(chartInstance: TuiCharts): Unit {
                 weeklyChartInstance = chartInstance
-                val pieOption: UTSJSONObject = object : UTSJSONObject(UTSSourceMapPosition("pieOption", "pages/home/home.uvue", 693, 9)) {
+                val pieOption: UTSJSONObject = object : UTSJSONObject(UTSSourceMapPosition("pieOption", "pages/home/home.uvue", 734, 9)) {
                     var type = "pie"
                     var animation = true
                     var dataLabel = true
@@ -487,7 +554,7 @@ open class GenPagesHomeHome : BasePage {
             }
             val onMonthlyChartInit = fun(chartInstance: TuiCharts): Unit {
                 monthlyChartInstance = chartInstance
-                val pieOption: UTSJSONObject = object : UTSJSONObject(UTSSourceMapPosition("pieOption", "pages/home/home.uvue", 767, 9)) {
+                val pieOption: UTSJSONObject = object : UTSJSONObject(UTSSourceMapPosition("pieOption", "pages/home/home.uvue", 808, 9)) {
                     var type = "pie"
                     var animation = true
                     var dataLabel = true
@@ -567,7 +634,7 @@ open class GenPagesHomeHome : BasePage {
             }
             val onTrendChartInit = fun(chartInstance: TuiCharts): Unit {
                 chartInstance
-                val columnOption: UTSJSONObject = object : UTSJSONObject(UTSSourceMapPosition("columnOption", "pages/home/home.uvue", 841, 9)) {
+                val columnOption: UTSJSONObject = object : UTSJSONObject(UTSSourceMapPosition("columnOption", "pages/home/home.uvue", 882, 9)) {
                     var type = "column"
                     var animation = true
                     var dataLabel = true

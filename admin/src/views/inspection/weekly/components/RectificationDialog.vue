@@ -139,25 +139,23 @@
           <el-col :span="24">
             <el-form-item label="整改图片">
               <div class="image-upload-container">
-                <el-upload
-                  v-model:file-list="imageFileList"
+                <DragUpload
+                  v-model="imageFileList"
                   :action="uploadAction"
-                  :headers="uploadHeaders"
-                  list-type="picture-card"
-                  :on-success="handleImageSuccess"
-                  :on-error="handleImageError"
-                  :on-remove="handleImageRemove"
-                  :before-upload="beforeImageUpload"
                   :limit="3"
-                  :on-exceed="handleImageExceed"
-                >
-                  <el-icon><Plus /></el-icon>
-                  <template #tip>
-                    <div class="el-upload__tip">
-                      只能上传jpg/png文件，且不超过2MB，最多3张
-                    </div>
-                  </template>
-                </el-upload>
+                  :max-size="2"
+                  accept="image/jpeg,image/png"
+                  list-type="picture-card"
+                  primary-text="将图片拖到此处，或点击上传"
+                  secondary-text="支持拖拽上传"
+                  tip-text="只能上传jpg/png文件，且不超过2MB，最多3张"
+                  :before-upload-validator="beforeImageUpload"
+                  :on-success-callback="handleImageSuccess"
+                  :on-error-callback="handleImageError"
+                  @success="handleImageSuccess"
+                  @error="handleImageError"
+                  @remove="handleImageRemove"
+                />
               </div>
             </el-form-item>
           </el-col>
@@ -180,6 +178,8 @@ import { ElMessage } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
 import { inspectionApi, getDictByType, getDeptList } from '@/api/inspection'
 import { getToken } from '@/utils/token'
+import { convertToHttpUrl } from '@/config/api'
+import DragUpload from '@/components/DragUpload.vue'
 
 const props = defineProps({
   visible: {
@@ -246,9 +246,11 @@ const natureOptions = ref([])
 const professionOptions = ref([])
 const departmentOptions = ref([])
 
+import { getFullApiUrl, parseImageUrls, getImageUploadUrl } from '@/config/api'
+
 // 图片上传相关
 const uploadAction = computed(() => {
-  return 'http://192.168.244.128:8080/api/upload/image'
+  return getImageUploadUrl()
 })
 
 const uploadHeaders = computed(() => {
@@ -256,40 +258,6 @@ const uploadHeaders = computed(() => {
     'Authorization': `Bearer ${getToken()}`
   }
 })
-
-// 解析图片URL的工具函数
-const parseImageUrls = (imageUrls) => {
-  if (!imageUrls) return []
-  
-  try {
-    let urlList = []
-    if (typeof imageUrls === 'string') {
-      // 首先尝试JSON解析
-      try {
-        const parsed = JSON.parse(imageUrls)
-        if (Array.isArray(parsed)) {
-          urlList = parsed
-        }
-      } catch (e) {
-        // JSON解析失败，尝试逗号分割
-        urlList = imageUrls.split(',').map(url => url.trim()).filter(url => url)
-      }
-    } else if (Array.isArray(imageUrls)) {
-      urlList = imageUrls
-    }
-    
-    // 转换为完整URL，添加/api前缀
-    return urlList.map(url => {
-      if (url && url.startsWith('/')) {
-        return `http://192.168.244.128:8080/api${url}`
-      }
-      return url || ''
-    }).filter(url => url)
-  } catch (e) {
-    console.error('解析图片URL失败:', e, '原始数据:', imageUrls)
-    return []
-  }
-}
 
 // 监听表单数据变化
 watch(() => props.formData, (newData) => {
@@ -396,7 +364,7 @@ const beforeImageUpload = (file) => {
 }
 
 // 图片上传成功
-const handleImageSuccess = (response, file) => {
+const handleImageSuccess = (response, file, fileList) => {
   if (response.code === 200) {
     ElMessage.success('图片上传成功')
     updateImageUrls()
@@ -406,27 +374,26 @@ const handleImageSuccess = (response, file) => {
 }
 
 // 图片上传失败
-const handleImageError = (error) => {
+const handleImageError = (error, file, fileList) => {
   console.error('图片上传失败:', error)
   ElMessage.error('图片上传失败')
 }
 
 // 移除图片
-const handleImageRemove = () => {
+const handleImageRemove = (file, fileList) => {
   updateImageUrls()
-}
-
-// 图片数量超限
-const handleImageExceed = () => {
-  ElMessage.warning('最多只能上传3张图片')
 }
 
 // 更新图片URLs
 const updateImageUrls = () => {
   const urls = imageFileList.value
     .filter(file => file.response?.data?.filePath || file.url)
-    .map(file => file.response?.data?.filePath || file.url)
-  form.rectificationImageUrls = JSON.stringify(urls)
+    .map(file => {
+      const filePath = file.response?.data?.filePath || file.url
+      // 使用convertToHttpUrl转换为正确的HTTP访问路径
+      return convertToHttpUrl(filePath)
+    })
+  form.rectificationImageUrls = urls.join(',')
 }
 
 // 格式化日期

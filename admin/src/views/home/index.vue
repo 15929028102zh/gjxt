@@ -11,120 +11,93 @@
       </div>
     </div>
 
-    <!-- 统计卡片 -->
-    <div class="stats-container">
-      <div class="stats-card" @click="goToPendingTasks">
-        <div class="stats-icon pending">
-          <el-icon><Clock /></el-icon>
+
+
+    <!-- 周检和月检数据展示区 -->
+    <div class="inspection-data-section">
+      <!-- 周检数据展示 -->
+      <div class="inspection-card weekly-inspection">
+        <div class="inspection-header">
+          <h3>周检数据统计</h3>
+          <el-date-picker
+            v-model="weeklyDateRange"
+            type="daterange"
+            range-separator="至"
+            start-placeholder="开始日期"
+            end-placeholder="结束日期"
+            format="YYYY-MM-DD"
+            @change="loadWeeklyData"
+            size="small"
+          />
         </div>
-        <div class="stats-content">
-          <div class="stats-number">{{ statistics.pendingTasks }}</div>
-          <div class="stats-label">待处理任务</div>
+        <div class="inspection-stats">
+          <div class="stat-item">
+            <div class="stat-number">{{ weeklyData.totalRecords }}</div>
+            <div class="stat-label">总记录数</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-number">{{ weeklyData.pendingRectification }}</div>
+            <div class="stat-label">待整改</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-number">{{ weeklyData.rectified }}</div>
+            <div class="stat-label">已整改</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-number">{{ weeklyData.reviewed }}</div>
+            <div class="stat-label">已复查</div>
+          </div>
         </div>
+        <div ref="weeklyChart" class="chart-content"></div>
       </div>
-      
-      <div class="stats-card" @click="goToCompletedTasks">
-        <div class="stats-icon completed">
-          <el-icon><Check /></el-icon>
+
+      <!-- 月检数据展示 -->
+      <div class="inspection-card monthly-inspection">
+        <div class="inspection-header">
+          <h3>月检数据统计</h3>
+          <el-date-picker
+            v-model="monthlyDateRange"
+            type="month"
+            format="YYYY年MM月"
+            placeholder="选择月份"
+            @change="loadMonthlyData"
+            size="small"
+          />
         </div>
-        <div class="stats-content">
-          <div class="stats-number">{{ statistics.completedTasks }}</div>
-          <div class="stats-label">已完成任务</div>
+        <div class="inspection-stats">
+          <div class="stat-item">
+            <div class="stat-number">{{ monthlyData.totalTasks }}</div>
+            <div class="stat-label">总任务数</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-number">{{ monthlyData.completedTasks }}</div>
+            <div class="stat-label">已完成</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-number">{{ monthlyData.pendingTasks }}</div>
+            <div class="stat-label">进行中</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-number">{{ monthlyData.overdueRate }}%</div>
+            <div class="stat-label">逾期率</div>
+          </div>
         </div>
-      </div>
-      
-      <div class="stats-card" @click="goToTotalInspections">
-        <div class="stats-icon total">
-          <el-icon><Document /></el-icon>
-        </div>
-        <div class="stats-content">
-          <div class="stats-number">{{ statistics.totalInspections }}</div>
-          <div class="stats-label">总巡检次数</div>
-        </div>
-      </div>
-      
-      <div class="stats-card" @click="goToPendingIssues">
-        <div class="stats-icon issues">
-          <el-icon><Warning /></el-icon>
-        </div>
-        <div class="stats-content">
-          <div class="stats-number">{{ statistics.pendingIssues }}</div>
-          <div class="stats-label">待整改问题</div>
-        </div>
+        <div ref="monthlyChart" class="chart-content"></div>
       </div>
     </div>
 
-    <!-- 图表区域 -->
-    <div class="charts-container">
-      <div class="chart-card">
-        <div class="chart-header">
-          <h3>月度巡检趋势</h3>
-        </div>
-        <div ref="monthlyTrendChart" class="chart-content"></div>
-      </div>
-      
-      <div class="chart-card">
-        <div class="chart-header">
-          <h3>问题分类统计</h3>
-        </div>
-        <div ref="issueCategoryChart" class="chart-content"></div>
-      </div>
-    </div>
-
-    <!-- 快捷操作 -->
-    <div class="quick-actions-section">
-      <h3 class="section-title">快捷操作</h3>
-      <div class="quick-actions">
-        <div class="action-button" @click="goToUserManagement">
-          <div class="action-icon">
-            <el-icon><User /></el-icon>
-          </div>
-          <div class="action-content">
-            <div class="action-title">用户管理</div>
-            <div class="action-desc">管理系统用户</div>
-          </div>
-        </div>
-        
-        <div class="action-button" @click="goToDeptManagement">
-          <div class="action-icon">
-            <el-icon><OfficeBuilding /></el-icon>
-          </div>
-          <div class="action-content">
-            <div class="action-title">部门管理</div>
-            <div class="action-desc">管理组织架构</div>
-          </div>
-        </div>
-        
-        <div class="action-button" @click="goToDictManagement">
-          <div class="action-icon">
-            <el-icon><Collection /></el-icon>
-          </div>
-          <div class="action-content">
-            <div class="action-title">字典管理</div>
-            <div class="action-desc">管理数据字典</div>
-          </div>
-        </div>
-        
-        <div class="action-button" @click="goToMonthlyTasks">
-          <div class="action-icon">
-            <el-icon><Calendar /></el-icon>
-          </div>
-          <div class="action-content">
-            <div class="action-title">月检任务</div>
-            <div class="action-desc">管理月检计划</div>
-          </div>
-        </div>
-      </div>
-    </div>
+    <!-- 移除月度趋势和问题分类统计图表 -->
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, nextTick } from 'vue'
+import { ref, onMounted, nextTick, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { User, OfficeBuilding, Collection, Clock, Check, Document, Warning, Calendar } from '@element-plus/icons-vue'
+// 移除统计卡片相关的图标导入
 import * as echarts from 'echarts'
 import { userApi } from '@/api/system'
+import { monthlyTaskApi } from '@/api/monthly'
+import { convertToHttpUrl } from '@/config/api'
 
 const router = useRouter()
 
@@ -137,17 +110,29 @@ const userInfo = ref({
 // 当前日期
 const currentDate = ref('')
 
-// 统计数据
-const statistics = ref({
-  pendingTasks: 0,
+// 移除统计数据相关变量
+
+// 周检数据
+const weeklyDateRange = ref(null)
+const weeklyData = ref({
+  totalRecords: 0,
+  pendingRectification: 0,
+  rectified: 0,
+  reviewed: 0
+})
+
+// 月检数据
+const monthlyDateRange = ref(new Date())
+const monthlyData = ref({
+  totalTasks: 0,
   completedTasks: 0,
-  totalInspections: 0,
-  pendingIssues: 0
+  pendingTasks: 0,
+  overdueRate: 0
 })
 
 // 图表引用
-const monthlyTrendChart = ref(null)
-const issueCategoryChart = ref(null)
+const weeklyChart = ref(null)
+const monthlyChart = ref(null)
 
 // 获取用户信息
 const loadUserInfo = async () => {
@@ -197,63 +182,157 @@ const loadUserInfo = async () => {
   }
 }
 
-// 获取统计数据
-const loadStatistics = async () => {
+// 移除统计数据加载函数
+
+// 获取周检数据
+const loadWeeklyData = async () => {
   try {
-    // 模拟数据，实际应该从API获取
-    statistics.value = {
-      pendingTasks: 12,
-      completedTasks: 156,
-      totalInspections: 2340,
-      pendingIssues: 8
+    console.log('开始加载周检数据...')
+    
+    // 获取用户信息
+    const localUserInfo = localStorage.getItem('userInfo')
+    let userId = null
+    let departmentId = null
+    
+    if (localUserInfo) {
+      const userData = JSON.parse(localUserInfo)
+      userId = userData.id || userData.userId
+      departmentId = userData.deptId || userData.departmentId
+      console.log('用户信息:', userData)
+      console.log('userId:', userId, 'departmentId:', departmentId)
     }
+    
+    // 构建请求参数
+    const params = new URLSearchParams()
+    // 移除userId参数，根据用户要求不需要传递
+    // if (userId) params.append('userId', userId)
+    if (departmentId) params.append('departmentId', departmentId)
+    
+    // 如果选择了日期范围，添加时间参数
+    if (weeklyDateRange.value && weeklyDateRange.value.length === 2) {
+      const startDate = weeklyDateRange.value[0].toISOString().split('T')[0]
+      const endDate = weeklyDateRange.value[1].toISOString().split('T')[0]
+      params.append('startDate', startDate)
+      params.append('endDate', endDate)
+    }
+    
+    // 获取不同状态的记录数量
+    const createParams = (status) => {
+      const statusParams = new URLSearchParams(params)
+      statusParams.append('status', status)
+      return statusParams
+    }
+    
+    const [pendingResponse, rectifiedResponse, reviewedResponse] = await Promise.all([
+      fetch(`/api/inspection-record/weekly-count?${createParams(0)}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      }),
+      fetch(`/api/inspection-record/weekly-count?${createParams(1)}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      }),
+      fetch(`/api/inspection-record/weekly-count?${createParams(2)}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      })
+    ])
+    
+    const pendingData = await pendingResponse.json()
+    const rectifiedData = await rectifiedResponse.json()
+    const reviewedData = await reviewedResponse.json()
+    
+    if (pendingData.code === 200 && rectifiedData.code === 200 && reviewedData.code === 200) {
+      const pending = pendingData.data || 0
+      const rectified = rectifiedData.data || 0
+      const reviewed = reviewedData.data || 0
+      
+      weeklyData.value = {
+        totalRecords: pending + rectified + reviewed,
+        pendingRectification: pending,
+        rectified: rectified,
+        reviewed: reviewed
+      }
+      
+      console.log('周检数据加载成功:', weeklyData.value)
+    } else {
+      console.error('获取周检数据失败:', pendingData.message || rectifiedData.message || reviewedData.message)
+      // 使用默认数据
+      weeklyData.value = {
+        totalRecords: 0,
+        pendingRectification: 0,
+        rectified: 0,
+        reviewed: 0
+      }
+    }
+    
+    // 重新初始化周检图表
+    await nextTick()
+    initWeeklyChart()
   } catch (error) {
-    console.error('获取统计数据失败:', error)
+    console.error('获取周检数据失败:', error)
+    // 使用默认数据
+    weeklyData.value = {
+      totalRecords: 0,
+      pendingRectification: 0,
+      rectified: 0,
+      reviewed: 0
+    }
   }
 }
 
-// 初始化月度趋势图表
-const initMonthlyTrendChart = () => {
-  if (!monthlyTrendChart.value) return
+// 获取月检数据
+const loadMonthlyData = async () => {
+  try {
+    // 模拟数据，实际应该从API获取
+    monthlyData.value = {
+      totalTasks: 120,
+      completedTasks: 95,
+      pendingTasks: 25,
+      overdueRate: 8.5
+    }
+    // 重新初始化月检图表
+    await nextTick()
+    initMonthlyChart()
+  } catch (error) {
+    console.error('获取月检数据失败:', error)
+  }
+}
+
+// 移除月度趋势图表和问题分类统计图表初始化函数
+
+// 初始化周检图表
+const initWeeklyChart = () => {
+  if (!weeklyChart.value) return
   
-  const chart = echarts.init(monthlyTrendChart.value)
+  const chart = echarts.init(weeklyChart.value)
   const option = {
     tooltip: {
-      trigger: 'axis'
+      trigger: 'item',
+      formatter: '{a} <br/>{b}: {c} ({d}%)'
     },
-    grid: {
-      left: '3%',
-      right: '4%',
-      bottom: '3%',
-      containLabel: true
-    },
-    xAxis: {
-      type: 'category',
-      data: ['1月', '2月', '3月', '4月', '5月', '6月']
-    },
-    yAxis: {
-      type: 'value'
+    legend: {
+      bottom: '5%',
+      left: 'center'
     },
     series: [{
-      name: '巡检次数',
-      type: 'line',
-      smooth: true,
-      data: [320, 332, 301, 334, 390, 330],
-      itemStyle: {
-        color: '#409EFF'
-      },
-      areaStyle: {
-        color: {
-          type: 'linear',
-          x: 0,
-          y: 0,
-          x2: 0,
-          y2: 1,
-          colorStops: [{
-            offset: 0, color: 'rgba(64, 158, 255, 0.3)'
-          }, {
-            offset: 1, color: 'rgba(64, 158, 255, 0.1)'
-          }]
+      name: '周检状态',
+      type: 'pie',
+      radius: ['30%', '60%'],
+      center: ['50%', '45%'],
+      data: [
+        { value: weeklyData.value.pendingRectification, name: '待整改', itemStyle: { color: '#F56C6C' } },
+        { value: weeklyData.value.rectified, name: '已整改', itemStyle: { color: '#E6A23C' } },
+        { value: weeklyData.value.reviewed, name: '已复查', itemStyle: { color: '#67C23A' } }
+      ],
+      emphasis: {
+        itemStyle: {
+          shadowBlur: 10,
+          shadowOffsetX: 0,
+          shadowColor: 'rgba(0, 0, 0, 0.5)'
         }
       }
     }]
@@ -266,45 +345,40 @@ const initMonthlyTrendChart = () => {
   })
 }
 
-// 初始化问题分类图表
-const initIssueCategoryChart = () => {
-  if (!issueCategoryChart.value) return
+// 初始化月检图表
+const initMonthlyChart = () => {
+  if (!monthlyChart.value) return
   
-  const chart = echarts.init(issueCategoryChart.value)
+  const chart = echarts.init(monthlyChart.value)
   const option = {
     tooltip: {
-      trigger: 'item'
+      trigger: 'axis',
+      axisPointer: {
+        type: 'shadow'
+      }
     },
-    legend: {
-      bottom: '5%',
-      left: 'center'
+    grid: {
+      left: '3%',
+      right: '4%',
+      bottom: '3%',
+      containLabel: true
+    },
+    xAxis: {
+      type: 'category',
+      data: ['总任务', '已完成', '进行中']
+    },
+    yAxis: {
+      type: 'value'
     },
     series: [{
-      name: '问题分类',
-      type: 'pie',
-      radius: ['40%', '70%'],
-      avoidLabelOverlap: false,
-      label: {
-        show: false,
-        position: 'center'
-      },
-      emphasis: {
-        label: {
-          show: true,
-          fontSize: '18',
-          fontWeight: 'bold'
-        }
-      },
-      labelLine: {
-        show: false
-      },
+      name: '任务数量',
+      type: 'bar',
       data: [
-        { value: 35, name: '设备故障', itemStyle: { color: '#FF6B6B' } },
-        { value: 25, name: '环境异常', itemStyle: { color: '#4ECDC4' } },
-        { value: 20, name: '安全隐患', itemStyle: { color: '#45B7D1' } },
-        { value: 15, name: '维护需求', itemStyle: { color: '#96CEB4' } },
-        { value: 5, name: '其他', itemStyle: { color: '#FFEAA7' } }
-      ]
+        { value: monthlyData.value.totalTasks, itemStyle: { color: '#409EFF' } },
+        { value: monthlyData.value.completedTasks, itemStyle: { color: '#67C23A' } },
+        { value: monthlyData.value.pendingTasks, itemStyle: { color: '#E6A23C' } }
+      ],
+      barWidth: '60%'
     }]
   }
   chart.setOption(option)
@@ -327,60 +401,24 @@ const formatCurrentDate = () => {
 }
 
 // 路由跳转方法
-const goToUserManagement = () => {
-  router.push('/system/user')
-}
+// 移除路由跳转函数
 
-const goToDeptManagement = () => {
-  router.push('/system/dept')
-}
 
-const goToDictManagement = () => {
-  router.push('/system/dict')
-}
 
-const goToMonthlyTasks = () => {
-  // 跳转到月检任务页面
-  router.push('/inspection/monthly')
-}
-
-const goToPendingTasks = () => {
-  // 跳转到待处理任务页面
-  router.push('/inspection/pending')
-}
-
-const goToCompletedTasks = () => {
-  // 跳转到已完成任务页面
-  router.push('/inspection/completed')
-}
-
-const goToTotalInspections = () => {
-  // 跳转到巡检记录页面
-  router.push('/inspection/records')
-}
-
-const goToPendingIssues = () => {
-  // 跳转到待整改问题页面
-  router.push('/inspection/issues')
-}
-
-// 将相对路径转换为HTTP访问路径
-const convertToHttpUrl = (relativePath) => {
-  if (!relativePath || relativePath.trim() === '') {
-    return ''
+// 监听日期范围变化，重新加载数据
+watch(weeklyDateRange, async (newRange) => {
+  if (newRange && newRange.length === 2) {
+    console.log('周检日期范围变化，重新加载数据:', newRange)
+    await loadWeeklyData()
   }
-  
-  // 如果已经是完整的HTTP/HTTPS URL，直接返回
-  if (relativePath.startsWith('http://') || relativePath.startsWith('https://')) {
-    return relativePath
+}, { deep: true })
+
+watch(monthlyDateRange, async (newRange) => {
+  if (newRange && newRange.length === 2) {
+    console.log('月检日期范围变化，重新加载数据:', newRange)
+    await loadMonthlyData()
   }
-  
-  // 直接拼接完整的HTTP URL
-  // 后端返回相对路径，如: /files/images/20250831/xxx.jpg
-  const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://192.168.244.128:8080'
-  const fullUrl = `${baseUrl}/api${relativePath}`
-  return fullUrl
-}
+}, { deep: true })
 
 // 组件挂载时初始化
 onMounted(async () => {
@@ -392,18 +430,25 @@ onMounted(async () => {
     await loadUserInfo()
     console.log('用户信息加载完成')
     
-    await loadStatistics()
-    console.log('统计数据加载完成')
+    // 移除统计数据加载
+    
+    await loadWeeklyData()
+    console.log('周检数据加载完成')
+    
+    await loadMonthlyData()
+    console.log('月检数据加载完成')
     
     // 等待DOM更新后初始化图表
     await nextTick()
     console.log('DOM更新完成，开始初始化图表')
     
-    initMonthlyTrendChart()
-    console.log('月度趋势图表初始化完成')
+    // 移除月度趋势图表和问题分类图表初始化
     
-    initIssueCategoryChart()
-    console.log('问题分类图表初始化完成')
+    initWeeklyChart()
+    console.log('周检图表初始化完成')
+    
+    initMonthlyChart()
+    console.log('月检图表初始化完成')
     
     console.log('首页组件挂载完成')
   } catch (error) {
@@ -414,143 +459,171 @@ onMounted(async () => {
 
 <style scoped>
 .home-container {
-  padding: 20px;
-  background: #f5f7fa;
+  padding: 24px;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
   min-height: calc(100vh - 60px);
   overflow-y: auto;
 }
 
-/* 欢迎区域 */
+/* 欢迎区域 - 美化升级 */
 .welcome-section {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 16px;
-  padding: 24px;
-  margin-bottom: 24px;
+  border-radius: 20px;
+  padding: 32px;
+  margin-bottom: 32px;
   display: flex;
   justify-content: space-between;
   align-items: center;
   color: white;
-  box-shadow: 0 8px 32px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 12px 40px rgba(102, 126, 234, 0.4);
+  position: relative;
+  overflow: hidden;
+}
+
+.welcome-section::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -50%;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+  border-radius: 50%;
+}
+
+.welcome-content {
+  position: relative;
+  z-index: 1;
 }
 
 .welcome-content .greeting {
-  font-size: 28px;
-  font-weight: 600;
-  margin: 0 0 8px 0;
+  font-size: 32px;
+  font-weight: 700;
+  margin: 0 0 12px 0;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
 .welcome-content .current-date {
-  font-size: 16px;
+  font-size: 18px;
   opacity: 0.9;
   margin: 0;
+  font-weight: 300;
 }
 
 .user-avatar {
   flex-shrink: 0;
+  position: relative;
+  z-index: 1;
 }
 
-/* 统计卡片 */
-.stats-container {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 20px;
-  margin-bottom: 24px;
+.user-avatar .el-avatar {
+  border: 3px solid rgba(255,255,255,0.3);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
 }
 
-.stats-card {
-  background: white;
-  border-radius: 12px;
-  padding: 20px;
+/* 数据展示区域美化 */
+.inspection-data-section {
   display: flex;
-  align-items: center;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-  transition: all 0.3s ease;
-  cursor: pointer;
-  border: 1px solid #f0f0f0;
+  flex-direction: row;
+  gap: 24px;
+  margin-bottom: 32px;
 }
 
-.stats-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
-}
-
-.stats-icon {
-  width: 48px;
-  height: 48px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-right: 16px;
-  font-size: 20px;
-}
-
-.stats-icon.pending {
-  background: rgba(255, 193, 7, 0.1);
-  color: #ffc107;
-}
-
-.stats-icon.completed {
-  background: rgba(40, 167, 69, 0.1);
-  color: #28a745;
-}
-
-.stats-icon.total {
-  background: rgba(0, 123, 255, 0.1);
-  color: #007bff;
-}
-
-.stats-icon.issues {
-  background: rgba(220, 53, 69, 0.1);
-  color: #dc3545;
-}
-
-.stats-content {
+.inspection-card {
   flex: 1;
+  background: white;
+  border-radius: 16px;
+  padding: 28px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  border: 1px solid #f0f2f5;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
 }
 
-.stats-number {
-  font-size: 24px;
+.inspection-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+}
+
+.inspection-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
+}
+
+.inspection-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #f0f2f5;
+}
+
+.inspection-header h3 {
+  font-size: 20px;
   font-weight: 600;
   color: #2c3e50;
-  margin-bottom: 4px;
+  margin: 0;
 }
 
-.stats-label {
-  font-size: 14px;
-  color: #6c757d;
-}
-
-/* 图表区域 */
-.charts-container {
+.inspection-stats {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-  gap: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 16px;
   margin-bottom: 24px;
 }
 
-.chart-card {
-  background: white;
+.stat-item {
+  text-align: center;
+  padding: 16px;
+  background: #f8f9fa;
   border-radius: 12px;
-  padding: 20px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-  border: 1px solid #f0f0f0;
+  transition: all 0.3s ease;
 }
 
+.stat-item:hover {
+  background: #e9ecef;
+  transform: translateY(-2px);
+}
+
+.stat-number {
+  font-size: 24px;
+  font-weight: 700;
+  color: #667eea;
+  margin-bottom: 8px;
+}
+
+.stat-label {
+  font-size: 14px;
+  color: #6c757d;
+  font-weight: 500;
+}
+
+/* 移除图表区域样式 */
+
 .chart-header {
-  margin-bottom: 16px;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #f0f2f5;
 }
 
 .chart-header h3 {
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 600;
   color: #2c3e50;
   margin: 0;
 }
 
 .chart-content {
-  height: 300px;
+  height: 320px;
   width: 100%;
+  border-radius: 8px;
 }
 
 /* 快捷操作区域 */
@@ -630,44 +703,58 @@ onMounted(async () => {
   .welcome-section {
     flex-direction: column;
     text-align: center;
-    gap: 16px;
+    gap: 20px;
+    padding: 24px;
   }
   
-  .stats-container {
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 16px;
+  .welcome-content .greeting {
+    font-size: 28px;
   }
   
-  .charts-container {
-    grid-template-columns: 1fr;
-    gap: 16px;
+  .inspection-data-section {
+    flex-direction: column;
+    gap: 20px;
   }
+  
+  .inspection-card {
+    padding: 20px;
+  }
+  
+  /* 移除图表容器样式 */
   
   .chart-content {
-    height: 250px;
+    height: 280px;
   }
   
-  .quick-actions {
-    grid-template-columns: 1fr;
-    gap: 12px;
+  .inspection-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .welcome-section {
+    padding: 20px;
   }
   
   .welcome-content .greeting {
     font-size: 24px;
   }
-}
-
-@media (max-width: 480px) {
-  .stats-container {
-    grid-template-columns: 1fr;
-  }
   
-  .stats-card {
+  .inspection-card {
     padding: 16px;
   }
   
   .chart-content {
-    height: 200px;
+    height: 240px;
+  }
+  
+  .inspection-stats {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  
+  .stat-item {
+    padding: 12px;
   }
 }
 </style>

@@ -25,17 +25,7 @@ public class SysInspectionRecord extends BaseEntity {
 
 
 
-    /**
-     * 检查组组长ID，外键，关联sys_user表
-     */
-    @TableField("group_leader_id")
-    private String groupLeaderId;
 
-    /**
-     * 检查组副组长ID，外键，关联sys_user表
-     */
-    @TableField("deputy_leader_id")
-    private String deputyLeaderId;
 
     /**
      * 检查组组长姓名
@@ -248,21 +238,7 @@ public class SysInspectionRecord extends BaseEntity {
 
 
 
-    public String getGroupLeaderId() {
-        return groupLeaderId;
-    }
 
-    public void setGroupLeaderId(String groupLeaderId) {
-        this.groupLeaderId = groupLeaderId;
-    }
-
-    public String getDeputyLeaderId() {
-        return deputyLeaderId;
-    }
-
-    public void setDeputyLeaderId(String deputyLeaderId) {
-        this.deputyLeaderId = deputyLeaderId;
-    }
 
     public String getGroupLeaderNameField() {
         return groupLeaderNameField;
@@ -442,6 +418,7 @@ public class SysInspectionRecord extends BaseEntity {
         this.status = status;
     }
 
+
     // 关联查询字段的getter和setter
     public String getTaskNo() {
         return taskNo;
@@ -567,13 +544,7 @@ public class SysInspectionRecord extends BaseEntity {
         if (submitData.getInspector() != null) {
             record.setInspector(submitData.getInspector());
         }
-        // 前端提交的groupLeader和deputyLeader是姓名字符串，存储到姓名字段
-        if (submitData.getGroupLeader() != null) {
-            record.setGroupLeaderNameField(submitData.getGroupLeader());
-        }
-        if (submitData.getDeputyLeader() != null) {
-            record.setDeputyLeaderNameField(submitData.getDeputyLeader());
-        }
+        // 检查组长和副组长字段已移除
         if (submitData.getDepartmentId() != null) {
             record.setDepartmentId(submitData.getDepartmentId());
         }

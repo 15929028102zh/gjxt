@@ -89,6 +89,15 @@ export const inspectionApi = {
       params,
       responseType: 'blob'
     })
+  },
+
+  // 获取延迟整改记录列表
+  getDelayedRecords(params) {
+    return request({
+      url: '/inspection-record/delayed',
+      method: 'get',
+      params
+    })
   }
 }
 
@@ -130,5 +139,41 @@ export const getDeptList = (params) => {
     url: '/dept/list',
     method: 'get',
     params
+  })
+}
+
+// 周检提交页面专用API
+// 获取待提交的周检记录列表（状态为4已保存）
+export const getSubmitRecords = (params) => {
+  return request({
+    url: '/inspection-record/submit-list',
+    method: 'get',
+    params
+  })
+}
+
+// 更新记录状态（支持批量）
+export const updateRecordStatus = (data) => {
+  return request({
+    url: '/inspection-record/batch-status',
+    method: 'put',
+    data
+  })
+}
+
+// 删除记录
+export const deleteRecord = (id) => {
+  return request({
+    url: `/inspection-record/${id}`,
+    method: 'delete'
+  })
+}
+
+// 更新记录信息
+export const updateRecord = (data) => {
+  return request({
+    url: '/inspection-record',
+    method: 'put',
+    data
   })
 }

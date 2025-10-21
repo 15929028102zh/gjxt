@@ -18,25 +18,23 @@
         <el-col :span="24">
           <el-form-item label="问题照片" prop="problemImageUrls">
             <div class="image-upload-container">
-              <el-upload
-                v-model:file-list="imageFileList"
+              <DragUpload
+                v-model="imageFileList"
                 :action="uploadAction"
-                :headers="uploadHeaders"
-                list-type="picture-card"
-                :on-success="handleImageSuccess"
-                :on-error="handleImageError"
-                :on-remove="handleImageRemove"
-                :before-upload="beforeImageUpload"
                 :limit="3"
-                :on-exceed="handleImageExceed"
-              >
-                <el-icon><Plus /></el-icon>
-                <template #tip>
-                  <div class="el-upload__tip">
-                    只能上传jpg/png文件，且不超过2MB，最多3张
-                  </div>
-                </template>
-              </el-upload>
+                :max-size="2"
+                accept="image/jpeg,image/png"
+                list-type="picture-card"
+                primary-text="将图片拖到此处，或点击上传"
+                secondary-text="支持拖拽上传"
+                tip-text="只能上传jpg/png文件，且不超过2MB，最多3张"
+                :before-upload-validator="beforeImageUpload"
+                :on-success-callback="handleImageSuccess"
+                :on-error-callback="handleImageError"
+                @success="handleImageSuccess"
+                @error="handleImageError"
+                @remove="handleImageRemove"
+              />
             </div>
           </el-form-item>
         </el-col>
@@ -86,26 +84,25 @@
         </el-col>
         <el-col :span="12">
           <el-form-item label="考核情况" prop="assessmentSituation">
-            <el-input 
+            <el-select 
               v-model="form.assessmentSituation" 
-              placeholder="请输入考核情况"
+              placeholder="请选择或输入考核情况"
               style="width: 100%;"
-            />
+              filterable
+              allow-create
+              default-first-option
+            >
+              <el-option
+                v-for="item in assessmentOptions"
+                :key="item.id"
+                :label="item.name"
+                :value="item.name"
+              />
+            </el-select>
           </el-form-item>
         </el-col>
 
-        <!-- 考核金额和安全记分 -->
-        <el-col :span="12">
-          <el-form-item label="考核金额" prop="assessmentAmount">
-            <el-input-number
-              v-model="form.assessmentAmount"
-              :min="0"
-              :precision="2"
-              style="width: 100%;"
-              placeholder="请输入金额"
-            />
-          </el-form-item>
-        </el-col>
+        <!-- 安全记分 -->
         <el-col :span="12">
           <el-form-item label="安全记分" prop="safetyScore">
             <el-input-number
@@ -140,60 +137,37 @@
           </el-form-item>
         </el-col>
 
-        <!-- 检查人、组长、副组长 -->
-        <el-col :span="8">
+        <!-- 检查人 -->
+        <el-col :span="12">
           <el-form-item label="检查人" prop="inspector">
-            <el-select 
+            <el-input 
               v-model="form.inspector" 
-              placeholder="请选择检查人"
-              style="width: 100%;"
-              filterable
-            >
-              <el-option
-                v-for="item in inspectorOptions"
-                :key="item.id"
-                :label="item.realName"
-                :value="item.realName"
-              />
-            </el-select>
-          </el-form-item>
-        </el-col>
-        <el-col :span="8">
-          <el-form-item label="检查组组长" prop="groupLeader">
-            <el-input 
-              v-model="form.groupLeader"
-              placeholder="请输入组长姓名"
-              style="width: 100%;"
-            />
-          </el-form-item>
-        </el-col>
-        <el-col :span="8">
-          <el-form-item label="检查组副组长" prop="deputyLeader">
-            <el-input 
-              v-model="form.deputyLeader"
-              placeholder="请输入副组长姓名"
+              placeholder="请输入检查人姓名"
               style="width: 100%;"
             />
           </el-form-item>
         </el-col>
 
-        <!-- 所属部门和整改期限 -->
+        <!-- 所属部门 -->
         <el-col :span="12">
           <el-form-item label="所属部门" prop="departmentId">
             <el-select 
               v-model="form.departmentId" 
               placeholder="请选择所属部门"
               style="width: 100%;"
+              filterable
             >
               <el-option
                 v-for="item in departmentOptions"
                 :key="item.id"
-                :label="item.deptName"
+                :label="item.name"
                 :value="item.id"
               />
             </el-select>
           </el-form-item>
         </el-col>
+
+        <!-- 整改期限 -->
         <el-col :span="12">
           <el-form-item label="整改期限" prop="rectificationDeadline">
             <el-date-picker
@@ -224,6 +198,8 @@ import { ElMessage } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
 import { inspectionApi, getDictByType, getUserList, getDeptList } from '@/api/inspection'
 import { getToken } from '@/utils/token'
+import { convertToHttpUrl } from '@/config/api'
+import DragUpload from '@/components/DragUpload.vue'
 
 const props = defineProps({
   visible: {
@@ -257,14 +233,11 @@ const form = reactive({
   responsiblePerson: '',
   natureDefinition: '',
   assessmentSituation: '',
-  assessmentAmount: 0,
   safetyScore: 0,
   professionId: '',
   location: '',
   inspector: '',
-  groupLeader: '',
-  deputyLeader: '',
-  departmentId: '',
+  departmentId: '', // 所属部门ID
   rectificationDeadline: '',
   problemImageUrls: '',
   reporterId: '', // 将从当前登录用户获取
@@ -286,7 +259,7 @@ const rules = {
     { required: true, message: '请选择专业', trigger: 'change' }
   ],
   inspector: [
-    { required: true, message: '请选择检查人', trigger: 'change' }
+    { required: true, message: '请输入检查人', trigger: 'blur' }
   ],
   departmentId: [
     { required: true, message: '请选择所属部门', trigger: 'change' }
@@ -299,12 +272,21 @@ const rules = {
 // 选项数据
 const natureOptions = ref([])
 const professionOptions = ref([])
-const inspectorOptions = ref([])
+const assessmentOptions = ref([
+  { id: '1', name: '提出警告' },
+  { id: '2', name: '-50' },
+  { id: '3', name: '-100' },
+  { id: '4', name: '-200' },
+  { id: '5', name: '-300' }
+])
 const departmentOptions = ref([])
+
+
+import { getFullApiUrl, parseImageUrls, getImageUploadUrl } from '@/config/api'
 
 // 图片上传相关
 const uploadAction = computed(() => {
-  return 'http://192.168.244.128:8080/api/upload/image'
+  return getImageUploadUrl()
 })
 
 const uploadHeaders = computed(() => {
@@ -313,34 +295,34 @@ const uploadHeaders = computed(() => {
   }
 })
 
-// 解析图片URL的工具函数
-const parseImageUrls = (imageUrls) => {
-  if (!imageUrls) return []
-  
+
+
+// 获取当前用户部门信息
+const getCurrentUserDepartment = () => {
   try {
-    let urlList = []
-    if (typeof imageUrls === 'string') {
-      // 首先尝试JSON解析
-      try {
-        const parsed = JSON.parse(imageUrls)
-        if (Array.isArray(parsed)) {
-          urlList = parsed
-        }
-      } catch (e) {
-        // JSON解析失败，尝试逗号分割
-        urlList = imageUrls.split(',').map(url => url.trim()).filter(url => url)
-      }
-    } else if (Array.isArray(imageUrls)) {
-      urlList = imageUrls
+    const userInfoStr = localStorage.getItem('userInfo')
+    if (userInfoStr) {
+      const userInfo = JSON.parse(userInfoStr)
+      return userInfo.deptId || userInfo.departmentId || ''
     }
-    
-    // 返回处理后的URL列表
-    return urlList.filter(url => url)
-  } catch (e) {
-    console.error('解析图片URL失败:', e, '原始数据:', imageUrls)
-    return []
+  } catch (error) {
+    console.error('获取用户部门信息失败:', error)
   }
+  return ''
 }
+
+// 监听弹窗显示状态
+watch(() => props.visible, (val) => {
+  if (val) {
+    // 弹窗打开时，如果是新增模式（没有formData或formData为空），设置默认部门
+    if (!props.formData || Object.keys(props.formData).length === 0) {
+      const userDeptId = getCurrentUserDepartment()
+      if (userDeptId) {
+        form.departmentId = userDeptId
+      }
+    }
+  }
+})
 
 // 监听表单数据变化
 watch(() => props.formData, (newData) => {
@@ -355,6 +337,12 @@ watch(() => props.formData, (newData) => {
         name: `image_${index}`,
         url: url
       }))
+    }
+  } else {
+    // 新增模式，设置当前用户部门为默认值
+    const userDeptId = getCurrentUserDepartment()
+    if (userDeptId) {
+      form.departmentId = userDeptId
     }
   }
 }, { immediate: true, deep: true })
@@ -379,34 +367,44 @@ const loadDictData = async () => {
         name: item.dictValue || item.dictLabel
       }))
     }
+
+    // 加载考核情况
+    // const assessmentResponse = await getDictByType('考核情况')
+    // if (assessmentResponse.code === 200) {
+    //   assessmentOptions.value = assessmentResponse.data.map(item => ({
+    //     id: item.id,
+    //     name: item.dictValue || item.dictLabel
+    //   }))
+    // }
+
+    // 加载部门列表
+    const deptResponse = await getDeptList()
+    if (deptResponse.code === 200) {
+      departmentOptions.value = deptResponse.data.map(item => ({
+        id: item.id,
+        name: item.deptName || item.name
+      }))
+    }
   } catch (error) {
     console.error('加载字典数据失败:', error)
   }
 }
 
-// 加载用户数据
-const loadUserData = async () => {
-  try {
-    const response = await getUserList({ size: 1000 })
-    if (response.code === 200) {
-      inspectorOptions.value = response.data.records || []
-    }
-  } catch (error) {
-    console.error('加载用户数据失败:', error)
-  }
+// 设置默认整改时间（7天后）
+const setDefaultRectificationTime = () => {
+  const now = new Date()
+  const defaultTime = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000) // 7天后
+  const year = defaultTime.getFullYear()
+  const month = String(defaultTime.getMonth() + 1).padStart(2, '0')
+  const day = String(defaultTime.getDate()).padStart(2, '0')
+  const hours = String(defaultTime.getHours()).padStart(2, '0')
+  const minutes = String(defaultTime.getMinutes()).padStart(2, '0')
+  const seconds = String(defaultTime.getSeconds()).padStart(2, '0')
+  
+  form.rectificationDeadline = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
 }
 
-// 加载部门数据
-const loadDepartmentData = async () => {
-  try {
-    const response = await getDeptList()
-    if (response.code === 200) {
-      departmentOptions.value = response.data || []
-    }
-  } catch (error) {
-    console.error('加载部门数据失败:', error)
-  }
-}
+
 
 // 图片上传前验证
 const beforeImageUpload = (file) => {
@@ -425,7 +423,7 @@ const beforeImageUpload = (file) => {
 }
 
 // 图片上传成功
-const handleImageSuccess = (response, file) => {
+const handleImageSuccess = (response, file, fileList) => {
   if (response.code === 200) {
     ElMessage.success('图片上传成功')
     updateImageUrls()
@@ -435,27 +433,26 @@ const handleImageSuccess = (response, file) => {
 }
 
 // 图片上传失败
-const handleImageError = (error) => {
+const handleImageError = (error, file, fileList) => {
   console.error('图片上传失败:', error)
   ElMessage.error('图片上传失败')
 }
 
 // 移除图片
-const handleImageRemove = () => {
+const handleImageRemove = (file, fileList) => {
   updateImageUrls()
-}
-
-// 图片数量超限
-const handleImageExceed = () => {
-  ElMessage.warning('最多只能上传3张图片')
 }
 
 // 更新图片URLs
 const updateImageUrls = () => {
   const urls = imageFileList.value
     .filter(file => file.response?.data?.filePath || file.url)
-    .map(file => file.response?.data?.filePath || file.url)
-  form.problemImageUrls = JSON.stringify(urls)
+    .map(file => {
+      const filePath = file.response?.data?.filePath || file.url
+      // 使用convertToHttpUrl转换为正确的HTTP访问路径
+      return convertToHttpUrl(filePath)
+    })
+  form.problemImageUrls = urls.join(',')
 }
 
 // 提交表单
@@ -474,8 +471,6 @@ const handleSubmit = async () => {
     
     // 调试日志：检查提交的数据
     console.log('提交的表单数据:', form)
-    console.log('检查组长:', form.groupLeader)
-    console.log('副组长:', form.deputyLeader)
     
     const response = await inspectionApi.create(form)
     
@@ -506,27 +501,25 @@ const handleClose = () => {
     responsiblePerson: '',
     natureDefinition: '',
     assessmentSituation: '',
-    assessmentAmount: 0,
     safetyScore: 0,
     professionId: '',
     location: '',
     inspector: '',
-    groupLeader: '',
-    deputyLeader: '',
     departmentId: '',
     rectificationDeadline: '',
     problemImageUrls: '',
     reporterId: '',
     status: 0
   })
+  // 重新设置默认整改时间
+  setDefaultRectificationTime()
   emit('update:visible', false)
 }
 
 // 页面挂载时加载数据
 onMounted(() => {
   loadDictData()
-  loadUserData()
-  loadDepartmentData()
+  setDefaultRectificationTime()
 })
 </script>
 

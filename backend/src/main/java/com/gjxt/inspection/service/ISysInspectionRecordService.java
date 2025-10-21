@@ -39,10 +39,10 @@ public interface ISysInspectionRecordService extends IService<SysInspectionRecor
      * @return 分页结果
      */
     PageResult<SysInspectionRecord> getRecordPage(Long current, Long size, String taskId,
-                                                 String groupLeaderId, String deputyLeaderId, String departmentId,
+                                                 String departmentId,
                                                  String professionId, String natureId, String locationId, String inspectorId,
                                                  String responsibleUnitId, String responsiblePersonId, String reviewerId,
-                                                 Integer status,
+                                                 String status, String problemDescription, String responsiblePerson,
                                                  LocalDateTime startTime, LocalDateTime endTime);
 
     /**
@@ -123,49 +123,70 @@ public interface ISysInspectionRecordService extends IService<SysInspectionRecor
      * @param status 状态
      * @return 巡检记录列表
      */
-    List<SysInspectionRecord> getRecordsByUserId(Long userId, String status);
+    List<SysInspectionRecord> getRecordsByUserId(String userId, String status);
 
     /**
-     * 获取用户相关的巡检记录
+     * 分页查询用户记录
      *
      * @param userId 用户ID
      * @param current 当前页
-     * @param size 每页大小
+     * @param size 页大小
      * @param status 状态
+     * @param departmentId 部门ID
      * @return 分页结果
      */
-    PageResult<SysInspectionRecord> getUserRecords(Long userId, Long current, Long size, String status);
+    PageResult<SysInspectionRecord> getUserRecords(String userId, Long current, Long size, String status, String departmentId);
+
+    /**
+     * 获取统计概览
+     *
+     * @param departmentId 部门ID
+     * @return 统计概览数据
+     */
+    Map<String, Object> getStatisticsOverview(String departmentId);
+
+    /**
+     * 获取月检统计数据
+     *
+     * @param departmentId 部门ID
+     * @return 月检统计数据
+     */
+    Map<String, Object> getMonthlyStatistics(String departmentId);
 
     /**
      * 统计各状态问题数量
      *
-     * @return 状态统计结果
+     * @param departmentId 部门ID
+     * @return 状态统计列表
      */
-    List<Map<String, Object>> getStatusStatistics();
+    List<Map<String, Object>> getStatusStatistics(String departmentId);
 
     /**
      * 统计各专业问题数量
      *
-     * @param status 状态（可选）
-     * @return 专业统计结果
+     * @param status 状态
+     * @param departmentId 部门ID
+     * @return 专业统计列表
      */
-    List<Map<String, Object>> getProfessionStatistics(String status);
+    List<Map<String, Object>> getProfessionStatistics(String status, String departmentId);
 
     /**
      * 统计各部位问题数量
      *
-     * @param status 状态（可选）
-     * @return 部位统计结果
+     * @param status 状态
+     * @param departmentId 部门ID
+     * @return 部位统计列表
      */
-    List<Map<String, Object>> getLocationStatistics(String status);
+    List<Map<String, Object>> getLocationStatistics(String status, String departmentId);
 
     /**
      * 统计各责任人问题数量
      *
-     * @param status 状态（可选）
-     * @return 责任人统计结果
+     * @param status 状态
+     * @param departmentId 部门ID
+     * @return 责任人统计列表
      */
-    List<Map<String, Object>> getResponsiblePersonStatistics(String status);
+    List<Map<String, Object>> getResponsiblePersonStatistics(String status, String departmentId);
 
     /**
      * 处理延迟整改问题
@@ -289,21 +310,51 @@ public interface ISysInspectionRecordService extends IService<SysInspectionRecor
     boolean submitRecord(SysInspectionRecordSubmitData submitData);
 
     /**
-     * 按用户ID和状态查询当前周记录数量
+     * 获取周检记录数量
      *
-     * @param userId 用户ID（可为空）
-     * @param status 状态（可为空，0-待整改，1-已整改，2-已复查）
+     * @param userId 用户ID
+     * @param status 状态
+     * @param departmentId 部门ID
+     * @param startDate 开始时间
+     * @param endDate 结束时间
      * @return 记录数量
      */
-    Long getWeeklyRecordCountByUserAndStatus(String userId, Integer status);
+    Long getWeeklyRecordCount(String userId, Integer status, String departmentId, String startDate, String endDate);
 
     /**
-     * 查询延迟整改的记录（整改期限小于当前日期且状态为待整改）
+     * 分页查询延迟整改记录
      *
      * @param current 当前页
-     * @param size 每页大小
-     * @return 延迟整改记录分页结果
+     * @param size 页大小
+     * @param departmentId 部门ID
+     * @return 分页结果
      */
-    PageResult<SysInspectionRecord> getDelayedRectificationRecords(Long current, Long size);
+    PageResult<SysInspectionRecord> getDelayedRectificationRecords(Long current, Long size, String departmentId);
+
+    /**
+     * 批量更新记录状态
+     *
+     * @param ids 记录ID列表
+     * @param status 新状态
+     * @return 是否成功
+     */
+    boolean batchUpdateStatus(List<String> ids, Integer status);
+
+    /**
+     * 单个记录状态更新
+     *
+     * @param id 记录ID
+     * @param status 新状态
+     * @return 是否成功
+     */
+    boolean updateSingleStatus(String id, Integer status);
+
+    /**
+     * 批量删除巡检记录
+     *
+     * @param ids 记录ID列表
+     * @return 是否成功
+     */
+    boolean batchDeleteRecords(List<String> ids);
 
 }

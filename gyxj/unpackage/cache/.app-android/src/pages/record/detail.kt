@@ -1,5 +1,5 @@
 @file:Suppress("UNCHECKED_CAST", "USELESS_CAST", "INAPPLICABLE_JVM_NAME", "UNUSED_ANONYMOUS_PARAMETER", "NAME_SHADOWING", "UNNECESSARY_NOT_NULL_ASSERTION")
-package uni.UNI630A075
+package uni.UNIB5A0920
 import io.dcloud.uniapp.*
 import io.dcloud.uniapp.extapi.*
 import io.dcloud.uniapp.framework.*
@@ -30,6 +30,7 @@ open class GenPagesRecordDetail : BasePage {
     constructor(__ins: ComponentInternalInstance, __renderer: String?) : super(__ins, __renderer) {
         onLoad(fun(options: UTSJSONObject) {
             this.recordId = options.getString("id") ?: ""
+            this.isDelayed = options.getString("delayed") === "true"
             this.checkLogin()
             this.loadedDataCount = 0
             this.loadRecordDetail()
@@ -56,12 +57,20 @@ open class GenPagesRecordDetail : BasePage {
                 if (isTrue(_ctx.recordDetail)) {
                     _cE("view", _uM("key" to 1, "class" to "detail-content"), _uA(
                         _cE("view", _uM("class" to "status-header"), _uA(
-                            _cE("text", _uM("class" to "page-title"), "问题详情"),
+                            _cE("text", _uM("class" to "page-title"), _tD(if (_ctx.isDelayed) {
+                                "延迟整改录入"
+                            } else {
+                                "问题详情"
+                            }), 1),
                             _cE("view", _uM("class" to _nC(_uA(
                                 "record-status",
                                 _ctx.getStatusClass(_ctx.recordDetail?.status ?: 0)
                             ))), _uA(
-                                _cE("text", null, _tD(_ctx.getStatusText(_ctx.recordDetail?.status ?: 0)), 1)
+                                _cE("text", null, _tD(if (_ctx.isDelayed) {
+                                    "延迟整改"
+                                } else {
+                                    _ctx.getStatusText(_ctx.recordDetail?.status ?: 0)
+                                }), 1)
                             ), 2)
                         )),
                         if (_ctx.imageList.length > 0) {
@@ -395,25 +404,19 @@ open class GenPagesRecordDetail : BasePage {
                                 ))
                             ))
                         )),
-                        if (_ctx.rectificationImages.length > 0) {
-                            _cE("view", _uM("key" to 4, "class" to "form-item"), _uA(
-                                _cE("text", _uM("class" to "form-label"), "🔍 整改图片调试信息"),
-                                _cE("view", _uM("class" to "form-input-wrapper"), _uA(
-                                    _cE("view", _uM("class" to "form-display-text"), _uA(
-                                        _cE(Fragment, null, RenderHelpers.renderList(_ctx.rectificationImages, fun(image, index, __index, _cached): Any {
-                                            return _cE("text", _uM("key" to index), " 整改图片" + _tD(index + 1) + ": " + _tD(image) + "\n ", 1)
-                                        }), 128)
-                                    ))
-                                ))
-                            ))
-                        } else {
-                            _cC("v-if", true)
-                        },
                         _cE("view", _uM("class" to "save-button-wrapper"), _uA(
                             _cE("button", _uM("class" to "save-btn", "onClick" to _ctx.saveRectificationInfo, "disabled" to _ctx.saving), _tD(if (_ctx.saving) {
-                                "保存中..."
+                                if (_ctx.isDelayed) {
+                                    "确认中..."
+                                } else {
+                                    "保存中..."
+                                }
                             } else {
-                                "保存整改信息"
+                                if (_ctx.isDelayed) {
+                                    "确认整改"
+                                } else {
+                                    "保存整改信息"
+                                }
                             }), 9, _uA(
                                 "onClick",
                                 "disabled"
@@ -441,6 +444,7 @@ open class GenPagesRecordDetail : BasePage {
     open var saving: Boolean by `$data`
     open var scrollTop: Number by `$data`
     open var containerHeight: Number by `$data`
+    open var isDelayed: Boolean by `$data`
     open var natureOptions: UTSArray<NatureOption1> by `$data`
     open var professionOptions: UTSArray<ProfessionOption1> by `$data`
     open var departmentOptions: UTSArray<DepartmentOption1> by `$data`
@@ -454,7 +458,7 @@ open class GenPagesRecordDetail : BasePage {
     open var totalDataCount: Number by `$data`
     @Suppress("USELESS_CAST")
     override fun data(): Map<String, Any?> {
-        return _uM("recordId" to "", "recordDetail" to null as RecordDetail?, "imageList" to _uA<String>(), "loading" to true, "canOperate" to false, "rectificationEffect" to "", "rectificationImages" to _uA<String>(), "rectificationStatus" to 0, "saving" to false, "scrollTop" to 0, "containerHeight" to 0, "natureOptions" to _uA<NatureOption1>(), "professionOptions" to _uA<ProfessionOption1>(), "departmentOptions" to _uA<DepartmentOption1>(), "selectedNatureIndex" to -1, "selectedProfessionIndex" to -1, "selectedDepartmentIndex" to -1, "showNaturePopup" to false, "showProfessionPopup" to false, "showDepartmentPopup" to false, "loadedDataCount" to 0, "totalDataCount" to 4)
+        return _uM("recordId" to "", "recordDetail" to null as RecordDetail?, "imageList" to _uA<String>(), "loading" to true, "canOperate" to false, "rectificationEffect" to "", "rectificationImages" to _uA<String>(), "rectificationStatus" to 0, "saving" to false, "scrollTop" to 0, "containerHeight" to 0, "isDelayed" to false, "natureOptions" to _uA<NatureOption1>(), "professionOptions" to _uA<ProfessionOption1>(), "departmentOptions" to _uA<DepartmentOption1>(), "selectedNatureIndex" to -1, "selectedProfessionIndex" to -1, "selectedDepartmentIndex" to -1, "showNaturePopup" to false, "showProfessionPopup" to false, "showDepartmentPopup" to false, "loadedDataCount" to 0, "totalDataCount" to 4)
     }
     open var checkLogin = ::gen_checkLogin_fn
     open fun gen_checkLogin_fn() {
@@ -473,15 +477,15 @@ open class GenPagesRecordDetail : BasePage {
     open var checkAllDataLoaded = ::gen_checkAllDataLoaded_fn
     open fun gen_checkAllDataLoaded_fn() {
         this.loadedDataCount++
-        console.log("\u6570\u636E\u52A0\u8F7D\u8FDB\u5EA6: " + this.loadedDataCount + "/" + this.totalDataCount, " at pages/record/detail.uvue:400")
+        console.log("\u6570\u636E\u52A0\u8F7D\u8FDB\u5EA6: " + this.loadedDataCount + "/" + this.totalDataCount, " at pages/record/detail.uvue:391")
         if (this.loadedDataCount >= this.totalDataCount) {
-            console.log("所有数据加载完成，开始回写选中值", " at pages/record/detail.uvue:403")
-            console.log("当前数据状态:", _uO("recordDetail" to this.recordDetail, "natureOptionsLength" to this.natureOptions.length, "professionOptionsLength" to this.professionOptions.length, "departmentOptionsLength" to this.departmentOptions.length), " at pages/record/detail.uvue:404")
+            console.log("所有数据加载完成，开始回写选中值", " at pages/record/detail.uvue:394")
+            console.log("当前数据状态:", _uO("recordDetail" to this.recordDetail, "natureOptionsLength" to this.natureOptions.length, "professionOptionsLength" to this.professionOptions.length, "departmentOptionsLength" to this.departmentOptions.length), " at pages/record/detail.uvue:395")
             setTimeout(fun(){
-                console.log("开始执行 initSelectedValues", " at pages/record/detail.uvue:412")
+                console.log("开始执行 initSelectedValues", " at pages/record/detail.uvue:403")
                 this.initSelectedValues()
                 this.loading = false
-                console.log("加载状态设置为 false", " at pages/record/detail.uvue:415")
+                console.log("加载状态设置为 false", " at pages/record/detail.uvue:406")
             }
             , 100)
         }
@@ -498,13 +502,13 @@ open class GenPagesRecordDetail : BasePage {
                 if (recordData != null) {
                     this.recordDetail = RecordDetail(id = recordData.getString("id") ?: "", problemDescription = recordData.getString("problemDescription") ?: "", locationName = recordData.getString("locationName") ?: "", severity = recordData.getNumber("severity") ?: 1, taskName = recordData.getString("taskName") ?: "", reporterName = recordData.getString("reporterName") ?: "", createTime = recordData.getString("createTime") ?: "", updateTime = recordData.getString("updateTime") ?: "", status = recordData.getNumber("status") ?: 0, problemImageUrls = recordData.getString("problemImageUrls") ?: "", suggestions = recordData.getString("suggestions") ?: "", reporterId = recordData.getString("reporterId") ?: "", responsibleUnit = recordData.getString("responsibleUnit") ?: "", responsiblePerson = recordData.getString("responsiblePerson") ?: "", natureId = "", natureName = "", assessmentSituation = recordData.getString("assessmentSituation") ?: "", assessmentAmount = recordData.getNumber("assessmentAmount") ?: 0, safetyScore = recordData.getNumber("safetyScore") ?: 0, professionId = recordData.getString("professionId") ?: "", professionName = recordData.getString("professionName") ?: "", inspector = recordData.getString("inspectorName") ?: "", groupLeader = recordData.getString("groupLeaderName") ?: "", deputyLeader = recordData.getString("deputyLeaderName") ?: "", departmentId = recordData.getString("departmentId") ?: "", departmentName = recordData.getString("departmentName") ?: "", rectificationDate = recordData.getString("rectificationDeadline") ?: "", location = recordData.getString("location") ?: "", rectificationEffect = recordData.getString("rectificationEffect") ?: "", rectificationImageUrls = recordData.getString("rectificationImageUrls") ?: "", rectificationTime = recordData.getString("rectificationTime") ?: "")
                     val natureDefinitionValue = recordData.getString("natureDefinition") ?: ""
-                    console.log("natureDefinition原始值:", natureDefinitionValue, " at pages/record/detail.uvue:473")
+                    console.log("natureDefinition原始值:", natureDefinitionValue, " at pages/record/detail.uvue:464")
                     if (natureDefinitionValue.length === 32 && UTSRegExp("^[a-f0-9]+\$", "i").test(natureDefinitionValue)) {
                         this.recordDetail!!.natureId = natureDefinitionValue
-                        console.log("检测到ID格式，作为ID处理:", natureDefinitionValue, " at pages/record/detail.uvue:480")
+                        console.log("检测到ID格式，作为ID处理:", natureDefinitionValue, " at pages/record/detail.uvue:471")
                     } else {
                         this.recordDetail!!.natureName = natureDefinitionValue
-                        console.log("检测到名称格式，作为名称处理:", natureDefinitionValue, " at pages/record/detail.uvue:484")
+                        console.log("检测到名称格式，作为名称处理:", natureDefinitionValue, " at pages/record/detail.uvue:475")
                     }
                     this.rectificationEffect = this.recordDetail?.rectificationEffect ?: ""
                     if (this.recordDetail?.rectificationEffect != null && this.recordDetail?.rectificationEffect != "") {
@@ -514,55 +518,11 @@ open class GenPagesRecordDetail : BasePage {
                     }
                     val rectificationImages = this.recordDetail?.rectificationImageUrls
                     if (rectificationImages != null && rectificationImages != "") {
-                        try {
-                            var urlList: UTSArray<String> = _uA()
-                            if (UTSAndroid.`typeof`(rectificationImages) === "string") {
-                                val parsed = UTSAndroid.consoleDebugError(JSON.parse(rectificationImages as String), " at pages/record/detail.uvue:503")
-                                if (UTSArray.isArray(parsed)) {
-                                    urlList = parsed as UTSArray<String>
-                                }
-                            } else if (UTSArray.isArray(rectificationImages)) {
-                                urlList = rectificationImages as UTSArray<String>
-                            }
-                            this.rectificationImages = urlList.map(fun(url): String {
-                                return this.convertToHttpUrl(url)
-                            }
-                            )
-                        }
-                         catch (e: Throwable) {
-                            if (UTSAndroid.`typeof`(rectificationImages) === "string") {
-                                val urlList = (rectificationImages as String).split(",")
-                                this.rectificationImages = urlList.map(fun(url): String {
-                                    return this.convertToHttpUrl(url.trim())
-                                }
-                                )
-                            }
-                        }
+                        this.rectificationImages = this.processImageUrls(rectificationImages as String)
                     }
                     val imageUrls = this.recordDetail?.problemImageUrls
                     if (imageUrls != null && imageUrls != "") {
-                        try {
-                            var urlList: UTSArray<String> = _uA()
-                            if (UTSAndroid.`typeof`(imageUrls) === "string") {
-                                val parsed = UTSAndroid.consoleDebugError(JSON.parse(imageUrls as String), " at pages/record/detail.uvue:527")
-                                if (UTSArray.isArray(parsed)) {
-                                    urlList = parsed as UTSArray<String>
-                                }
-                            } else if (UTSArray.isArray(imageUrls)) {
-                                urlList = imageUrls as UTSArray<String>
-                            }
-                            this.imageList = urlList.map(fun(url): String {
-                                return this.convertToHttpUrl(url)
-                            })
-                        } catch (e: Throwable) {
-                            if (UTSAndroid.`typeof`(imageUrls) === "string") {
-                                val urlList = (imageUrls as String).split(",")
-                                this.imageList = urlList.map(fun(url): String {
-                                    return this.convertToHttpUrl(url.trim())
-                                }
-                                )
-                            }
-                        }
+                        this.imageList = this.processImageUrls(imageUrls as String)
                     } else {
                         this.imageList = _uA()
                     }
@@ -570,14 +530,19 @@ open class GenPagesRecordDetail : BasePage {
                     var userInfo: UTSJSONObject? = null
                     if (userInfoStr != null && userInfoStr != "") {
                         try {
-                            userInfo = UTSAndroid.consoleDebugError(JSON.parse(userInfoStr), " at pages/record/detail.uvue:552") as UTSJSONObject
+                            userInfo = UTSAndroid.consoleDebugError(JSON.parse(userInfoStr), " at pages/record/detail.uvue:507") as UTSJSONObject
                         }
                          catch (e: Throwable) {
-                            console.error("解析用户信息失败:", e, " at pages/record/detail.uvue:554")
+                            console.error("解析用户信息失败:", e, " at pages/record/detail.uvue:509")
                         }
                     }
                     this.canOperate = userInfo != null && (userInfo.getString("role") === "ADMIN" || userInfo.getString("id") === (this.recordDetail?.reporterId ?: ""))
-                    uni_setNavigationBarTitle(SetNavigationBarTitleOptions(title = "记录详情"))
+                    uni_setNavigationBarTitle(SetNavigationBarTitleOptions(title = if (this.isDelayed) {
+                        "延迟整改录入"
+                    } else {
+                        "记录详情"
+                    }
+                    ))
                     this.checkAllDataLoaded()
                 }
             } else {
@@ -586,7 +551,7 @@ open class GenPagesRecordDetail : BasePage {
             this.checkAllDataLoaded()
         }
         , fail = fun(error){
-            console.error("加载记录详情失败:", error, " at pages/record/detail.uvue:577")
+            console.error("加载记录详情失败:", error, " at pages/record/detail.uvue:532")
             uni_showToast(ShowToastOptions(title = "网络错误", icon = "none"))
             this.checkAllDataLoaded()
         }
@@ -620,7 +585,7 @@ open class GenPagesRecordDetail : BasePage {
                     }
                 }
                 , fail = fun(error){
-                    console.error("" + actionName + "\u5931\u8D25:", error, " at pages/record/detail.uvue:639")
+                    console.error("" + actionName + "\u5931\u8D25:", error, " at pages/record/detail.uvue:594")
                     uni_showToast(ShowToastOptions(title = "网络错误", icon = "none"))
                 }
                 ))
@@ -729,6 +694,37 @@ open class GenPagesRecordDetail : BasePage {
         val fullUrl = "" + apiConfig.baseUrl + "/api" + relativePath
         return fullUrl
     }
+    open var processImageUrls = ::gen_processImageUrls_fn
+    open fun gen_processImageUrls_fn(imageUrls: String): UTSArray<String> {
+        if (imageUrls == null || imageUrls.trim() === "") {
+            return _uA()
+        }
+        try {
+            if (imageUrls.trim().startsWith("[") && imageUrls.trim().endsWith("]")) {
+                val parsed = UTSAndroid.consoleDebugError(JSON.parse(imageUrls), " at pages/record/detail.uvue:714") as UTSArray<String>
+                return parsed.map(fun(url): String {
+                    return this.convertToHttpUrl(url)
+                }
+                ).filter(fun(url): Boolean {
+                    return url !== ""
+                }
+                )
+            }
+        }
+         catch (e: Throwable) {
+            console.log("JSON解析失败，尝试按逗号分隔处理:", e, " at pages/record/detail.uvue:718")
+        }
+        return imageUrls.split(",").map(fun(url): String {
+            return url.trim()
+        }
+        ).filter(fun(url): Boolean {
+            return url !== ""
+        }
+        ).map(fun(url): String {
+            return this.convertToHttpUrl(url)
+        }
+        )
+    }
     open var saveRectificationInfo = ::gen_saveRectificationInfo_fn
     open fun gen_saveRectificationInfo_fn(): UTSPromise<Unit> {
         return wrapUTSPromise(suspend w@{
@@ -747,7 +743,7 @@ open class GenPagesRecordDetail : BasePage {
                         imageUrls = await(this.uploadRectificationImages())
                         uni_hideLoading()
                     }
-                    val updateData: UTSJSONObject = _uO("__\$originalPosition" to UTSSourceMapPosition("updateData", "pages/record/detail.uvue", 775, 11), "id" to (this.recordDetail?.id ?: ""), "problemDescription" to (this.recordDetail?.problemDescription ?: ""), "responsibleUnit" to (this.recordDetail?.responsibleUnit ?: ""), "responsiblePerson" to (this.recordDetail?.responsiblePerson ?: ""), "natureDefinition" to if (this.selectedNatureIndex !== -1) {
+                    val updateData: UTSJSONObject = _uO("__\$originalPosition" to UTSSourceMapPosition("updateData", "pages/record/detail.uvue", 753, 11), "id" to (this.recordDetail?.id ?: ""), "problemDescription" to (this.recordDetail?.problemDescription ?: ""), "responsibleUnit" to (this.recordDetail?.responsibleUnit ?: ""), "responsiblePerson" to (this.recordDetail?.responsiblePerson ?: ""), "natureDefinition" to if (this.selectedNatureIndex !== -1) {
                         this.natureOptions[this.selectedNatureIndex].name
                     } else {
                         (this.recordDetail?.natureName ?: "")
@@ -764,8 +760,8 @@ open class GenPagesRecordDetail : BasePage {
                     }
                     , "rectificationDeadline" to (this.recordDetail?.rectificationDate ?: ""), "problemImageUrls" to (this.recordDetail?.problemImageUrls ?: ""), "reporterId" to (this.recordDetail?.reporterId ?: ""), "rectificationEffect" to this.rectificationEffect, "rectificationImageUrls" to imageUrls.join(","), "status" to this.rectificationStatus, "rectificationTime" to Date().toISOString().replace("T", " ").substring(0, 19))
                     uni_showLoading(ShowLoadingOptions(title = "保存中..."))
-                    console.log("准备保存的数据:", updateData, " at pages/record/detail.uvue:809")
-                    console.log("性质界定保存值:", _uO("selectedNatureIndex" to this.selectedNatureIndex, "natureDefinition" to updateData["natureDefinition"], "natureOptions" to this.natureOptions), " at pages/record/detail.uvue:810")
+                    console.log("准备保存的数据:", updateData, " at pages/record/detail.uvue:787")
+                    console.log("性质界定保存值:", _uO("selectedNatureIndex" to this.selectedNatureIndex, "natureDefinition" to updateData["natureDefinition"], "natureOptions" to this.natureOptions), " at pages/record/detail.uvue:788")
                     val token = uni_getStorageSync("token")
                     uni_request<Any>(RequestOptions(url = getApiUrl("/inspection-record"), method = "PUT", header = object : UTSJSONObject() {
                         var Authorization = "Bearer " + token
@@ -774,7 +770,11 @@ open class GenPagesRecordDetail : BasePage {
                         uni_hideLoading()
                         val data = response.data as UTSJSONObject
                         if (response.statusCode === 200 && (data.getNumber("code") ?: 0) === 200) {
-                            uni_showToast(ShowToastOptions(title = "保存成功", icon = "success", duration = 1500))
+                            uni_showToast(ShowToastOptions(title = if (this.isDelayed) {
+                                "确认整改成功"
+                            } else {
+                                "保存成功"
+                            }, icon = "success", duration = 1500))
                             setTimeout(fun(){
                                 val pages = getCurrentPages()
                                 if (pages.length >= 2) {
@@ -797,7 +797,7 @@ open class GenPagesRecordDetail : BasePage {
                     }
                     , fail = fun(error){
                         uni_hideLoading()
-                        console.error("保存整改信息失败:", error, " at pages/record/detail.uvue:872")
+                        console.error("保存整改信息失败:", error, " at pages/record/detail.uvue:850")
                         uni_showToast(ShowToastOptions(title = "网络错误", icon = "none"))
                         this.saving = false
                     }
@@ -805,7 +805,7 @@ open class GenPagesRecordDetail : BasePage {
                 }
                  catch (error: Throwable) {
                     uni_hideLoading()
-                    console.error("上传图片失败:", error, " at pages/record/detail.uvue:882")
+                    console.error("上传图片失败:", error, " at pages/record/detail.uvue:860")
                     uni_showToast(ShowToastOptions(title = "图片上传失败，请重试", icon = "none"))
                     this.saving = false
                 }
@@ -824,7 +824,7 @@ open class GenPagesRecordDetail : BasePage {
                             var Authorization = "Bearer " + token
                         }, success = fun(res){
                             try {
-                                val data = UTSAndroid.consoleDebugError(JSON.parse(res.data), " at pages/record/detail.uvue:909") as UTSJSONObject
+                                val data = UTSAndroid.consoleDebugError(JSON.parse(res.data), " at pages/record/detail.uvue:887") as UTSJSONObject
                                 if (res.statusCode === 200 && (data.getNumber("code") ?: 0) === 200) {
                                     val dataObj = data.getJSON("data")
                                     val imageUrl = dataObj?.getString("filePath") ?: ""
@@ -851,12 +851,12 @@ open class GenPagesRecordDetail : BasePage {
                 )
                 try {
                     val imageUrls = await(UTSPromise.all(uploadPromises))
-                    console.log("所有整改图片上传成功，返回URL数量:", imageUrls.length, " at pages/record/detail.uvue:934")
-                    console.log("上传成功的图片URLs:", imageUrls, " at pages/record/detail.uvue:935")
+                    console.log("所有整改图片上传成功，返回URL数量:", imageUrls.length, " at pages/record/detail.uvue:912")
+                    console.log("上传成功的图片URLs:", imageUrls, " at pages/record/detail.uvue:913")
                     return@w imageUrls
                 }
                  catch (error: Throwable) {
-                    console.error("整改图片上传失败:", error, " at pages/record/detail.uvue:938")
+                    console.error("整改图片上传失败:", error, " at pages/record/detail.uvue:916")
                     throw error
                 }
         })
@@ -891,98 +891,98 @@ open class GenPagesRecordDetail : BasePage {
     }
     open var initSelectedValues = ::gen_initSelectedValues_fn
     open fun gen_initSelectedValues_fn() {
-        console.log("开始初始化选中值", " at pages/record/detail.uvue:968")
+        console.log("开始初始化选中值", " at pages/record/detail.uvue:946")
         if (this.recordDetail == null) {
-            console.log("recordDetail为空，无法初始化选中值", " at pages/record/detail.uvue:970")
+            console.log("recordDetail为空，无法初始化选中值", " at pages/record/detail.uvue:948")
             return
         }
-        console.log("记录详情数据:", this.recordDetail, " at pages/record/detail.uvue:974")
-        console.log("字典数据状态:", _uO("natureOptions" to this.natureOptions, "professionOptions" to this.professionOptions, "departmentOptions" to this.departmentOptions), " at pages/record/detail.uvue:975")
+        console.log("记录详情数据:", this.recordDetail, " at pages/record/detail.uvue:952")
+        console.log("字典数据状态:", _uO("natureOptions" to this.natureOptions, "professionOptions" to this.professionOptions, "departmentOptions" to this.departmentOptions), " at pages/record/detail.uvue:953")
         val natureId = this.recordDetail!!.natureId ?: ""
         val natureName = this.recordDetail!!.natureName ?: ""
-        console.log("性质界定数据:", _uO("natureId" to natureId, "natureName" to natureName), " at pages/record/detail.uvue:984")
+        console.log("性质界定数据:", _uO("natureId" to natureId, "natureName" to natureName), " at pages/record/detail.uvue:962")
         if (natureId !== "") {
-            console.log("使用ID匹配:", natureId, " at pages/record/detail.uvue:988")
+            console.log("使用ID匹配:", natureId, " at pages/record/detail.uvue:966")
             run {
                 var i: Number = 0
                 while(i < this.natureOptions.length){
-                    console.log("\u6027\u8D28\u754C\u5B9AID\u6BD4\u8F83: " + this.natureOptions[i].id + " == " + natureId, " at pages/record/detail.uvue:990")
+                    console.log("\u6027\u8D28\u754C\u5B9AID\u6BD4\u8F83: " + this.natureOptions[i].id + " == " + natureId, " at pages/record/detail.uvue:968")
                     if (this.natureOptions[i].id == natureId) {
                         this.selectedNatureIndex = i
                         this.recordDetail!!.natureName = this.natureOptions[i].name
-                        console.log("性质界定ID匹配成功，索引:", i, "ID:", this.natureOptions[i].id, "名称:", this.natureOptions[i].name, " at pages/record/detail.uvue:994")
+                        console.log("性质界定ID匹配成功，索引:", i, "ID:", this.natureOptions[i].id, "名称:", this.natureOptions[i].name, " at pages/record/detail.uvue:972")
                         break
                     }
                     i++
                 }
             }
             if (this.selectedNatureIndex === -1) {
-                console.log("性质界定ID在字典中未找到匹配项:", natureId, " at pages/record/detail.uvue:999")
+                console.log("性质界定ID在字典中未找到匹配项:", natureId, " at pages/record/detail.uvue:977")
             }
         } else if (natureName !== "") {
-            console.log("使用名称匹配:", natureName, " at pages/record/detail.uvue:1003")
+            console.log("使用名称匹配:", natureName, " at pages/record/detail.uvue:981")
             run {
                 var i: Number = 0
                 while(i < this.natureOptions.length){
-                    console.log("\u6027\u8D28\u754C\u5B9A\u540D\u79F0\u6BD4\u8F83: " + this.natureOptions[i].name + " == " + natureName, " at pages/record/detail.uvue:1005")
+                    console.log("\u6027\u8D28\u754C\u5B9A\u540D\u79F0\u6BD4\u8F83: " + this.natureOptions[i].name + " == " + natureName, " at pages/record/detail.uvue:983")
                     if (this.natureOptions[i].name == natureName) {
                         this.selectedNatureIndex = i
                         this.recordDetail!!.natureId = this.natureOptions[i].id
-                        console.log("性质界定名称匹配成功，索引:", i, "ID:", this.natureOptions[i].id, "名称:", this.natureOptions[i].name, " at pages/record/detail.uvue:1009")
+                        console.log("性质界定名称匹配成功，索引:", i, "ID:", this.natureOptions[i].id, "名称:", this.natureOptions[i].name, " at pages/record/detail.uvue:987")
                         break
                     }
                     i++
                 }
             }
             if (this.selectedNatureIndex === -1) {
-                console.log("性质界定名称在字典中未找到匹配项:", natureName, " at pages/record/detail.uvue:1014")
+                console.log("性质界定名称在字典中未找到匹配项:", natureName, " at pages/record/detail.uvue:992")
             }
         } else {
-            console.log("性质界定ID和名称都为空，跳过匹配", " at pages/record/detail.uvue:1017")
+            console.log("性质界定ID和名称都为空，跳过匹配", " at pages/record/detail.uvue:995")
         }
         if (this.selectedNatureIndex === -1) {
             console.log("可用的字典选项:", this.natureOptions.map(fun(item): String {
                 return "" + item.name + "(" + item.id + ")"
             }
-            ), " at pages/record/detail.uvue:1021")
+            ), " at pages/record/detail.uvue:999")
         }
         val professionId = this.recordDetail!!.professionId ?: ""
-        console.log("专业ID:", professionId, " at pages/record/detail.uvue:1026")
+        console.log("专业ID:", professionId, " at pages/record/detail.uvue:1004")
         if (professionId !== "") {
             run {
                 var i: Number = 0
                 while(i < this.professionOptions.length){
-                    console.log("\u4E13\u4E1A\u6BD4\u8F83: " + this.professionOptions[i].id + " == " + professionId, " at pages/record/detail.uvue:1029")
+                    console.log("\u4E13\u4E1A\u6BD4\u8F83: " + this.professionOptions[i].id + " == " + professionId, " at pages/record/detail.uvue:1007")
                     if (this.professionOptions[i].id == professionId) {
                         this.selectedProfessionIndex = i
-                        console.log("专业匹配成功，索引:", i, "名称:", this.professionOptions[i].name, " at pages/record/detail.uvue:1032")
+                        console.log("专业匹配成功，索引:", i, "名称:", this.professionOptions[i].name, " at pages/record/detail.uvue:1010")
                         break
                     }
                     i++
                 }
             }
         } else {
-            console.log("专业ID为空，跳过匹配", " at pages/record/detail.uvue:1037")
+            console.log("专业ID为空，跳过匹配", " at pages/record/detail.uvue:1015")
         }
         val departmentId = this.recordDetail!!.departmentId ?: ""
-        console.log("部门ID:", departmentId, " at pages/record/detail.uvue:1042")
+        console.log("部门ID:", departmentId, " at pages/record/detail.uvue:1020")
         if (departmentId !== "") {
             run {
                 var i: Number = 0
                 while(i < this.departmentOptions.length){
-                    console.log("\u90E8\u95E8\u6BD4\u8F83: " + this.departmentOptions[i].id + " == " + departmentId, " at pages/record/detail.uvue:1045")
+                    console.log("\u90E8\u95E8\u6BD4\u8F83: " + this.departmentOptions[i].id + " == " + departmentId, " at pages/record/detail.uvue:1023")
                     if (this.departmentOptions[i].id == departmentId) {
                         this.selectedDepartmentIndex = i
-                        console.log("部门匹配成功，索引:", i, "名称:", this.departmentOptions[i].name, " at pages/record/detail.uvue:1048")
+                        console.log("部门匹配成功，索引:", i, "名称:", this.departmentOptions[i].name, " at pages/record/detail.uvue:1026")
                         break
                     }
                     i++
                 }
             }
         } else {
-            console.log("部门ID为空，跳过匹配", " at pages/record/detail.uvue:1053")
+            console.log("部门ID为空，跳过匹配", " at pages/record/detail.uvue:1031")
         }
-        console.log("回写选中值完成:", _uO("natureId" to natureId, "selectedNatureIndex" to this.selectedNatureIndex, "professionId" to professionId, "selectedProfessionIndex" to this.selectedProfessionIndex, "departmentId" to departmentId, "selectedDepartmentIndex" to this.selectedDepartmentIndex), " at pages/record/detail.uvue:1056")
+        console.log("回写选中值完成:", _uO("natureId" to natureId, "selectedNatureIndex" to this.selectedNatureIndex, "professionId" to professionId, "selectedProfessionIndex" to this.selectedProfessionIndex, "departmentId" to departmentId, "selectedDepartmentIndex" to this.selectedDepartmentIndex), " at pages/record/detail.uvue:1034")
     }
     open var loadNatureOptions = ::gen_loadNatureOptions_fn
     open fun gen_loadNatureOptions_fn() {
@@ -1014,10 +1014,10 @@ open class GenPagesRecordDetail : BasePage {
                         }
                     }
                 }
-                console.log("性质界定数据加载成功:", this.natureOptions, " at pages/record/detail.uvue:1089")
+                console.log("性质界定数据加载成功:", this.natureOptions, " at pages/record/detail.uvue:1067")
             } else {
                 val message = data.getString("message") ?: "未知错误"
-                console.error("获取性质界定数据失败:", message, " at pages/record/detail.uvue:1092")
+                console.error("获取性质界定数据失败:", message, " at pages/record/detail.uvue:1070")
                 this.natureOptions = _uA(
                     NatureOption1(id = "1", name = "一般问题"),
                     NatureOption1(id = "2", name = "较大问题"),
@@ -1028,7 +1028,7 @@ open class GenPagesRecordDetail : BasePage {
             this.checkAllDataLoaded()
         }
         , fail = fun(error){
-            console.error("请求性质界定数据失败:", error, " at pages/record/detail.uvue:1104")
+            console.error("请求性质界定数据失败:", error, " at pages/record/detail.uvue:1082")
             this.natureOptions = _uA(
                 NatureOption1(id = "1", name = "一般问题"),
                 NatureOption1(id = "2", name = "较大问题"),
@@ -1069,10 +1069,10 @@ open class GenPagesRecordDetail : BasePage {
                         }
                     }
                 }
-                console.log("专业数据加载成功:", this.professionOptions, " at pages/record/detail.uvue:1143")
+                console.log("专业数据加载成功:", this.professionOptions, " at pages/record/detail.uvue:1121")
             } else {
                 val message = data.getString("message") ?: "未知错误"
-                console.error("获取专业数据失败:", message, " at pages/record/detail.uvue:1146")
+                console.error("获取专业数据失败:", message, " at pages/record/detail.uvue:1124")
                 this.professionOptions = _uA(
                     ProfessionOption1(id = "1", name = "机械"),
                     ProfessionOption1(id = "2", name = "电气"),
@@ -1085,7 +1085,7 @@ open class GenPagesRecordDetail : BasePage {
             this.checkAllDataLoaded()
         }
         , fail = fun(error){
-            console.error("请求专业数据失败:", error, " at pages/record/detail.uvue:1160")
+            console.error("请求专业数据失败:", error, " at pages/record/detail.uvue:1138")
             this.professionOptions = _uA(
                 ProfessionOption1(id = "1", name = "机械"),
                 ProfessionOption1(id = "2", name = "电气"),
@@ -1124,10 +1124,10 @@ open class GenPagesRecordDetail : BasePage {
                         }
                     }
                 }
-                console.log("部门数据加载成功:", this.departmentOptions, " at pages/record/detail.uvue:1201")
+                console.log("部门数据加载成功:", this.departmentOptions, " at pages/record/detail.uvue:1179")
             } else {
                 val message = data.getString("message") ?: "未知错误"
-                console.error("获取部门数据失败:", message, " at pages/record/detail.uvue:1204")
+                console.error("获取部门数据失败:", message, " at pages/record/detail.uvue:1182")
                 this.departmentOptions = _uA(
                     DepartmentOption1(id = "1", name = "生产部"),
                     DepartmentOption1(id = "2", name = "安全部"),
@@ -1141,7 +1141,7 @@ open class GenPagesRecordDetail : BasePage {
             this.checkAllDataLoaded()
         }
         , fail = fun(error){
-            console.error("请求部门数据失败:", error, " at pages/record/detail.uvue:1219")
+            console.error("请求部门数据失败:", error, " at pages/record/detail.uvue:1197")
             this.departmentOptions = _uA(
                 DepartmentOption1(id = "1", name = "生产部"),
                 DepartmentOption1(id = "2", name = "安全部"),
@@ -1159,17 +1159,17 @@ open class GenPagesRecordDetail : BasePage {
     open fun gen_showNaturePicker_fn() {
         if (this.natureOptions.length > 0) {
             this.showNaturePopup = true
-            console.log("显示性质界定选择弹窗", " at pages/record/detail.uvue:1239")
+            console.log("显示性质界定选择弹窗", " at pages/record/detail.uvue:1217")
         }
     }
     open var hideNaturePicker = ::gen_hideNaturePicker_fn
     open fun gen_hideNaturePicker_fn() {
         this.showNaturePopup = false
-        console.log("隐藏性质界定选择弹窗", " at pages/record/detail.uvue:1245")
+        console.log("隐藏性质界定选择弹窗", " at pages/record/detail.uvue:1223")
     }
     open var selectNature = ::gen_selectNature_fn
     open fun gen_selectNature_fn(index: Number) {
-        console.log("选择性质界定，索引:", index, " at pages/record/detail.uvue:1249")
+        console.log("选择性质界定，索引:", index, " at pages/record/detail.uvue:1227")
         this.selectedNatureIndex = index
         this.hideNaturePicker()
     }
@@ -1177,17 +1177,17 @@ open class GenPagesRecordDetail : BasePage {
     open fun gen_showProfessionPicker_fn() {
         if (this.professionOptions.length > 0) {
             this.showProfessionPopup = true
-            console.log("显示专业选择弹窗", " at pages/record/detail.uvue:1258")
+            console.log("显示专业选择弹窗", " at pages/record/detail.uvue:1236")
         }
     }
     open var hideProfessionPicker = ::gen_hideProfessionPicker_fn
     open fun gen_hideProfessionPicker_fn() {
         this.showProfessionPopup = false
-        console.log("隐藏专业选择弹窗", " at pages/record/detail.uvue:1264")
+        console.log("隐藏专业选择弹窗", " at pages/record/detail.uvue:1242")
     }
     open var selectProfession = ::gen_selectProfession_fn
     open fun gen_selectProfession_fn(index: Number) {
-        console.log("选择专业，索引:", index, " at pages/record/detail.uvue:1268")
+        console.log("选择专业，索引:", index, " at pages/record/detail.uvue:1246")
         this.selectedProfessionIndex = index
         this.hideProfessionPicker()
     }
@@ -1195,17 +1195,17 @@ open class GenPagesRecordDetail : BasePage {
     open fun gen_showDepartmentPicker_fn() {
         if (this.departmentOptions.length > 0) {
             this.showDepartmentPopup = true
-            console.log("显示部门选择弹窗", " at pages/record/detail.uvue:1277")
+            console.log("显示部门选择弹窗", " at pages/record/detail.uvue:1255")
         }
     }
     open var hideDepartmentPicker = ::gen_hideDepartmentPicker_fn
     open fun gen_hideDepartmentPicker_fn() {
         this.showDepartmentPopup = false
-        console.log("隐藏部门选择弹窗", " at pages/record/detail.uvue:1283")
+        console.log("隐藏部门选择弹窗", " at pages/record/detail.uvue:1261")
     }
     open var selectDepartment = ::gen_selectDepartment_fn
     open fun gen_selectDepartment_fn(index: Number) {
-        console.log("选择部门，索引:", index, " at pages/record/detail.uvue:1287")
+        console.log("选择部门，索引:", index, " at pages/record/detail.uvue:1265")
         this.selectedDepartmentIndex = index
         this.hideDepartmentPicker()
     }

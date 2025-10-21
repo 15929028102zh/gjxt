@@ -3,6 +3,8 @@ package com.gjxt.inspection.entity;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableName;
 
+import java.util.List;
+
 /**
  * 部门实体类
  *
@@ -42,6 +44,18 @@ public class SysDept extends BaseEntity {
     @TableField("status")
     private Integer status;
 
+    /**
+     * 部门级别（1:一级部门, 2:二级部门, 3:三级部门）
+     */
+    @TableField("dept_level")
+    private Integer deptLevel;
+
+    /**
+     * 子部门列表（非数据库字段）
+     */
+    @TableField(exist = false)
+    private List<SysDept> children;
+
     public String getDeptName() {
         return deptName;
     }
@@ -80,5 +94,21 @@ public class SysDept extends BaseEntity {
 
     public void setStatus(Integer status) {
         this.status = status;
+    }
+
+    public List<SysDept> getChildren() {
+        return children;
+    }
+
+    public void setChildren(List<SysDept> children) {
+        this.children = children;
+    }
+
+    public Integer getDeptLevel() {
+        return deptLevel;
+    }
+
+    public void setDeptLevel(Integer deptLevel) {
+        this.deptLevel = deptLevel;
     }
 }

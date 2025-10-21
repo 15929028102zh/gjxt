@@ -20,8 +20,13 @@
 				<!-- 通知图标放在欢迎区域右上角 -->
 				<view class="notification-icon-wrapper" @click="showNotifications">
 					<text class="icon-bell">🔔</text>
-					<view v-if="notificationCount > 0" class="notification-badge">
-						<text class="badge-text">{{notificationCount > 99 ? '99+' : notificationCount}}</text>
+					<!-- 红点标记（当有通知但不显示数字时） -->
+					<view v-if="notificationCount > 0 && notificationCount <= 99" class="notification-badge">
+						<text class="badge-text">{{notificationCount}}</text>
+					</view>
+					<!-- 99+标记 -->
+					<view v-else-if="notificationCount > 99" class="notification-badge">
+						<text class="badge-text">99+</text>
 					</view>
 				</view>
 			</view>
@@ -37,78 +42,36 @@
 			</view>
 		</view>
 		
+		<!-- 操作按钮 -->
+		<view class="action-buttons">
+			<view class="action-button" @click="goToAddRecord">
+				<view class="button-icon">➕</view>
+				<text >月检</text>
+				<text class="button-text">每月安全检查</text>
+			</view>
+			<view class="action-button delayed-button" @click="goToDelayedRecord">
+				<view class="button-icon">⏰</view>
+				<text >延迟整改</text>
+				<text class="button-text">延期问题处理</text>
+			</view>
+		</view>
+		
 		<!-- 统计卡片 -->
 		<view class="stats-container">
 			<view class="stats-card" @click="goToPendingIssues">
 				<text class="stats-number">{{statistics.monthlyPending}}</text>
-				<text class="stats-label">本月待整改</text>
+				<text class="stats-label">待整改</text>
 				<text class="stats-icon">⚠️</text>
 			</view>
 			<view class="stats-card" @click="goToCompletedIssues">
 				<text class="stats-number">{{statistics.monthlyCompleted}}</text>
-				<text class="stats-label">本月已整改</text>
+				<text class="stats-label">已整改</text>
 				<text class="stats-icon">✅</text>
 			</view>
-			<view class="stats-card" @click="goToMonthlyReport">
-				<text class="stats-number">{{statistics.monthlyTotal}}</text>
-				<text class="stats-label">本月总记录</text>
-				<text class="stats-icon">📊</text>
-			</view>
-		</view>
-		
-		<!-- 月度趋势图 -->
-		<view class="trend-section">
-			<text class="section-title">月度趋势</text>
-			<view class="trend-chart">
-				<view class="chart-placeholder">
-					<text class="placeholder-text">月度趋势图</text>
-					<text class="placeholder-desc">显示本月问题发现与整改趋势</text>
-				</view>
-			</view>
-		</view>
-		
-		<!-- 快捷功能 -->
-		<view class="quick-actions">
-			<text class="section-title">快捷功能</text>
-			<view class="actions-grid">
-				<view class="action-item" @click="goToAddRecord">
-					<view class="action-icon">➕</view>
-					<text class="action-text">新增记录</text>
-				</view>
-				<view class="action-item" @click="goToMonthlyReport">
-					<view class="action-icon">📊</view>
-					<text class="action-text">月度报告</text>
-				</view>
-				<view class="action-item" @click="goToPendingIssues">
-					<view class="action-icon">⚠️</view>
-					<text class="action-text">待整改问题</text>
-				</view>
-				<view class="action-item" @click="goToCompletedIssues">
-					<view class="action-icon">✅</view>
-					<text class="action-text">已整改问题</text>
-				</view>
-			</view>
-		</view>
-		
-		<!-- 本月记录 -->
-		<view class="recent-records">
-			<view class="section-header">
-				<text class="section-title">本月记录</text>
-				<text class="more-text" @click="goToRecords">查看更多</text>
-			</view>
-			<view class="records-list">
-				<view class="record-item" v-for="record in monthlyRecords" :key="record.id">
-					<view class="record-info">
-						<text class="record-title">{{record.problemDescription}}</text>
-						<text class="record-meta">{{record.locationName}} · {{record.createTime}}</text>
-					</view>
-					<view class="record-status" :class="getStatusClass(record.status)">
-						<text>{{getStatusText(record.status)}}</text>
-					</view>
-				</view>
-				<view v-if="monthlyRecords.length === 0" class="empty-state">
-					<text class="empty-text">本月暂无记录</text>
-				</view>
+			<view class="stats-card" @click="goToReviewedRecords">
+				<text class="stats-number">{{statistics.reviewedCount}}</text>
+				<text class="stats-label">已复查数量</text>
+				<text class="stats-icon">✅</text>
 			</view>
 		</view>
 		
@@ -156,7 +119,7 @@
 	type MonthlyStatistics = {
 		monthlyPending: number,
 		monthlyCompleted: number,
-		monthlyTotal: number
+		reviewedCount: number
 	}
 
 	type Notification = {
@@ -178,7 +141,7 @@
 					statistics: {
 						monthlyPending: 0,
 						monthlyCompleted: 0,
-						monthlyTotal: 0
+						reviewedCount: 0
 					} as MonthlyStatistics,
 					monthlyRecords: [] as MonthlyRecord[],
 					notifications: [] as Notification[],
@@ -225,13 +188,34 @@
 				const year = now.getFullYear()
 				const month = (now.getMonth() + 1).toString()
 				const formattedMonth = month.length == 1 ? `0${month}` : month
-				this.currentDate = `${year}年${formattedMonth}月`
+				const day = now.getDate().toString()
+				const formattedDay = day.length == 1 ? `0${day}` : day
+				const weekdays = ['日', '一', '二', '三', '四', '五', '六']
+				const weekday = weekdays[now.getDay()]
+				this.currentDate = `${year}年${formattedMonth}月${formattedDay}日 星期${weekday}`
 			},
 			
 			loadStatistics() {
 				const token = uni.getStorageSync('token')
+				
+				// 获取用户部门信息
+				let departmentId = ''
+				const userInfoData = uni.getStorageSync('userInfo')
+				const userInfoStr = userInfoData != null ? userInfoData as string : ''
+				if (userInfoStr != null && userInfoStr != '' && userInfoStr != 'null' && userInfoStr != 'undefined') {
+					try {
+						const parsedUserInfo = JSON.parse(userInfoStr) as UTSJSONObject
+						departmentId = parsedUserInfo.getString('deptId') ?? ''
+					} catch (error) {
+						console.error('用户信息JSON解析失败:', error)
+					}
+				}
+				
+				// 构建部门过滤参数
+				const deptParam = departmentId != null && departmentId != '' ? `?departmentId=${departmentId}` : ''
+				
 				uni.request({
-					url: getApiUrl('/statistics/overview'),
+					url: getApiUrl(`/statistics/overview${deptParam}`),
 					method: 'GET',
 					header: {
 						'Authorization': `Bearer ${token}`
@@ -244,7 +228,7 @@
 							this.statistics = {
 								monthlyPending: data.getNumber('totalTasks') ?? 0,
 								monthlyCompleted: data.getNumber('todayRecords') ?? 0,
-								monthlyTotal: data.getNumber('monthRecords') ?? 0
+								reviewedCount: data.getNumber('monthRecords') ?? 0
 							}
 						}
 					},
@@ -256,8 +240,25 @@
 			
 			loadMonthlyRecords() {
 				const token = uni.getStorageSync('token')
+				
+				// 获取用户部门信息
+				let departmentId = ''
+				const userInfoData = uni.getStorageSync('userInfo')
+				const userInfoStr = userInfoData != null ? userInfoData as string : ''
+				if (userInfoStr != null && userInfoStr != '' && userInfoStr != 'null' && userInfoStr != 'undefined') {
+					try {
+						const parsedUserInfo = JSON.parse(userInfoStr) as UTSJSONObject
+						departmentId = parsedUserInfo.getString('deptId') ?? ''
+					} catch (error) {
+						console.error('用户信息JSON解析失败:', error)
+					}
+				}
+				
+				// 构建部门过滤参数
+				const deptParam = departmentId != null && departmentId != '' ? `&departmentId=${departmentId}` : ''
+				
 				uni.request({
-					url: getApiUrl('/inspection-record/page?pageNum=1&pageSize=10'),
+					url: getApiUrl(`/inspection-record/page?pageNum=1&pageSize=10${deptParam}`),
 					method: 'GET',
 					header: {
 						'Authorization': `Bearer ${token}`
@@ -313,9 +314,21 @@
 				})
 			},
 			
+			goToReviewedRecords() {
+				uni.navigateTo({
+					url: '/pages/record/record?status=2'
+				})
+			},
+			
 			goToMonthlyReport() {
 				uni.navigateTo({
 					url: '/pages/statistics/statistics'
+				})
+			},
+			
+			goToDelayedRecord() {
+				uni.navigateTo({
+					url: '/pages/record/delayed'
 				})
 			},
 			
@@ -334,6 +347,13 @@
 			loadNotifications() {
 				const token = uni.getStorageSync('token')
 				const userId = this.userInfo.getString('id') ?? ''
+				console.log('开始加载通知，用户ID:', userId)
+				
+      if (userId == null || userId == '') {
+       console.log('用户ID为空，无法加载通知')
+       return
+				}
+				
 				uni.request({
 					url: getApiUrl(`/monthly-inspection-task/user/${userId}`),
 					method: 'GET',
@@ -341,9 +361,11 @@
 						'Authorization': `Bearer ${token}`
 					},
 					success: (res) => {
+						console.log('通知请求响应:', res)
 						const response = res.data as UTSJSONObject
 						if (res.statusCode == 200 && (response.getNumber('code') ?? 0) == 200) {
 							const data = response.getArray('data') as Array<UTSJSONObject>
+							console.log('获取到的通知数据:', data.length, '条')
 							this.notifications = []
 							let unreadCount = 0
 							for (let i = 0; i < data.length; i++) {
@@ -363,6 +385,9 @@
 								}
 							}
 							this.notificationCount = unreadCount
+							console.log('设置通知条数:', this.notificationCount)
+						} else {
+							console.log('通知请求失败，响应码:', res.statusCode, '业务码:', response.getNumber('code'))
 						}
 					},
 					fail: (error) => {
@@ -386,7 +411,7 @@
 				
 				// 跳转到月检任务录入页面，传递任务信息
 				uni.navigateTo({
-					url: `/pages/monthly/task-record?taskNo=${notification.taskNo}`
+					url: `/pages/monthly/task-record?taskId=${notification.taskNo}`
 				})
 				
 				this.hideNotifications()
@@ -554,25 +579,28 @@
 	
 	.notification-badge {
 		position: absolute;
-		top: -8rpx;
-		right: -8rpx;
-		min-width: 28rpx;
-		height: 28rpx;
-		background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
-		border-radius: 50%;
+		top: -6rpx;
+		right: -6rpx;
+		min-width: 32rpx;
+		height: 32rpx;
+		background: #ff4757;
+		border-radius: 16rpx;
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		border: 2rpx solid rgba(255, 255, 255, 0.8);
-		box-shadow: 0 4rpx 12rpx rgba(255, 107, 107, 0.4);
+		border: 3rpx solid #ffffff;
+		box-shadow: 0 2rpx 8rpx rgba(255, 71, 87, 0.3);
 		z-index: 4;
+		padding: 0 6rpx;
 	}
 	
 	.badge-text {
-		font-size: 20rpx;
-		color: white;
-		font-weight: 600;
+		font-size: 18rpx;
+		color: #ffffff;
+		font-weight: 700;
 		line-height: 1;
+		text-align: center;
+		white-space: nowrap;
 	}
 	
 	.user-avatar {
@@ -616,6 +644,7 @@
 		display: flex;
 		justify-content: space-between;
 		margin-bottom: 30px;
+		gap: 10px;
 	}
 	
 	.stats-card {
@@ -623,22 +652,24 @@
 		background: #fff;
 		border-radius: 12px;
 		padding: 20px 15px;
-		margin: 0 5px;
 		text-align: center;
 		position: relative;
 		box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+		overflow: hidden;
 	}
 	
 	.stats-number {
 		font-size: 24px;
 		font-weight: bold;
-		color: #007AFF;
+		color: #333;
+		display: block;
 		margin-bottom: 8px;
 	}
 	
 	.stats-label {
 		font-size: 14px;
 		color: #666;
+		display: block;
 		margin-bottom: 8px;
 	}
 	
@@ -647,6 +678,47 @@
 		position: absolute;
 		top: 15px;
 		right: 15px;
+		opacity: 0.3;
+	}
+	
+	.action-buttons {
+		margin-bottom: 30px;
+		display: flex;
+		flex-direction: row;
+		justify-content: space-between;
+		gap: 10px;
+	}
+	
+	.action-button {
+		flex: 1;
+		background: #d1ecf1;
+		border-radius: 12px;
+		padding: 15px 10px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+		min-width: 0;
+	}
+	
+	.delayed-button {
+		background: #ff4757 !important;
+	}
+	
+	.button-icon {
+		font-size: 20px;
+		margin-right: 8px;
+		color: #007AFF;
+		flex-shrink: 0;
+	}
+	
+	.button-text {
+		font-size: 14px;
+		color: #333;
+		font-weight: 500;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
 	}
 	
 	.trend-section {

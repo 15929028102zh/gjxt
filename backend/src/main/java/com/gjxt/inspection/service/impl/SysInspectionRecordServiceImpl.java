@@ -48,17 +48,19 @@ public class SysInspectionRecordServiceImpl extends ServiceImpl<SysInspectionRec
     
     @Autowired
     private ISysDictionaryService dictionaryService;
+    
+    @Autowired
+    private com.gjxt.inspection.util.UserContextUtil userContextUtil;
 
     @Override
     public PageResult<SysInspectionRecord> getRecordPage(Long current, Long size, String taskId,
-                                                        String groupLeaderId, String deputyLeaderId, String departmentId,
+                                                        String departmentId,
                                                         String professionId, String natureId, String locationId, String inspectorId,
                                                         String responsibleUnitId, String responsiblePersonId, String reviewerId,
-                                                        Integer status,
+                                                        String status, String problemDescription, String responsiblePerson,
                                                         LocalDateTime startTime, LocalDateTime endTime) {
         Page<SysInspectionRecord> page = new Page<>(current, size);
-        String statusStr = status != null ? status.toString() : null;
-        IPage<SysInspectionRecord> result = this.baseMapper.selectRecordPage(page, taskId, groupLeaderId, deputyLeaderId, departmentId, professionId, natureId, locationId, inspectorId, responsibleUnitId, responsiblePersonId, reviewerId, statusStr, startTime, endTime);
+        IPage<SysInspectionRecord> result = this.baseMapper.selectRecordPage(page, taskId, departmentId, professionId, natureId, locationId, inspectorId, responsibleUnitId, responsiblePersonId, reviewerId, status, problemDescription, responsiblePerson, startTime, endTime);
         return new PageResult<SysInspectionRecord>(result.getCurrent(), result.getSize(), result.getTotal(), result.getRecords());
     }
 
@@ -80,7 +82,7 @@ public class SysInspectionRecordServiceImpl extends ServiceImpl<SysInspectionRec
         if (record.getRecordNo() == null || record.getRecordNo().isEmpty()) {
             record.setRecordNo(generateRecordNo());
         }
-        record.setStatus(0); // 0-待整改
+        record.setStatus(4); // 4-保存
         record.setCreateTime(LocalDateTime.now());
         record.setUpdateTime(LocalDateTime.now());
         
@@ -103,6 +105,15 @@ public class SysInspectionRecordServiceImpl extends ServiceImpl<SysInspectionRec
     @Transactional(rollbackFor = Exception.class)
     public boolean deleteRecord(String id) {
         return this.removeById(id);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public boolean batchDeleteRecords(List<String> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return false;
+        }
+        return this.removeByIds(ids);
     }
 
     @Override
@@ -165,7 +176,7 @@ public class SysInspectionRecordServiceImpl extends ServiceImpl<SysInspectionRec
 
 
     @Override
-    public List<SysInspectionRecord> getRecordsByUserId(Long userId, String status) {
+    public List<SysInspectionRecord> getRecordsByUserId(String userId, String status) {
         LambdaQueryWrapper<SysInspectionRecord> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(SysInspectionRecord::getInspector, userId);
         if (StringUtils.hasText(status)) {
@@ -176,12 +187,15 @@ public class SysInspectionRecordServiceImpl extends ServiceImpl<SysInspectionRec
     }
 
     @Override
-    public PageResult<SysInspectionRecord> getUserRecords(Long userId, Long current, Long size, String status) {
+    public PageResult<SysInspectionRecord> getUserRecords(String userId, Long current, Long size, String status, String departmentId) {
         Page<SysInspectionRecord> page = new Page<>(current, size);
         LambdaQueryWrapper<SysInspectionRecord> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(SysInspectionRecord::getInspector, userId);
         if (StringUtils.hasText(status)) {
             wrapper.eq(SysInspectionRecord::getStatus, status);
+        }
+        if (StringUtils.hasText(departmentId)) {
+            wrapper.eq(SysInspectionRecord::getDepartmentId, departmentId);
         }
         wrapper.orderByDesc(SysInspectionRecord::getCreateTime);
         IPage<SysInspectionRecord> result = this.page(page, wrapper);
@@ -190,23 +204,53 @@ public class SysInspectionRecordServiceImpl extends ServiceImpl<SysInspectionRec
     }
 
     @Override
-    public List<Map<String, Object>> getStatusStatistics() {
-        return recordMapper.selectStatusStatistics();
+    public List<Map<String, Object>> getStatusStatistics(String departmentId) {
+        return recordMapper.selectStatusStatistics(departmentId);
     }
 
     @Override
-    public List<Map<String, Object>> getProfessionStatistics(String status) {
-        return recordMapper.selectProfessionStatistics(status);
+    public List<Map<String, Object>> getProfessionStatistics(String status, String departmentId) {
+        return recordMapper.selectProfessionStatistics(status, departmentId);
     }
 
     @Override
-    public List<Map<String, Object>> getLocationStatistics(String status) {
-        return recordMapper.selectLocationStatistics(status);
+    public List<Map<String, Object>> getLocationStatistics(String status, String departmentId) {
+        return recordMapper.selectLocationStatistics(status, departmentId);
     }
 
     @Override
-    public List<Map<String, Object>> getResponsiblePersonStatistics(String status) {
-        return recordMapper.selectResponsiblePersonStatistics(status);
+    public List<Map<String, Object>> getResponsiblePersonStatistics(String status, String departmentId) {
+        return recordMapper.selectResponsiblePersonStatistics(status, departmentId);
+    }
+
+    @Override
+    public Map<String, Object> getStatisticsOverview(String departmentId) {
+        Map<String, Object> overview = new HashMap<>();
+        
+        // 获取总数统计
+        overview.put("totalRecords", recordMapper.selectTotalRecordCount(departmentId));
+        overview.put("pendingRecords", recordMapper.selectRecordCountByStatus(0, departmentId));
+        overview.put("processingRecords", recordMapper.selectRecordCountByStatus(1, departmentId));
+        overview.put("completedRecords", recordMapper.selectRecordCountByStatus(2, departmentId));
+        
+        // 获取状态分布
+        overview.put("statusDistribution", recordMapper.selectStatusStatistics(departmentId));
+        
+        return overview;
+    }
+
+    @Override
+    public Map<String, Object> getMonthlyStatistics(String departmentId) {
+        Map<String, Object> monthly = new HashMap<>();
+        
+        // 获取本月统计
+        monthly.put("currentMonthRecords", recordMapper.selectCurrentMonthRecordCount(departmentId));
+        monthly.put("lastMonthRecords", recordMapper.selectLastMonthRecordCount(departmentId));
+        
+        // 获取月度趋势
+        monthly.put("monthlyTrend", recordMapper.selectMonthlyTrendStatistics(departmentId));
+        
+        return monthly;
     }
 
     @Override
@@ -382,12 +426,22 @@ public class SysInspectionRecordServiceImpl extends ServiceImpl<SysInspectionRec
             // 使用静态方法创建记录实体，字段映射在实体类中处理
             SysInspectionRecord record = SysInspectionRecord.createFromSubmitData(submitData);
             
+            // 自动获取当前用户的部门ID并设置到记录中
+            String currentUserDeptId = userContextUtil.getCurrentUserDeptId();
+            if (currentUserDeptId != null && !currentUserDeptId.isEmpty()) {
+                record.setDepartmentId(currentUserDeptId);
+                log.info("自动设置部门ID: {}", currentUserDeptId);
+            } else {
+                log.warn("无法获取当前用户的部门ID");
+            }
+            
             // 生成记录编号
             record.setRecordNo(generateRecordNo());
             
-            // 调试日志：检查组长和副组长字段值
-            log.info("提交记录 - 检查组长ID: {}, 副组长ID: {}", record.getGroupLeaderId(), record.getDeputyLeaderId());
-            log.info("前端提交数据 - groupLeader: {}, deputyLeader: {}", submitData.getGroupLeader(), submitData.getDeputyLeader());
+            // 调试日志：记录提交信息
+            log.info("提交记录 - 记录ID: {}", record.getId());
+            log.info("前端提交数据 - 检查人: {}", submitData.getInspector());
+            log.info("设置的部门ID: {}", record.getDepartmentId());
             
             // 使用专门的插入方法
             int result = recordMapper.insertSubmitRecord(record);
@@ -399,31 +453,41 @@ public class SysInspectionRecordServiceImpl extends ServiceImpl<SysInspectionRec
     }
 
     @Override
-    public Long getWeeklyRecordCountByUserAndStatus(String userId, Integer status) {
-        // 获取当前时间
-        LocalDateTime now = LocalDateTime.now();
+    public Long getWeeklyRecordCount(String userId, Integer status, String departmentId, String startDate, String endDate) {
+        LocalDateTime weekStart;
+        LocalDateTime weekEnd;
         
-        // 计算本周开始时间（周一00:00:00）
-        LocalDateTime weekStart = now.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
-                .withHour(0).withMinute(0).withSecond(0).withNano(0);
-        
-        // 计算本周结束时间（周日23:59:59）
-        LocalDateTime weekEnd = now.with(TemporalAdjusters.nextOrSame(DayOfWeek.SUNDAY))
-                .withHour(23).withMinute(59).withSecond(59).withNano(999999999);
+        if (StringUtils.hasText(startDate) && StringUtils.hasText(endDate)) {
+            // 如果传入了时间参数，使用传入的时间范围
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+            weekStart = LocalDateTime.parse(startDate + " 00:00:00", DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+            weekEnd = LocalDateTime.parse(endDate + " 23:59:59", DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        } else {
+            // 如果没有传入时间参数，使用本周时间范围
+            LocalDateTime now = LocalDateTime.now();
+            
+            // 计算本周开始时间（周一00:00:00）
+            weekStart = now.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
+                    .withHour(0).withMinute(0).withSecond(0).withNano(0);
+            
+            // 计算本周结束时间（周日23:59:59）
+            weekEnd = now.with(TemporalAdjusters.nextOrSame(DayOfWeek.SUNDAY))
+                    .withHour(23).withMinute(59).withSecond(59).withNano(999999999);
+        }
         
         // 调用Mapper方法查询
-        Long count = recordMapper.selectWeeklyRecordCountByUserAndStatus(userId, status, weekStart, weekEnd);
+        Long count = recordMapper.selectWeeklyRecordCount(userId, status, departmentId, weekStart, weekEnd);
         return count != null ? count : 0L;
     }
 
     @Override
-    public PageResult<SysInspectionRecord> getDelayedRectificationRecords(Long current, Long size) {
+    public PageResult<SysInspectionRecord> getDelayedRectificationRecords(Long current, Long size, String departmentId) {
         Page<SysInspectionRecord> page = new Page<>(current, size);
         LocalDateTime currentTime = LocalDateTime.now();
         
         log.info("查询延迟整改记录，当前时间：{}", currentTime);
         
-        IPage<SysInspectionRecord> result = recordMapper.selectDelayedRectificationRecords(page, currentTime);
+        IPage<SysInspectionRecord> result = recordMapper.selectDelayedRectificationRecords(page, currentTime, departmentId);
         
         log.info("查询到 {} 条延迟整改记录", result.getTotal());
         
@@ -438,13 +502,18 @@ public class SysInspectionRecordServiceImpl extends ServiceImpl<SysInspectionRec
         try {
 
             
-            // 使用recordMapper调用selectRecordPage方法获取包含关联字段的数据
-            // 注意：selectRecordPage方法需要Page对象和所有查询参数
-            // 由于导出不需要分页，这里可以创建一个Page对象，但只取其records
-            Page<SysInspectionRecord> page = new Page<>(1, -1); // size设置为-1表示不分页
-            IPage<SysInspectionRecord> resultPage = recordMapper.selectRecordPage(page,
-                    null, null, departmentId, professionId, natureId, problemDescription, null, null, responsiblePerson, null, null, status != null ? status.toString() : null, startTime, endTime);
-            List<SysInspectionRecord> records = resultPage.getRecords();
+            // 使用recordMapper调用selectExportData方法获取包含关联字段的数据，已按sort_order排序
+            List<SysInspectionRecord> records = recordMapper.selectExportData(
+                    status != null ? status.toString() : null, // status
+                    (professionId != null && !professionId.trim().isEmpty()) ? Long.valueOf(professionId) : null, // professionId
+                    null, // locationId
+                    null, // checkerId
+                    responsiblePerson, // responsiblePerson
+                    startTime, // startTime
+                    endTime, // endTime
+                    departmentId, // departmentId
+                    natureId, // natureId
+                    problemDescription); // problemDescription
             
             // 创建Excel工作簿
             Workbook workbook = new XSSFWorkbook();
@@ -453,10 +522,10 @@ public class SysInspectionRecordServiceImpl extends ServiceImpl<SysInspectionRec
             // 创建标题行
             Row headerRow = sheet.createRow(0);
             String[] headers = {
-                "序号", "检查组组长", "副组长", "所属部门", "专业", "问题描述", "发生部位", 
+                "序号", "所属部门", "专业", "问题描述", "发生部位", 
                 "整改期限", "检查人", "责任单位", "责任人", "整改效果", 
                 "整改时间", "复查效果", "复查人", "复查时间", 
-                "性质界定", "考核情况", "安全记分"
+                "性质界定", "安全记分", "考核情况"
             };
             
             // 设置标题样式
@@ -499,98 +568,88 @@ public class SysInspectionRecordServiceImpl extends ServiceImpl<SysInspectionRec
                 cell0.setCellValue(i + 1);
                 cell0.setCellStyle(dataStyle);
                 
-                // 检查组组长
+                // 所属部门
                 Cell cell1 = row.createCell(1);
-                cell1.setCellValue(record.getGroupLeaderName() != null ? record.getGroupLeaderName() : "");
+                cell1.setCellValue(record.getDepartmentName() != null ? record.getDepartmentName() : "");
                 cell1.setCellStyle(dataStyle);
                 
-                // 副组长
+                // 专业
                 Cell cell2 = row.createCell(2);
-                cell2.setCellValue(record.getDeputyLeaderName() != null ? record.getDeputyLeaderName() : "");
+                cell2.setCellValue(record.getProfessionName() != null ? record.getProfessionName() : "");
                 cell2.setCellStyle(dataStyle);
                 
-                // 所属部门
+                // 问题描述
                 Cell cell3 = row.createCell(3);
-                cell3.setCellValue(record.getDepartmentName() != null ? record.getDepartmentName() : "");
+                cell3.setCellValue(record.getProblemDescription() != null ? record.getProblemDescription() : "");
                 cell3.setCellStyle(dataStyle);
                 
-                // 专业
+                // 发生部位
                 Cell cell4 = row.createCell(4);
-                cell4.setCellValue(record.getProfessionName() != null ? record.getProfessionName() : "");
+                cell4.setCellValue(record.getLocation() != null ? record.getLocation() : "");
                 cell4.setCellStyle(dataStyle);
                 
-                // 问题描述
+                // 整改期限
                 Cell cell5 = row.createCell(5);
-                cell5.setCellValue(record.getProblemDescription() != null ? record.getProblemDescription() : "");
+                cell5.setCellValue(record.getRectificationDeadline() != null ? 
+                    record.getRectificationDeadline().format(formatter) : "");
                 cell5.setCellStyle(dataStyle);
                 
-                // 发生部位
+                // 检查人
                 Cell cell6 = row.createCell(6);
-                cell6.setCellValue(record.getLocation() != null ? record.getLocation() : "");
+                cell6.setCellValue(record.getInspectorName() != null ? record.getInspectorName() : "");
                 cell6.setCellStyle(dataStyle);
                 
-                // 整改期限
+                // 责任单位
                 Cell cell7 = row.createCell(7);
-                cell7.setCellValue(record.getRectificationDeadline() != null ? 
-                    record.getRectificationDeadline().format(formatter) : "");
+                cell7.setCellValue(record.getResponsibleUnit() != null ? record.getResponsibleUnit() : "");
                 cell7.setCellStyle(dataStyle);
                 
-                // 检查人
+                // 责任人
                 Cell cell8 = row.createCell(8);
-                cell8.setCellValue(record.getInspectorName() != null ? record.getInspectorName() : "");
+                cell8.setCellValue(record.getResponsiblePersonName() != null ? record.getResponsiblePersonName() : "");
                 cell8.setCellStyle(dataStyle);
                 
-                // 责任单位
+                // 整改效果
                 Cell cell9 = row.createCell(9);
-                cell9.setCellValue(record.getResponsibleUnit() != null ? record.getResponsibleUnit() : "");
+                cell9.setCellValue(record.getRectificationEffect() != null ? record.getRectificationEffect() : "");
                 cell9.setCellStyle(dataStyle);
                 
-                // 责任人
+                // 整改时间
                 Cell cell10 = row.createCell(10);
-                cell10.setCellValue(record.getResponsiblePersonName() != null ? record.getResponsiblePersonName() : "");
+                cell10.setCellValue(record.getRectificationTime() != null ? 
+                    record.getRectificationTime().format(formatter) : "");
                 cell10.setCellStyle(dataStyle);
                 
-                // 整改效果
+                // 复查效果
                 Cell cell11 = row.createCell(11);
-                cell11.setCellValue(record.getRectificationEffect() != null ? record.getRectificationEffect() : "");
+                cell11.setCellValue(record.getReviewEffect() != null ? record.getReviewEffect() : "");
                 cell11.setCellStyle(dataStyle);
                 
-                // 整改时间
+                // 复查人
                 Cell cell12 = row.createCell(12);
-                cell12.setCellValue(record.getRectificationTime() != null ? 
-                    record.getRectificationTime().format(formatter) : "");
+                cell12.setCellValue(record.getReviewerName() != null ? record.getReviewerName() : "");
                 cell12.setCellStyle(dataStyle);
                 
-                // 复查效果
+                // 复查时间
                 Cell cell13 = row.createCell(13);
-                cell13.setCellValue(record.getReviewEffect() != null ? record.getReviewEffect() : "");
+                cell13.setCellValue(record.getReviewTime() != null ? 
+                    record.getReviewTime().format(formatter) : "");
                 cell13.setCellStyle(dataStyle);
                 
-                // 复查人
+                // 性质界定
                 Cell cell14 = row.createCell(14);
-                cell14.setCellValue(record.getReviewerName() != null ? record.getReviewerName() : "");
+                cell14.setCellValue(record.getNatureDefinition() != null ? record.getNatureDefinition() : "");
                 cell14.setCellStyle(dataStyle);
                 
-                // 复查时间
+                // 安全记分
                 Cell cell15 = row.createCell(15);
-                cell15.setCellValue(record.getReviewTime() != null ? 
-                    record.getReviewTime().format(formatter) : "");
+                cell15.setCellValue(record.getSafetyScore() != null ? record.getSafetyScore().toString() : "");
                 cell15.setCellStyle(dataStyle);
                 
-                // 性质界定
-                Cell cell16 = row.createCell(16);
-                cell16.setCellValue(record.getNatureDefinition() != null ? record.getNatureDefinition() : "");
-                cell16.setCellStyle(dataStyle);
-                
                 // 考核情况
-                Cell cell17 = row.createCell(17);
-                cell17.setCellValue(record.getAssessmentSituation() != null ? record.getAssessmentSituation() : "");
-                cell17.setCellStyle(dataStyle);
-                
-                // 安全记分
-                Cell cell18 = row.createCell(18);
-                cell18.setCellValue(record.getSafetyScore() != null ? record.getSafetyScore().toString() : "");
-                cell18.setCellStyle(dataStyle);
+                Cell cell16 = row.createCell(16);
+                cell16.setCellValue(record.getAssessmentSituation() != null ? record.getAssessmentSituation() : "");
+                cell16.setCellStyle(dataStyle);
             }
             
             // 自动调整列宽
@@ -623,6 +682,80 @@ public class SysInspectionRecordServiceImpl extends ServiceImpl<SysInspectionRec
         } catch (IOException e) {
             log.error("导出Excel失败", e);
             throw new RuntimeException("导出Excel失败: " + e.getMessage());
+        }
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public boolean batchUpdateStatus(List<String> ids, Integer status) {
+        try {
+            if (ids == null || ids.isEmpty()) {
+                log.warn("批量更新状态失败：记录ID列表为空");
+                return false;
+            }
+            if (status == null) {
+                log.warn("批量更新状态失败：状态值为空");
+                return false;
+            }
+            
+            // 构建更新条件
+            LambdaQueryWrapper<SysInspectionRecord> wrapper = new LambdaQueryWrapper<>();
+            wrapper.in(SysInspectionRecord::getId, ids);
+            
+            // 创建更新对象
+            SysInspectionRecord updateRecord = new SysInspectionRecord();
+            updateRecord.setStatus(status);
+            updateRecord.setUpdateTime(LocalDateTime.now());
+            
+            // 执行批量更新
+            boolean result = this.update(updateRecord, wrapper);
+            
+            if (result) {
+                log.info("批量更新状态成功：更新{}条记录，状态设为{}", ids.size(), status);
+            } else {
+                log.error("批量更新状态失败：更新{}条记录失败", ids.size());
+            }
+            
+            return result;
+        } catch (Exception e) {
+            log.error("批量更新状态异常：{}", e.getMessage(), e);
+            throw new RuntimeException("批量更新状态失败: " + e.getMessage());
+        }
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public boolean updateSingleStatus(String id, Integer status) {
+        try {
+            if (id == null || id.isEmpty()) {
+                log.warn("单个更新状态失败：记录ID为空");
+                return false;
+            }
+            if (status == null) {
+                log.warn("单个更新状态失败：状态值为空");
+                return false;
+            }
+            
+            // 创建更新对象
+            SysInspectionRecord updateRecord = new SysInspectionRecord();
+            updateRecord.setId(id);
+            updateRecord.setStatus(status);
+            updateRecord.setUpdateTime(LocalDateTime.now());
+            
+            
+            // 执行更新
+            boolean result = this.updateById(updateRecord);
+            
+            if (result) {
+                log.info("单个更新状态成功：记录ID={}, 状态设为{}", id, status);
+            } else {
+                log.error("单个更新状态失败：记录ID={}", id);
+            }
+            
+            return result;
+        } catch (Exception e) {
+            log.error("单个更新状态异常：{}", e.getMessage(), e);
+            throw new RuntimeException("单个更新状态失败: " + e.getMessage());
         }
     }
 }

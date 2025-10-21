@@ -1,7 +1,7 @@
 {
   "id": "tui-xechars",
   "displayName": "xCharts 高性能UTS图表UI",
-  "version": "2.0.2",
+  "version": "2.0.3",
   "description": "⭐ 重磅革新：单 Canvas 绘制多图表，性能飞跃 ⭐ uniappx 量身定制的纯 UTS 图表引擎 ",
   "keywords": [
     "charts",
@@ -20,10 +20,10 @@
     "type": "component-vue",
     "sale": {
       "regular": {
-        "price": "9.99"
+        "price": "0.00"
       },
       "sourcecode": {
-        "price": "199.99"
+        "price": "0.00"
       }
     },
     "contact": {
@@ -44,9 +44,9 @@
     "encrypt": [],
     "platforms": {
       "cloud": {
-        "tcb": "x",
-        "aliyun": "x",
-        "alipay": "x"
+        "tcb": "√",
+        "aliyun": "√",
+        "alipay": "√"
       },
       "client": {
         "uni-app": {

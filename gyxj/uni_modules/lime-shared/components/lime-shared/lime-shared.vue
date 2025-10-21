@@ -380,7 +380,7 @@
 	// console.log("示例1 标准HTTP URL:", isURL("http://example.com")); // true
 	// console.log("示例2 需要端口时缺少端口:", isURL("https://example.com", { requirePort: true } as URLOptions)); // false
 	// console.log("示例3 协议相对URL:", isURL("//example.com", { allowProtocolRelativeUrls: true })); // true
-	console.log("示例4 IPv6地址:", isURL("http://[2001:db8::1]:8080", {})); // true
+	console.log("示例4 IPv6地址:", isURL("http://[2001:db8::1]:8081", {})); // true
 	// console.log("示例5 带认证信息被禁用:", isURL("user:pass@example.com", { disallowAuth: true })); // false
 	console.log("示例6 查询参数被禁用:", isURL("http://example.com?q=test", { allowQueryComponents: true })); // false
 	console.log("示例7 非字符串输入:", isURL(null, {})); // false
@@ -391,7 +391,7 @@
 	
 	// #ifdef WEB
 	// console.log('validator', validator.isURL())
-	console.log("示例4 IPv6地址:", validator.isURL("http://[2001:db8::1]:8080", {})); // true
+	console.log("示例4 IPv6地址:", validator.isURL("http://[2001:db8::1]:8081", {})); // true
 	console.log("示例6 查询参数被禁用:", validator.isURL("http://example.com?q=test", { allow_query_components: true })); // false
 	console.log("示例8 邮件协议被排除:", validator.isURL("mailto:test@example.com", {})); // false
 	console.log("示例9 自定义协议:", isURL("ftp://files.example.com", { protocols: ["ftp"] })); // true

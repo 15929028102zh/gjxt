@@ -86,6 +86,24 @@ public class SysUser extends BaseEntity {
     @TableField("image_url")
     private String imageUrl;
 
+    /**
+     * 周检操作权限（0:允许编辑删除, 1:禁用编辑删除）
+     */
+    @TableField("weekly_permission")
+    private Integer weeklyPermission;
+
+    /**
+     * 月检操作权限（0:允许编辑删除, 1:禁用编辑删除）
+     */
+    @TableField("monthly_permission")
+    private Integer monthlyPermission;
+
+    /**
+     * 是否为管理员（0:否, 1:是）
+     */
+    @TableField("is_admin")
+    private Integer isAdmin;
+
     public String getUsername() {
         return username;
     }
@@ -192,5 +210,29 @@ public class SysUser extends BaseEntity {
 
     public void setImageUrl(String imageUrl) {
         this.imageUrl = imageUrl;
+    }
+
+    public Integer getWeeklyPermission() {
+        return weeklyPermission;
+    }
+
+    public void setWeeklyPermission(Integer weeklyPermission) {
+        this.weeklyPermission = weeklyPermission;
+    }
+
+    public Integer getMonthlyPermission() {
+        return monthlyPermission;
+    }
+
+    public void setMonthlyPermission(Integer monthlyPermission) {
+        this.monthlyPermission = monthlyPermission;
+    }
+
+    public Integer getIsAdmin() {
+        return isAdmin;
+    }
+
+    public void setIsAdmin(Integer isAdmin) {
+        this.isAdmin = isAdmin;
     }
 }

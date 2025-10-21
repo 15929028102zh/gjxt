@@ -39,11 +39,29 @@ public class JwtUtil {
      * @param role 用户角色
      * @return JWT Token
      */
-    public String generateToken(Long userId, String username, String role) {
+    public String generateToken(String userId, String username, String role) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("userId", userId);
         claims.put("username", username);
         claims.put("role", role);
+        return createToken(claims, username);
+    }
+
+    /**
+     * 生成JWT Token（包含管理员信息）
+     *
+     * @param userId 用户ID
+     * @param username 用户名
+     * @param role 用户角色
+     * @param isAdmin 是否为管理员
+     * @return JWT Token
+     */
+    public String generateToken(String userId, String username, String role, Integer isAdmin) {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("userId", userId);
+        claims.put("username", username);
+        claims.put("role", role);
+        claims.put("isAdmin", isAdmin);
         return createToken(claims, username);
     }
 
@@ -83,9 +101,9 @@ public class JwtUtil {
      * @param token Token
      * @return 用户ID
      */
-    public Long getUserIdFromToken(String token) {
+    public String getUserIdFromToken(String token) {
         Claims claims = getAllClaimsFromToken(token);
-        return Long.valueOf(claims.get("userId").toString());
+        return claims.get("userId").toString();
     }
 
     /**
@@ -97,6 +115,18 @@ public class JwtUtil {
     public String getRoleFromToken(String token) {
         Claims claims = getAllClaimsFromToken(token);
         return claims.get("role").toString();
+    }
+
+    /**
+     * 从Token中获取管理员标识
+     *
+     * @param token Token
+     * @return 是否为管理员
+     */
+    public Integer getIsAdminFromToken(String token) {
+        Claims claims = getAllClaimsFromToken(token);
+        Object isAdmin = claims.get("isAdmin");
+        return isAdmin != null ? Integer.valueOf(isAdmin.toString()) : 0;
     }
 
     /**

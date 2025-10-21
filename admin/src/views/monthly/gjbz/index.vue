@@ -25,8 +25,8 @@
       </el-form>
       
       <div class="operation-buttons">
-        <el-button type="primary" @click="handleAdd" :icon="Plus">新增</el-button>
-        <el-button type="danger" @click="handleBatchDelete" :disabled="selectedRows.length === 0" :icon="Delete">批量删除</el-button>
+        <el-button type="primary" @click="handleAdd" :icon="Plus" v-if="hasMonthlyPermission()">新增</el-button>
+        <el-button type="danger" @click="handleBatchDelete" :disabled="selectedRows.length === 0" :icon="Delete" v-if="hasMonthlyPermission()">批量删除</el-button>
       </div>
     </div>
 
@@ -48,8 +48,8 @@
         <el-table-column prop="quality" label="问题性质" width="120" />
         <el-table-column label="操作" width="200" fixed="right">
           <template #default="{ row }">
-            <el-button type="primary" size="small" @click="handleEdit(row)" :icon="Edit">编辑</el-button>
-            <el-button type="danger" size="small" @click="handleDelete(row)" :icon="Delete">删除</el-button>
+            <el-button type="primary" size="small" @click="handleEdit(row)" :icon="Edit" v-if="hasMonthlyPermission()">编辑</el-button>
+            <el-button type="danger" size="small" @click="handleDelete(row)" :icon="Delete" v-if="hasMonthlyPermission()">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -113,6 +113,7 @@ import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search, Refresh, Plus, Delete, Edit } from '@element-plus/icons-vue'
 import { gjbzDataApi } from '@/api/gjbz'
+import { hasMonthlyPermission } from '@/utils/permission'
 
 // 响应式数据
 const loading = ref(false)

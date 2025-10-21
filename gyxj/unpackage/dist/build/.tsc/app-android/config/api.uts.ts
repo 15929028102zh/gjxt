@@ -1,0 +1,29 @@
+// API配置文件
+export type ApiConfig = {
+  baseUrl: string
+}
+
+// 获取API基础URL
+const getBaseUrl = (): string => {
+  // 开发环境
+  if (process.env.NODE_ENV === 'development') {
+    return 'http://192.168.75.128:8081'  // 开发服务器
+  }
+  // 生产环境
+  return 'http://10.116.40.104:8081'     // 生产服务器
+}
+
+// 实例化配置
+export const apiConfig = reactive({ 
+  baseUrl: getBaseUrl()
+} as ApiConfig)
+
+// 获取完整的API URL
+export const getApiUrl = (endpoint: string): string => {
+  return `${apiConfig.baseUrl}/api${endpoint}`
+}
+
+// 修改基础URL的方法
+export const setBaseUrl = (url: string) => {
+  apiConfig.baseUrl = url
+}

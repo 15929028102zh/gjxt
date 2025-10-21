@@ -28,9 +28,9 @@ public class InspectionSystemApplication {
                 "                                                                               __/ | \n" +
                 "                                                                              |___/  \n" +
                 "\n石油工业园区设备巡检系统启动成功！\n" +
-                "访问地址：http://localhost:8080/api\n" +
-                "接口文档：http://localhost:8080/api/swagger-ui/index.html\n" +
-                "Druid监控：http://localhost:8080/api/druid\n");
+                "访问地址：http://localhost:8081/api\n" +
+                "接口文档：http://localhost:8081/api/swagger-ui/index.html\n" +
+                "Druid监控：http://localhost:8081/api/druid\n");
     }
 
 }

@@ -1,5 +1,5 @@
 @file:Suppress("UNCHECKED_CAST", "USELESS_CAST", "INAPPLICABLE_JVM_NAME", "UNUSED_ANONYMOUS_PARAMETER", "NAME_SHADOWING", "UNNECESSARY_NOT_NULL_ASSERTION")
-package uni.UNI630A075
+package uni.UNIB5A0920
 import io.dcloud.uniapp.*
 import io.dcloud.uniapp.extapi.*
 import io.dcloud.uniapp.framework.*
@@ -175,66 +175,122 @@ open class GenPagesWeeklyWeekly : BasePage {
     open fun gen_loadStatistics_fn() {
         console.log("开始加载统计数据", " at pages/weekly/weekly.uvue:154")
         val token = uni_getStorageSync("token")
-        val pendingUrl = getApiUrl("/inspection-record/weekly-count?status=0")
-        console.log("待整改数量请求URL:", pendingUrl, " at pages/weekly/weekly.uvue:159")
+        var departmentId = ""
+        val userInfoData = uni_getStorageSync("userInfo")
+        val userInfoStr = if (userInfoData != null) {
+            userInfoData as String
+        } else {
+            ""
+        }
+        if (userInfoStr != null && userInfoStr != "" && userInfoStr != "null" && userInfoStr != "undefined") {
+            try {
+                val parsedUserInfo = UTSAndroid.consoleDebugError(JSON.parse(userInfoStr), " at pages/weekly/weekly.uvue:163") as UTSJSONObject
+                departmentId = parsedUserInfo.getString("deptId") ?: ""
+                console.log("获取到的部门id", departmentId, " at pages/weekly/weekly.uvue:165")
+            }
+             catch (error: Throwable) {
+                console.error("用户信息JSON解析失败:", error, " at pages/weekly/weekly.uvue:167")
+            }
+        }
+        val pendingUrl = getApiUrl("/inspection-record/page?current=1&size=1&status=0" + (if (departmentId != null && departmentId != "") {
+            "&departmentId=" + departmentId
+        } else {
+            ""
+        }
+        ))
+        console.log("待整改数量请求URL:", pendingUrl, " at pages/weekly/weekly.uvue:173")
         uni_request<Any>(RequestOptions(url = pendingUrl, method = "GET", header = object : UTSJSONObject() {
             var Authorization = "Bearer " + token
         }, success = fun(res){
-            console.log("待整改数量请求成功:", res, " at pages/weekly/weekly.uvue:167")
+            console.log("待整改数量请求成功:", res, " at pages/weekly/weekly.uvue:181")
             val response = res.data as UTSJSONObject
             if (res.statusCode == 200 && (response.getNumber("code") ?: 0) == 200) {
-                this.statistics.pendingIssues = response.getNumber("data") ?: 0
-                console.log("待整改数量:", this.statistics.pendingIssues, " at pages/weekly/weekly.uvue:171")
+                val data = response.getJSON("data") as UTSJSONObject
+                this.statistics.pendingIssues = data.getNumber("total") ?: 0
+                console.log("待整改数量:", this.statistics.pendingIssues, " at pages/weekly/weekly.uvue:186")
             } else {
-                console.log("待整改数量请求失败:", response, " at pages/weekly/weekly.uvue:173")
+                console.log("待整改数量请求失败:", response, " at pages/weekly/weekly.uvue:188")
             }
         }
         , fail = fun(error){
-            console.log("待整改数量请求错误:", error, " at pages/weekly/weekly.uvue:177")
+            console.log("待整改数量请求错误:", error, " at pages/weekly/weekly.uvue:192")
         }
         ))
-        val completedUrl = getApiUrl("/inspection-record/weekly-count?status=1")
-        console.log("已整改数量请求URL:", completedUrl, " at pages/weekly/weekly.uvue:183")
+        val completedUrl = getApiUrl("/inspection-record/page?current=1&size=1&status=1" + (if (departmentId != null && departmentId != "") {
+            "&departmentId=" + departmentId
+        } else {
+            ""
+        }
+        ))
+        console.log("已整改数量请求URL:", completedUrl, " at pages/weekly/weekly.uvue:198")
         uni_request<Any>(RequestOptions(url = completedUrl, method = "GET", header = object : UTSJSONObject() {
             var Authorization = "Bearer " + token
         }, success = fun(res){
-            console.log("已整改数量请求成功:", res, " at pages/weekly/weekly.uvue:191")
+            console.log("已整改数量请求成功:", res, " at pages/weekly/weekly.uvue:206")
             val response = res.data as UTSJSONObject
             if (res.statusCode == 200 && (response.getNumber("code") ?: 0) == 200) {
-                this.statistics.completedIssues = response.getNumber("data") ?: 0
-                console.log("已整改数量:", this.statistics.completedIssues, " at pages/weekly/weekly.uvue:195")
+                val data = response.getJSON("data") as UTSJSONObject
+                this.statistics.completedIssues = data.getNumber("total") ?: 0
+                console.log("已整改数量:", this.statistics.completedIssues, " at pages/weekly/weekly.uvue:211")
             } else {
-                console.log("已整改数量请求失败:", response, " at pages/weekly/weekly.uvue:197")
+                console.log("已整改数量请求失败:", response, " at pages/weekly/weekly.uvue:213")
             }
         }
         , fail = fun(error){
-            console.log("已整改数量请求错误:", error, " at pages/weekly/weekly.uvue:201")
+            console.log("已整改数量请求错误:", error, " at pages/weekly/weekly.uvue:217")
         }
         ))
-        val reviewedUrl = getApiUrl("/inspection-record/weekly-count?status=2")
-        console.log("已复查数量请求URL:", reviewedUrl, " at pages/weekly/weekly.uvue:207")
+        val reviewedUrl = getApiUrl("/inspection-record/page?current=1&size=1&status=2" + (if (departmentId != null && departmentId != "") {
+            "&departmentId=" + departmentId
+        } else {
+            ""
+        }
+        ))
+        console.log("已复查数量请求URL:", reviewedUrl, " at pages/weekly/weekly.uvue:223")
         uni_request<Any>(RequestOptions(url = reviewedUrl, method = "GET", header = object : UTSJSONObject() {
             var Authorization = "Bearer " + token
         }, success = fun(res){
-            console.log("已复查数量请求成功:", res, " at pages/weekly/weekly.uvue:215")
+            console.log("已复查数量请求成功:", res, " at pages/weekly/weekly.uvue:231")
             val response = res.data as UTSJSONObject
             if (res.statusCode == 200 && (response.getNumber("code") ?: 0) == 200) {
-                this.statistics.reviewedCount = response.getNumber("data") ?: 0
-                console.log("已复查数量:", this.statistics.reviewedCount, " at pages/weekly/weekly.uvue:219")
+                val data = response.getJSON("data") as UTSJSONObject
+                this.statistics.reviewedCount = data.getNumber("total") ?: 0
+                console.log("已复查数量:", this.statistics.reviewedCount, " at pages/weekly/weekly.uvue:236")
             } else {
-                console.log("已复查数量请求失败:", response, " at pages/weekly/weekly.uvue:221")
+                console.log("已复查数量请求失败:", response, " at pages/weekly/weekly.uvue:238")
             }
         }
         , fail = fun(error){
-            console.log("已复查数量请求错误:", error, " at pages/weekly/weekly.uvue:225")
+            console.log("已复查数量请求错误:", error, " at pages/weekly/weekly.uvue:242")
         }
         ))
     }
     open var loadRecentRecords = ::gen_loadRecentRecords_fn
     open fun gen_loadRecentRecords_fn() {
         val token = uni_getStorageSync("token")
-        val apiUrl = getApiUrl("/inspection-record/page?current=1&size=5&status=0")
-        console.log("请求URL:", apiUrl, " at pages/weekly/weekly.uvue:233")
+        var departmentId = ""
+        val userInfoData = uni_getStorageSync("userInfo")
+        val userInfoStr = if (userInfoData != null) {
+            userInfoData as String
+        } else {
+            ""
+        }
+        if (userInfoStr != null && userInfoStr != "" && userInfoStr != "null" && userInfoStr != "undefined") {
+            try {
+                val parsedUserInfo = UTSAndroid.consoleDebugError(JSON.parse(userInfoStr), " at pages/weekly/weekly.uvue:256") as UTSJSONObject
+                departmentId = parsedUserInfo.getString("deptId") ?: ""
+            }
+             catch (error: Throwable) {
+                console.error("用户信息JSON解析失败:", error, " at pages/weekly/weekly.uvue:259")
+            }
+        }
+        val apiUrl = getApiUrl("/inspection-record/page?current=1&size=5&status=0" + (if (departmentId != null && departmentId != "") {
+            "&departmentId=" + departmentId
+        } else {
+            ""
+        }
+        ))
+        console.log("请求URL:", apiUrl, " at pages/weekly/weekly.uvue:264")
         uni_request<Any>(RequestOptions(url = apiUrl, method = "GET", header = object : UTSJSONObject() {
             var Authorization = "Bearer " + token
         }, success = fun(res){
@@ -255,7 +311,7 @@ open class GenPagesWeeklyWeekly : BasePage {
             }
         }
         , fail = fun(error){
-            console.log("加载最近记录失败:", error, " at pages/weekly/weekly.uvue:260")
+            console.log("加载最近记录失败:", error, " at pages/weekly/weekly.uvue:291")
         }
         ))
     }
@@ -321,31 +377,31 @@ open class GenPagesWeeklyWeekly : BasePage {
     }
     open var onRefresh = ::gen_onRefresh_fn
     open fun gen_onRefresh_fn() {
-        console.log("开始下拉刷新", " at pages/weekly/weekly.uvue:327")
+        console.log("开始下拉刷新", " at pages/weekly/weekly.uvue:358")
         this.isRefreshing = true
         this.reloadAllData()
     }
     open var onRefreshRestore = ::gen_onRefreshRestore_fn
     open fun gen_onRefreshRestore_fn() {
-        console.log("刷新恢复", " at pages/weekly/weekly.uvue:336")
+        console.log("刷新恢复", " at pages/weekly/weekly.uvue:367")
         this.isRefreshing = false
     }
     open var reloadAllData = ::gen_reloadAllData_fn
     open fun gen_reloadAllData_fn() {
-        console.log("重新加载所有数据", " at pages/weekly/weekly.uvue:342")
+        console.log("重新加载所有数据", " at pages/weekly/weekly.uvue:373")
         try {
             this.initData()
             this.loadUserInfo()
             this.loadStatistics()
             this.loadRecentRecords()
-            console.log("数据加载完成", " at pages/weekly/weekly.uvue:355")
+            console.log("数据加载完成", " at pages/weekly/weekly.uvue:386")
         }
          catch (error: Throwable) {
-            console.error("数据加载失败:", error, " at pages/weekly/weekly.uvue:358")
+            console.error("数据加载失败:", error, " at pages/weekly/weekly.uvue:389")
         }
          finally{
             setTimeout(fun(){
-                console.log("关闭刷新动画", " at pages/weekly/weekly.uvue:362")
+                console.log("关闭刷新动画", " at pages/weekly/weekly.uvue:393")
                 this.isRefreshing = false
             }
             , 1000)

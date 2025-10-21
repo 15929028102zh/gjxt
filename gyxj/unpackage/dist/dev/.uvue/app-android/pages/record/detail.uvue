@@ -1,21 +1,21 @@
 import { getApiUrl, apiConfig } from '@/config/api.uts';
 type NatureOption = {
-    __$originalPosition?: UTSSourceMapPosition<"NatureOption", "pages/record/detail.uvue", 286, 7>;
+    __$originalPosition?: UTSSourceMapPosition<"NatureOption", "pages/record/detail.uvue", 275, 7>;
     id: string;
     name: string;
 };
 type ProfessionOption = {
-    __$originalPosition?: UTSSourceMapPosition<"ProfessionOption", "pages/record/detail.uvue", 291, 7>;
+    __$originalPosition?: UTSSourceMapPosition<"ProfessionOption", "pages/record/detail.uvue", 280, 7>;
     id: string;
     name: string;
 };
 type DepartmentOption = {
-    __$originalPosition?: UTSSourceMapPosition<"DepartmentOption", "pages/record/detail.uvue", 296, 7>;
+    __$originalPosition?: UTSSourceMapPosition<"DepartmentOption", "pages/record/detail.uvue", 285, 7>;
     id: string;
     name: string;
 };
 type RecordDetail = {
-    __$originalPosition?: UTSSourceMapPosition<"RecordDetail", "pages/record/detail.uvue", 301, 7>;
+    __$originalPosition?: UTSSourceMapPosition<"RecordDetail", "pages/record/detail.uvue", 290, 7>;
     id: string;
     problemDescription: string;
     responsibleUnit: string;
@@ -62,6 +62,7 @@ const __sfc__ = defineComponent({
             saving: false,
             scrollTop: 0,
             containerHeight: 0,
+            isDelayed: false,
             // 下拉选择框相关数据
             natureOptions: [] as NatureOption[],
             professionOptions: [] as ProfessionOption[],
@@ -79,6 +80,7 @@ const __sfc__ = defineComponent({
     },
     onLoad(options: UTSJSONObject) {
         this.recordId = options.getString('id') ?? '';
+        this.isDelayed = options.getString('delayed') === 'true'; // 检查是否为延迟整改模式
         this.checkLogin();
         // 重置数据加载计数器
         this.loadedDataCount = 0;
@@ -111,21 +113,21 @@ const __sfc__ = defineComponent({
         // 检查所有数据是否加载完成
         checkAllDataLoaded() {
             this.loadedDataCount++;
-            console.log(`数据加载进度: ${this.loadedDataCount}/${this.totalDataCount}`, " at pages/record/detail.uvue:400");
+            console.log(`数据加载进度: ${this.loadedDataCount}/${this.totalDataCount}`, " at pages/record/detail.uvue:391");
             if (this.loadedDataCount >= this.totalDataCount) {
-                console.log('所有数据加载完成，开始回写选中值', " at pages/record/detail.uvue:403");
+                console.log('所有数据加载完成，开始回写选中值', " at pages/record/detail.uvue:394");
                 console.log('当前数据状态:', {
                     recordDetail: this.recordDetail,
                     natureOptionsLength: this.natureOptions.length,
                     professionOptionsLength: this.professionOptions.length,
                     departmentOptionsLength: this.departmentOptions.length
-                }, " at pages/record/detail.uvue:404");
+                }, " at pages/record/detail.uvue:395");
                 // 所有数据加载完成，延迟100ms回写选中值，确保数据已经更新到界面
                 setTimeout(() => {
-                    console.log('开始执行 initSelectedValues', " at pages/record/detail.uvue:412");
+                    console.log('开始执行 initSelectedValues', " at pages/record/detail.uvue:403");
                     this.initSelectedValues();
                     this.loading = false;
-                    console.log('加载状态设置为 false', " at pages/record/detail.uvue:415");
+                    console.log('加载状态设置为 false', " at pages/record/detail.uvue:406");
                 }, 100);
             }
         },
@@ -180,18 +182,18 @@ const __sfc__ = defineComponent({
                             } as RecordDetail;
                             // 处理性质界定字段映射
                             const natureDefinitionValue = recordData.getString('natureDefinition') ?? '';
-                            console.log('natureDefinition原始值:', natureDefinitionValue, " at pages/record/detail.uvue:473");
+                            console.log('natureDefinition原始值:', natureDefinitionValue, " at pages/record/detail.uvue:464");
                             // 判断返回值是ID还是名称，然后正确映射
                             // 如果是32位的ID格式，则作为ID处理；否则作为名称处理
                             if (natureDefinitionValue.length === 32 && /^[a-f0-9]+$/i.test(natureDefinitionValue)) {
                                 // 这是ID，直接赋值
                                 this.recordDetail!.natureId = natureDefinitionValue;
-                                console.log('检测到ID格式，作为ID处理:', natureDefinitionValue, " at pages/record/detail.uvue:480");
+                                console.log('检测到ID格式，作为ID处理:', natureDefinitionValue, " at pages/record/detail.uvue:471");
                             }
                             else {
                                 // 这是名称，需要转换为ID
                                 this.recordDetail!.natureName = natureDefinitionValue;
-                                console.log('检测到名称格式，作为名称处理:', natureDefinitionValue, " at pages/record/detail.uvue:484");
+                                console.log('检测到名称格式，作为名称处理:', natureDefinitionValue, " at pages/record/detail.uvue:475");
                                 // natureId会在字典加载完成后通过名称匹配设置
                             }
                             // 回写整改信息到表单
@@ -206,50 +208,12 @@ const __sfc__ = defineComponent({
                             // 处理整改图片
                             const rectificationImages = this.recordDetail?.rectificationImageUrls;
                             if (rectificationImages != null && rectificationImages != '') {
-                                try {
-                                    let urlList: Array<string> = [];
-                                    if (typeof rectificationImages === 'string') {
-                                        const parsed = UTSAndroid.consoleDebugError(JSON.parse(rectificationImages as string), " at pages/record/detail.uvue:503");
-                                        if (Array.isArray(parsed)) {
-                                            urlList = parsed as Array<string>;
-                                        }
-                                    }
-                                    else if (Array.isArray(rectificationImages)) {
-                                        urlList = rectificationImages as Array<string>;
-                                    }
-                                    // 为整改图片URL添加完整的HTTP地址
-                                    this.rectificationImages = urlList.map((url): string => this.convertToHttpUrl(url));
-                                }
-                                catch (e: any) {
-                                    if (typeof rectificationImages === 'string') {
-                                        const urlList = (rectificationImages as string).split(',');
-                                        this.rectificationImages = urlList.map((url): string => this.convertToHttpUrl(url.trim()));
-                                    }
-                                }
+                                this.rectificationImages = this.processImageUrls(rectificationImages as string);
                             }
                             // 处理图片URL
                             const imageUrls = this.recordDetail?.problemImageUrls;
                             if (imageUrls != null && imageUrls != '') {
-                                try {
-                                    let urlList: Array<string> = [];
-                                    if (typeof imageUrls === 'string') {
-                                        const parsed = UTSAndroid.consoleDebugError(JSON.parse(imageUrls as string), " at pages/record/detail.uvue:527");
-                                        if (Array.isArray(parsed)) {
-                                            urlList = parsed as Array<string>;
-                                        }
-                                    }
-                                    else if (Array.isArray(imageUrls)) {
-                                        urlList = imageUrls as Array<string>;
-                                    }
-                                    // 为图片URL添加完整的HTTP地址
-                                    this.imageList = urlList.map((url): string => this.convertToHttpUrl(url));
-                                }
-                                catch (e: any) {
-                                    if (typeof imageUrls === 'string') {
-                                        const urlList = (imageUrls as string).split(',');
-                                        this.imageList = urlList.map((url): string => this.convertToHttpUrl(url.trim()));
-                                    }
-                                }
+                                this.imageList = this.processImageUrls(imageUrls as string);
                             }
                             else {
                                 this.imageList = [];
@@ -259,16 +223,16 @@ const __sfc__ = defineComponent({
                             let userInfo: UTSJSONObject | null = null;
                             if (userInfoStr != null && userInfoStr != '') {
                                 try {
-                                    userInfo = UTSAndroid.consoleDebugError(JSON.parse(userInfoStr), " at pages/record/detail.uvue:552") as UTSJSONObject;
+                                    userInfo = UTSAndroid.consoleDebugError(JSON.parse(userInfoStr), " at pages/record/detail.uvue:507") as UTSJSONObject;
                                 }
                                 catch (e: any) {
-                                    console.error('解析用户信息失败:', e, " at pages/record/detail.uvue:554");
+                                    console.error('解析用户信息失败:', e, " at pages/record/detail.uvue:509");
                                 }
                             }
                             this.canOperate = userInfo != null && (userInfo.getString('role') === 'ADMIN' || userInfo.getString('id') === (this.recordDetail?.reporterId ?? ''));
                             // 设置页面标题
                             uni.setNavigationBarTitle({
-                                title: '记录详情'
+                                title: this.isDelayed ? '延迟整改录入' : '记录详情'
                             });
                             // 记录详情加载完成
                             this.checkAllDataLoaded();
@@ -284,7 +248,7 @@ const __sfc__ = defineComponent({
                     this.checkAllDataLoaded();
                 },
                 fail: (error) => {
-                    console.error('加载记录详情失败:', error, " at pages/record/detail.uvue:577");
+                    console.error('加载记录详情失败:', error, " at pages/record/detail.uvue:532");
                     uni.showToast({
                         title: '网络错误',
                         icon: 'none'
@@ -343,7 +307,7 @@ const __sfc__ = defineComponent({
                                 }
                             },
                             fail: (error) => {
-                                console.error(`${actionName}失败:`, error, " at pages/record/detail.uvue:639");
+                                console.error(`${actionName}失败:`, error, " at pages/record/detail.uvue:594");
                                 uni.showToast({
                                     title: '网络错误',
                                     icon: 'none'
@@ -437,6 +401,27 @@ const __sfc__ = defineComponent({
             const fullUrl = `${apiConfig.baseUrl}/api${relativePath}`;
             return fullUrl;
         },
+        // 处理图片URL数组，支持JSON数组格式和逗号分隔字符串格式
+        processImageUrls(imageUrls: string): string[] {
+            if (imageUrls == null || imageUrls.trim() === '') {
+                return [];
+            }
+            try {
+                // 尝试解析为JSON数组
+                if (imageUrls.trim().startsWith('[') && imageUrls.trim().endsWith(']')) {
+                    const parsed = UTSAndroid.consoleDebugError(JSON.parse(imageUrls), " at pages/record/detail.uvue:714") as string[];
+                    return parsed.map((url): string => this.convertToHttpUrl(url)).filter((url): boolean => url !== '');
+                }
+            }
+            catch (e: any) {
+                console.log('JSON解析失败，尝试按逗号分隔处理:', e, " at pages/record/detail.uvue:718");
+            }
+            // 按逗号分隔处理
+            return imageUrls.split(',')
+                .map((url): string => url.trim())
+                .filter((url): boolean => url !== '')
+                .map((url): string => this.convertToHttpUrl(url));
+        },
         async saveRectificationInfo(): Promise<void> {
             if (this.saving)
                 return;
@@ -459,7 +444,7 @@ const __sfc__ = defineComponent({
                     uni.hideLoading();
                 }
                 // 2. 组织全页数据 - 保持原有字段不变，更新整改相关字段
-                const updateData = { __$originalPosition: new UTSSourceMapPosition("updateData", "pages/record/detail.uvue", 775, 11),
+                const updateData = { __$originalPosition: new UTSSourceMapPosition("updateData", "pages/record/detail.uvue", 753, 11),
                     // 保持原有记录的所有字段
                     id: this.recordDetail?.id ?? '',
                     problemDescription: this.recordDetail?.problemDescription ?? '',
@@ -490,12 +475,12 @@ const __sfc__ = defineComponent({
                     title: '保存中...'
                 });
                 // 添加调试信息
-                console.log('准备保存的数据:', updateData, " at pages/record/detail.uvue:809");
+                console.log('准备保存的数据:', updateData, " at pages/record/detail.uvue:787");
                 console.log('性质界定保存值:', {
                     selectedNatureIndex: this.selectedNatureIndex,
                     natureDefinition: updateData["natureDefinition"],
                     natureOptions: this.natureOptions
-                }, " at pages/record/detail.uvue:810");
+                }, " at pages/record/detail.uvue:788");
                 const token = uni.getStorageSync('token');
                 uni.request({
                     url: getApiUrl('/inspection-record'),
@@ -510,7 +495,7 @@ const __sfc__ = defineComponent({
                         const data = response.data as UTSJSONObject;
                         if (response.statusCode === 200 && (data.getNumber('code') ?? 0) === 200) {
                             uni.showToast({
-                                title: '保存成功',
+                                title: this.isDelayed ? '确认整改成功' : '保存成功',
                                 icon: 'success',
                                 duration: 1500
                             });
@@ -555,7 +540,7 @@ const __sfc__ = defineComponent({
                     },
                     fail: (error) => {
                         uni.hideLoading();
-                        console.error('保存整改信息失败:', error, " at pages/record/detail.uvue:872");
+                        console.error('保存整改信息失败:', error, " at pages/record/detail.uvue:850");
                         uni.showToast({
                             title: '网络错误',
                             icon: 'none'
@@ -566,7 +551,7 @@ const __sfc__ = defineComponent({
             }
             catch (error: any) {
                 uni.hideLoading();
-                console.error('上传图片失败:', error, " at pages/record/detail.uvue:882");
+                console.error('上传图片失败:', error, " at pages/record/detail.uvue:860");
                 uni.showToast({
                     title: '图片上传失败，请重试',
                     icon: 'none'
@@ -591,7 +576,7 @@ const __sfc__ = defineComponent({
                         },
                         success: (res) => {
                             try {
-                                const data = UTSAndroid.consoleDebugError(JSON.parse(res.data), " at pages/record/detail.uvue:909") as UTSJSONObject;
+                                const data = UTSAndroid.consoleDebugError(JSON.parse(res.data), " at pages/record/detail.uvue:887") as UTSJSONObject;
                                 if (res.statusCode === 200 && (data.getNumber('code') ?? 0) === 200) {
                                     const dataObj = data.getJSON('data');
                                     const imageUrl = dataObj?.getString('filePath') ?? '';
@@ -618,12 +603,12 @@ const __sfc__ = defineComponent({
             });
             try {
                 const imageUrls = await Promise.all(uploadPromises);
-                console.log('所有整改图片上传成功，返回URL数量:', imageUrls.length, " at pages/record/detail.uvue:934");
-                console.log('上传成功的图片URLs:', imageUrls, " at pages/record/detail.uvue:935");
+                console.log('所有整改图片上传成功，返回URL数量:', imageUrls.length, " at pages/record/detail.uvue:912");
+                console.log('上传成功的图片URLs:', imageUrls, " at pages/record/detail.uvue:913");
                 return imageUrls;
             }
             catch (error: any) {
-                console.error('整改图片上传失败:', error, " at pages/record/detail.uvue:938");
+                console.error('整改图片上传失败:', error, " at pages/record/detail.uvue:916");
                 throw error;
             }
         },
@@ -651,96 +636,96 @@ const __sfc__ = defineComponent({
         },
         // 初始化选中值（数据加载完成后调用）
         initSelectedValues() {
-            console.log('开始初始化选中值', " at pages/record/detail.uvue:968");
+            console.log('开始初始化选中值', " at pages/record/detail.uvue:946");
             if (this.recordDetail == null) {
-                console.log('recordDetail为空，无法初始化选中值', " at pages/record/detail.uvue:970");
+                console.log('recordDetail为空，无法初始化选中值', " at pages/record/detail.uvue:948");
                 return;
             }
-            console.log('记录详情数据:', this.recordDetail, " at pages/record/detail.uvue:974");
+            console.log('记录详情数据:', this.recordDetail, " at pages/record/detail.uvue:952");
             console.log('字典数据状态:', {
                 natureOptions: this.natureOptions,
                 professionOptions: this.professionOptions,
                 departmentOptions: this.departmentOptions
-            }, " at pages/record/detail.uvue:975");
+            }, " at pages/record/detail.uvue:953");
             // 回写性质界定（支持ID或名称匹配）
             const natureId = this.recordDetail!.natureId ?? '';
             const natureName = this.recordDetail!.natureName ?? '';
-            console.log('性质界定数据:', { natureId, natureName }, " at pages/record/detail.uvue:984");
+            console.log('性质界定数据:', { natureId, natureName }, " at pages/record/detail.uvue:962");
             if (natureId !== '') {
                 // 有ID值，使用ID匹配
-                console.log('使用ID匹配:', natureId, " at pages/record/detail.uvue:988");
+                console.log('使用ID匹配:', natureId, " at pages/record/detail.uvue:966");
                 for (let i = 0; i < this.natureOptions.length; i++) {
-                    console.log(`性质界定ID比较: ${this.natureOptions[i].id} == ${natureId}`, " at pages/record/detail.uvue:990");
+                    console.log(`性质界定ID比较: ${this.natureOptions[i].id} == ${natureId}`, " at pages/record/detail.uvue:968");
                     if (this.natureOptions[i].id == natureId) {
                         this.selectedNatureIndex = i;
                         this.recordDetail!.natureName = this.natureOptions[i].name;
-                        console.log('性质界定ID匹配成功，索引:', i, 'ID:', this.natureOptions[i].id, '名称:', this.natureOptions[i].name, " at pages/record/detail.uvue:994");
+                        console.log('性质界定ID匹配成功，索引:', i, 'ID:', this.natureOptions[i].id, '名称:', this.natureOptions[i].name, " at pages/record/detail.uvue:972");
                         break;
                     }
                 }
                 if (this.selectedNatureIndex === -1) {
-                    console.log('性质界定ID在字典中未找到匹配项:', natureId, " at pages/record/detail.uvue:999");
+                    console.log('性质界定ID在字典中未找到匹配项:', natureId, " at pages/record/detail.uvue:977");
                 }
             }
             else if (natureName !== '') {
                 // 没有ID但有名称，使用名称匹配
-                console.log('使用名称匹配:', natureName, " at pages/record/detail.uvue:1003");
+                console.log('使用名称匹配:', natureName, " at pages/record/detail.uvue:981");
                 for (let i = 0; i < this.natureOptions.length; i++) {
-                    console.log(`性质界定名称比较: ${this.natureOptions[i].name} == ${natureName}`, " at pages/record/detail.uvue:1005");
+                    console.log(`性质界定名称比较: ${this.natureOptions[i].name} == ${natureName}`, " at pages/record/detail.uvue:983");
                     if (this.natureOptions[i].name == natureName) {
                         this.selectedNatureIndex = i;
                         this.recordDetail!.natureId = this.natureOptions[i].id;
-                        console.log('性质界定名称匹配成功，索引:', i, 'ID:', this.natureOptions[i].id, '名称:', this.natureOptions[i].name, " at pages/record/detail.uvue:1009");
+                        console.log('性质界定名称匹配成功，索引:', i, 'ID:', this.natureOptions[i].id, '名称:', this.natureOptions[i].name, " at pages/record/detail.uvue:987");
                         break;
                     }
                 }
                 if (this.selectedNatureIndex === -1) {
-                    console.log('性质界定名称在字典中未找到匹配项:', natureName, " at pages/record/detail.uvue:1014");
+                    console.log('性质界定名称在字典中未找到匹配项:', natureName, " at pages/record/detail.uvue:992");
                 }
             }
             else {
-                console.log('性质界定ID和名称都为空，跳过匹配', " at pages/record/detail.uvue:1017");
+                console.log('性质界定ID和名称都为空，跳过匹配', " at pages/record/detail.uvue:995");
             }
             if (this.selectedNatureIndex === -1) {
-                console.log('可用的字典选项:', this.natureOptions.map((item): string => `${item.name}(${item.id})`), " at pages/record/detail.uvue:1021");
+                console.log('可用的字典选项:', this.natureOptions.map((item): string => `${item.name}(${item.id})`), " at pages/record/detail.uvue:999");
             }
             // 回写专业（使用字符串类型ID）
             const professionId = this.recordDetail!.professionId ?? '';
-            console.log('专业ID:', professionId, " at pages/record/detail.uvue:1026");
+            console.log('专业ID:', professionId, " at pages/record/detail.uvue:1004");
             if (professionId !== '') {
                 for (let i = 0; i < this.professionOptions.length; i++) {
-                    console.log(`专业比较: ${this.professionOptions[i].id} == ${professionId}`, " at pages/record/detail.uvue:1029");
+                    console.log(`专业比较: ${this.professionOptions[i].id} == ${professionId}`, " at pages/record/detail.uvue:1007");
                     if (this.professionOptions[i].id == professionId) {
                         this.selectedProfessionIndex = i;
-                        console.log('专业匹配成功，索引:', i, '名称:', this.professionOptions[i].name, " at pages/record/detail.uvue:1032");
+                        console.log('专业匹配成功，索引:', i, '名称:', this.professionOptions[i].name, " at pages/record/detail.uvue:1010");
                         break;
                     }
                 }
             }
             else {
-                console.log('专业ID为空，跳过匹配', " at pages/record/detail.uvue:1037");
+                console.log('专业ID为空，跳过匹配', " at pages/record/detail.uvue:1015");
             }
             // 回写部门（使用字符串类型ID）
             const departmentId = this.recordDetail!.departmentId ?? '';
-            console.log('部门ID:', departmentId, " at pages/record/detail.uvue:1042");
+            console.log('部门ID:', departmentId, " at pages/record/detail.uvue:1020");
             if (departmentId !== '') {
                 for (let i = 0; i < this.departmentOptions.length; i++) {
-                    console.log(`部门比较: ${this.departmentOptions[i].id} == ${departmentId}`, " at pages/record/detail.uvue:1045");
+                    console.log(`部门比较: ${this.departmentOptions[i].id} == ${departmentId}`, " at pages/record/detail.uvue:1023");
                     if (this.departmentOptions[i].id == departmentId) {
                         this.selectedDepartmentIndex = i;
-                        console.log('部门匹配成功，索引:', i, '名称:', this.departmentOptions[i].name, " at pages/record/detail.uvue:1048");
+                        console.log('部门匹配成功，索引:', i, '名称:', this.departmentOptions[i].name, " at pages/record/detail.uvue:1026");
                         break;
                     }
                 }
             }
             else {
-                console.log('部门ID为空，跳过匹配', " at pages/record/detail.uvue:1053");
+                console.log('部门ID为空，跳过匹配', " at pages/record/detail.uvue:1031");
             }
             console.log('回写选中值完成:', {
                 natureId, selectedNatureIndex: this.selectedNatureIndex,
                 professionId, selectedProfessionIndex: this.selectedProfessionIndex,
                 departmentId, selectedDepartmentIndex: this.selectedDepartmentIndex
-            }, " at pages/record/detail.uvue:1056");
+            }, " at pages/record/detail.uvue:1034");
         },
         // 加载性质界定字典数据
         loadNatureOptions() {
@@ -768,11 +753,11 @@ const __sfc__ = defineComponent({
                                 this.natureOptions.push({ id: id, name: name } as NatureOption);
                             }
                         }
-                        console.log('性质界定数据加载成功:', this.natureOptions, " at pages/record/detail.uvue:1089");
+                        console.log('性质界定数据加载成功:', this.natureOptions, " at pages/record/detail.uvue:1067");
                     }
                     else {
                         const message = data.getString('message') ?? '未知错误';
-                        console.error('获取性质界定数据失败:', message, " at pages/record/detail.uvue:1092");
+                        console.error('获取性质界定数据失败:', message, " at pages/record/detail.uvue:1070");
                         this.natureOptions = [
                             { id: '1', name: '一般问题' } as NatureOption,
                             { id: '2', name: '较大问题' } as NatureOption,
@@ -784,7 +769,7 @@ const __sfc__ = defineComponent({
                     this.checkAllDataLoaded();
                 },
                 fail: (error) => {
-                    console.error('请求性质界定数据失败:', error, " at pages/record/detail.uvue:1104");
+                    console.error('请求性质界定数据失败:', error, " at pages/record/detail.uvue:1082");
                     this.natureOptions = [
                         { id: '1', name: '一般问题' } as NatureOption,
                         { id: '2', name: '较大问题' } as NatureOption,
@@ -822,11 +807,11 @@ const __sfc__ = defineComponent({
                                 this.professionOptions.push({ id: id, name: name } as ProfessionOption);
                             }
                         }
-                        console.log('专业数据加载成功:', this.professionOptions, " at pages/record/detail.uvue:1143");
+                        console.log('专业数据加载成功:', this.professionOptions, " at pages/record/detail.uvue:1121");
                     }
                     else {
                         const message = data.getString('message') ?? '未知错误';
-                        console.error('获取专业数据失败:', message, " at pages/record/detail.uvue:1146");
+                        console.error('获取专业数据失败:', message, " at pages/record/detail.uvue:1124");
                         this.professionOptions = [
                             { id: '1', name: '机械' } as ProfessionOption,
                             { id: '2', name: '电气' } as ProfessionOption,
@@ -840,7 +825,7 @@ const __sfc__ = defineComponent({
                     this.checkAllDataLoaded();
                 },
                 fail: (error) => {
-                    console.error('请求专业数据失败:', error, " at pages/record/detail.uvue:1160");
+                    console.error('请求专业数据失败:', error, " at pages/record/detail.uvue:1138");
                     this.professionOptions = [
                         { id: '1', name: '机械' } as ProfessionOption,
                         { id: '2', name: '电气' } as ProfessionOption,
@@ -880,11 +865,11 @@ const __sfc__ = defineComponent({
                                 }
                             }
                         }
-                        console.log('部门数据加载成功:', this.departmentOptions, " at pages/record/detail.uvue:1201");
+                        console.log('部门数据加载成功:', this.departmentOptions, " at pages/record/detail.uvue:1179");
                     }
                     else {
                         const message = data.getString('message') ?? '未知错误';
-                        console.error('获取部门数据失败:', message, " at pages/record/detail.uvue:1204");
+                        console.error('获取部门数据失败:', message, " at pages/record/detail.uvue:1182");
                         this.departmentOptions = [
                             { id: '1', name: '生产部' } as DepartmentOption,
                             { id: '2', name: '安全部' } as DepartmentOption,
@@ -899,7 +884,7 @@ const __sfc__ = defineComponent({
                     this.checkAllDataLoaded();
                 },
                 fail: (error) => {
-                    console.error('请求部门数据失败:', error, " at pages/record/detail.uvue:1219");
+                    console.error('请求部门数据失败:', error, " at pages/record/detail.uvue:1197");
                     this.departmentOptions = [
                         { id: '1', name: '生产部' } as DepartmentOption,
                         { id: '2', name: '安全部' } as DepartmentOption,
@@ -918,15 +903,15 @@ const __sfc__ = defineComponent({
         showNaturePicker() {
             if (this.natureOptions.length > 0) {
                 this.showNaturePopup = true;
-                console.log('显示性质界定选择弹窗', " at pages/record/detail.uvue:1239");
+                console.log('显示性质界定选择弹窗', " at pages/record/detail.uvue:1217");
             }
         },
         hideNaturePicker() {
             this.showNaturePopup = false;
-            console.log('隐藏性质界定选择弹窗', " at pages/record/detail.uvue:1245");
+            console.log('隐藏性质界定选择弹窗', " at pages/record/detail.uvue:1223");
         },
         selectNature(index: number) {
-            console.log('选择性质界定，索引:', index, " at pages/record/detail.uvue:1249");
+            console.log('选择性质界定，索引:', index, " at pages/record/detail.uvue:1227");
             this.selectedNatureIndex = index;
             this.hideNaturePicker();
         },
@@ -934,15 +919,15 @@ const __sfc__ = defineComponent({
         showProfessionPicker() {
             if (this.professionOptions.length > 0) {
                 this.showProfessionPopup = true;
-                console.log('显示专业选择弹窗', " at pages/record/detail.uvue:1258");
+                console.log('显示专业选择弹窗', " at pages/record/detail.uvue:1236");
             }
         },
         hideProfessionPicker() {
             this.showProfessionPopup = false;
-            console.log('隐藏专业选择弹窗', " at pages/record/detail.uvue:1264");
+            console.log('隐藏专业选择弹窗', " at pages/record/detail.uvue:1242");
         },
         selectProfession(index: number) {
-            console.log('选择专业，索引:', index, " at pages/record/detail.uvue:1268");
+            console.log('选择专业，索引:', index, " at pages/record/detail.uvue:1246");
             this.selectedProfessionIndex = index;
             this.hideProfessionPicker();
         },
@@ -950,15 +935,15 @@ const __sfc__ = defineComponent({
         showDepartmentPicker() {
             if (this.departmentOptions.length > 0) {
                 this.showDepartmentPopup = true;
-                console.log('显示部门选择弹窗', " at pages/record/detail.uvue:1277");
+                console.log('显示部门选择弹窗', " at pages/record/detail.uvue:1255");
             }
         },
         hideDepartmentPicker() {
             this.showDepartmentPopup = false;
-            console.log('隐藏部门选择弹窗', " at pages/record/detail.uvue:1283");
+            console.log('隐藏部门选择弹窗', " at pages/record/detail.uvue:1261");
         },
         selectDepartment(index: number) {
-            console.log('选择部门，索引:', index, " at pages/record/detail.uvue:1287");
+            console.log('选择部门，索引:', index, " at pages/record/detail.uvue:1265");
             this.selectedDepartmentIndex = index;
             this.hideDepartmentPicker();
         }
@@ -988,11 +973,11 @@ function GenPagesRecordDetailRender(this: InstanceType<typeof __sfc__>): any | n
                     class: "detail-content"
                 }), [
                     _cE("view", _uM({ class: "status-header" }), [
-                        _cE("text", _uM({ class: "page-title" }), "问题详情"),
+                        _cE("text", _uM({ class: "page-title" }), _tD(_ctx.isDelayed ? '延迟整改录入' : '问题详情'), 1 /* TEXT */),
                         _cE("view", _uM({
                             class: _nC(["record-status", _ctx.getStatusClass(_ctx.recordDetail?.status ?? 0)])
                         }), [
-                            _cE("text", null, _tD(_ctx.getStatusText(_ctx.recordDetail?.status ?? 0)), 1 /* TEXT */)
+                            _cE("text", null, _tD(_ctx.isDelayed ? '延迟整改' : _ctx.getStatusText(_ctx.recordDetail?.status ?? 0)), 1 /* TEXT */)
                         ], 2 /* CLASS */)
                     ]),
                     _ctx.imageList.length > 0
@@ -1296,27 +1281,12 @@ function GenPagesRecordDetailRender(this: InstanceType<typeof __sfc__>): any | n
                             ])
                         ])
                     ]),
-                    _ctx.rectificationImages.length > 0
-                        ? _cE("view", _uM({
-                            key: 4,
-                            class: "form-item"
-                        }), [
-                            _cE("text", _uM({ class: "form-label" }), "🔍 整改图片调试信息"),
-                            _cE("view", _uM({ class: "form-input-wrapper" }), [
-                                _cE("view", _uM({ class: "form-display-text" }), [
-                                    _cE(Fragment, null, RenderHelpers.renderList(_ctx.rectificationImages, (image, index, __index, _cached): any => {
-                                        return _cE("text", _uM({ key: index }), " 整改图片" + _tD(index + 1) + ": " + _tD(image) + "\n ", 1 /* TEXT */);
-                                    }), 128 /* KEYED_FRAGMENT */)
-                                ])
-                            ])
-                        ])
-                        : _cC("v-if", true),
                     _cE("view", _uM({ class: "save-button-wrapper" }), [
                         _cE("button", _uM({
                             class: "save-btn",
                             onClick: _ctx.saveRectificationInfo,
                             disabled: _ctx.saving
-                        }), _tD(_ctx.saving ? '保存中...' : '保存整改信息'), 9 /* TEXT, PROPS */, ["onClick", "disabled"])
+                        }), _tD(_ctx.saving ? (_ctx.isDelayed ? '确认中...' : '保存中...') : (_ctx.isDelayed ? '确认整改' : '保存整改信息')), 9 /* TEXT, PROPS */, ["onClick", "disabled"])
                     ])
                 ])
                 : _cE("view", _uM({

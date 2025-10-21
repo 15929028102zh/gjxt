@@ -3,8 +3,7 @@
     <div class="login-box">
       <div class="login-header">
         <img src="/logo.png" alt="Logo" class="logo" />
-        <h2>岗位巡检系统</h2>
-        <p>后台管理系统</p>
+        <h2>榆林公司岗检系统</h2>
       </div>
       
       <el-form
@@ -115,8 +114,8 @@ const handleLogin = async () => {
           console.log('开始执行跳转逻辑')
           console.log('当前路径:', route.path)
           console.log('Token是否有效:', isTokenValid())
-          console.log('准备跳转到根路径 /')
-          router.push('/').then(() => {
+          console.log('准备跳转到首页 /home')
+          router.push('/home').then(() => {
             console.log('路由跳转Promise成功')
             setTimeout(() => {
               console.log('跳转后的路径:', router.currentRoute.value.path)

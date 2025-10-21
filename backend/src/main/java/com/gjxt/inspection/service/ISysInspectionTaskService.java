@@ -30,7 +30,7 @@ public interface ISysInspectionTaskService extends IService<SysInspectionTask> {
      * @return 分页结果
      */
     PageResult<SysInspectionTask> getTaskPage(Long current, Long size, String taskNo, String taskName, 
-                                              Long professionId, Long locationId, Long assignedUserId, 
+                                              Long professionId, Long locationId, String assignedUserId, 
                                               String status, String startTime, String endTime);
 
     /**
@@ -100,7 +100,7 @@ public interface ISysInspectionTaskService extends IService<SysInspectionTask> {
      * @param status 状态
      * @return 分页结果
      */
-    PageResult<SysInspectionTask> getUserTasks(Long userId, Long current, Long size, String status);
+    PageResult<SysInspectionTask> getUserTasks(String userId, Long current, Long size, String status);
 
     /**
      * 检查任务编号是否存在

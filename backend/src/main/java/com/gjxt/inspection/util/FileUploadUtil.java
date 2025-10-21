@@ -67,15 +67,22 @@ public class FileUploadUtil {
             throw new RuntimeException("文件名不能为空");
         }
 
+        // 添加调试日志
+        System.out.println("=== FileUploadUtil 调试信息 ===");
+        System.out.println("原始文件名: " + originalFilename);
+        System.out.println("子目录: " + subDir);
+
         // 获取文件扩展名
         String extension = "";
         int lastDotIndex = originalFilename.lastIndexOf(".");
         if (lastDotIndex > 0) {
             extension = originalFilename.substring(lastDotIndex);
         }
+        System.out.println("文件扩展名: " + extension);
 
         // 生成新的文件名
         String newFileName = generateFileName() + extension;
+        System.out.println("生成的新文件名: " + newFileName);
 
         // 构建文件保存路径
         String datePath = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
@@ -83,20 +90,31 @@ public class FileUploadUtil {
         // 确保路径使用正确的分隔符
         String savePath = uploadPath + fullSubDir;
         
+        System.out.println("日期路径: " + datePath);
+        System.out.println("完整子目录: " + fullSubDir);
+        System.out.println("保存路径: " + savePath);
+        
         // 使用同步方法创建目录
         File saveDir = createDirectoryIfNotExists(savePath);
 
         // 保存文件
         File saveFile = new File(saveDir, newFileName);
+        System.out.println("完整文件路径: " + saveFile.getAbsolutePath());
+        
         try {
             file.transferTo(saveFile);
+            System.out.println("文件保存成功");
         } catch (IOException e) {
+            System.err.println("文件保存失败: " + e.getMessage());
             throw new RuntimeException("文件上传失败: " + e.getMessage());
         }
 
         // 返回相对路径，用于前端访问
         // 例如: /files/images/20250818/xxx.jpg
         String relativePath = "/files/" + fullSubDir.replace(File.separator, "/") + "/" + newFileName;
+        System.out.println("返回的相对路径: " + relativePath);
+        System.out.println("=== FileUploadUtil 调试信息结束 ===");
+        
         return relativePath;
     }
 

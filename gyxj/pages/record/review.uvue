@@ -560,44 +560,15 @@
 								// 处理问题图片
 								const imageUrls = this.recordDetail?.problemImageUrls
 								if (imageUrls != null && imageUrls != '') {
-									try {
-										let urlList: Array<string> = []
-										if (typeof imageUrls === 'string') {
-											const parsed = JSON.parse(imageUrls as string)
-											if (Array.isArray(parsed)) {
-												urlList = parsed as Array<string>
-											}
-										} else if (Array.isArray(imageUrls)) {
-											urlList = imageUrls as Array<string>
-										}
-										this.imageList = urlList.map(url => this.convertToHttpUrl(url))
-									} catch (e) {
-										if (typeof imageUrls === 'string') {
-											const urlList = (imageUrls as string).split(',')
-											this.imageList = urlList.map(url => this.convertToHttpUrl(url.trim()))
-										}
-									}
+									this.imageList = this.processImageUrls(imageUrls as string)
 								}
 												
 								// 处理整改图片
 								const rectificationImages = this.recordDetail?.rectificationImageUrls
 								console.log('调试：整改图片原始数据', rectificationImages)
 								if (rectificationImages != null && rectificationImages != '') {
-									// 直接按逗号分割处理，因为数据库存储格式就是逗号分割的
-									if (typeof rectificationImages === 'string') {
-										const urlList = (rectificationImages as string).split(',')
-										console.log('调试：逗号分割结果', urlList)
-										// 过滤空字符串并转换为完整URL
-										this.rectificationImages = urlList
-											.map(url => url.trim())
-											.filter(url => url.length > 0)
-											.map(url => this.convertToHttpUrl(url))
-										console.log('调试：最终的整改图片URL列表', this.rectificationImages)
-									} else if (Array.isArray(rectificationImages)) {
-										// 如果已经是数组，直接处理
-										this.rectificationImages = (rectificationImages as Array<string>).map(url => this.convertToHttpUrl(url))
-										console.log('调试：直接数组处理结果', this.rectificationImages)
-									}
+									this.rectificationImages = this.processImageUrls(rectificationImages as string)
+									console.log('调试：最终的整改图片URL列表', this.rectificationImages)
 								} else {
 									console.log('调试：整改图片数据为空')
 								}
@@ -606,21 +577,8 @@
 								const reviewImages = this.recordDetail?.reviewImageUrls
 								console.log('调试：复查图片原始数据', reviewImages)
 								if (reviewImages != null && reviewImages != '') {
-									// 直接按逗号分割处理，因为数据库存储格式就是逗号分割的
-									if (typeof reviewImages === 'string') {
-										const urlList = (reviewImages as string).split(',')
-										console.log('调试：逗号分割结果', urlList)
-										// 过滤空字符串并转换为完整URL
-										this.reviewImages = urlList
-											.map(url => url.trim())
-											.filter(url => url.length > 0)
-											.map(url => this.convertToHttpUrl(url))
-										console.log('调试：最终的复查图片URL列表', this.reviewImages)
-									} else if (Array.isArray(reviewImages)) {
-										// 如果已经是数组，直接处理
-										this.reviewImages = (reviewImages as Array<string>).map(url => this.convertToHttpUrl(url))
-										console.log('调试：直接数组处理结果', this.reviewImages)
-									}
+									this.reviewImages = this.processImageUrls(reviewImages as string)
+									console.log('调试：最终的复查图片URL列表', this.reviewImages)
 								} else {
 									console.log('调试：复查图片数据为空')
 								}
@@ -722,6 +680,29 @@
 					}
 					const fullUrl = `${apiConfig.baseUrl}/api${relativePath}`
 					return fullUrl
+				},
+				
+				// 处理图片URL数组，支持JSON数组格式和逗号分隔字符串格式
+      processImageUrls(imageUrls: string): string[] {
+       if (imageUrls == null || imageUrls.trim() === '') {
+						return []
+					}
+					
+					try {
+						// 尝试解析为JSON数组
+						if (imageUrls.trim().startsWith('[') && imageUrls.trim().endsWith(']')) {
+							const parsed = JSON.parse(imageUrls) as string[]
+							return parsed.map(url => this.convertToHttpUrl(url)).filter(url => url !== '')
+						}
+					} catch (e) {
+						console.log('JSON解析失败，尝试按逗号分隔处理:', e)
+					}
+					
+					// 按逗号分隔处理
+					return imageUrls.split(',')
+						.map(url => url.trim())
+						.filter(url => url !== '')
+						.map(url => this.convertToHttpUrl(url))
 				},
 				
 				async saveReviewInfo() {

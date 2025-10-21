@@ -57,6 +57,20 @@ public class SysUserController {
     }
 
     /**
+     * 用户退出登录
+     */
+    @PostMapping("/logout")
+    public Result<Void> logout() {
+        try {
+            // 这里可以添加清除session、token等逻辑
+            // 目前前端主要通过清除本地token来实现退出
+            return Result.success("退出登录成功");
+        } catch (Exception e) {
+            return Result.error(e.getMessage());
+        }
+    }
+
+    /**
      * 分页查询用户列表
      */
     @GetMapping("/page")
@@ -233,6 +247,46 @@ public class SysUserController {
             }
             boolean success = userService.updateImageUrlByUsername(username, imageUrl);
             return success ? Result.success("更新头像成功") : Result.error("更新头像失败");
+        } catch (Exception e) {
+            return Result.error(e.getMessage());
+        }
+    }
+
+    /**
+     * 更新用户权限
+     */
+    @PutMapping("/{id}/permissions")
+    public Result<Void> updateUserPermissions(@PathVariable String id, @RequestBody Map<String, Integer> params) {
+        try {
+            Integer weeklyPermission = params.get("weeklyPermission");
+            Integer monthlyPermission = params.get("monthlyPermission");
+            
+            // 参数验证
+            if (weeklyPermission != null && (weeklyPermission < 0 || weeklyPermission > 1)) {
+                return Result.error("周检权限值必须为0或1");
+            }
+            if (monthlyPermission != null && (monthlyPermission < 0 || monthlyPermission > 1)) {
+                return Result.error("月检权限值必须为0或1");
+            }
+            
+            boolean success = userService.updateUserPermissions(id, weeklyPermission, monthlyPermission);
+            return success ? Result.success("更新用户权限成功") : Result.error("更新用户权限失败");
+        } catch (Exception e) {
+            return Result.error(e.getMessage());
+        }
+    }
+
+    /**
+     * 获取用户权限信息
+     */
+    @GetMapping("/{userId}/permissions")
+    public Result<SysUser> getUserPermissions(@PathVariable String userId) {
+        try {
+            SysUser userPermissions = userService.getUserPermissions(userId);
+            if (userPermissions != null) {
+                return Result.success(userPermissions);
+            }
+            return Result.error("用户不存在");
         } catch (Exception e) {
             return Result.error(e.getMessage());
         }

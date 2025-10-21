@@ -1,3 +1,4 @@
+com\gjxt\inspection\service\impl\MonthlyInspectionRecordServiceImpl.class
 com\gjxt\inspection\common\ResultCode.class
 com\gjxt\inspection\entity\BaseEntity.class
 com\gjxt\inspection\service\impl\SysInspectionRecordServiceImpl.class
@@ -13,6 +14,7 @@ com\gjxt\inspection\mapper\SysDeptMapper.class
 com\gjxt\inspection\mapper\MonthlyInspectionTaskMapper.class
 com\gjxt\inspection\service\impl\MonthlyInspectionTaskServiceImpl.class
 com\gjxt\inspection\config\SecurityConfig.class
+com\gjxt\inspection\mapper\MonthlyInspectionRecordMapper.class
 com\gjxt\inspection\controller\SysDictionaryController.class
 com\gjxt\inspection\controller\GjbzDataController.class
 com\gjxt\inspection\entity\SysDept.class
@@ -36,20 +38,24 @@ com\gjxt\inspection\controller\SysInspectionTaskController.class
 com\gjxt\inspection\mapper\SysUserMapper.class
 com\gjxt\inspection\controller\FileUploadController.class
 com\gjxt\inspection\controller\SysInspectionRecordController.class
+com\gjxt\inspection\controller\MonthlyInspectionRecordController.class
 com\gjxt\inspection\entity\MonthlyInspectionTask.class
 com\gjxt\inspection\mapper\GjbzDataMapper.class
 com\gjxt\inspection\service\ISysDictionaryService.class
 com\gjxt\inspection\service\IGjbzDataService.class
 com\gjxt\inspection\entity\SysUser.class
 com\gjxt\inspection\entity\SysDictionary.class
+com\gjxt\inspection\util\UserContextUtil.class
 com\gjxt\inspection\service\impl\SysDeptServiceImpl.class
 com\gjxt\inspection\config\MybatisPlusConfig$1.class
 com\gjxt\inspection\config\CorsConfig.class
 com\gjxt\inspection\entity\GjbzData.class
 com\gjxt\inspection\controller\SysDeptController.class
 com\gjxt\inspection\config\SwaggerConfig.class
+com\gjxt\inspection\entity\MonthlyInspectionRecord.class
 com\gjxt\inspection\service\impl\SysInspectionTaskServiceImpl.class
 com\gjxt\inspection\config\ScheduleConfig.class
+com\gjxt\inspection\service\IMonthlyInspectionRecordService.class
 com\gjxt\inspection\service\ISysDeptService.class
 com\gjxt\inspection\service\IMonthlyInspectionTaskService.class
 com\gjxt\inspection\util\PasswordUtil.class

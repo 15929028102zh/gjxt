@@ -169,39 +169,7 @@ const dialogVisible = computed({
   set: (value) => emit('update:visible', value)
 })
 
-// 解析图片URL的工具函数
-const parseImageUrls = (imageUrls) => {
-  if (!imageUrls) return []
-  
-  try {
-    let urlList = []
-    if (typeof imageUrls === 'string') {
-      // 首先尝试JSON解析
-      try {
-        const parsed = JSON.parse(imageUrls)
-        if (Array.isArray(parsed)) {
-          urlList = parsed
-        }
-      } catch (e) {
-        // JSON解析失败，尝试逗号分割
-        urlList = imageUrls.split(',').map(url => url.trim()).filter(url => url)
-      }
-    } else if (Array.isArray(imageUrls)) {
-      urlList = imageUrls
-    }
-    
-    // 转换为完整URL
-    return urlList.map(url => {
-      if (url && url.startsWith('/')) {
-        return `http://192.168.244.128:8080/api${url}`
-      }
-      return url || ''
-    }).filter(url => url)
-  } catch (e) {
-    console.error('解析图片URL失败:', e, '原始数据:', imageUrls)
-    return []
-  }
-}
+import { parseImageUrls } from '@/config/api'
 
 // 监听表单数据变化，处理图片数据
 watch(() => props.formData, (newData) => {

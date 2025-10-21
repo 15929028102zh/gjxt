@@ -94,9 +94,23 @@
 				console.log('开始加载统计数据', " at pages/weekly/weekly.uvue:154")
 				const token = uni.getStorageSync('token')
 				
-				// 获取待整改数量（状态为0）
-				const pendingUrl = getApiUrl('/inspection-record/weekly-count?status=0')
-				console.log('待整改数量请求URL:', pendingUrl, " at pages/weekly/weekly.uvue:159")
+				// 获取用户部门信息
+				let departmentId = ''
+				const userInfoData = uni.getStorageSync('userInfo')
+				const userInfoStr = userInfoData != null ? userInfoData as string : ''
+				if (userInfoStr != null && userInfoStr != '' && userInfoStr != 'null' && userInfoStr != 'undefined') {
+					try {
+					const parsedUserInfo = UTSAndroid.consoleDebugError(JSON.parse(userInfoStr), " at pages/weekly/weekly.uvue:163") as UTSJSONObject
+					departmentId = parsedUserInfo.getString('deptId') ?? ''
+					console.log("获取到的部门id",departmentId, " at pages/weekly/weekly.uvue:165")
+					} catch (error) {
+						console.error('用户信息JSON解析失败:', error, " at pages/weekly/weekly.uvue:167")
+					}
+				}
+				
+				// 获取待整改数量（状态为0）- 使用分页查询API获取准确数量
+				const pendingUrl = getApiUrl(`/inspection-record/page?current=1&size=1&status=0${departmentId != null && departmentId != '' ? '&departmentId=' + departmentId : ''}`)
+				console.log('待整改数量请求URL:', pendingUrl, " at pages/weekly/weekly.uvue:173")
 				uni.request({
 					url: pendingUrl,
 					method: 'GET',
@@ -104,23 +118,24 @@
 						'Authorization': `Bearer ${token}`
 					},
 					success: (res) => {
-						console.log('待整改数量请求成功:', res, " at pages/weekly/weekly.uvue:167")
+						console.log('待整改数量请求成功:', res, " at pages/weekly/weekly.uvue:181")
 						const response = res.data as UTSJSONObject
 						if (res.statusCode == 200 && (response.getNumber('code') ?? 0) == 200) {
-							this.statistics.pendingIssues = response.getNumber('data') ?? 0
-							console.log('待整改数量:', this.statistics.pendingIssues, " at pages/weekly/weekly.uvue:171")
+							const data = response.getJSON('data') as UTSJSONObject
+							this.statistics.pendingIssues = data.getNumber('total') ?? 0
+							console.log('待整改数量:', this.statistics.pendingIssues, " at pages/weekly/weekly.uvue:186")
 						} else {
-							console.log('待整改数量请求失败:', response, " at pages/weekly/weekly.uvue:173")
+							console.log('待整改数量请求失败:', response, " at pages/weekly/weekly.uvue:188")
 						}
 					},
 					fail: (error) => {
-						console.log('待整改数量请求错误:', error, " at pages/weekly/weekly.uvue:177")
+						console.log('待整改数量请求错误:', error, " at pages/weekly/weekly.uvue:192")
 					}
 				})
 				
-				// 获取已整改数量（状态为1）
-				const completedUrl = getApiUrl('/inspection-record/weekly-count?status=1')
-				console.log('已整改数量请求URL:', completedUrl, " at pages/weekly/weekly.uvue:183")
+				// 获取已整改数量（状态为1）- 使用分页查询API获取准确数量
+				const completedUrl = getApiUrl(`/inspection-record/page?current=1&size=1&status=1${departmentId != null && departmentId != '' ? '&departmentId=' + departmentId : ''}`)
+				console.log('已整改数量请求URL:', completedUrl, " at pages/weekly/weekly.uvue:198")
 				uni.request({
 					url: completedUrl,
 					method: 'GET',
@@ -128,23 +143,24 @@
 						'Authorization': `Bearer ${token}`
 					},
 					success: (res) => {
-						console.log('已整改数量请求成功:', res, " at pages/weekly/weekly.uvue:191")
+						console.log('已整改数量请求成功:', res, " at pages/weekly/weekly.uvue:206")
 						const response = res.data as UTSJSONObject
 						if (res.statusCode == 200 && (response.getNumber('code') ?? 0) == 200) {
-							this.statistics.completedIssues = response.getNumber('data') ?? 0
-							console.log('已整改数量:', this.statistics.completedIssues, " at pages/weekly/weekly.uvue:195")
+							const data = response.getJSON('data') as UTSJSONObject
+							this.statistics.completedIssues = data.getNumber('total') ?? 0
+							console.log('已整改数量:', this.statistics.completedIssues, " at pages/weekly/weekly.uvue:211")
 						} else {
-							console.log('已整改数量请求失败:', response, " at pages/weekly/weekly.uvue:197")
+							console.log('已整改数量请求失败:', response, " at pages/weekly/weekly.uvue:213")
 						}
 					},
 					fail: (error) => {
-						console.log('已整改数量请求错误:', error, " at pages/weekly/weekly.uvue:201")
+						console.log('已整改数量请求错误:', error, " at pages/weekly/weekly.uvue:217")
 					}
 				})
 				
-				// 获取已复查数量（状态为2）
-				const reviewedUrl = getApiUrl('/inspection-record/weekly-count?status=2')
-				console.log('已复查数量请求URL:', reviewedUrl, " at pages/weekly/weekly.uvue:207")
+				// 获取已复查数量（状态为2）- 使用分页查询API获取准确数量
+				const reviewedUrl = getApiUrl(`/inspection-record/page?current=1&size=1&status=2${departmentId != null && departmentId != '' ? '&departmentId=' + departmentId : ''}`)
+				console.log('已复查数量请求URL:', reviewedUrl, " at pages/weekly/weekly.uvue:223")
 				uni.request({
 					url: reviewedUrl,
 					method: 'GET',
@@ -152,25 +168,40 @@
 						'Authorization': `Bearer ${token}`
 					},
 					success: (res) => {
-						console.log('已复查数量请求成功:', res, " at pages/weekly/weekly.uvue:215")
+						console.log('已复查数量请求成功:', res, " at pages/weekly/weekly.uvue:231")
 						const response = res.data as UTSJSONObject
 						if (res.statusCode == 200 && (response.getNumber('code') ?? 0) == 200) {
-							this.statistics.reviewedCount = response.getNumber('data') ?? 0
-							console.log('已复查数量:', this.statistics.reviewedCount, " at pages/weekly/weekly.uvue:219")
+							const data = response.getJSON('data') as UTSJSONObject
+							this.statistics.reviewedCount = data.getNumber('total') ?? 0
+							console.log('已复查数量:', this.statistics.reviewedCount, " at pages/weekly/weekly.uvue:236")
 						} else {
-							console.log('已复查数量请求失败:', response, " at pages/weekly/weekly.uvue:221")
+							console.log('已复查数量请求失败:', response, " at pages/weekly/weekly.uvue:238")
 						}
 					},
 					fail: (error) => {
-						console.log('已复查数量请求错误:', error, " at pages/weekly/weekly.uvue:225")
+						console.log('已复查数量请求错误:', error, " at pages/weekly/weekly.uvue:242")
 					}
 				})
 			},
 			
 			loadRecentRecords() {
 				const token = uni.getStorageSync('token')
-				const apiUrl = getApiUrl('/inspection-record/page?current=1&size=5&status=0')
-				console.log('请求URL:', apiUrl, " at pages/weekly/weekly.uvue:233")
+				
+				// 获取用户部门信息
+				let departmentId = ''
+				const userInfoData = uni.getStorageSync('userInfo')
+				const userInfoStr = userInfoData != null ? userInfoData as string : ''
+				if (userInfoStr != null && userInfoStr != '' && userInfoStr != 'null' && userInfoStr != 'undefined') {
+					try {
+						const parsedUserInfo = UTSAndroid.consoleDebugError(JSON.parse(userInfoStr), " at pages/weekly/weekly.uvue:256") as UTSJSONObject
+						departmentId = parsedUserInfo.getString('deptId') ?? ''
+					} catch (error) {
+						console.error('用户信息JSON解析失败:', error, " at pages/weekly/weekly.uvue:259")
+					}
+				}
+				
+				const apiUrl = getApiUrl(`/inspection-record/page?current=1&size=5&status=0${departmentId != null && departmentId != '' ? '&departmentId=' + departmentId : ''}`)
+				console.log('请求URL:', apiUrl, " at pages/weekly/weekly.uvue:264")
 				uni.request({
 				url: apiUrl,
 					method: 'GET',
@@ -197,7 +228,7 @@
 						}
 					},
 					fail: (error) => {
-						console.log('加载最近记录失败:', error, " at pages/weekly/weekly.uvue:260")
+						console.log('加载最近记录失败:', error, " at pages/weekly/weekly.uvue:291")
 					}
 				})
 			},
@@ -264,7 +295,7 @@
 			
 			// 下拉刷新事件处理
 			onRefresh() {
-				console.log('开始下拉刷新', " at pages/weekly/weekly.uvue:327")
+				console.log('开始下拉刷新', " at pages/weekly/weekly.uvue:358")
 				this.isRefreshing = true
 				
 				// 重新加载数据
@@ -273,13 +304,13 @@
 			
 			// 刷新恢复事件处理
 			onRefreshRestore() {
-				console.log('刷新恢复', " at pages/weekly/weekly.uvue:336")
+				console.log('刷新恢复', " at pages/weekly/weekly.uvue:367")
 				this.isRefreshing = false
 			},
 			
 			// 重新加载所有数据
 			reloadAllData() {
-				console.log('重新加载所有数据', " at pages/weekly/weekly.uvue:342")
+				console.log('重新加载所有数据', " at pages/weekly/weekly.uvue:373")
 				
 				try {
 					// 重新初始化时间
@@ -292,14 +323,14 @@
 					this.loadStatistics()
 					this.loadRecentRecords()
 					
-					console.log('数据加载完成', " at pages/weekly/weekly.uvue:355")
+					console.log('数据加载完成', " at pages/weekly/weekly.uvue:386")
 					
 				} catch (error) {
-					console.error('数据加载失败:', error, " at pages/weekly/weekly.uvue:358")
+					console.error('数据加载失败:', error, " at pages/weekly/weekly.uvue:389")
 				} finally {
 					// 无论成功还是失败，都要关闭刷新动画
 					setTimeout(() => {
-						console.log('关闭刷新动画', " at pages/weekly/weekly.uvue:362")
+						console.log('关闭刷新动画', " at pages/weekly/weekly.uvue:393")
 						this.isRefreshing = false
 					}, 1000) // 1秒后关闭刷新动画
 				}

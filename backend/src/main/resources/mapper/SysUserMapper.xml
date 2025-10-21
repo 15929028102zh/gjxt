@@ -21,12 +21,15 @@
         <result column="update_time" property="updateTime" />
         <result column="deleted" property="deleted" />
         <result column="image_url" property="imageUrl" />
+        <result column="weekly_permission" property="weeklyPermission" />
+        <result column="monthly_permission" property="monthlyPermission" />
+        <result column="is_admin" property="isAdmin" />
     </resultMap>
 
     <!-- 基础字段 -->
     <sql id="Base_Column_List">
         id, username, password, real_name, phone, email, department, dept_id, position, role, status, 
-        last_login_time, create_time, update_time, deleted
+        last_login_time, create_time, update_time, deleted, weekly_permission, monthly_permission, is_admin
     </sql>
 
     <!-- 根据用户名查询用户 -->
@@ -34,7 +37,7 @@
         SELECT u.id, u.username, u.password, u.real_name, u.phone, u.email, 
                u.department, u.dept_id, u.position, u.role, u.status,
                u.last_login_time, u.create_time, u.update_time, u.deleted,
-               u.image_url,
+               u.image_url, u.weekly_permission, u.monthly_permission, u.is_admin,
                d.dept_name
         FROM sys_user u
         LEFT JOIN sys_dept d ON u.dept_id = d.id
@@ -63,6 +66,7 @@
         SELECT u.id, u.username, u.password, u.real_name, u.phone, u.email, 
                u.department, u.dept_id, u.position, u.role, u.status,
                u.last_login_time, u.create_time, u.update_time, u.deleted,
+               u.weekly_permission, u.monthly_permission, u.is_admin,
                d.dept_name
         FROM sys_user u
         LEFT JOIN sys_dept d ON u.dept_id = d.id
@@ -75,6 +79,7 @@
         SELECT u.id, u.username, u.password, u.real_name, u.phone, u.email, 
                u.department, u.dept_id, u.position, u.role, u.status,
                u.last_login_time, u.create_time, u.update_time, u.deleted,
+               u.weekly_permission, u.monthly_permission, u.is_admin,
                d.dept_name
         FROM sys_user u
         LEFT JOIN sys_dept d ON u.dept_id = d.id
