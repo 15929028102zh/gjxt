@@ -67,6 +67,15 @@
         </div>
         
         <div class="header-right">
+          <!-- WebSocket连接状态指示器 -->
+          <div class="websocket-status" :title="webSocketStore.isConnected ? 'WebSocket已连接' : 'WebSocket未连接'">
+            <el-icon :size="16" :color="webSocketStore.isConnected ? '#67C23A' : '#F56C6C'">
+              <Connection v-if="webSocketStore.isConnected" />
+              <Close v-else />
+            </el-icon>
+            <span class="status-text">{{ webSocketStore.isConnected ? '在线' : '离线' }}</span>
+          </div>
+          
           <!-- 通知图标 -->
           <div class="notification-wrapper" @click="showNotifications">
             <el-icon class="notification-icon" :size="20">
@@ -81,8 +90,8 @@
           
           <el-dropdown @command="handleCommand">
             <span class="user-info">
-              <el-avatar :size="32" :src="convertToHttpUrl(userInfo.imageUrl) || '/default-avatar.svg'" />
-              <span class="username">{{ userInfo.realName || userInfo.username || '用户' }}</span>
+              <el-avatar :size="32" :src="convertToHttpUrl(userStore.userInfo?.imageUrl) || '/default-avatar.svg'" />
+              <span class="username">{{ userStore.userInfo?.realName || userStore.userInfo?.username || '用户' }}</span>
               <el-icon><ArrowDown /></el-icon>
             </span>
             <template #dropdown>
@@ -105,60 +114,114 @@
     <el-dialog
       v-model="showNotificationModal"
       title="通知消息"
-      width="500px"
+      width="600px"
       :before-close="hideNotifications"
     >
-      <div class="notification-header">
-        <el-button type="text" @click="markAllAsRead" class="mark-all-read">
-          全部已读
-        </el-button>
-      </div>
-      
-      <div class="notification-list">
-        <div v-if="notifications.length === 0" class="empty-notifications">
-          <el-empty description="暂无通知" />
-        </div>
-        
-        <div 
-          v-for="notification in notifications" 
-          :key="notification.id"
-          class="notification-item"
-          :class="{ unread: !notification.isRead }"
-          @click="handleNotificationClick(notification)"
-        >
-          <div class="notification-dot" v-if="!notification.isRead"></div>
-          <div class="notification-content">
-            <div class="notification-title">{{ notification.title }}</div>
-            <div class="notification-desc">{{ notification.content }}</div>
-            <div class="notification-time">{{ notification.createTime }}</div>
+      <el-tabs v-model="activeNotificationTab" @tab-change="handleTabChange">
+        <!-- 普通通知标签页 -->
+        <el-tab-pane label="系统通知" name="system">
+          <div class="notification-header">
+            <el-button type="text" @click="markAllAsRead" class="mark-all-read">
+              全部已读
+            </el-button>
           </div>
-          <el-icon class="notification-arrow"><ArrowRight /></el-icon>
-        </div>
-      </div>
+          
+          <div class="notification-list">
+            <div v-if="notifications.length === 0" class="empty-notifications">
+              <el-empty description="暂无通知" />
+            </div>
+            
+            <div 
+                    v-for="notification in notifications" 
+                    :key="notification.id" 
+                    class="notification-item"
+                    :class="{ unread: !notification.isRead }"
+                    @click="handleNotificationClick(notification)">
+                    <div class="notification-dot" v-if="!notification.isRead"></div>
+              <div class="notification-content">
+                <div class="notification-title">{{ notification.title }}</div>
+                <div class="notification-desc">{{ notification.content }}</div>
+                <div class="notification-time">{{ notification.createTime }}</div>
+              </div>
+              <el-icon class="notification-arrow"><ArrowRight /></el-icon>
+            </div>
+          </div>
+        </el-tab-pane>
+        
+        <!-- 月检任务通知标签页 -->
+        <el-tab-pane label="月检任务" name="tasks">
+          <div class="notification-header">
+            <el-button type="text" @click="refreshTaskNotifications" class="refresh-btn">
+              刷新
+            </el-button>
+          </div>
+          
+          <div class="notification-list">
+            <div v-if="taskNotifications.length === 0" class="empty-notifications">
+              <el-empty description="暂无已通知的月检任务" />
+            </div>
+            
+            <div 
+              v-for="taskNotification in taskNotifications" 
+              :key="taskNotification.id"
+              class="notification-item task-notification"
+              @click="handleTaskNotificationClick(taskNotification)"
+            >
+              <div class="task-status-badge" :class="getStatusClass(taskNotification.status)">
+                {{ getStatusText(taskNotification.status) }}
+              </div>
+              <div class="notification-content">
+                <div class="notification-title">{{ taskNotification.title }}</div>
+                <div class="notification-desc">
+                  任务编号：{{ taskNotification.taskNo }}<br>
+                  月检时间：{{ taskNotification.inspectionMonth }}<br>
+                  任务状态：{{ getStatusText(taskNotification.status) }}<br>
+                  {{ taskNotification.content }}
+                </div>
+                <div class="notification-time">{{ taskNotification.createTime }}</div>
+              </div>
+              <el-icon class="notification-arrow"><ArrowRight /></el-icon>
+            </div>
+          </div>
+        </el-tab-pane>
+      </el-tabs>
     </el-dialog>
   </el-container>
+  
+  <!-- 通知弹框组件 -->
+  <NotificationPopup ref="notificationPopupRef" />
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Bell, ArrowRight } from '@element-plus/icons-vue'
+import { Bell, ArrowRight, Connection, Close, Expand, Fold, ArrowDown } from '@element-plus/icons-vue'
 import { logout } from '@/api/auth'
 import { userApi } from '@/api/system'
 import { monthlyTaskApi } from '@/api/monthlyRecord'
 import { getToken } from '@/utils/token'
 import { convertToHttpUrl } from '@/config/api'
+import { useWebSocketStore } from '@/stores/websocket'
+import { useUserStore } from '@/stores/user'
+import NotificationPopup from '@/components/NotificationPopup.vue'
 
 const route = useRoute()
 const router = useRouter()
 
+// 使用stores
+const webSocketStore = useWebSocketStore()
+const userStore = useUserStore()
+
 const isCollapse = ref(false)
 const visitedViews = ref([])
-const userInfo = ref({})
 const showNotificationModal = ref(false)
-const notifications = ref([])
-const notificationCount = ref(0)
+const activeNotificationTab = ref('system')
+const taskNotifications = ref([])
+
+// 使用WebSocket store中的通知数据
+const notifications = computed(() => webSocketStore.notifications)
+const notificationCount = computed(() => webSocketStore.unreadCount)
 
 // 菜单路由 - 过滤掉登录页和标记为hideInMenu的页面
 const menuRoutes = computed(() => {
@@ -172,7 +235,7 @@ const menuRoutes = computed(() => {
 // 判断是否应该隐藏路由（基于权限）
 const shouldHideRoute = (route) => {
   // 如果路由需要管理员权限，但当前用户不是管理员，则隐藏
-  if (route.meta?.requiresAdmin && userInfo.value?.isAdmin !== 1 && userInfo.value?.username !== 'admin') {
+  if (route.meta?.requiresAdmin && userStore.userInfo?.isAdmin !== 1) {
     return true
   }
   return false
@@ -232,17 +295,20 @@ const getUserInfo = async () => {
       return
     }
     
-    // 从token中解析用户名或从localStorage获取
-    const userInfoStr = localStorage.getItem('userInfo')
-    console.log('Layout组件检查本地用户信息:', userInfoStr ? '存在' : '不存在')
-    if (userInfoStr) {
-      const storedUserInfo = JSON.parse(userInfoStr)
-      userInfo.value = storedUserInfo
-      console.log('Layout组件使用本地用户信息:', storedUserInfo)
+    // 初始化用户store
+    userStore.initUserInfo()
+    
+    // 从用户store获取用户信息
+    if (userStore.userInfo) {
+      console.log('Layout组件使用store中的用户信息:', userStore.userInfo)
+      
+      // 连接WebSocket
+      webSocketStore.connect()
+      
       return
     }
     
-    // 如果没有存储的用户信息，尝试从token解析用户名
+    // 如果store中没有用户信息，尝试从token解析用户名
     const payload = JSON.parse(atob(token.split('.')[1]))
     const username = payload.sub || payload.username
     console.log('Layout组件从token解析用户名:', username)
@@ -252,9 +318,11 @@ const getUserInfo = async () => {
       const response = await userApi.getUserInfo(username)
       console.log('Layout组件API调用结果:', response)
       if (response.code === 200) {
-        userInfo.value = response.data
-        localStorage.setItem('userInfo', JSON.stringify(response.data))
+        userStore.setUserInfo(response.data)
         console.log('Layout组件用户信息设置完成:', response.data)
+        
+        // 连接WebSocket
+        webSocketStore.connect()
       }
     }
   } catch (error) {
@@ -273,37 +341,40 @@ watch(route, (newRoute) => {
 // 组件挂载时获取用户信息
 onMounted(() => {
   getUserInfo()
-  loadNotifications()
+  window.__openNotifications = (tab) => {
+    showNotificationModal.value = true
+    activeNotificationTab.value = tab || 'system'
+    if (activeNotificationTab.value === 'tasks') {
+      fetchTaskNotifications()
+    }
+  }
+  window.addEventListener('open-notifications', (e) => {
+    const detail = e && e.detail ? e.detail : {}
+    const tab = detail.tab || 'system'
+    showNotificationModal.value = true
+    activeNotificationTab.value = tab
+    if (tab === 'tasks') {
+      fetchTaskNotifications()
+    }
+  })
 })
 
-// 加载通知
-const loadNotifications = async () => {
-  try {
-    const token = getToken()
-    if (!token || !userInfo.value.id) return
-    
-    const response = await monthlyTaskApi.getUserTasks(userInfo.value.id)
-    if (response.code === 200) {
-      notifications.value = response.data.map(task => ({
-        id: task.id,
-        taskId: task.id,
-        taskNo: task.taskNo,
-        title: `月检任务通知 - ${task.taskNo}`,
-        content: `您有新的月检任务需要处理，任务编号：${task.taskNo}`,
-        createTime: task.createTime,
-        isRead: task.notificationRead || false
-      }))
-      
-      notificationCount.value = notifications.value.filter(n => !n.isRead).length
-    }
-  } catch (error) {
-    console.error('加载通知失败:', error)
-  }
-}
+onUnmounted(() => {
+  // 断开WebSocket连接
+  webSocketStore.disconnect()
+  try { delete window.__openNotifications } catch (_) {}
+  window.removeEventListener('open-notifications', () => {})
+})
 
 // 显示通知弹窗
 const showNotifications = () => {
   showNotificationModal.value = true
+  // 获取最新通知
+  webSocketStore.fetchNotifications()
+  // 如果当前标签页是月检任务，也获取月检任务通知
+  if (activeNotificationTab.value === 'tasks') {
+    fetchTaskNotifications()
+  }
 }
 
 // 隐藏通知弹窗
@@ -312,26 +383,90 @@ const hideNotifications = () => {
 }
 
 // 处理通知点击
-const handleNotificationClick = (notification) => {
-  // 标记为已读
-  notification.isRead = true
-  updateNotificationCount()
-  
+const handleNotificationClick = async (notification) => {
+  try {
+    // 标记为已读
+    if (!notification.isRead) {
+      await webSocketStore.markAsRead(notification.id)
+    }
+    
+    // 跳转到相关页面
+    if (notification.actionUrl) {
+      router.push(notification.actionUrl)
+    }
+    
+    hideNotifications()
+  } catch (error) {
+    console.error('处理通知点击失败:', error)
+  }
+}
+
+// 标记所有通知为已读
+const markAllAsRead = async () => {
+  try {
+    const unreadNotifications = notifications.value.filter(n => !n.isRead)
+    for (const notification of unreadNotifications) {
+      await webSocketStore.markAsRead(notification.id)
+    }
+    ElMessage.success('所有通知已标记为已读')
+  } catch (error) {
+    console.error('标记所有通知为已读失败:', error)
+    ElMessage.error('操作失败')
+  }
+}
+
+// 获取月检任务通知列表
+const fetchTaskNotifications = async () => {
+  try {
+    const result = await webSocketStore.fetchTaskNotifications()
+    taskNotifications.value = result
+  } catch (error) {
+    console.error('获取月检任务通知失败:', error)
+    ElMessage.error('获取月检任务通知失败')
+  }
+}
+
+// 处理标签页切换
+const handleTabChange = (tabName) => {
+  if (tabName === 'tasks') {
+    fetchTaskNotifications()
+  }
+}
+
+// 刷新月检任务通知
+const refreshTaskNotifications = () => {
+  fetchTaskNotifications()
+  ElMessage.success('刷新成功')
+}
+
+// 处理月检任务通知点击
+const handleTaskNotificationClick = (taskNotification) => {
   // 跳转到月检记录录入页面
-  router.push(`/monthly/record?taskId=${notification.taskNo}`)
-  
+  router.push(`/monthly/record?taskId=${taskNotification.taskId}`)
   hideNotifications()
 }
 
-// 更新通知数量
-const updateNotificationCount = () => {
-  notificationCount.value = notifications.value.filter(n => !n.isRead).length
+// 获取月检任务的状态文本 - 与移动端保持一致
+// 任务状态：0-未开始，1-进行中，2-已完成
+const getStatusText = (status) => {
+  const statusMap = {
+    0: '未开始',
+    1: '进行中', 
+    2: '已完成',
+    3: '已取消'
+  }
+  return statusMap[status] || '未知状态'
 }
 
-// 全部标记为已读
-const markAllAsRead = () => {
-  notifications.value.forEach(n => n.isRead = true)
-  notificationCount.value = 0
+// 获取任务状态样式类
+const getStatusClass = (status) => {
+  const classMap = {
+    0: 'status-pending',
+    1: 'status-processing',
+    2: 'status-completed', 
+    3: 'status-cancelled'
+  }
+  return classMap[status] || 'status-unknown'
 }
 
 // 切换侧边栏折叠
@@ -427,96 +562,181 @@ const handleCommand = async (command) => {
 }
 
 .header-right {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    
-    .notification-icon {
-      cursor: pointer;
-      font-size: 18px;
-      color: #606266;
-      transition: color 0.3s;
-      
-      &:hover {
-        color: #409eff;
-      }
-    }
-  }
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.websocket-status {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  background-color: #f5f7fa;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.websocket-status:hover {
+  background-color: #e4e7ed;
+}
+
+.websocket-status .status-text {
+  font-size: 12px;
+  color: #606266;
+  font-weight: 500;
+}
+
+.notification-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.notification-icon {
+  cursor: pointer;
+  font-size: 18px;
+  color: #606266;
+  transition: color 0.3s;
+}
+
+.notification-icon:hover {
+  color: #409eff;
+}
+
+.notification-badge {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+}
   
   .notification-header {
     display: flex;
     justify-content: flex-end;
     margin-bottom: 16px;
-    
-    .mark-all-read {
-      color: #409eff;
-      font-size: 14px;
-    }
+  }
+  
+  .notification-header .mark-all-read {
+    color: #409eff;
+    font-size: 14px;
   }
   
   .notification-list {
     max-height: 400px;
     overflow-y: auto;
-    
-    .notification-item {
-      display: flex;
-      align-items: center;
-      padding: 12px 0;
-      border-bottom: 1px solid #f0f0f0;
-      cursor: pointer;
-      position: relative;
-      transition: background-color 0.3s;
-      
-      &:hover {
-        background-color: #f5f7fa;
-      }
-      
-      &.unread {
-        background-color: #f0f9ff;
-      }
-      
-      .notification-dot {
-        width: 8px;
-        height: 8px;
-        background-color: #f56c6c;
-        border-radius: 50%;
-        margin-right: 12px;
-        flex-shrink: 0;
-      }
-      
-      .notification-content {
-        flex: 1;
-        
-        .notification-title {
-          font-size: 14px;
-          font-weight: 500;
-          color: #303133;
-          margin-bottom: 4px;
-        }
-        
-        .notification-desc {
-          font-size: 12px;
-          color: #909399;
-          margin-bottom: 4px;
-        }
-        
-        .notification-time {
-          font-size: 12px;
-          color: #c0c4cc;
-        }
-      }
-      
-      .notification-arrow {
-        color: #c0c4cc;
-        font-size: 14px;
-        margin-left: 8px;
-      }
-    }
+  }
+  
+  .notification-item {
+    display: flex;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid #f0f0f0;
+    cursor: pointer;
+    position: relative;
+    transition: background-color 0.3s;
+  }
+  
+  .notification-item:hover {
+    background-color: #f5f7fa;
+  }
+  
+  .notification-item.unread {
+    background-color: #f0f9ff;
+  }
+  
+  .notification-dot {
+    width: 8px;
+    height: 8px;
+    background-color: #f56c6c;
+    border-radius: 50%;
+    margin-right: 12px;
+    flex-shrink: 0;
+  }
+  
+  .notification-content {
+    flex: 1;
+  }
+  
+  .notification-title {
+    font-size: 14px;
+    font-weight: 500;
+    color: #303133;
+    margin-bottom: 4px;
+  }
+  
+  .notification-desc {
+    font-size: 12px;
+    color: #909399;
+    margin-bottom: 4px;
+  }
+  
+  .notification-time {
+    font-size: 12px;
+    color: #c0c4cc;
+  }
+  
+  .notification-arrow {
+    color: #c0c4cc;
+    font-size: 14px;
+    margin-left: 8px;
   }
   
   .empty-notifications {
     text-align: center;
     padding: 40px 0;
+  }
+
+  /* 月检任务通知样式 */
+  .task-notification .task-status-badge {
+    color: white;
+    font-size: 12px;
+    padding: 2px 8px;
+    border-radius: 12px;
+    margin-right: 12px;
+    flex-shrink: 0;
+    font-weight: 500;
+  }
+  
+  /* 不同状态的样式 */
+  .task-status-badge.status-pending {
+    background-color: #909399; /* 灰色 - 待执行 */
+  }
+  
+  .task-status-badge.status-processing {
+    background-color: #409eff; /* 蓝色 - 执行中 */
+  }
+  
+  .task-status-badge.status-completed {
+    background-color: #67c23a; /* 绿色 - 已完成 */
+  }
+  
+  .task-status-badge.status-overdue {
+    background-color: #f56c6c; /* 红色 - 已逾期 */
+  }
+  
+  .task-status-badge.status-unknown {
+    background-color: #c0c4cc; /* 浅灰色 - 未知状态 */
+  }
+  
+  .task-notification .notification-desc {
+    line-height: 1.5;
+    white-space: pre-line;
+  }
+  
+  .task-notification:hover {
+    background-color: #f0f9ff;
+    border-left: 3px solid #409eff;
+  }
+
+  /* 通知标签页样式 */
+  .el-tabs .el-tabs__header {
+    margin-bottom: 16px;
+  }
+  
+  .el-tabs .el-tabs__nav-wrap {
+    padding: 0 16px;
   }
 
 .user-info {

@@ -55,6 +55,7 @@
       <div class="inspection-card monthly-inspection">
         <div class="inspection-header">
           <h3>月检数据统计</h3>
+          <!-- 保留月份选择但不参与过滤，后续如需可扩展为开始/结束日期 -->
           <el-date-picker
             v-model="monthlyDateRange"
             type="month"
@@ -66,20 +67,20 @@
         </div>
         <div class="inspection-stats">
           <div class="stat-item">
-            <div class="stat-number">{{ monthlyData.totalTasks }}</div>
-            <div class="stat-label">总任务数</div>
+            <div class="stat-number">{{ monthlyData.totalRecords }}</div>
+            <div class="stat-label">总记录数</div>
           </div>
           <div class="stat-item">
-            <div class="stat-number">{{ monthlyData.completedTasks }}</div>
-            <div class="stat-label">已完成</div>
+            <div class="stat-number">{{ monthlyData.pendingRectification }}</div>
+            <div class="stat-label">待整改</div>
           </div>
           <div class="stat-item">
-            <div class="stat-number">{{ monthlyData.pendingTasks }}</div>
-            <div class="stat-label">进行中</div>
+            <div class="stat-number">{{ monthlyData.rectified }}</div>
+            <div class="stat-label">已整改</div>
           </div>
           <div class="stat-item">
-            <div class="stat-number">{{ monthlyData.overdueRate }}%</div>
-            <div class="stat-label">逾期率</div>
+            <div class="stat-number">{{ monthlyData.reviewed }}</div>
+            <div class="stat-label">已复查</div>
           </div>
         </div>
         <div ref="monthlyChart" class="chart-content"></div>
@@ -98,6 +99,7 @@ import * as echarts from 'echarts'
 import { userApi } from '@/api/system'
 import { monthlyTaskApi } from '@/api/monthly'
 import { convertToHttpUrl } from '@/config/api'
+import request from '@/utils/request'
 
 const router = useRouter()
 
@@ -124,10 +126,10 @@ const weeklyData = ref({
 // 月检数据
 const monthlyDateRange = ref(new Date())
 const monthlyData = ref({
-  totalTasks: 0,
-  completedTasks: 0,
-  pendingTasks: 0,
-  overdueRate: 0
+  totalRecords: 0,
+  pendingRectification: 0,
+  rectified: 0,
+  reviewed: 0
 })
 
 // 图表引用
@@ -193,20 +195,23 @@ const loadWeeklyData = async () => {
     const localUserInfo = localStorage.getItem('userInfo')
     let userId = null
     let departmentId = null
+    let isAdmin = false
     
     if (localUserInfo) {
       const userData = JSON.parse(localUserInfo)
       userId = userData.id || userData.userId
       departmentId = userData.deptId || userData.departmentId
+      isAdmin = userData.isAdmin === 1
       console.log('用户信息:', userData)
-      console.log('userId:', userId, 'departmentId:', departmentId)
+      console.log('userId:', userId, 'departmentId:', departmentId, 'isAdmin:', isAdmin)
     }
     
     // 构建请求参数
     const params = new URLSearchParams()
     // 移除userId参数，根据用户要求不需要传递
     // if (userId) params.append('userId', userId)
-    if (departmentId) params.append('departmentId', departmentId)
+    // 管理员用户不进行部门过滤，查询所有数据
+    if (!isAdmin && departmentId) params.append('departmentId', departmentId)
     
     // 如果选择了日期范围，添加时间参数
     if (weeklyDateRange.value && weeklyDateRange.value.length === 2) {
@@ -216,25 +221,35 @@ const loadWeeklyData = async () => {
       params.append('endDate', endDate)
     }
     
-    // 获取不同状态的记录数量
-    const createParams = (status) => {
-      const statusParams = new URLSearchParams(params)
-      statusParams.append('status', status)
-      return statusParams
+    // 构建部门过滤参数 - 管理员用户不需要部门过滤
+    const deptParam = (!isAdmin && departmentId) ? `&departmentId=${departmentId}` : ''
+    
+    // 获取不同状态的记录数量 - 使用与移动端相同的API接口
+    const createApiUrl = (status) => {
+      let url = `/api/inspection-record/page?current=1&size=1&status=${status}${deptParam}`
+      
+      // 如果选择了日期范围，添加时间参数
+      if (weeklyDateRange.value && weeklyDateRange.value.length === 2) {
+        const startDate = weeklyDateRange.value[0].toISOString().split('T')[0]
+        const endDate = weeklyDateRange.value[1].toISOString().split('T')[0]
+        url += `&startDate=${startDate}&endDate=${endDate}`
+      }
+      
+      return url
     }
     
     const [pendingResponse, rectifiedResponse, reviewedResponse] = await Promise.all([
-      fetch(`/api/inspection-record/weekly-count?${createParams(0)}`, {
+      fetch(createApiUrl(0), {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
       }),
-      fetch(`/api/inspection-record/weekly-count?${createParams(1)}`, {
+      fetch(createApiUrl(1), {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
       }),
-      fetch(`/api/inspection-record/weekly-count?${createParams(2)}`, {
+      fetch(createApiUrl(2), {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
@@ -246,9 +261,9 @@ const loadWeeklyData = async () => {
     const reviewedData = await reviewedResponse.json()
     
     if (pendingData.code === 200 && rectifiedData.code === 200 && reviewedData.code === 200) {
-      const pending = pendingData.data || 0
-      const rectified = rectifiedData.data || 0
-      const reviewed = reviewedData.data || 0
+      const pending = pendingData.data?.total || 0
+      const rectified = rectifiedData.data?.total || 0
+      const reviewed = reviewedData.data?.total || 0
       
       weeklyData.value = {
         totalRecords: pending + rectified + reviewed,
@@ -284,21 +299,51 @@ const loadWeeklyData = async () => {
   }
 }
 
-// 获取月检数据
+// 获取月检数据（与周检一致的权限与统计维度）
 const loadMonthlyData = async () => {
   try {
-    // 模拟数据，实际应该从API获取
-    monthlyData.value = {
-      totalTasks: 120,
-      completedTasks: 95,
-      pendingTasks: 25,
-      overdueRate: 8.5
+    const localUserInfo = localStorage.getItem('userInfo')
+    let departmentId = null
+    let isAdmin = false
+    if (localUserInfo) {
+      try {
+        const userData = JSON.parse(localUserInfo)
+        departmentId = userData.deptId || userData.departmentId || null
+        isAdmin = (userData.isAdmin === 1)
+      } catch (e) {}
     }
-    // 重新初始化月检图表
+
+    let startDate = ''
+    let endDate = ''
+    if (monthlyDateRange.value && monthlyDateRange.value instanceof Date) {
+      const d = monthlyDateRange.value
+      const year = d.getFullYear()
+      const month = d.getMonth() + 1
+      const pad = (n) => String(n).padStart(2, '0')
+      startDate = `${year}-${pad(month)}-01`
+      const lastDay = new Date(year, month, 0).getDate()
+      endDate = `${year}-${pad(month)}-${pad(lastDay)}`
+    }
+
+    const token = localStorage.getItem('token') || ''
+    const baseParams = {
+      departmentId: (!isAdmin && departmentId) ? departmentId : undefined,
+      startDate: startDate || undefined,
+      endDate: endDate || undefined
+    }
+
+    const req = (status) => request.get('/monthly-inspection-record/monthly-count', { params: { ...baseParams, recordStatus: status } })
+    const [pendingResp, rectifiedResp, reviewedResp] = await Promise.all([req(0), req(1), req(2)])
+    const toVal = (r) => (typeof r?.data === 'number') ? r.data : 0
+    const pending = toVal(pendingResp)
+    const rectified = toVal(rectifiedResp)
+    const reviewed = toVal(reviewedResp)
+    monthlyData.value = { totalRecords: pending + rectified + reviewed, pendingRectification: pending, rectified, reviewed }
     await nextTick()
     initMonthlyChart()
   } catch (error) {
     console.error('获取月检数据失败:', error)
+    monthlyData.value = { totalRecords: 0, pendingRectification: 0, rectified: 0, reviewed: 0 }
   }
 }
 
@@ -345,40 +390,25 @@ const initWeeklyChart = () => {
   })
 }
 
-// 初始化月检图表
+// 初始化月检图表（使用与周检相同的饼图）
 const initMonthlyChart = () => {
   if (!monthlyChart.value) return
   
   const chart = echarts.init(monthlyChart.value)
   const option = {
-    tooltip: {
-      trigger: 'axis',
-      axisPointer: {
-        type: 'shadow'
-      }
-    },
-    grid: {
-      left: '3%',
-      right: '4%',
-      bottom: '3%',
-      containLabel: true
-    },
-    xAxis: {
-      type: 'category',
-      data: ['总任务', '已完成', '进行中']
-    },
-    yAxis: {
-      type: 'value'
-    },
+    tooltip: { trigger: 'item', formatter: '{a} <br/>{b}: {c} ({d}%)' },
+    legend: { bottom: '5%', left: 'center' },
     series: [{
-      name: '任务数量',
-      type: 'bar',
+      name: '月检状态',
+      type: 'pie',
+      radius: ['30%', '60%'],
+      center: ['50%', '45%'],
       data: [
-        { value: monthlyData.value.totalTasks, itemStyle: { color: '#409EFF' } },
-        { value: monthlyData.value.completedTasks, itemStyle: { color: '#67C23A' } },
-        { value: monthlyData.value.pendingTasks, itemStyle: { color: '#E6A23C' } }
+        { value: monthlyData.value.pendingRectification, name: '待整改', itemStyle: { color: '#F56C6C' } },
+        { value: monthlyData.value.rectified, name: '已整改', itemStyle: { color: '#E6A23C' } },
+        { value: monthlyData.value.reviewed, name: '已复查', itemStyle: { color: '#67C23A' } }
       ],
-      barWidth: '60%'
+      emphasis: { itemStyle: { shadowBlur: 10, shadowOffsetX: 0, shadowColor: 'rgba(0, 0, 0, 0.5)' } }
     }]
   }
   chart.setOption(option)

@@ -27,6 +27,15 @@ CREATE TABLE `sys_monthly_inspection_record` (
   `photos` text DEFAULT NULL COMMENT '问题照片URL列表（JSON格式）',
   `safety_score` decimal(5,2) DEFAULT NULL COMMENT '安全记分',
   `rectification_date` date DEFAULT NULL COMMENT '整改期限',
+  -- 整改与复查相关字段（为前后端流程提供数据存储）
+  `rectification_suggestion` varchar(500) DEFAULT NULL COMMENT '整改建议',
+  `rectification_effect` varchar(500) DEFAULT NULL COMMENT '整改效果描述',
+  `rectification_images` text DEFAULT NULL COMMENT '整改图片URL列表',
+  `rectification_time` datetime DEFAULT NULL COMMENT '整改时间',
+  `review_suggestion` varchar(500) DEFAULT NULL COMMENT '复查建议',
+  `review_effect` varchar(500) DEFAULT NULL COMMENT '复查效果描述',
+  `review_images` text DEFAULT NULL COMMENT '复查图片URL列表',
+  `review_time` datetime DEFAULT NULL COMMENT '复查时间',
   `inspector` varchar(100) DEFAULT NULL COMMENT '检查人',
   
   -- 系统字段

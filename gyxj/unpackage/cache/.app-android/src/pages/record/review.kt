@@ -486,7 +486,7 @@ open class GenPagesRecordReview : BasePage {
         ))
     }
     open var recordId: String by `$data`
-    open var recordDetail: RecordDetail1? by `$data`
+    open var recordDetail: RecordDetail2? by `$data`
     open var imageList: UTSArray<String> by `$data`
     open var rectificationImages: UTSArray<String> by `$data`
     open var loading: Boolean by `$data`
@@ -510,7 +510,7 @@ open class GenPagesRecordReview : BasePage {
     open var isReviewed: Boolean by `$data`
     @Suppress("USELESS_CAST")
     override fun data(): Map<String, Any?> {
-        return _uM("recordId" to "", "recordDetail" to null as RecordDetail1?, "imageList" to _uA<String>(), "rectificationImages" to _uA<String>(), "loading" to true, "reviewEffect" to "", "reviewImages" to _uA<String>(), "saving" to false, "scrollTop" to 0, "containerHeight" to 0, "natureOptions" to _uA<NatureOption2>(), "professionOptions" to _uA<ProfessionOption2>(), "departmentOptions" to _uA<DepartmentOption2>(), "selectedNatureIndex" to -1, "selectedProfessionIndex" to -1, "selectedDepartmentIndex" to -1, "showNaturePopup" to false, "showProfessionPopup" to false, "showDepartmentPopup" to false, "loadedDataCount" to 0, "totalDataCount" to 4, "isDelayed" to false, "isReviewed" to false)
+        return _uM("recordId" to "", "recordDetail" to null as RecordDetail2?, "imageList" to _uA<String>(), "rectificationImages" to _uA<String>(), "loading" to true, "reviewEffect" to "", "reviewImages" to _uA<String>(), "saving" to false, "scrollTop" to 0, "containerHeight" to 0, "natureOptions" to _uA<NatureOption2>(), "professionOptions" to _uA<ProfessionOption2>(), "departmentOptions" to _uA<DepartmentOption2>(), "selectedNatureIndex" to -1, "selectedProfessionIndex" to -1, "selectedDepartmentIndex" to -1, "showNaturePopup" to false, "showProfessionPopup" to false, "showDepartmentPopup" to false, "loadedDataCount" to 0, "totalDataCount" to 4, "isDelayed" to false, "isReviewed" to false)
     }
     open var checkLogin = ::gen_checkLogin_fn
     open fun gen_checkLogin_fn() {
@@ -559,7 +559,7 @@ open class GenPagesRecordReview : BasePage {
                 console.log("nature:", recordData?.getString("nature"), " at pages/record/review.uvue:493")
                 console.log("natureType:", recordData?.getString("natureType"), " at pages/record/review.uvue:494")
                 if (recordData != null) {
-                    this.recordDetail = RecordDetail1(id = recordData.getString("id") ?: "", problemDescription = recordData.getString("problemDescription") ?: "", locationName = recordData.getString("locationName") ?: "", severity = recordData.getNumber("severity") ?: 1, taskName = recordData.getString("taskName") ?: "", reporterName = recordData.getString("reporterName") ?: "", createTime = recordData.getString("createTime") ?: "", updateTime = recordData.getString("updateTime") ?: "", status = recordData.getNumber("status") ?: 0, problemImageUrls = recordData.getString("problemImageUrls") ?: "", suggestions = recordData.getString("suggestions") ?: "", reporterId = recordData.getString("reporterId") ?: "", responsibleUnit = recordData.getString("responsibleUnit") ?: "", responsiblePerson = recordData.getString("responsiblePerson") ?: "", natureId = "", natureName = "", assessmentSituation = recordData.getString("assessmentSituation") ?: "", assessmentAmount = recordData.getNumber("assessmentAmount") ?: 0, safetyScore = recordData.getNumber("safetyScore") ?: 0, professionId = recordData.getString("professionId") ?: "", professionName = recordData.getString("professionName") ?: "", inspector = recordData.getString("inspectorName") ?: "", groupLeader = recordData.getString("groupLeaderName") ?: "", deputyLeader = recordData.getString("deputyLeaderName") ?: "", departmentId = recordData.getString("departmentId") ?: "", departmentName = recordData.getString("departmentName") ?: "", rectificationDate = recordData.getString("rectificationDeadline") ?: "", location = recordData.getString("location") ?: "", rectificationEffect = recordData.getString("rectificationEffect") ?: "", rectificationImageUrls = recordData.getString("rectificationImageUrls") ?: "", rectificationTime = recordData.getString("rectificationTime") ?: "", reviewEffect = recordData.getString("reviewEffect") ?: "", reviewImageUrls = recordData.getString("reviewImageUrls") ?: "")
+                    this.recordDetail = RecordDetail2(id = recordData.getString("id") ?: "", problemDescription = recordData.getString("problemDescription") ?: "", locationName = recordData.getString("locationName") ?: "", severity = recordData.getNumber("severity") ?: 1, taskName = recordData.getString("taskName") ?: "", reporterName = recordData.getString("reporterName") ?: "", createTime = recordData.getString("createTime") ?: "", updateTime = recordData.getString("updateTime") ?: "", status = recordData.getNumber("status") ?: 0, problemImageUrls = recordData.getString("problemImageUrls") ?: "", suggestions = recordData.getString("suggestions") ?: "", reporterId = recordData.getString("reporterId") ?: "", responsibleUnit = recordData.getString("responsibleUnit") ?: "", responsiblePerson = recordData.getString("responsiblePerson") ?: "", natureId = "", natureName = "", assessmentSituation = recordData.getString("assessmentSituation") ?: "", assessmentAmount = recordData.getNumber("assessmentAmount") ?: 0, safetyScore = recordData.getNumber("safetyScore") ?: 0, professionId = recordData.getString("professionId") ?: "", professionName = recordData.getString("professionName") ?: "", inspector = recordData.getString("inspectorName") ?: "", groupLeader = recordData.getString("groupLeaderName") ?: "", deputyLeader = recordData.getString("deputyLeaderName") ?: "", departmentId = recordData.getString("departmentId") ?: "", departmentName = recordData.getString("departmentName") ?: "", rectificationDate = recordData.getString("rectificationDeadline") ?: "", location = recordData.getString("location") ?: "", rectificationEffect = recordData.getString("rectificationEffect") ?: "", rectificationImageUrls = recordData.getString("rectificationImageUrls") ?: "", rectificationTime = recordData.getString("rectificationTime") ?: "", reviewEffect = recordData.getString("reviewEffect") ?: "", reviewImageUrls = recordData.getString("reviewImageUrls") ?: "")
                     val natureDefinitionValue = recordData.getString("natureDefinition") ?: ""
                     console.log("natureDefinition原始值:", natureDefinitionValue, " at pages/record/review.uvue:538")
                     if (natureDefinitionValue.length === 32 && UTSRegExp("^[a-f0-9]+\$", "i").test(natureDefinitionValue)) {
@@ -745,10 +745,11 @@ open class GenPagesRecordReview : BasePage {
                     , "rectificationEffect" to (this.recordDetail?.rectificationEffect ?: ""), "rectificationImageUrls" to (this.recordDetail?.rectificationImageUrls ?: ""), "reviewEffect" to this.reviewEffect, "reviewImageUrls" to reviewImageUrls.join(","), "reviewerId" to currentUserId, "status" to 2, "reviewTime" to Date().toISOString().replace("T", " ").substring(0, 19))
                     uni_showLoading(ShowLoadingOptions(title = "保存中..."))
                     val token = uni_getStorageSync("token")
-                    uni_request<Any>(RequestOptions(url = getApiUrl("/inspection-record"), method = "PUT", header = object : UTSJSONObject() {
+                    val payload: UTSJSONObject = _uO("__\$originalPosition" to UTSSourceMapPosition("payload", "pages/record/review.uvue", 775, 31), "reviewSuggestion" to this.reviewEffect, "reviewEffect" to this.reviewEffect, "reviewImages" to reviewImageUrls.join(","))
+                    uni_request<Any>(RequestOptions(url = getApiUrl("/monthly-inspection-record/" + (this.recordDetail?.id ?: "") + "/review"), method = "PUT", header = object : UTSJSONObject() {
                         var Authorization = "Bearer " + token
                         var `Content-Type` = "application/json"
-                    }, data = updateData, success = fun(response){
+                    }, data = payload, success = fun(response){
                         uni_hideLoading()
                         val data = response.data as UTSJSONObject
                         if (response.statusCode === 200 && (data.getNumber("code") ?: 0) === 200) {
@@ -763,7 +764,7 @@ open class GenPagesRecordReview : BasePage {
                     }
                     , fail = fun(error){
                         uni_hideLoading()
-                        console.error("保存复查信息失败:", error, " at pages/record/review.uvue:803")
+                        console.error("保存复查信息失败:", error, " at pages/record/review.uvue:809")
                         uni_showToast(ShowToastOptions(title = "网络错误", icon = "none"))
                         this.saving = false
                     }
@@ -771,7 +772,7 @@ open class GenPagesRecordReview : BasePage {
                 }
                  catch (error: Throwable) {
                     uni_hideLoading()
-                    console.error("上传图片失败:", error, " at pages/record/review.uvue:813")
+                    console.error("上传图片失败:", error, " at pages/record/review.uvue:819")
                     uni_showToast(ShowToastOptions(title = "图片上传失败，请重试", icon = "none"))
                     this.saving = false
                 }
@@ -790,7 +791,7 @@ open class GenPagesRecordReview : BasePage {
                             var Authorization = "Bearer " + token
                         }, success = fun(res){
                             try {
-                                val data = UTSAndroid.consoleDebugError(JSON.parse(res.data), " at pages/record/review.uvue:839") as UTSJSONObject
+                                val data = UTSAndroid.consoleDebugError(JSON.parse(res.data), " at pages/record/review.uvue:845") as UTSJSONObject
                                 if (res.statusCode === 200 && (data.getNumber("code") ?: 0) === 200) {
                                     val dataObj = data.getJSON("data")
                                     val imageUrl = dataObj?.getString("filePath") ?: ""
@@ -817,11 +818,11 @@ open class GenPagesRecordReview : BasePage {
                 )
                 try {
                     val imageUrls = await(UTSPromise.all(uploadPromises))
-                    console.log("所有复查图片上传成功：", imageUrls, " at pages/record/review.uvue:864")
+                    console.log("所有复查图片上传成功：", imageUrls, " at pages/record/review.uvue:870")
                     return@w imageUrls
                 }
                  catch (error: Throwable) {
-                    console.error("复查图片上传失败:", error, " at pages/record/review.uvue:867")
+                    console.error("复查图片上传失败:", error, " at pages/record/review.uvue:873")
                     throw error
                 }
         })
@@ -854,112 +855,112 @@ open class GenPagesRecordReview : BasePage {
     }
     open var initSelectedValues = ::gen_initSelectedValues_fn
     open fun gen_initSelectedValues_fn() {
-        console.log("开始初始化选中值", " at pages/record/review.uvue:892")
+        console.log("开始初始化选中值", " at pages/record/review.uvue:898")
         if (this.recordDetail == null) {
-            console.log("recordDetail为空，无法初始化选中值", " at pages/record/review.uvue:894")
+            console.log("recordDetail为空，无法初始化选中值", " at pages/record/review.uvue:900")
             return
         }
-        console.log("记录详情数据:", this.recordDetail, " at pages/record/review.uvue:898")
-        console.log("字典数据状态:", _uO("natureOptions" to this.natureOptions, "professionOptions" to this.professionOptions, "departmentOptions" to this.departmentOptions), " at pages/record/review.uvue:899")
+        console.log("记录详情数据:", this.recordDetail, " at pages/record/review.uvue:904")
+        console.log("字典数据状态:", _uO("natureOptions" to this.natureOptions, "professionOptions" to this.professionOptions, "departmentOptions" to this.departmentOptions), " at pages/record/review.uvue:905")
         val natureId = this.recordDetail!!.natureId ?: ""
         val natureName = this.recordDetail!!.natureName ?: ""
-        console.log("性质界定数据:", _uO("natureId" to natureId, "natureName" to natureName), " at pages/record/review.uvue:908")
+        console.log("性质界定数据:", _uO("natureId" to natureId, "natureName" to natureName), " at pages/record/review.uvue:914")
         if (natureId !== "") {
-            console.log("使用ID匹配:", natureId, " at pages/record/review.uvue:912")
+            console.log("使用ID匹配:", natureId, " at pages/record/review.uvue:918")
             run {
                 var i: Number = 0
                 while(i < this.natureOptions.length){
-                    console.log("\u6027\u8D28\u754C\u5B9AID\u6BD4\u8F83: " + this.natureOptions[i].id + " == " + natureId, " at pages/record/review.uvue:914")
+                    console.log("\u6027\u8D28\u754C\u5B9AID\u6BD4\u8F83: " + this.natureOptions[i].id + " == " + natureId, " at pages/record/review.uvue:920")
                     if (this.natureOptions[i].id == natureId) {
                         this.selectedNatureIndex = i
                         this.recordDetail!!.natureName = this.natureOptions[i].name
-                        console.log("性质界定ID匹配成功，索引:", i, "ID:", this.natureOptions[i].id, "名称:", this.natureOptions[i].name, " at pages/record/review.uvue:918")
+                        console.log("性质界定ID匹配成功，索引:", i, "ID:", this.natureOptions[i].id, "名称:", this.natureOptions[i].name, " at pages/record/review.uvue:924")
                         break
                     }
                     i++
                 }
             }
             if (this.selectedNatureIndex === -1) {
-                console.log("性质界定ID在字典中未找到匹配项:", natureId, " at pages/record/review.uvue:923")
+                console.log("性质界定ID在字典中未找到匹配项:", natureId, " at pages/record/review.uvue:929")
             }
         } else if (natureName !== "") {
-            console.log("使用名称匹配:", natureName, " at pages/record/review.uvue:927")
+            console.log("使用名称匹配:", natureName, " at pages/record/review.uvue:933")
             run {
                 var i: Number = 0
                 while(i < this.natureOptions.length){
-                    console.log("\u6027\u8D28\u754C\u5B9A\u540D\u79F0\u6BD4\u8F83: " + this.natureOptions[i].name + " == " + natureName, " at pages/record/review.uvue:929")
+                    console.log("\u6027\u8D28\u754C\u5B9A\u540D\u79F0\u6BD4\u8F83: " + this.natureOptions[i].name + " == " + natureName, " at pages/record/review.uvue:935")
                     if (this.natureOptions[i].name == natureName) {
                         this.selectedNatureIndex = i
                         this.recordDetail!!.natureId = this.natureOptions[i].id
-                        console.log("性质界定名称匹配成功，索引:", i, "ID:", this.natureOptions[i].id, "名称:", this.natureOptions[i].name, " at pages/record/review.uvue:933")
+                        console.log("性质界定名称匹配成功，索引:", i, "ID:", this.natureOptions[i].id, "名称:", this.natureOptions[i].name, " at pages/record/review.uvue:939")
                         break
                     }
                     i++
                 }
             }
             if (this.selectedNatureIndex === -1) {
-                console.log("性质界定名称在字典中未找到匹配项:", natureName, " at pages/record/review.uvue:938")
+                console.log("性质界定名称在字典中未找到匹配项:", natureName, " at pages/record/review.uvue:944")
             }
         } else {
-            console.log("性质界定ID和名称都为空，跳过匹配", " at pages/record/review.uvue:941")
+            console.log("性质界定ID和名称都为空，跳过匹配", " at pages/record/review.uvue:947")
         }
         if (this.selectedNatureIndex === -1) {
             console.log("可用的字典选项:", this.natureOptions.map(fun(item): String {
                 return "" + item.name + "(" + item.id + ")"
             }
-            ), " at pages/record/review.uvue:945")
+            ), " at pages/record/review.uvue:951")
         }
         val professionId = this.recordDetail!!.professionId ?: ""
-        console.log("专业ID:", professionId, " at pages/record/review.uvue:950")
+        console.log("专业ID:", professionId, " at pages/record/review.uvue:956")
         if (professionId !== "") {
             run {
                 var i: Number = 0
                 while(i < this.professionOptions.length){
-                    console.log("\u4E13\u4E1A\u6BD4\u8F83: " + this.professionOptions[i].id + " == " + professionId, " at pages/record/review.uvue:953")
+                    console.log("\u4E13\u4E1A\u6BD4\u8F83: " + this.professionOptions[i].id + " == " + professionId, " at pages/record/review.uvue:959")
                     if (this.professionOptions[i].id == professionId) {
                         this.selectedProfessionIndex = i
-                        console.log("专业匹配成功，索引:", i, "名称:", this.professionOptions[i].name, " at pages/record/review.uvue:956")
+                        console.log("专业匹配成功，索引:", i, "名称:", this.professionOptions[i].name, " at pages/record/review.uvue:962")
                         break
                     }
                     i++
                 }
             }
         } else {
-            console.log("专业ID为空，跳过匹配", " at pages/record/review.uvue:961")
+            console.log("专业ID为空，跳过匹配", " at pages/record/review.uvue:967")
         }
         val departmentId = this.recordDetail!!.departmentId ?: ""
-        console.log("部门ID:", departmentId, " at pages/record/review.uvue:966")
+        console.log("部门ID:", departmentId, " at pages/record/review.uvue:972")
         if (departmentId !== "") {
             run {
                 var i: Number = 0
                 while(i < this.departmentOptions.length){
-                    console.log("\u90E8\u95E8\u6BD4\u8F83: " + this.departmentOptions[i].id + " == " + departmentId, " at pages/record/review.uvue:969")
+                    console.log("\u90E8\u95E8\u6BD4\u8F83: " + this.departmentOptions[i].id + " == " + departmentId, " at pages/record/review.uvue:975")
                     if (this.departmentOptions[i].id == departmentId) {
                         this.selectedDepartmentIndex = i
-                        console.log("部门匹配成功，索引:", i, "名称:", this.departmentOptions[i].name, " at pages/record/review.uvue:972")
+                        console.log("部门匹配成功，索引:", i, "名称:", this.departmentOptions[i].name, " at pages/record/review.uvue:978")
                         break
                     }
                     i++
                 }
             }
         } else {
-            console.log("部门ID为空，跳过匹配", " at pages/record/review.uvue:977")
+            console.log("部门ID为空，跳过匹配", " at pages/record/review.uvue:983")
         }
-        console.log("回写选中值完成:", _uO("natureId" to natureId, "selectedNatureIndex" to this.selectedNatureIndex, "professionId" to professionId, "selectedProfessionIndex" to this.selectedProfessionIndex, "departmentId" to departmentId, "selectedDepartmentIndex" to this.selectedDepartmentIndex), " at pages/record/review.uvue:980")
+        console.log("回写选中值完成:", _uO("natureId" to natureId, "selectedNatureIndex" to this.selectedNatureIndex, "professionId" to professionId, "selectedProfessionIndex" to this.selectedProfessionIndex, "departmentId" to departmentId, "selectedDepartmentIndex" to this.selectedDepartmentIndex), " at pages/record/review.uvue:986")
     }
     open var loadNatureOptions = ::gen_loadNatureOptions_fn
     open fun gen_loadNatureOptions_fn() {
         val token = uni_getStorageSync("token")
-        console.log("开始加载性质界定数据", " at pages/record/review.uvue:990")
+        console.log("开始加载性质界定数据", " at pages/record/review.uvue:996")
         uni_request<Any>(RequestOptions(url = getApiUrl("/dictionary/type/性质界定"), method = "GET", header = object : UTSJSONObject() {
             var Authorization = "Bearer " + token
             var `Content-Type` = "application/json"
         }, success = fun(res){
             val data = res.data as UTSJSONObject
-            console.log("性质界定接口响应:", res.statusCode, data.getNumber("code"), " at pages/record/review.uvue:1000")
+            console.log("性质界定接口响应:", res.statusCode, data.getNumber("code"), " at pages/record/review.uvue:1006")
             if (res.statusCode === 200 && data.getNumber("code") === 200) {
                 val dataArray = data.getArray("data")
-                console.log("性质界定原始数据:", dataArray, " at pages/record/review.uvue:1003")
+                console.log("性质界定原始数据:", dataArray, " at pages/record/review.uvue:1009")
                 if (dataArray != null) {
                     this.natureOptions = _uA()
                     run {
@@ -974,35 +975,35 @@ open class GenPagesRecordReview : BasePage {
                             } else {
                                 dictLabel
                             }
-                            console.log("\u6027\u8D28\u754C\u5B9A\u9879\u76EE " + i + ":", _uO("id" to id, "dictValue" to dictValue, "dictLabel" to dictLabel, "name" to name), " at pages/record/review.uvue:1012")
+                            console.log("\u6027\u8D28\u754C\u5B9A\u9879\u76EE " + i + ":", _uO("id" to id, "dictValue" to dictValue, "dictLabel" to dictLabel, "name" to name), " at pages/record/review.uvue:1018")
                             this.natureOptions.push(NatureOption2(id = id, name = name))
                             i++
                         }
                     }
                 }
-                console.log("性质界定数据加载成功:", this.natureOptions, " at pages/record/review.uvue:1016")
+                console.log("性质界定数据加载成功:", this.natureOptions, " at pages/record/review.uvue:1022")
             } else {
                 val message = data.getString("message") ?: "未知错误"
-                console.error("获取性质界定数据失败:", message, " at pages/record/review.uvue:1019")
+                console.error("获取性质界定数据失败:", message, " at pages/record/review.uvue:1025")
                 this.natureOptions = _uA(
                     NatureOption2(id = "1", name = "一般问题"),
                     NatureOption2(id = "2", name = "较大问题"),
                     NatureOption2(id = "3", name = "严重问题"),
                     NatureOption2(id = "4", name = "重大问题")
                 )
-                console.log("使用默认性质界定数据:", this.natureOptions, " at pages/record/review.uvue:1026")
+                console.log("使用默认性质界定数据:", this.natureOptions, " at pages/record/review.uvue:1032")
             }
             this.checkAllDataLoaded()
         }
         , fail = fun(error){
-            console.error("请求性质界定数据失败:", error, " at pages/record/review.uvue:1031")
+            console.error("请求性质界定数据失败:", error, " at pages/record/review.uvue:1037")
             this.natureOptions = _uA(
                 NatureOption2(id = "1", name = "一般问题"),
                 NatureOption2(id = "2", name = "较大问题"),
                 NatureOption2(id = "3", name = "严重问题"),
                 NatureOption2(id = "4", name = "重大问题")
             )
-            console.log("使用默认性质界定数据:", this.natureOptions, " at pages/record/review.uvue:1038")
+            console.log("使用默认性质界定数据:", this.natureOptions, " at pages/record/review.uvue:1044")
             this.checkAllDataLoaded()
         }
         ))

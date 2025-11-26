@@ -41,11 +41,11 @@
         t.id, t.task_no, t.inspection_time, t.group_leader_id, t.deputy_leader_id,
         t.department_id, t.profession_id, t.task_description, t.status, t.notification_sent,
         t.create_user_id, t.create_time, t.update_time, t.deleted,
-        gl.username as group_leader_name,
-        dl.username as deputy_leader_name,
+        gl.real_name as group_leader_name,
+        dl.real_name as deputy_leader_name,
         d.dept_name as department_name,
         p.dict_label as profession_name,
-        cu.username as create_user_name
+        cu.real_name as create_user_name
     </sql>
 
     <!-- 分页查询月检任务列表 -->
@@ -90,7 +90,7 @@
         LEFT JOIN sys_dept d ON t.department_id = d.id AND d.deleted = 0
         LEFT JOIN sys_dictionary p ON t.profession_id = p.dict_value AND p.dict_type = '专业' AND p.deleted = 0
         LEFT JOIN sys_user cu ON t.create_user_id = cu.id AND cu.deleted = 0
-        WHERE t.task_no = #{id} AND t.deleted = 0
+        WHERE t.id = #{id} AND t.deleted = 0
     </select>
 
     <!-- 根据用户ID查询相关任务 -->
@@ -175,11 +175,16 @@
     </update>
 
     <!-- 根据任务编号查询任务 -->
-    <select id="selectByTaskNo" resultMap="BaseResultMap">
+    <select id="selectByTaskNo" resultMap="TaskDetailResultMap">
         SELECT
-        <include refid="Base_Column_List"/>
-        FROM sys_monthly_inspection_task
-        WHERE task_no = #{taskNo} AND deleted = 0
+        <include refid="Detail_Column_List"/>
+        FROM sys_monthly_inspection_task t
+        LEFT JOIN sys_user gl ON t.group_leader_id = gl.id AND gl.deleted = 0
+        LEFT JOIN sys_user dl ON t.deputy_leader_id = dl.id AND dl.deleted = 0
+        LEFT JOIN sys_dept d ON t.department_id = d.id AND d.deleted = 0
+        LEFT JOIN sys_dictionary p ON t.profession_id = p.dict_value AND p.dict_type = '专业' AND p.deleted = 0
+        LEFT JOIN sys_user cu ON t.create_user_id = cu.id AND cu.deleted = 0
+        WHERE t.task_no = #{taskNo} AND t.deleted = 0
     </select>
 
 </mapper>

@@ -29,6 +29,12 @@
           <el-descriptions-item label="检查副组长">
             {{ formData.deputyLeaderName || '暂无' }}
           </el-descriptions-item>
+          <el-descriptions-item label="责任人">
+            {{ formData.responsiblePerson || '暂无' }}
+          </el-descriptions-item>
+          <el-descriptions-item label="责任单位">
+            {{ formData.responsibleUnit || '暂无' }}
+          </el-descriptions-item>
           <el-descriptions-item label="专业类别">
             {{ formData.professionalTypeName || '暂无' }}
           </el-descriptions-item>
@@ -57,7 +63,7 @@
             {{ formData.inspector || '暂无' }}
           </el-descriptions-item>
           <el-descriptions-item label="整改期限">
-            {{ formatDate(formData.rectificationDeadline) }}
+            {{ formatDate(getRectificationDeadline()) }}
           </el-descriptions-item>
           <el-descriptions-item label="状态">
             <el-tag :type="getStatusType(formData.recordStatus)">
@@ -89,14 +95,14 @@
       </div>
 
       <!-- 整改信息 -->
-      <div class="info-section" v-if="formData.status >= 1">
+      <div class="info-section" v-if="formData.recordStatus >= 1">
         <h4>整改信息</h4>
-        <el-descriptions :column="1" border>
-          <el-descriptions-item label="整改效果描述">
-            {{ formData.rectificationEffect || '暂无' }}
+        <el-descriptions :column="2" border>
+          <el-descriptions-item label="整改效果">
+            {{ formData.rectificationEffect || formData.rectificationSuggestion || '暂无' }}
           </el-descriptions-item>
           <el-descriptions-item label="整改时间">
-            {{ formatDate(formData.rectificationTime) }}
+            {{ formatDate(getRectificationTime()) }}
           </el-descriptions-item>
         </el-descriptions>
         
@@ -120,14 +126,14 @@
       </div>
 
       <!-- 复查信息 -->
-      <div class="info-section" v-if="formData.status >= 2">
+      <div class="info-section" v-if="formData.recordStatus >= 2">
         <h4>复查信息</h4>
         <el-descriptions :column="2" border>
+          <el-descriptions-item label="复查效果">
+            {{ formData.reviewEffect || formData.reviewSuggestion || '暂无' }}
+          </el-descriptions-item>
           <el-descriptions-item label="复查时间">
             {{ formatDate(formData.reviewTime) }}
-          </el-descriptions-item>
-          <el-descriptions-item label="复查备注">
-            {{ formData.reviewRemark || '暂无' }}
           </el-descriptions-item>
         </el-descriptions>
         
@@ -226,6 +232,16 @@ const getStatusText = (status) => {
 const formatDate = (dateStr) => {
   if (!dateStr) return ''
   return new Date(dateStr).toLocaleString('zh-CN')
+}
+
+const getRectificationDeadline = () => {
+  const d = props.formData || {}
+  return d.rectificationDeadline || d.rectificationDate || ''
+}
+
+const getRectificationTime = () => {
+  const d = props.formData || {}
+  return d.rectificationTime || d.rectifyTime || ''
 }
 
 // 关闭弹窗

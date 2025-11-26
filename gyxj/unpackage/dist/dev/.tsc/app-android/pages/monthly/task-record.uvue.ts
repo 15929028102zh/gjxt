@@ -1,16 +1,17 @@
 
 	import { getApiUrl, apiConfig } from '@/config/api.uts'
 	
-	type TaskInfo = { __$originalPosition?: UTSSourceMapPosition<"TaskInfo", "pages/monthly/task-record.uvue", 360, 7>;
-		taskNumber: string
-		inspectionDate: string
-		department: string
-		profession: string
-		groupLeader: string
-		deputyLeader: string
-	}
+type TaskInfo = { __$originalPosition?: UTSSourceMapPosition<"TaskInfo", "pages/monthly/task-record.uvue", 376, 6>;
+    taskId: string
+    taskNumber: string
+    inspectionDate: string
+    department: string
+    profession: string
+    groupLeader: string
+    deputyLeader: string
+}
 	
-	type FormData = { __$originalPosition?: UTSSourceMapPosition<"FormData", "pages/monthly/task-record.uvue", 369, 7>;
+  type FormData = { __$originalPosition?: UTSSourceMapPosition<"FormData", "pages/monthly/task-record.uvue", 386, 8>;
 		problemType: string
 		problemDescription: string
 		location: string
@@ -20,11 +21,13 @@
 		module: string
 		responsibility: string
 		issue: string
-		quality: string
-		inspector: string
-	}
+    quality: string
+    inspector: string
+    responsibleUnit: string
+    responsiblePerson: string
+  }
 	
-	type OptionItem = { __$originalPosition?: UTSSourceMapPosition<"OptionItem", "pages/monthly/task-record.uvue", 383, 7>;
+	type OptionItem = { __$originalPosition?: UTSSourceMapPosition<"OptionItem", "pages/monthly/task-record.uvue", 402, 7>;
 		id: string
 		name: string
 		value?: string
@@ -77,16 +80,17 @@
 			defaultDate.setDate(defaultDate.getDate() + 7)
 			const defaultDateStr = `${defaultDate.getFullYear()}-${(defaultDate.getMonth() + 1).toString().padStart(2, '0')}-${defaultDate.getDate().toString().padStart(2, '0')}`
 			
-			return {
-				taskInfo: {
-					taskNumber: '',
-					inspectionDate: '',
-					department: '',
-					profession: '',
-					groupLeader: '',
-					deputyLeader: ''
-				} as TaskInfo,
-				formData: {
+        return {
+            taskInfo: {
+                taskId: '',
+                taskNumber: '',
+                inspectionDate: '',
+                department: '',
+                profession: '',
+                groupLeader: '',
+                deputyLeader: ''
+            } as TaskInfo,
+          formData: {
 			problemType: '',
 			problemDescription: '',
 			location: '',
@@ -96,9 +100,11 @@
 			module: '',
 			responsibility: '',
 			issue: '',
-			quality: '',
-			inspector: ''
-		} as FormData,
+            quality: '',
+            inspector: ''
+            ,responsibleUnit: '',
+            responsiblePerson: ''
+          } as FormData,
 				containerHeight: 0,
 				scrollTop: 0,
 				showProblemTypeModal: false,
@@ -170,9 +176,9 @@
 		})
 	},
 
-	onLoad(options : UTSJSONObject) {
-			const taskId = options.getString('taskId')
-			console.log(taskId, " at pages/monthly/task-record.uvue:531")
+	onLoad(options: UTSJSONObject) {
+			const taskId = options.getString('taskId') ?? ''
+			console.log(taskId, " at pages/monthly/task-record.uvue:553")
 			
 			if (taskId != null && taskId != '') {
 				this.loadTaskInfo(taskId)
@@ -247,7 +253,7 @@
 			},
 			// 将相对路径转换为HTTP访问路径
 			convertToHttpUrl(relativePath: string): string {
-				console.log('相对路径:', relativePath, " at pages/monthly/task-record.uvue:606")
+				console.log('相对路径:', relativePath, " at pages/monthly/task-record.uvue:628")
 				// 如果已经是HTTP路径，直接返回
 				if (relativePath.startsWith('http://') || relativePath.startsWith('https://')) {
 					return relativePath
@@ -256,7 +262,7 @@
 				// 直接拼接完整的HTTP URL
 				// 后端已返回相对路径，如: /files/images/20250818/xxx.jpg
 				const httpUrl = `${apiConfig.baseUrl}/api${relativePath}`
-				console.log('转换后的HTTP URL:', httpUrl, " at pages/monthly/task-record.uvue:615")
+				console.log('转换后的HTTP URL:', httpUrl, " at pages/monthly/task-record.uvue:637")
 				return httpUrl
 			},
 			// 初始化容器高度
@@ -269,58 +275,62 @@
 			loadTaskInfo(taskId: string) {
 				try {
 					const token = uni.getStorageSync('token')
-					console.log(taskId, " at pages/monthly/task-record.uvue:628")
+					console.log('接收到的taskId参数:', taskId, " at pages/monthly/task-record.uvue:650")
+					// 使用task-no接口根据任务编号获取任务详情
 					uni.request({
-						url: getApiUrl(`/monthly-inspection-task/${taskId}`),
+						url: getApiUrl(`/monthly-inspection-task/task-no/${taskId}`),
 						method: 'GET',
 						header: {
 							'Authorization': `Bearer ${token}`
 						},
 						success: (res) => {
 							const respdata=res.data as UTSJSONObject;
-							if ( respdata.getNumber('code')=== 200) {
-								const taskInfo = respdata.getJSON('data')
-								console.log("获取到的数据:",taskInfo, " at pages/monthly/task-record.uvue:639")
-								if (taskInfo != null) {
-									this.taskInfo = {
-										taskNumber: taskInfo.getString('id') ?? '',
-										inspectionDate: taskInfo.getString('inspectionTime') ?? '',
-										department: taskInfo.getString('departmentName') ?? '',
-										profession: taskInfo.getString('professionId') ?? '',
-										groupLeader: taskInfo.getString('groupLeaderName') ?? '',
-										deputyLeader: taskInfo.getString('deputyLeaderName') ?? ''
-									}
+                            if ( respdata.getNumber('code')=== 200) {
+                                const taskInfo = respdata.getJSON('data')
+                                console.log("获取到的任务数据:",taskInfo, " at pages/monthly/task-record.uvue:662")
+                                if (taskInfo != null) {
+                                    this.taskInfo = {
+                                        taskId: taskInfo.getString('id') ?? '',
+                                        taskNumber: taskInfo.getString('taskNo') ?? '',
+                                        inspectionDate: taskInfo.getString('inspectionTime') ?? '',
+                                        department: taskInfo.getString('departmentName') ?? '',
+                                        profession: taskInfo.getString('professionId') ?? '',
+                                        groupLeader: taskInfo.getString('groupLeaderName') ?? '',
+                                        deputyLeader: taskInfo.getString('deputyLeaderName') ?? ''
+                                    }
 									// 自动填充性质界定
 									this.autoFillProfession()
 								}
 							}
 						},
 						fail: (error) => {
-							console.error('加载任务信息失败:', error, " at pages/monthly/task-record.uvue:655")
+							console.error('加载任务信息失败:', error, " at pages/monthly/task-record.uvue:679")
 							// 模拟数据
-							this.taskInfo = {
-								taskNumber: 'YJ202401001',
-								inspectionDate: '2024年1月',
-								department: '生产部',
-								profession: '违法违规',
-								groupLeader: '张三',
-								deputyLeader: '李四'
-							}
+                        this.taskInfo = {
+                            taskId: '',
+                            taskNumber: 'YJ202401001',
+                            inspectionDate: '2024年1月',
+                            department: '生产部',
+                            profession: '违法违规',
+                            groupLeader: '张三',
+                            deputyLeader: '李四'
+                        }
 							// 自动填充性质界定
 						this.autoFillProfession()
 						}
 					})
 				} catch (error) {
-					console.error('加载任务信息失败:', error, " at pages/monthly/task-record.uvue:670")
+					console.error('加载任务信息失败:', error, " at pages/monthly/task-record.uvue:695")
 					// 模拟数据
-					this.taskInfo = {
-						taskNumber: 'YJ202401001',
-						inspectionDate: '2024年1月',
-						department: '生产部',
-						profession: '违法违规',
-						groupLeader: '张三',
-						deputyLeader: '李四'
-					}
+                    this.taskInfo = {
+                        taskId: '',
+                        taskNumber: 'YJ202401001',
+                        inspectionDate: '2024年1月',
+                        department: '生产部',
+                        profession: '违法违规',
+                        groupLeader: '张三',
+                        deputyLeader: '李四'
+                    }
 					// 自动填充性质界定
 					this.autoFillProfession()
 				}
@@ -347,41 +357,41 @@
 				this.selectedProblemType = type
 			},
 			
-			// 自动填充性质界定
-			autoFillProfession() {
-				console.log('开始自动填充性质界定', " at pages/monthly/task-record.uvue:708")
-				console.log('taskInfo:', this.taskInfo, " at pages/monthly/task-record.uvue:709")
-				console.log('typeOptions:', this.typeOptions, " at pages/monthly/task-record.uvue:710")
+            // 自动填充性质界定
+            autoFillProfession() {
+				console.log('开始自动填充性质界定', " at pages/monthly/task-record.uvue:734")
+				console.log('taskInfo:', this.taskInfo, " at pages/monthly/task-record.uvue:735")
+				console.log('typeOptions:', this.typeOptions, " at pages/monthly/task-record.uvue:736")
 				
 				if (this.taskInfo != null && this.taskInfo.profession != '' && this.typeOptions.length > 0) {
-					console.log('查找性质界定:', this.taskInfo.profession, " at pages/monthly/task-record.uvue:713")
+					console.log('查找性质界定:', this.taskInfo.profession, " at pages/monthly/task-record.uvue:739")
 					const index = this.typeOptions.findIndex((item: OptionItem) => item.name === this.taskInfo.profession)
-					console.log('找到的性质界定索引:', index, " at pages/monthly/task-record.uvue:715")
+					console.log('找到的性质界定索引:', index, " at pages/monthly/task-record.uvue:741")
 					
 					if (index !== -1) {
 						this.selectedTypeIndex = index
-						console.log('已设置性质界定索引:', this.selectedTypeIndex, " at pages/monthly/task-record.uvue:719")
-						// 自动加载模块选项
-						this.loadModuleOptions((this.typeOptions[index] as OptionItem).id)
+						console.log('已设置性质界定索引:', this.selectedTypeIndex, " at pages/monthly/task-record.uvue:745")
+                        // 自动加载模块选项（按专业名称过滤模块）
+                        this.loadModuleOptions((this.typeOptions[index] as OptionItem).name)
 					} else {
-						console.warn('未找到匹配的性质界定:', this.taskInfo.profession, " at pages/monthly/task-record.uvue:723")
+						console.warn('未找到匹配的性质界定:', this.taskInfo.profession, " at pages/monthly/task-record.uvue:749")
 						// 尝试模糊匹配
 						const fuzzyIndex = this.typeOptions.findIndex((item: OptionItem) => 
 							item.name.includes(this.taskInfo.profession) || this.taskInfo.profession.includes(item.name)
 						)
 						if (fuzzyIndex !== -1) {
 							this.selectedTypeIndex = fuzzyIndex
-							console.log('模糊匹配到性质界定索引:', this.selectedTypeIndex, " at pages/monthly/task-record.uvue:730")
-							this.loadModuleOptions((this.typeOptions[fuzzyIndex] as OptionItem).id)
+							console.log('模糊匹配到性质界定索引:', this.selectedTypeIndex, " at pages/monthly/task-record.uvue:756")
+                            this.loadModuleOptions((this.typeOptions[fuzzyIndex] as OptionItem).name)
 						}
 					}
 				} else {
 					if (this.taskInfo == null) {
-						console.log('taskInfo为空，等待任务信息加载', " at pages/monthly/task-record.uvue:736")
+						console.log('taskInfo为空，等待任务信息加载', " at pages/monthly/task-record.uvue:762")
 					} else if (this.taskInfo.profession == '') {
-						console.log('专业信息为空', " at pages/monthly/task-record.uvue:738")
+						console.log('专业信息为空', " at pages/monthly/task-record.uvue:764")
 					} else if (this.typeOptions.length === 0) {
-						console.log('性质界定选项未加载，等待加载完成', " at pages/monthly/task-record.uvue:740")
+						console.log('性质界定选项未加载，等待加载完成', " at pages/monthly/task-record.uvue:766")
 					}
 				}
 				
@@ -402,7 +412,7 @@
 						const respdata = res.data as UTSJSONObject
 						if (respdata.getNumber('code') === 200) {
 							const data = respdata.getArray('data')
-							console.log("获取到的专业类别数据",data, " at pages/monthly/task-record.uvue:761")
+							console.log("获取到的专业类别数据",data, " at pages/monthly/task-record.uvue:787")
 							if (data != null) {
 								const options: OptionItem[] = []
 								for (let i = 0; i < data.length; i++) {
@@ -413,17 +423,17 @@
            } as OptionItem)
 								}
 								this.typeOptions = options
-								console.log("专业类别选项已加载:", this.typeOptions, " at pages/monthly/task-record.uvue:772")
+								console.log("专业类别选项已加载:", this.typeOptions, " at pages/monthly/task-record.uvue:798")
 								// 自动填充专业类别
 								this.autoFillProfession()
 							}
 						} else {
-						console.error('加载专业类别失败:', respdata.getString('message'), " at pages/monthly/task-record.uvue:777")
+						console.error('加载专业类别失败:', respdata.getString('message'), " at pages/monthly/task-record.uvue:803")
 						this.loadFallbackTypeOptions()
 					}
 				},
 				fail: (error) => {
-					console.error('加载专业类别失败:', error, " at pages/monthly/task-record.uvue:782")
+					console.error('加载专业类别失败:', error, " at pages/monthly/task-record.uvue:808")
 					this.loadFallbackTypeOptions()
 				}
 			})
@@ -438,7 +448,7 @@
 				{ id: '4', name: '安全专业' },
 				{ id: '5', name: '环保专业' }
 			]
-			console.log("使用备用专业类别数据:", this.typeOptions, " at pages/monthly/task-record.uvue:797")
+			console.log("使用备用专业类别数据:", this.typeOptions, " at pages/monthly/task-record.uvue:823")
 			// 自动填充专业类别
 		this.autoFillProfession()
 		},
@@ -453,7 +463,7 @@
 				
 				const token = uni.getStorageSync('token')
 				uni.request({
-					url: getApiUrl(`/gjbz-data/by-profession/${UTSAndroid.consoleDebugError(encodeURIComponent(this.taskInfo.profession), " at pages/monthly/task-record.uvue:812")}`),
+					url: getApiUrl(`/gjbz-data/by-profession/${UTSAndroid.consoleDebugError(encodeURIComponent(this.taskInfo.profession), " at pages/monthly/task-record.uvue:838")}`),
 					method: 'GET',
 					header: {
 						'Authorization': `Bearer ${token}`
@@ -463,18 +473,18 @@
 						if (respdata.getNumber('code') === 200) {
 							const data = respdata.getArray('data')
 							if (data != null && data.length > 0) {
-								console.log(`找到${data.length}个与专业"${this.taskInfo.profession}"相关的岗检标准项`, " at pages/monthly/task-record.uvue:822")
+								console.log(`找到${data.length}个与专业"${this.taskInfo.profession}"相关的岗检标准项`, " at pages/monthly/task-record.uvue:848")
 								// 这里可以将数据存储到组件的数据中，供后续使用
 								// 例如：this.gjbzDataList = data
 							} else {
-								console.log(`未找到与专业"${this.taskInfo.profession}"相关的岗检标准项`, " at pages/monthly/task-record.uvue:826")
+								console.log(`未找到与专业"${this.taskInfo.profession}"相关的岗检标准项`, " at pages/monthly/task-record.uvue:852")
 							}
 						} else {
-							console.error('加载岗检标准项失败:', respdata.getString('message'), " at pages/monthly/task-record.uvue:829")
+							console.error('加载岗检标准项失败:', respdata.getString('message'), " at pages/monthly/task-record.uvue:855")
 						}
 					},
 					fail: (error) => {
-						console.error('加载岗检标准项失败:', error, " at pages/monthly/task-record.uvue:833")
+						console.error('加载岗检标准项失败:', error, " at pages/monthly/task-record.uvue:859")
 					}
 				})
 			},
@@ -497,7 +507,7 @@
 				this.showTypePopup = false
 				this.typeSearchKeyword = ''
 			},
-			selectType(index: number) {
+            selectType(index: number) {
 				this.selectedTypeIndex = index
 				this.hideTypePicker()
 				// 重置下级选择
@@ -507,8 +517,8 @@
 				this.moduleOptions = []
 				this.responsibilityOptions = []
 				this.issueOptions = []
-				// 加载模块选项
-				this.loadModuleOptions((this.typeOptions[index] as OptionItem).id)
+                // 加载模块选项（按专业名称过滤）
+                this.loadModuleOptions((this.typeOptions[index] as OptionItem).name)
 			},
 			selectTypeFromFiltered(item: OptionItem) {
 				// 找到原始数组中的索引
@@ -544,6 +554,7 @@
 				this.issueOptions = []
 				// 加载责任选项
 				this.loadResponsibilityOptions((this.moduleOptions[index] as OptionItem).id)
+				this.loadResponsibilityOptions((this.moduleOptions[index] as OptionItem).name)
 			},
 			selectModuleFromFiltered(item: OptionItem) {
 				// 找到原始数组中的索引
@@ -576,6 +587,7 @@
 				this.issueOptions = []
 				// 加载问题选项
 				this.loadIssueOptions((this.responsibilityOptions[index] as OptionItem).id)
+				this.loadIssueOptions((this.responsibilityOptions[index] as OptionItem).name)
 			},
 			selectResponsibilityFromFiltered(item: OptionItem) {
 				// 找到原始数组中的索引
@@ -627,8 +639,7 @@
 				// 回写选中的值到表单数据
 				this.formData.quality = (this.qualityOptions[index] as OptionItem).name
 				this.hideQualityPicker()
-				// 自动带出扣分值和安全记分关联项
-				this.loadQualityDetails((this.qualityOptions[index] as OptionItem).id)
+				this.formData.safetyScore = this.getScoreByQualityName((this.qualityOptions[index] as OptionItem).name)
 			},
 			selectQualityFromFiltered(item: OptionItem) {
 				// 找到原始数组中的索引
@@ -638,116 +649,109 @@
 				}
 			},
 			
-			// 加载模块选项
-			loadModuleOptions(typeId: string) {
-				const token = uni.getStorageSync('token')
-				uni.request({
-					url: getApiUrl('/gjbz-data/options/modules'),
-					method: 'GET',
-					header: {
-						'Authorization': `Bearer ${token}`
-					},
-					success: (res) => {
-						const respdata = res.data as UTSJSONObject
-						if (respdata.getNumber('code') === 200) {
-							const data = respdata.getArray('data')
-							if (data != null) {
-								const options: OptionItem[] = []
-								for (let i = 0; i < data.length; i++) {
-									const item = data[i] as string
-									options.push({
-										id: (i + 1).toString(),
-										name: item
-									} as OptionItem)
-								}
-								this.moduleOptions = options
-							}
-						}
-					},
-					fail: (error) => {
-						console.error('加载模块选项失败:', error, " at pages/monthly/task-record.uvue:1024")
-						this.moduleOptions = [
-							{ id: 'module1', name: '模块1' },
-							{ id: 'module2', name: '模块2' },
-							{ id: 'module3', name: '模块3' }
-						] as OptionItem[]
-					}
-				})
-			},
+            // 加载模块选项（按专业类型精确过滤）
+            loadModuleOptions(typeName: string) {
+                const token = uni.getStorageSync('token')
+                uni.request({
+                    url: getApiUrl(`/gjbz-data/modules/by-type/${UTSAndroid.consoleDebugError(encodeURIComponent(typeName), " at pages/monthly/task-record.uvue:1028")}`),
+                    method: 'GET',
+                    header: {
+                        'Authorization': `Bearer ${token}`
+                    },
+                    success: (res) => {
+                        const respdata = res.data as UTSJSONObject
+                        if (respdata.getNumber('code') === 200) {
+                            const modules = respdata.getArray('data') as string[]
+                            const unique = [] as string[]
+                            if (modules != null) {
+                                for (let i = 0; i < modules.length; i++) {
+                                    const m = modules[i]
+                                    if (m != null && m != '' && unique.indexOf(m) === -1) unique.push(m)
+                                }
+                            }
+                            this.moduleOptions = unique.map((m, idx) => ({ id: (idx + 1).toString(), name: m } as OptionItem))
+                        }
+                    },
+                    fail: (error) => {
+                        console.error('按专业加载模块失败:', error, " at pages/monthly/task-record.uvue:1048")
+                        this.moduleOptions = [] as OptionItem[]
+                    }
+                })
+            },
 			
 			// 加载责任选项
-			loadResponsibilityOptions(moduleId: string) {
-				const token = uni.getStorageSync('token')
-				uni.request({
-					url: getApiUrl('/gjbz-data/options/responsibilities'),
-					method: 'GET',
-					header: {
-						'Authorization': `Bearer ${token}`
-					},
-					success: (res) => {
-						const respdata = res.data as UTSJSONObject
-						if (respdata.getNumber('code') === 200) {
-							const data = respdata.getArray('data')
-							if (data != null) {
-								const options: OptionItem[] = []
-								for (let i = 0; i < data.length; i++) {
-									const item = data[i] as string
-									options.push({
-										id: (i + 1).toString(),
-										name: item
-									} as OptionItem)
-								}
-								this.responsibilityOptions = options
-							}
-						}
-					},
-					fail: (error) => {
-						console.error('加载责任选项失败:', error, " at pages/monthly/task-record.uvue:1061")
-						this.responsibilityOptions = [
-							{ id: 'resp1', name: '责任1' },
-							{ id: 'resp2', name: '责任2' },
-							{ id: 'resp3', name: '责任3' }
-						] as OptionItem[]
-					}
-				})
-			},
+            loadResponsibilityOptions(moduleId: string) {
+                const token = uni.getStorageSync('token')
+                uni.request({
+                    url: getApiUrl(`/gjbz-data/options/responsibilities/by-module/${UTSAndroid.consoleDebugError(encodeURIComponent(moduleId), " at pages/monthly/task-record.uvue:1058")}`),
+                    method: 'GET',
+                    header: {
+                        'Authorization': `Bearer ${token}`
+                    },
+                    success: (res) => {
+                        const respdata = res.data as UTSJSONObject
+                        if (respdata.getNumber('code') === 200) {
+                            const data = respdata.getArray('data')
+                            if (data != null) {
+                                const options: OptionItem[] = []
+                                for (let i = 0; i < data.length; i++) {
+                                    const item = data[i] as string
+                                    options.push({
+                                        id: (i + 1).toString(),
+                                        name: item
+                                    } as OptionItem)
+                                }
+                                this.responsibilityOptions = options
+                            }
+                        }
+                    },
+                    fail: (error) => {
+                        console.error('加载责任选项失败:', error, " at pages/monthly/task-record.uvue:1081")
+                        this.responsibilityOptions = [
+                            { id: 'resp1', name: '责任1' },
+                            { id: 'resp2', name: '责任2' },
+                            { id: 'resp3', name: '责任3' }
+                        ] as OptionItem[]
+                    }
+                })
+            },
 			
 			// 加载问题选项
-			loadIssueOptions(responsibilityId: string) {
-				const token = uni.getStorageSync('token')
-				uni.request({
-					url: getApiUrl('/gjbz-data/options/issues'),
-					method: 'GET',
-					header: {
-						'Authorization': `Bearer ${token}`
-					},
-					success: (res) => {
-						const respdata = res.data as UTSJSONObject
-						if (respdata.getNumber('code') === 200) {
-							const data = respdata.getArray('data')
-							if (data != null) {
-								const options: OptionItem[] = []
-								for (let i = 0; i < data.length; i++) {
-									const item = data[i] as string
-									options.push({
-										id: (i + 1).toString(),
-										name: item
-									} as OptionItem)
-								}
-								this.issueOptions = options
-							}
-						}
-					},
-					fail: (error) => {
-						console.error('加载问题选项失败:', error, " at pages/monthly/task-record.uvue:1098")
-						this.issueOptions = [
-							{ id: 'issue1', name: '问题1' },
-							{ id: 'issue2', name: '问题2' },
-							{ id: 'issue3', name: '问题3' }
-						] as OptionItem[]
-					}
-				})
-			},
+            loadIssueOptions(responsibilityId: string) {
+                const token = uni.getStorageSync('token')
+                uni.request({
+                    url: getApiUrl(`/gjbz-data/options/issues/by-responsibility/${UTSAndroid.consoleDebugError(encodeURIComponent(responsibilityId), " at pages/monthly/task-record.uvue:1095")}`),
+                    method: 'GET',
+                    header: {
+                        'Authorization': `Bearer ${token}`
+                    },
+                    success: (res) => {
+                        const respdata = res.data as UTSJSONObject
+                        if (respdata.getNumber('code') === 200) {
+                            const data = respdata.getArray('data')
+                            if (data != null) {
+                                const options: OptionItem[] = []
+                                for (let i = 0; i < data.length; i++) {
+                                    const item = data[i] as string
+                                    options.push({
+                                        id: (i + 1).toString(),
+                                        name: item
+                                    } as OptionItem)
+                                }
+                                this.issueOptions = options
+                            }
+                        }
+                    },
+                    fail: (error) => {
+                        console.error('加载问题选项失败:', error, " at pages/monthly/task-record.uvue:1118")
+                        this.issueOptions = [
+                            { id: 'issue1', name: '问题1' },
+                            { id: 'issue2', name: '问题2' },
+                            { id: 'issue3', name: '问题3' }
+                        ] as OptionItem[]
+                    }
+                })
+            },
 			
 			// 加载性质界定选项
 			loadQualityOptions() {
@@ -776,10 +780,10 @@
 									this.qualityOptions.push({ id: id, name: name } as OptionItem)
 								}
 							}
-							console.log('性质界定选项加载完成:', this.qualityOptions, " at pages/monthly/task-record.uvue:1135")
+							console.log('性质界定选项加载完成:', this.qualityOptions, " at pages/monthly/task-record.uvue:1155")
 						} else {
 							const message = data.getString('message') ?? '未知错误'
-							console.error('获取性质界定数据失败:', message, " at pages/monthly/task-record.uvue:1138")
+							console.error('获取性质界定数据失败:', message, " at pages/monthly/task-record.uvue:1158")
 							// 使用默认数据作为备选
 							this.qualityOptions = [
 								{ id: '1', name: '一般问题' },
@@ -790,7 +794,7 @@
 						}
 					},
 					fail: (error) => {
-						console.error('请求性质界定数据失败:', error, " at pages/monthly/task-record.uvue:1149")
+						console.error('请求性质界定数据失败:', error, " at pages/monthly/task-record.uvue:1169")
 						// 使用默认数据作为备选
 						this.qualityOptions = [
 							{ id: '1', name: '一般问题' },
@@ -804,27 +808,15 @@
 			
 			// 加载性质界定详情（扣分值和安全记分关联项）
 			loadQualityDetails(qualityId: string) {
-				// 模拟API调用
-				setTimeout(() => {
-					switch (qualityId) {
-						case 'quality1':
-					this.formData.safetyScore = '5分 - 一般安全记分'
-					break
-				case 'quality2':
-					this.formData.safetyScore = '10分 - 严重安全记分'
-					break
-				case 'quality3':
-					this.formData.safetyScore = '20分 - 重大安全记分'
-					break
-				default:
-					this.formData.safetyScore = ''
-					}
-			}, 100)
+				const opt = this.qualityOptions.find((o: OptionItem) => o.id === qualityId)
+				if (opt != null) {
+					this.formData.safetyScore = this.getScoreByQualityName(opt.name)
+				}
 			},
 			
 			// 根据选择的问题自动填充问题性质和对应分数
 			autoFillIssueDetails(issueId: string, issueName: string) {
-				console.log('开始自动填充问题详情:', issueId, issueName, " at pages/monthly/task-record.uvue:1183")
+				console.log('开始自动填充问题详情:', issueId, issueName, " at pages/monthly/task-record.uvue:1191")
 				
 				// 首先加载性质界定选项（如果还没有加载）
 				if (this.qualityOptions.length === 0) {
@@ -866,7 +858,7 @@
 							}
 						} else {
 							const message = data.getString('message') ?? '未知错误'
-							console.error('获取性质界定数据失败:', message, " at pages/monthly/task-record.uvue:1225")
+							console.error('获取性质界定数据失败:', message, " at pages/monthly/task-record.uvue:1233")
 							// 使用备用数据
 							this.qualityOptions = [
 								{ id: '1', name: '一般问题' },
@@ -879,7 +871,7 @@
 						}
 					},
 					fail: (error) => {
-						console.error('请求性质界定数据失败:', error, " at pages/monthly/task-record.uvue:1238")
+						console.error('请求性质界定数据失败:', error, " at pages/monthly/task-record.uvue:1246")
 						// 使用备用数据
 						this.qualityOptions = [
 							{ id: '1', name: '一般问题' },
@@ -938,20 +930,14 @@
 					}
 				}
 					
-					// 设置安全记分 - 只提取数字部分
-      const scoreMatch = safetyScoreText.match(/(\d+)分/)
-      if (scoreMatch != null && scoreMatch.length > 1 && scoreMatch[1] != null) {
-       this.formData.safetyScore = scoreMatch[1] as string
-      } else {
-       this.formData.safetyScore = '5' // 默认值
-					}
+					this.formData.safetyScore = this.getScoreByQualityName(matchedQualityName)
 				
 				console.log('自动填充完成:', {
 					originalQuality: qualityName,
 					matchedQuality: matchedQualityName,
 					safetyScore: this.formData.safetyScore,
 					selectedQualityIndex: this.selectedQualityIndex
-				}, " at pages/monthly/task-record.uvue:1305")
+				}, " at pages/monthly/task-record.uvue:1307")
 				
 				// 显示提示信息
 				uni.showToast({
@@ -960,12 +946,12 @@
 					duration: 2000
 				})
 				} else {
-					console.log('未找到匹配的问题映射规则', " at pages/monthly/task-record.uvue:1319")
+					console.log('未找到匹配的问题映射规则', " at pages/monthly/task-record.uvue:1321")
 				}
 			},
 			
 			// 获取问题与性质界定的映射关系
-  getIssueQualityMapping(issueName: string): UTSJSONObject {
+			getIssueQualityMapping(issueName: string): UTSJSONObject {
     // 定义问题与性质界定的映射规则
 			const mappingRules = [
 				// 严重问题类型
@@ -1002,6 +988,13 @@
 					safetyScore: '5分 - 一般安全记分'
 				}
 			},
+			getScoreByQualityName(qualityName: string): string {
+				const s: string = (qualityName == null) ? '' : qualityName
+				if (s.indexOf('重要') >= 0) return '5'
+				if (s.indexOf('一般') >= 0) return '3'
+				if (s.indexOf('观察') >= 0) return '1'
+				return '0'
+			},
 			
 			// 添加照片
 			addPhoto() {
@@ -1020,8 +1013,8 @@
 			
 			// 上传图片到服务器
 			uploadImage(imagePath: string) {
-				console.log('=== 移动端图片上传调试信息 ===', " at pages/monthly/task-record.uvue:1379")
-				console.log('选择的图片路径:', imagePath, " at pages/monthly/task-record.uvue:1380")
+				console.log('=== 移动端图片上传调试信息 ===', " at pages/monthly/task-record.uvue:1388")
+				console.log('选择的图片路径:', imagePath, " at pages/monthly/task-record.uvue:1389")
 				
 				uni.showLoading({
 					title: '上传中...'
@@ -1036,12 +1029,12 @@
 					},
 					success: (uploadRes) => {
 						uni.hideLoading()
-						console.log('上传响应状态码:', uploadRes.statusCode, " at pages/monthly/task-record.uvue:1395")
-						console.log('上传响应数据:', uploadRes.data, " at pages/monthly/task-record.uvue:1396")
+						console.log('上传响应状态码:', uploadRes.statusCode, " at pages/monthly/task-record.uvue:1404")
+						console.log('上传响应数据:', uploadRes.data, " at pages/monthly/task-record.uvue:1405")
 						
 						try {
-							const result = UTSAndroid.consoleDebugError(JSON.parse(uploadRes.data), " at pages/monthly/task-record.uvue:1399") as UTSJSONObject
-							console.log('解析后的响应数据:', result, " at pages/monthly/task-record.uvue:1400")
+							const result = UTSAndroid.consoleDebugError(JSON.parse(uploadRes.data), " at pages/monthly/task-record.uvue:1408") as UTSJSONObject
+							console.log('解析后的响应数据:', result, " at pages/monthly/task-record.uvue:1409")
 							
 							const code = result.getNumber('code')
 							if (code === 200) {
@@ -1049,10 +1042,10 @@
 								const data = result.getJSON('data')
 								if (data != null) {
 									const url = data.getString('url')
-									console.log('服务器返回的图片URL:', url, " at pages/monthly/task-record.uvue:1408")
+									console.log('服务器返回的图片URL:', url, " at pages/monthly/task-record.uvue:1417")
 									if (url != null) {
 										this.formData.photos.push(url)
-										console.log('当前photos数组:', this.formData.photos, " at pages/monthly/task-record.uvue:1411")
+										console.log('当前photos数组:', this.formData.photos, " at pages/monthly/task-record.uvue:1420")
 									}
 								}
 							} else {
@@ -1060,25 +1053,25 @@
 								if (message == null) {
 									message = '上传失败'
 								}
-								console.error('上传失败，服务器响应:', result, " at pages/monthly/task-record.uvue:1419")
+								console.error('上传失败，服务器响应:', result, " at pages/monthly/task-record.uvue:1428")
 								uni.showToast({
 									title: message,
 									icon: 'none'
 								})
 							}
 						} catch (e) {
-							console.error('解析响应数据失败:', e, " at pages/monthly/task-record.uvue:1426")
-							console.error('原始响应数据:', uploadRes.data, " at pages/monthly/task-record.uvue:1427")
+							console.error('解析响应数据失败:', e, " at pages/monthly/task-record.uvue:1435")
+							console.error('原始响应数据:', uploadRes.data, " at pages/monthly/task-record.uvue:1436")
 							uni.showToast({
 								title: '上传失败',
 								icon: 'none'
 							})
 						}
-						console.log('=== 移动端图片上传调试信息结束 ===', " at pages/monthly/task-record.uvue:1433")
+						console.log('=== 移动端图片上传调试信息结束 ===', " at pages/monthly/task-record.uvue:1442")
 					},
 					fail: (error) => {
 						uni.hideLoading()
-						console.error('图片上传失败:', error, " at pages/monthly/task-record.uvue:1437")
+						console.error('图片上传失败:', error, " at pages/monthly/task-record.uvue:1446")
 						uni.showToast({
 							title: '上传失败',
 							icon: 'none'
@@ -1138,10 +1131,20 @@
 					return
 				}
 				
-				if (this.formData.rectificationDate == '') {
-					uni.showToast({ title: '请选择整改期限', icon: 'none' })
-					return
-				}
+        if (this.formData.rectificationDate == '') {
+          uni.showToast({ title: '请选择整改期限', icon: 'none' })
+          return
+        }
+
+        if (this.formData.responsibleUnit.trim() == '') {
+          uni.showToast({ title: '请输入责任单位', icon: 'none' })
+          return
+        }
+
+        if (this.formData.responsiblePerson.trim() == '') {
+          uni.showToast({ title: '请输入责任人', icon: 'none' })
+          return
+        }
 				
 				if (this.formData.inspector.trim() == '') {
 					uni.showToast({ title: '请输入检查人', icon: 'none' })
@@ -1156,10 +1159,10 @@
 					let userId = ''
 					if (userInfoStr != null && userInfoStr != '') {
 						try {
-							const userInfo = UTSAndroid.consoleDebugError(JSON.parse(userInfoStr), " at pages/monthly/task-record.uvue:1515") as UTSJSONObject
+							const userInfo = UTSAndroid.consoleDebugError(JSON.parse(userInfoStr), " at pages/monthly/task-record.uvue:1534") as UTSJSONObject
 							userId = userInfo.getString('id') ?? ''
 						} catch (e) {
-							console.error('解析用户信息失败:', e, " at pages/monthly/task-record.uvue:1518")
+							console.error('解析用户信息失败:', e, " at pages/monthly/task-record.uvue:1537")
 						}
 					}
 					
@@ -1170,20 +1173,22 @@
 					}
 					
 					// 构建保存数据
-      const saveData = {__$originalPosition: new UTSSourceMapPosition("saveData", "pages/monthly/task-record.uvue", 1529, 13),
-        taskId: this.taskInfo.taskNumber,
+        const saveData = {__$originalPosition: new UTSSourceMapPosition("saveData", "pages/monthly/task-record.uvue", 1548, 15),
+        taskId: this.taskInfo.taskId,
         professionalCategory: this.selectedTypeIndex !== -1 && this.typeOptions[this.selectedTypeIndex] != null ? this.typeOptions[this.selectedTypeIndex].name : '',
         module: this.selectedModuleIndex !== -1 && this.moduleOptions[this.selectedModuleIndex] != null ? this.moduleOptions[this.selectedModuleIndex].name : '',
         responsibility: this.selectedResponsibilityIndex !== -1 && this.responsibilityOptions[this.selectedResponsibilityIndex] != null ? this.responsibilityOptions[this.selectedResponsibilityIndex].name : '',
         issue: this.selectedIssueIndex !== -1 && this.issueOptions[this.selectedIssueIndex] != null ? this.issueOptions[this.selectedIssueIndex].name : '',
         qualityDetermination: this.selectedQualityIndex !== -1 && this.qualityOptions[this.selectedQualityIndex] != null ? this.qualityOptions[this.selectedQualityIndex].name : '',
-						problemDescription: this.formData.problemDescription,
-						location: this.formData.location,
-						rectificationDate: this.formData.rectificationDate,
-						inspector: this.formData.inspector,
-						safetyScore: this.formData.safetyScore,
-						photos: this.formData.photos
-					}
+            problemDescription: this.formData.problemDescription,
+            location: this.formData.location,
+            rectificationDate: this.formData.rectificationDate,
+            inspector: this.formData.inspector,
+            safetyScore: this.formData.safetyScore,
+            photos: this.formData.photos,
+            responsibleUnit: this.formData.responsibleUnit,
+            responsiblePerson: this.formData.responsiblePerson
+        }
 					
 					// 调用月检记录保存接口
 					uni.request({
@@ -1213,13 +1218,13 @@
 						},
 						fail: (error) => {
 							uni.hideLoading()
-							console.error('保存失败:', error, " at pages/monthly/task-record.uvue:1572")
+							console.error('保存失败:', error, " at pages/monthly/task-record.uvue:1593")
 							uni.showToast({ title: '保存失败', icon: 'none' })
 						}
 					})
 				} catch (error) {
 					uni.hideLoading()
-					console.error('保存失败:', error, " at pages/monthly/task-record.uvue:1578")
+					console.error('保存失败:', error, " at pages/monthly/task-record.uvue:1599")
 					uni.showToast({ title: '保存失败', icon: 'none' })
 				}
 			},
@@ -1255,7 +1260,7 @@
 					yearIndex, monthIndex, dayIndex,
 					pickerValue: this.pickerValue,
 					daysArray: this.days
-				}, " at pages/monthly/task-record.uvue:1607")
+				}, " at pages/monthly/task-record.uvue:1628")
 			},
 			
 			// 更新日期数组
@@ -1291,7 +1296,7 @@
 				if (dayIndex < 0) {
 					dayIndex = (this.days.length - 1) as Int
 					this.selectedDay = this.days[dayIndex]
-					console.log('日期不存在，调整为月末:', this.selectedDay, " at pages/monthly/task-record.uvue:1650")
+					console.log('日期不存在，调整为月末:', this.selectedDay, " at pages/monthly/task-record.uvue:1671")
 				}
 				
 				this.pickerValue = [yearIndex >= 0 ? yearIndex : 0, monthIndex, dayIndex]
@@ -1303,7 +1308,7 @@
 					selectedDay: this.selectedDay,
 					yearIndex, monthIndex, dayIndex,
 					pickerValue: this.pickerValue
-				}, " at pages/monthly/task-record.uvue:1655")
+				}, " at pages/monthly/task-record.uvue:1676")
 				
 				this.datePickerVisible = true
 			},
@@ -1324,7 +1329,7 @@
 					oldSelectedMonth: this.selectedMonth,
 					oldSelectedDay: this.selectedDay,
 					oldDaysLength: oldDaysLength
-				}, " at pages/monthly/task-record.uvue:1677")
+				}, " at pages/monthly/task-record.uvue:1698")
 				
 				// 更新选择的年月日
 				this.selectedYear = this.years[value[0]]
@@ -1338,7 +1343,7 @@
 				if (newDayIndex >= this.days.length) {
 					// 如果选择的日期超出了当前月的天数，调整为月末
 					newDayIndex = this.days.length - 1
-					console.log('日期超出范围，调整为月末:', this.days[newDayIndex], " at pages/monthly/task-record.uvue:1697")
+					console.log('日期超出范围，调整为月末:', this.days[newDayIndex], " at pages/monthly/task-record.uvue:1718")
 				}
 				
 				this.selectedDay = this.days[newDayIndex]
@@ -1358,7 +1363,7 @@
 							selectedYear: this.selectedYear,
 							selectedMonth: this.selectedMonth,
 							selectedDay: this.selectedDay
-						}, " at pages/monthly/task-record.uvue:1712")
+						}, " at pages/monthly/task-record.uvue:1733")
 					}, 50) // 50ms延迟，提供更快速的平滑视觉效果
 				} else {
 					// 直接更新
@@ -1368,7 +1373,7 @@
 						selectedYear: this.selectedYear,
 						selectedMonth: this.selectedMonth,
 						selectedDay: this.selectedDay
-					}, " at pages/monthly/task-record.uvue:1722")
+					}, " at pages/monthly/task-record.uvue:1743")
 				}
 			},
 			
@@ -1393,7 +1398,7 @@
 					selectedMonth: selectedMonth,
 					selectedDay: selectedDay,
 					formattedDate: newDate
-				}, " at pages/monthly/task-record.uvue:1743")
+				}, " at pages/monthly/task-record.uvue:1764")
 				
 				this.formData.rectificationDate = newDate
 				this.hideDatePicker()
@@ -1537,6 +1542,24 @@ const _component_picker_view = resolveComponent("picker-view")
           modelValue: _ctx.formData.location,
           onInput: ($event: UniInputEvent) => {(_ctx.formData.location) = $event.detail.value},
           placeholder: "请输入问题发现的具体位置"
+        }), null, 40 /* PROPS, NEED_HYDRATION */, ["modelValue", "onInput"])
+      ]),
+      _cE("view", _uM({ class: "form-item" }), [
+        _cE("text", _uM({ class: "form-label-left" }), "责任单位"),
+        _cE("input", _uM({
+          class: "form-input",
+          modelValue: _ctx.formData.responsibleUnit,
+          onInput: ($event: UniInputEvent) => {(_ctx.formData.responsibleUnit) = $event.detail.value},
+          placeholder: "请输入责任单位"
+        }), null, 40 /* PROPS, NEED_HYDRATION */, ["modelValue", "onInput"])
+      ]),
+      _cE("view", _uM({ class: "form-item" }), [
+        _cE("text", _uM({ class: "form-label-left" }), "责任人"),
+        _cE("input", _uM({
+          class: "form-input",
+          modelValue: _ctx.formData.responsiblePerson,
+          onInput: ($event: UniInputEvent) => {(_ctx.formData.responsiblePerson) = $event.detail.value},
+          placeholder: "请输入责任人"
         }), null, 40 /* PROPS, NEED_HYDRATION */, ["modelValue", "onInput"])
       ]),
       _cE("view", _uM({ class: "form-item" }), [

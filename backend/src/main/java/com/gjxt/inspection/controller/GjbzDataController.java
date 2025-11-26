@@ -80,6 +80,19 @@ public class GjbzDataController {
     }
 
     /**
+     * 根据类型获取模块选项
+     */
+    @GetMapping("/modules/by-type/{type}")
+    public Result<List<String>> getModulesByType(@PathVariable String type) {
+        try {
+            List<String> result = gjbzDataService.getModulesByType(type);
+            return Result.success(result);
+        } catch (Exception e) {
+            return Result.error(e.getMessage());
+        }
+    }
+
+    /**
      * 获取责任单位选项
      */
     @GetMapping("/options/responsibilities")
@@ -93,12 +106,51 @@ public class GjbzDataController {
     }
 
     /**
+     * 根据模块获取责任单位选项
+     */
+    @GetMapping("/options/responsibilities/by-module/{module}")
+    public Result<List<String>> getResponsibilitiesByModule(@PathVariable String module) {
+        try {
+            List<String> result = gjbzDataService.getResponsibilitiesByModule(module);
+            return Result.success(result);
+        } catch (Exception e) {
+            return Result.error(e.getMessage());
+        }
+    }
+
+    /**
      * 获取问题类型选项
      */
     @GetMapping("/options/issues")
     public Result<List<String>> getIssueOptions() {
         try {
             List<String> result = gjbzDataService.getIssueOptions();
+            return Result.success(result);
+        } catch (Exception e) {
+            return Result.error(e.getMessage());
+        }
+    }
+
+    /**
+     * 根据责任单位获取问题类型选项
+     */
+    @GetMapping("/options/issues/by-responsibility/{responsibility}")
+    public Result<List<String>> getIssuesByResponsibility(@PathVariable String responsibility) {
+        try {
+            List<String> result = gjbzDataService.getIssuesByResponsibility(responsibility);
+            return Result.success(result);
+        } catch (Exception e) {
+            return Result.error(e.getMessage());
+        }
+    }
+
+    /**
+     * 获取问题类型选项（包含质量等级）
+     */
+    @GetMapping("/options/issues-with-quality")
+    public Result<List<GjbzData>> getIssueOptionsWithQuality() {
+        try {
+            List<GjbzData> result = gjbzDataService.getIssueOptionsWithQuality();
             return Result.success(result);
         } catch (Exception e) {
             return Result.error(e.getMessage());

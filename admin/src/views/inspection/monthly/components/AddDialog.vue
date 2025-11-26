@@ -14,7 +14,7 @@
       class="add-form"
     >
       <el-row :gutter="20">
-        <el-col :span="12" v-if="isEdit && formData.taskNo">
+        <el-col :span="12" v-if="formData.taskNo">
           <el-form-item label="任务编号">
             <el-input
               v-model="formData.taskNo"
@@ -24,11 +24,21 @@
             />
           </el-form-item>
         </el-col>
-        <el-col :span="12" v-if="isEdit && formData.departmentName">
-          <el-form-item label="检查部门">
+        <el-col :span="12" v-if="formData.groupLeaderName">
+          <el-form-item label="检查组长">
             <el-input
-              v-model="formData.departmentName"
-              placeholder="检查部门"
+              v-model="formData.groupLeaderName"
+              placeholder="检查组长"
+              readonly
+              style="width: 100%"
+            />
+          </el-form-item>
+        </el-col>
+        <el-col :span="12" v-if="formData.deputyLeaderName">
+          <el-form-item label="检查副组长">
+            <el-input
+              v-model="formData.deputyLeaderName"
+              placeholder="检查副组长"
               readonly
               style="width: 100%"
             />
@@ -37,11 +47,12 @@
         <el-col :span="24">
           <el-form-item label="问题照片" prop="problemImageUrls">
             <DragUpload
-              v-model="formData.problemImageUrls"
+              v-model="imageFileList"
               :limit="5"
               accept="image/*"
               :multiple="true"
               list-type="picture-card"
+              @success="handleImageUploadSuccess"
             />
           </el-form-item>
         </el-col>
@@ -69,6 +80,7 @@
             v-model="formData.professionalTypeId"
               placeholder="请选择专业类别"
               style="width: 100%"
+              clearable
               @change="handleProfessionChange"
             >
               <el-option
@@ -256,7 +268,8 @@
 import { ref, reactive, computed, watch, nextTick } from 'vue'
 import { ElMessage } from 'element-plus'
 import DragUpload from '@/components/DragUpload.vue'
-import { monthlyRecordApi, getProfessionList, getNatureDefinitionList, getDeptList, getModuleByProfessionId, getResponsibilityByModuleId, getProblemByResponsibilityId } from '@/api/monthlyRecord'
+import { monthlyRecordApi, getProfessionList, getNatureDefinitionList, getDeptList } from '@/api/monthlyRecord'
+import { gjbzDataApi } from '@/api/gjbz'
 
 // Props
 const props = defineProps({
@@ -276,12 +289,17 @@ const emit = defineEmits(['update:visible', 'success'])
 // 响应式数据
 const formRef = ref()
 const submitLoading = ref(false)
+const imageFileList = ref([])
 const professionOptions = ref([])
 const moduleOptions = ref([])
 const responsibilityOptions = ref([])
 const problemOptions = ref([])
 const natureOptions = ref([])
 const departmentList = ref([])
+const taskOptions = ref([])
+
+// 存储所有岗检标准记录供本地查询
+let allGjbzRecords = []
 
 // 表单数据
 const formData = reactive({
@@ -290,6 +308,8 @@ const formData = reactive({
   taskName: '',
   taskNo: '',
   departmentName: '',
+  groupLeaderName: '',
+  deputyLeaderName: '',
   problemImageUrls: [],
   problemDescription: '',
   professionalTypeId: '',
@@ -364,45 +384,77 @@ const isAdminUser = computed(() => {
 })
 
 // 监听弹窗显示状态
+let isInitializing = false
 watch(() => props.visible, (newVal) => {
   if (newVal) {
-    nextTick(() => {
+    isInitializing = true
+    nextTick(async () => {
+      console.log('=== 开始初始化弹窗 ===')
       resetForm()
-      loadOptions()
-      // 编辑模式下初始化表单数据
-      if (props.formData && props.formData.id) {
+      await loadOptions()
+      
+      // 编辑模式或新增模式都需要回写数据
+      if (props.formData) {
+        console.log('\u56de\u5199props.formData:', props.formData)
+        console.log('props.formData.professionalTypeId:', props.formData.professionalTypeId, '\u7c7b\u578b:', typeof props.formData.professionalTypeId)
+        console.log('props.formData.moduleId:', props.formData.moduleId, '\u7c7b\u578b:', typeof props.formData.moduleId)
+        // 编辑模式或新增模式都需要回写数据
+        // 根据是否有ID字段判断是否是编辑模式
+        const isEdit = !!props.formData.id
+        console.log('是否是编辑模式:', isEdit)
+        
         Object.assign(formData, {
           ...props.formData,
           taskId: props.formData.taskId || '',
           taskName: props.formData.taskName || '',
           taskNo: props.formData.taskNo || '',
           departmentName: props.formData.departmentName || '',
-          professionalTypeId: props.formData.professionalTypeId,
+          groupLeaderName: props.formData.groupLeaderName || '',
+          deputyLeaderName: props.formData.deputyLeaderName || '',
+          inspector: props.formData.inspector || props.formData.groupLeaderName || '',
+          professionalTypeId: props.formData.professionalTypeId || '',
           professionalTypeName: props.formData.professionalTypeName || '',
-          moduleId: props.formData.moduleId,
+          moduleId: props.formData.moduleId || '',
           moduleName: props.formData.moduleName || '',
-          responsibilityId: props.formData.responsibilityId,
+          responsibilityId: props.formData.responsibilityId || '',
           responsibilityName: props.formData.responsibilityName || '',
-          issueId: props.formData.issueId,
+          issueId: props.formData.issueId || '',
           issueName: props.formData.issueName || '',
-          qualityId: props.formData.qualityId,
+          qualityId: props.formData.qualityId || '',
           qualityName: props.formData.qualityName || '',
-          problemImageUrls: Array.isArray(props.formData.photos) 
-            ? props.formData.photos.filter(url => url && url.trim() !== '')
-            : (props.formData.photos ? props.formData.photos.split(',').filter(url => url && url.trim() !== '') : [])
+          problemImageUrls: '',
+          safetyScore: props.formData.safetyScore || 0,
+          location: props.formData.location || '',
+          responsibleUnit: props.formData.responsibleUnit || '',
+          responsiblePerson: props.formData.responsiblePerson || '',
+          rectificationDeadline: props.formData.rectificationDeadline || '',
+          departmentId: props.formData.departmentId || ''
         })
+        // 处理图片数据 - 从后端的recordPhotos提取图片路径
+        if (props.formData.recordPhotos) {
+          const photoUrls = props.formData.recordPhotos.split(',')
+          imageFileList.value = photoUrls.map((url, index) => ({
+            name: `image_${index}`,
+            url: url.trim()
+          }))
+          console.log('回写图片列表:', imageFileList.value)
+        }
+        console.log('回写后的formData:', formData)
         
-        // 级联加载相关选项数据
-        if (formData.professionalTypeId) {
-          handleProfessionChange(formData.professionalTypeId)
+        // 编辑模式下，如果已有专业类别，需要串联加载下级数据
+        if (props.formData.id && formData.professionalTypeId) {
+          console.log('编辑模式：开始加载专业的下级数据')
+          await handleProfessionChange(formData.professionalTypeId)
         }
-        if (formData.moduleId) {
-          handleModuleChange(formData.moduleId)
-        }
-        if (formData.responsibilityId) {
-          handleResponsibilityChange(formData.responsibilityId)
+        // 新增模式下，如果从任务回写了专业类别，也需要加载下级模块
+        else if (!props.formData.id && formData.professionalTypeId) {
+          console.log('新增模式：开始加载专业的模块')
+          await handleProfessionChange(formData.professionalTypeId)
         }
       }
+      
+      isInitializing = false
+      console.log('=== 初始化完成 ===')
     })
   }
 })
@@ -426,43 +478,110 @@ const resetForm = () => {
 // 加载选项数据
 const loadOptions = async () => {
   try {
+    console.log('=== 开始加载选项数据 ===')
+    // 只加载专业、性质界定、部门等基础数据
     const [professionResponse, natureResponse, deptResponse] = await Promise.all([
       getProfessionList(),
       getNatureDefinitionList(),
       getDeptList()
     ])
 
-    if (professionResponse.code === 200) {
-      professionOptions.value = professionResponse.data
+    console.log('professionResponse:', professionResponse)
+    
+    // 专业类别（第一级下拉框）
+    if (professionResponse && professionResponse.code === 200) {
+      // API返回的是字符串数组，需要转换为对象数组
+      professionOptions.value = (professionResponse.data || []).map(item => {
+        // 如果是字符串，直接作为name
+        if (typeof item === 'string') {
+          return {
+            id: item,
+            name: item,
+            label: item
+          }
+        }
+        // 否则为对象
+        return {
+          id: item.id,
+          name: item.dictValue || item.dictLabel || item.name,
+          label: item.dictLabel || item.label || item.name
+        }
+      })
+      console.log('专业类别选项:', professionOptions.value.length, '个')
+    } else {
+      console.error('专业类别加载失败:', professionResponse)
     }
 
-    if (natureResponse.code === 200) {
-      natureOptions.value = natureResponse.data
+    // 性质界定选项
+    if (natureResponse && natureResponse.code === 200) {
+      natureOptions.value = (natureResponse.data || []).map(item => ({
+        id: item.id,
+        name: item.dictValue || item.dictLabel,
+        label: item.dictLabel
+      }))
+      console.log('性质界定选项:', natureOptions.value.length, '个')
     }
 
-    if (deptResponse.code === 200) {
+    // 部门列表
+    if (deptResponse && deptResponse.code === 200) {
       departmentList.value = deptResponse.data
+      console.log('部门列表:', departmentList.value.length, '个')
     }
+    
+    console.log('=== 选项数据加载完成 ===')
   } catch (error) {
     console.error('加载选项数据失败:', error)
+    ElMessage.error('加载选项数据失败: ' + error.message)
   }
 }
 
 // 专业类别变化
 const handleProfessionChange = async (professionalTypeId) => {
-  // 清空下级选项
-  formData.moduleId = ''
-  formData.responsibilityId = ''
-  formData.problemId = ''
-  moduleOptions.value = []
-  responsibilityOptions.value = []
-  problemOptions.value = []
+  console.log('handleProfessionChange called with:', professionalTypeId)
   
   if (professionalTypeId) {
     try {
-      const response = await getModuleByProfessionId(professionalTypeId)
-      if (response.code === 200) {
-        moduleOptions.value = response.data
+      // 找到选中的专业对象
+      let selectedProfession = professionOptions.value.find(item => item.id === professionalTypeId)
+      let professionName = ''
+      
+      if (!selectedProfession) {
+        // 按ID找不到，尝试使用formData中的professionalTypeName
+        professionName = formData.professionalTypeName
+        if (!professionName) {
+          console.error('找不到专业:', professionalTypeId)
+          return
+        }
+        // 如果professionName是数字，根据数字不法直接匹配，视为改次后台干脚，实际应详查后台需求
+        // 直接使用professionalName(专业名称)调用API
+        console.log('按ID找不到，最终使用professionalTypeName:', professionName)
+      } else {
+        professionName = selectedProfession.name || selectedProfession.label
+        console.log('选中专业名称:', professionName)
+      }
+      
+      // 清空下级选项
+      moduleOptions.value = []
+      responsibilityOptions.value = []
+      problemOptions.value = []
+      formData.moduleId = ''
+      formData.responsibilityId = ''
+      formData.issueId = ''
+      
+      // 从后台API获取该专业下的模块
+      const moduleResponse = await gjbzDataApi.getModulesByType(professionName)
+      console.log('获取模块响应:', moduleResponse)
+      
+      if (moduleResponse && moduleResponse.code === 200) {
+        const modules = moduleResponse.data || []
+        console.log('获取的模块:', modules.length, '个')
+        // 转换为下拉框选项格式
+        const newModules = modules.map((name, index) => ({
+          id: name, // 使用模块名称作为ID
+          name
+        }))
+        moduleOptions.value.splice(0, moduleOptions.value.length, ...newModules)
+        console.log('moduleOptions设置成功:', moduleOptions.value.length, '个模块')
       }
     } catch (error) {
       console.error('加载模块数据失败:', error)
@@ -472,16 +591,31 @@ const handleProfessionChange = async (professionalTypeId) => {
 
 // 模块变化
 const handleModuleChange = async (moduleId) => {
-  formData.responsibilityId = ''
-  formData.problemId = ''
-  responsibilityOptions.value = []
-  problemOptions.value = []
-
+  console.log('handleModuleChange called with:', moduleId)
+  
   if (moduleId) {
     try {
-      const response = await getResponsibilityByModuleId(moduleId)
-      if (response.code === 200) {
-        responsibilityOptions.value = response.data
+      // 清空下级选项
+      responsibilityOptions.value = []
+      problemOptions.value = []
+      formData.responsibilityId = ''
+      formData.issueId = ''
+      
+      // 从后台API获取该模块下的责任
+      const moduleName = moduleId // 模块ID就是模块名称
+      const respResponse = await gjbzDataApi.getResponsibilitiesByModule(moduleName)
+      console.log('获取责任响应:', respResponse)
+      
+      if (respResponse && respResponse.code === 200) {
+        const responsibilities = respResponse.data || []
+        console.log('获取的责任:', responsibilities.length, '个')
+        // 转换为下拉框选项格式
+        const newResponsibilities = responsibilities.map((name, index) => ({
+          id: name, // 使用责任名称作为ID
+          name
+        }))
+        responsibilityOptions.value.splice(0, responsibilityOptions.value.length, ...newResponsibilities)
+        console.log('responsibilityOptions设置成功:', responsibilityOptions.value.length, '个责任')
       }
     } catch (error) {
       console.error('加载责任数据失败:', error)
@@ -491,19 +625,70 @@ const handleModuleChange = async (moduleId) => {
 
 // 责任变化
 const handleResponsibilityChange = async (responsibilityId) => {
-  formData.problemId = ''
-  problemOptions.value = []
-
+  console.log('handleResponsibilityChange called with:', responsibilityId)
+  
   if (responsibilityId) {
     try {
-      const response = await getProblemByResponsibilityId(responsibilityId)
-      if (response.code === 200) {
-        problemOptions.value = response.data
+      // 清空问题选项
+      problemOptions.value = []
+      formData.issueId = ''
+      
+      // 从后台API获取该责任下的问题
+      const responsibilityName = responsibilityId // 责任ID就是责任名称
+      const issueResponse = await gjbzDataApi.getIssuesByResponsibility(responsibilityName)
+      console.log('获取问题响应:', issueResponse)
+      
+      if (issueResponse && issueResponse.code === 200) {
+        const issues = issueResponse.data || []
+        console.log('获取的问题:', issues.length, '个')
+        // 转换为下拉框选项格式
+        const newIssues = issues.map((name, index) => ({
+          id: name, // 使用问题名称作为ID
+          name
+        }))
+        problemOptions.value.splice(0, problemOptions.value.length, ...newIssues)
+        console.log('problemOptions设置成功:', problemOptions.value.length, '个问题')
       }
     } catch (error) {
       console.error('加载问题数据失败:', error)
     }
   }
+}
+
+// 图片上传成功处理
+const handleImageUploadSuccess = (response, file, fileList) => {
+  if (response.code === 200) {
+    ElMessage.success('图片上传成功')
+    // 上传成功后更新图片URLs
+    updateImageUrls()
+  } else {
+    ElMessage.error(response.message || '图片上传失败')
+  }
+}
+
+// 移除图片時更新路径
+const handleImageRemove = (file, fileList) => {
+  updateImageUrls()
+}
+
+// 更新图片URLs - 从上传组件中提取路径並保存为formData.problemImageUrls
+const updateImageUrls = () => {
+  console.log('updateImageUrls 调用, imageFileList.value:', imageFileList.value)
+  const urls = imageFileList.value
+    .filter(file => {
+      const hasUrl = file.url || file.response?.data?.filePath
+      console.log('筛选文件:', file.name, '是否有url:', !!hasUrl, '文件对象:', file)
+      return hasUrl
+    })
+    .map(file => {
+      // 优先使用url（DragUpload组件上传成功后会去添加url），其次打针response.data.filePath
+      const path = file.url || file.response?.data?.filePath
+      console.log('批取url:', path)
+      return path
+    })
+  // 保存为逗号分隔的字符串
+  formData.problemImageUrls = urls.join(',')
+  console.log('更新后的图片URLs:', formData.problemImageUrls)
 }
 
 // 关闭弹窗
@@ -519,16 +704,40 @@ const handleSubmit = async () => {
     await formRef.value.validate()
     submitLoading.value = true
 
+    // 提交前更新图片URLs
+    updateImageUrls()
+    
     const submitData = { ...formData }
     
-    // 处理图片数组 - 将problemImageUrls映射为后端的photos字段
-    if (submitData.problemImageUrls && submitData.problemImageUrls.length > 0) {
-      submitData.photos = submitData.problemImageUrls.join(',')
+    console.log('调试: formData.problemImageUrls =', formData.problemImageUrls, '类型:', typeof formData.problemImageUrls)
+    
+    // 新增时设置状态为4(已提交)並一起孠存部门名称
+    if (!isEdit.value) {
+      submitData.recordStatus = 4
+      // 部门名称从部门列表中查找
+      if (formData.departmentId && departmentList.value && departmentList.value.length > 0) {
+        const dept = departmentList.value.find(d => d.id === formData.departmentId)
+        if (dept) {
+          submitData.departmentName = dept.deptName || dept.name
+        }
+      }
+    }
+    
+    // 映射为后端的photos字段
+    if (formData.problemImageUrls && formData.problemImageUrls.length > 0) {
+      // problemImageUrls 是一个逗号分隔的字符串，直接赋值到photos
+      submitData.photos = formData.problemImageUrls
     } else {
       submitData.photos = ''
     }
-    // 删除前端字段
+    console.log('调试: 最终photos =', submitData.photos)
+    console.log('调试: 削除problemImageUrls前的submitData =', JSON.parse(JSON.stringify(submitData)))
+        
+    // 削除前端字段，不应该发送给后端
     delete submitData.problemImageUrls
+    delete submitData.recordPhotos
+        
+    console.log('调试: 削除后的submitData =', JSON.parse(JSON.stringify(submitData)))
 
     let response
     if (isEdit.value) {

@@ -441,14 +441,20 @@ const __sfc__ = defineComponent({
                     title: '保存中...'
                 });
                 const token = uni.getStorageSync('token');
+                // 统一为Web端复查接口
+                const payload = { __$originalPosition: new UTSSourceMapPosition("payload", "pages/record/review.uvue", 775, 31),
+                    reviewSuggestion: this.reviewEffect,
+                    reviewEffect: this.reviewEffect,
+                    reviewImages: reviewImageUrls.join(',')
+                } as UTSJSONObject;
                 uni.request({
-                    url: getApiUrl('/inspection-record'),
+                    url: getApiUrl(`/monthly-inspection-record/${this.recordDetail?.id ?? ''}/review`),
                     method: 'PUT',
                     header: {
                         'Authorization': `Bearer ${token}`,
                         'Content-Type': 'application/json'
                     },
-                    data: updateData,
+                    data: payload,
                     success: (response) => {
                         uni.hideLoading();
                         const data = response.data as UTSJSONObject;
@@ -471,7 +477,7 @@ const __sfc__ = defineComponent({
                     },
                     fail: (error) => {
                         uni.hideLoading();
-                        console.error('保存复查信息失败:', error, " at pages/record/review.uvue:803");
+                        console.error('保存复查信息失败:', error, " at pages/record/review.uvue:809");
                         uni.showToast({
                             title: '网络错误',
                             icon: 'none'
@@ -482,7 +488,7 @@ const __sfc__ = defineComponent({
             }
             catch (error: any) {
                 uni.hideLoading();
-                console.error('上传图片失败:', error, " at pages/record/review.uvue:813");
+                console.error('上传图片失败:', error, " at pages/record/review.uvue:819");
                 uni.showToast({
                     title: '图片上传失败，请重试',
                     icon: 'none'
@@ -506,7 +512,7 @@ const __sfc__ = defineComponent({
                         },
                         success: (res) => {
                             try {
-                                const data = UTSAndroid.consoleDebugError(JSON.parse(res.data), " at pages/record/review.uvue:839") as UTSJSONObject;
+                                const data = UTSAndroid.consoleDebugError(JSON.parse(res.data), " at pages/record/review.uvue:845") as UTSJSONObject;
                                 if (res.statusCode === 200 && (data.getNumber('code') ?? 0) === 200) {
                                     const dataObj = data.getJSON('data');
                                     const imageUrl = dataObj?.getString('filePath') ?? '';
@@ -533,11 +539,11 @@ const __sfc__ = defineComponent({
             });
             try {
                 const imageUrls = await Promise.all(uploadPromises);
-                console.log('所有复查图片上传成功：', imageUrls, " at pages/record/review.uvue:864");
+                console.log('所有复查图片上传成功：', imageUrls, " at pages/record/review.uvue:870");
                 return imageUrls;
             }
             catch (error: any) {
-                console.error('复查图片上传失败:', error, " at pages/record/review.uvue:867");
+                console.error('复查图片上传失败:', error, " at pages/record/review.uvue:873");
                 throw error;
             }
         },
@@ -559,101 +565,101 @@ const __sfc__ = defineComponent({
         },
         // 初始化选中值（数据加载完成后调用）
         initSelectedValues() {
-            console.log('开始初始化选中值', " at pages/record/review.uvue:892");
+            console.log('开始初始化选中值', " at pages/record/review.uvue:898");
             if (this.recordDetail == null) {
-                console.log('recordDetail为空，无法初始化选中值', " at pages/record/review.uvue:894");
+                console.log('recordDetail为空，无法初始化选中值', " at pages/record/review.uvue:900");
                 return;
             }
-            console.log('记录详情数据:', this.recordDetail, " at pages/record/review.uvue:898");
+            console.log('记录详情数据:', this.recordDetail, " at pages/record/review.uvue:904");
             console.log('字典数据状态:', {
                 natureOptions: this.natureOptions,
                 professionOptions: this.professionOptions,
                 departmentOptions: this.departmentOptions
-            }, " at pages/record/review.uvue:899");
+            }, " at pages/record/review.uvue:905");
             // 回写性质界定（支持ID或名称匹配）
             const natureId = this.recordDetail!.natureId ?? '';
             const natureName = this.recordDetail!.natureName ?? '';
-            console.log('性质界定数据:', { natureId, natureName }, " at pages/record/review.uvue:908");
+            console.log('性质界定数据:', { natureId, natureName }, " at pages/record/review.uvue:914");
             if (natureId !== '') {
                 // 有ID值，使用ID匹配
-                console.log('使用ID匹配:', natureId, " at pages/record/review.uvue:912");
+                console.log('使用ID匹配:', natureId, " at pages/record/review.uvue:918");
                 for (let i = 0; i < this.natureOptions.length; i++) {
-                    console.log(`性质界定ID比较: ${this.natureOptions[i].id} == ${natureId}`, " at pages/record/review.uvue:914");
+                    console.log(`性质界定ID比较: ${this.natureOptions[i].id} == ${natureId}`, " at pages/record/review.uvue:920");
                     if (this.natureOptions[i].id == natureId) {
                         this.selectedNatureIndex = i;
                         this.recordDetail!.natureName = this.natureOptions[i].name;
-                        console.log('性质界定ID匹配成功，索引:', i, 'ID:', this.natureOptions[i].id, '名称:', this.natureOptions[i].name, " at pages/record/review.uvue:918");
+                        console.log('性质界定ID匹配成功，索引:', i, 'ID:', this.natureOptions[i].id, '名称:', this.natureOptions[i].name, " at pages/record/review.uvue:924");
                         break;
                     }
                 }
                 if (this.selectedNatureIndex === -1) {
-                    console.log('性质界定ID在字典中未找到匹配项:', natureId, " at pages/record/review.uvue:923");
+                    console.log('性质界定ID在字典中未找到匹配项:', natureId, " at pages/record/review.uvue:929");
                 }
             }
             else if (natureName !== '') {
                 // 没有ID但有名称，使用名称匹配
-                console.log('使用名称匹配:', natureName, " at pages/record/review.uvue:927");
+                console.log('使用名称匹配:', natureName, " at pages/record/review.uvue:933");
                 for (let i = 0; i < this.natureOptions.length; i++) {
-                    console.log(`性质界定名称比较: ${this.natureOptions[i].name} == ${natureName}`, " at pages/record/review.uvue:929");
+                    console.log(`性质界定名称比较: ${this.natureOptions[i].name} == ${natureName}`, " at pages/record/review.uvue:935");
                     if (this.natureOptions[i].name == natureName) {
                         this.selectedNatureIndex = i;
                         this.recordDetail!.natureId = this.natureOptions[i].id;
-                        console.log('性质界定名称匹配成功，索引:', i, 'ID:', this.natureOptions[i].id, '名称:', this.natureOptions[i].name, " at pages/record/review.uvue:933");
+                        console.log('性质界定名称匹配成功，索引:', i, 'ID:', this.natureOptions[i].id, '名称:', this.natureOptions[i].name, " at pages/record/review.uvue:939");
                         break;
                     }
                 }
                 if (this.selectedNatureIndex === -1) {
-                    console.log('性质界定名称在字典中未找到匹配项:', natureName, " at pages/record/review.uvue:938");
+                    console.log('性质界定名称在字典中未找到匹配项:', natureName, " at pages/record/review.uvue:944");
                 }
             }
             else {
-                console.log('性质界定ID和名称都为空，跳过匹配', " at pages/record/review.uvue:941");
+                console.log('性质界定ID和名称都为空，跳过匹配', " at pages/record/review.uvue:947");
             }
             if (this.selectedNatureIndex === -1) {
-                console.log('可用的字典选项:', this.natureOptions.map((item): string => `${item.name}(${item.id})`), " at pages/record/review.uvue:945");
+                console.log('可用的字典选项:', this.natureOptions.map((item): string => `${item.name}(${item.id})`), " at pages/record/review.uvue:951");
             }
             // 回写专业（使用字符串类型ID）
             const professionId = this.recordDetail!.professionId ?? '';
-            console.log('专业ID:', professionId, " at pages/record/review.uvue:950");
+            console.log('专业ID:', professionId, " at pages/record/review.uvue:956");
             if (professionId !== '') {
                 for (let i = 0; i < this.professionOptions.length; i++) {
-                    console.log(`专业比较: ${this.professionOptions[i].id} == ${professionId}`, " at pages/record/review.uvue:953");
+                    console.log(`专业比较: ${this.professionOptions[i].id} == ${professionId}`, " at pages/record/review.uvue:959");
                     if (this.professionOptions[i].id == professionId) {
                         this.selectedProfessionIndex = i;
-                        console.log('专业匹配成功，索引:', i, '名称:', this.professionOptions[i].name, " at pages/record/review.uvue:956");
+                        console.log('专业匹配成功，索引:', i, '名称:', this.professionOptions[i].name, " at pages/record/review.uvue:962");
                         break;
                     }
                 }
             }
             else {
-                console.log('专业ID为空，跳过匹配', " at pages/record/review.uvue:961");
+                console.log('专业ID为空，跳过匹配', " at pages/record/review.uvue:967");
             }
             // 回写部门（使用字符串类型ID）
             const departmentId = this.recordDetail!.departmentId ?? '';
-            console.log('部门ID:', departmentId, " at pages/record/review.uvue:966");
+            console.log('部门ID:', departmentId, " at pages/record/review.uvue:972");
             if (departmentId !== '') {
                 for (let i = 0; i < this.departmentOptions.length; i++) {
-                    console.log(`部门比较: ${this.departmentOptions[i].id} == ${departmentId}`, " at pages/record/review.uvue:969");
+                    console.log(`部门比较: ${this.departmentOptions[i].id} == ${departmentId}`, " at pages/record/review.uvue:975");
                     if (this.departmentOptions[i].id == departmentId) {
                         this.selectedDepartmentIndex = i;
-                        console.log('部门匹配成功，索引:', i, '名称:', this.departmentOptions[i].name, " at pages/record/review.uvue:972");
+                        console.log('部门匹配成功，索引:', i, '名称:', this.departmentOptions[i].name, " at pages/record/review.uvue:978");
                         break;
                     }
                 }
             }
             else {
-                console.log('部门ID为空，跳过匹配', " at pages/record/review.uvue:977");
+                console.log('部门ID为空，跳过匹配', " at pages/record/review.uvue:983");
             }
             console.log('回写选中值完成:', {
                 natureId, selectedNatureIndex: this.selectedNatureIndex,
                 professionId, selectedProfessionIndex: this.selectedProfessionIndex,
                 departmentId, selectedDepartmentIndex: this.selectedDepartmentIndex
-            }, " at pages/record/review.uvue:980");
+            }, " at pages/record/review.uvue:986");
         },
         // 加载性质界定字典数据
         loadNatureOptions() {
             const token = uni.getStorageSync('token');
-            console.log('开始加载性质界定数据', " at pages/record/review.uvue:990");
+            console.log('开始加载性质界定数据', " at pages/record/review.uvue:996");
             uni.request({
                 url: getApiUrl('/dictionary/type/性质界定'),
                 method: 'GET',
@@ -663,10 +669,10 @@ const __sfc__ = defineComponent({
                 },
                 success: (res) => {
                     const data = res.data as UTSJSONObject;
-                    console.log('性质界定接口响应:', res.statusCode, data.getNumber('code'), " at pages/record/review.uvue:1000");
+                    console.log('性质界定接口响应:', res.statusCode, data.getNumber('code'), " at pages/record/review.uvue:1006");
                     if (res.statusCode === 200 && data.getNumber('code') === 200) {
                         const dataArray = data.getArray('data');
-                        console.log('性质界定原始数据:', dataArray, " at pages/record/review.uvue:1003");
+                        console.log('性质界定原始数据:', dataArray, " at pages/record/review.uvue:1009");
                         if (dataArray != null) {
                             this.natureOptions = [];
                             for (let i = 0; i < dataArray.length; i++) {
@@ -675,34 +681,34 @@ const __sfc__ = defineComponent({
                                 const dictValue = item.getString('dictValue') ?? '';
                                 const dictLabel = item.getString('dictLabel') ?? '';
                                 const name = dictValue !== '' ? dictValue : dictLabel;
-                                console.log(`性质界定项目 ${i}:`, { id, dictValue, dictLabel, name }, " at pages/record/review.uvue:1012");
+                                console.log(`性质界定项目 ${i}:`, { id, dictValue, dictLabel, name }, " at pages/record/review.uvue:1018");
                                 this.natureOptions.push({ id: id, name: name } as NatureOption);
                             }
                         }
-                        console.log('性质界定数据加载成功:', this.natureOptions, " at pages/record/review.uvue:1016");
+                        console.log('性质界定数据加载成功:', this.natureOptions, " at pages/record/review.uvue:1022");
                     }
                     else {
                         const message = data.getString('message') ?? '未知错误';
-                        console.error('获取性质界定数据失败:', message, " at pages/record/review.uvue:1019");
+                        console.error('获取性质界定数据失败:', message, " at pages/record/review.uvue:1025");
                         this.natureOptions = [
                             { id: '1', name: '一般问题' } as NatureOption,
                             { id: '2', name: '较大问题' } as NatureOption,
                             { id: '3', name: '严重问题' } as NatureOption,
                             { id: '4', name: '重大问题' } as NatureOption
                         ];
-                        console.log('使用默认性质界定数据:', this.natureOptions, " at pages/record/review.uvue:1026");
+                        console.log('使用默认性质界定数据:', this.natureOptions, " at pages/record/review.uvue:1032");
                     }
                     this.checkAllDataLoaded();
                 },
                 fail: (error) => {
-                    console.error('请求性质界定数据失败:', error, " at pages/record/review.uvue:1031");
+                    console.error('请求性质界定数据失败:', error, " at pages/record/review.uvue:1037");
                     this.natureOptions = [
                         { id: '1', name: '一般问题' } as NatureOption,
                         { id: '2', name: '较大问题' } as NatureOption,
                         { id: '3', name: '严重问题' } as NatureOption,
                         { id: '4', name: '重大问题' } as NatureOption
                     ];
-                    console.log('使用默认性质界定数据:', this.natureOptions, " at pages/record/review.uvue:1038");
+                    console.log('使用默认性质界定数据:', this.natureOptions, " at pages/record/review.uvue:1044");
                     this.checkAllDataLoaded();
                 }
             });

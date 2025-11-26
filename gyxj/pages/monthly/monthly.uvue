@@ -81,24 +81,101 @@
 				<view class="notification-header">
 					<text class="notification-title">通知消息</text>
 					<view class="notification-actions">
-						<text class="mark-all-read" @click="markAllAsRead">全部已读</text>
+						<text class="close-btn" @click="hideNotifications">×</text>
 					</view>
 				</view>
-				<view class="notification-list">
-					<view v-if="notifications.length === 0" class="empty-notifications">
-						<text class="empty-text">暂无通知</text>
+				
+				<!-- 标签页切换 -->
+				<view class="notification-tabs">
+					<view class="tab-item" 
+						  :class="{active: activeNotificationTab === 'system'}"
+						  @click="switchNotificationTab('system')">
+						<text class="tab-text">系统通知</text>
 					</view>
-					<view v-for="notification in notifications" :key="notification.id" 
-						  class="notification-item" 
-						  :class="{unread: !notification.isRead}"
-						  @click="handleNotificationClick(notification)">
-						<view class="notification-dot" v-if="!notification.isRead"></view>
-						<view class="notification-info">
-							<text class="notification-item-title">{{notification.title}}</text>
-							<text class="notification-item-content">{{notification.content}}</text>
-							<text class="notification-time">{{notification.createTime}}</text>
+					<view class="tab-item" 
+						  :class="{active: activeNotificationTab === 'tasks'}"
+						  @click="switchNotificationTab('tasks')">
+						<text class="tab-text">月检任务</text>
+					</view>
+				</view>
+				
+				<!-- 系统通知标签页 -->
+				<view v-if="activeNotificationTab === 'system'" class="tab-content">
+					<view class="tab-header">
+						<text class="mark-all-read" @click="markAllAsRead">全部已读</text>
+					</view>
+					<scroll-view class="notification-list" 
+								 scroll-y="true" 
+								 :show-scrollbar="true"
+								 :enable-back-to-top="false">
+						<view v-if="notifications.length === 0" class="empty-notifications">
+							<text class="empty-text">暂无通知</text>
 						</view>
-						<text class="notification-arrow">›</text>
+						<view v-for="notification in notifications" :key="notification.id" 
+							  class="notification-item" 
+							  :class="{unread: !notification.isRead}"
+							  @click="handleNotificationClick(notification)">
+							<view class="notification-dot" v-if="!notification.isRead"></view>
+							<view class="notification-info">
+								<text class="notification-item-title">{{notification.title}}</text>
+								<text class="notification-item-content">{{notification.content}}</text>
+								<text class="notification-time">{{notification.createTime}}</text>
+							</view>
+							<text class="notification-arrow">›</text>
+						</view>
+					</scroll-view>
+				</view>
+				
+				<!-- 月检任务标签页 -->
+				<view v-if="activeNotificationTab === 'tasks'" class="tab-content">
+					<view class="tab-header">
+						<text class="refresh-btn" @click="refreshTaskNotifications">刷新</text>
+					</view>
+					<scroll-view class="notification-list" 
+								 scroll-y="true" 
+								 :show-scrollbar="true"
+								 :enable-back-to-top="false">
+						<view v-if="taskNotifications.length === 0" class="empty-notifications">
+							<text class="empty-text">暂无已通知的月检任务</text>
+						</view>
+						<view v-for="taskNotification in taskNotifications" :key="taskNotification.id" 
+							  class="notification-item task-notification"
+							  @click="handleTaskNotificationClick(taskNotification)">
+							<view class="task-status-badge" :class="getTaskStatusClass(taskNotification.status)">
+								<text class="status-text">{{getTaskStatusText(taskNotification.status)}}</text>
+							</view>
+							<view class="notification-info">
+								<text class="notification-item-title">{{taskNotification.title}}</text>
+								<text class="notification-item-content">
+									任务编号：{{taskNotification.taskNo}}
+									月检时间：{{taskNotification.inspectionMonth}}
+									任务状态：{{getTaskStatusText(taskNotification.status)}}
+									{{taskNotification.content}}
+								</text>
+								<text class="notification-time">{{taskNotification.createTime}}</text>
+							</view>
+							<text class="notification-arrow">›</text>
+						</view>
+					</scroll-view>
+				</view>
+			</view>
+		</view>
+
+		<!-- 任务选择弹窗 -->
+		<view v-if="showTaskPickerModal" class="task-picker-overlay" @click="closeTaskPicker">
+			<view class="task-picker" @click.stop>
+				<view class="task-picker-header">
+					<text>选择月检任务</text>
+					<text class="task-picker-close" @click="closeTaskPicker">×</text>
+				</view>
+				<view class="task-picker-body">
+					<view v-if="taskPickerLoading" class="empty-tasks">加载中...</view>
+					<view v-else-if="taskPickerList.length === 0" class="empty-tasks">当前无待执行或进行中的任务</view>
+					<view v-else>
+						<view class="task-item" v-for="t in taskPickerList" :key="t.getString('id')" @click="pickTaskAndGo(t)">
+							<text class="task-title">任务编号：{{ t.getString('taskNo') ?? '' }}</text>
+							<text class="task-sub">月检时间：{{ t.getString('inspectionMonth') ?? '' }} 状态：{{ getTaskStatusText(t.getString('status') ?? '') }}</text>
+						</view>
 					</view>
 				</view>
 			</view>
@@ -132,9 +209,20 @@
 		isRead: boolean
 	}
 
+	type TaskNotification = {
+		id: string,
+		taskId: string,
+		taskNo: string,
+		title: string,
+		content: string,
+		createTime: string,
+		status: string,
+		inspectionMonth: string
+	}
+
 	export default {
 		data() {
-				return {
+			return {
 					userInfo: {} as UTSJSONObject,
 					userName: '用户', // 简化的用户姓名变量
 					currentDate: '',
@@ -145,8 +233,19 @@
 					} as MonthlyStatistics,
 					monthlyRecords: [] as MonthlyRecord[],
 					notifications: [] as Notification[],
+					taskNotifications: [] as TaskNotification[],
 					notificationCount: 0,
-					showNotificationModal: false,
+				showNotificationModal: false,
+				activeNotificationTab: 'system', // 默认显示系统通知
+				showTaskPickerModal: false,
+				taskPickerLoading: false,
+				taskPickerList: [] as Array<UTSJSONObject>,
+					// WebSocket相关
+      socketTask: null as any | null,
+					isSocketConnected: false,
+					reconnectAttempts: 0,
+					maxReconnectAttempts: 5,
+					reconnectInterval: 3000, // 3秒重连间隔
 					// 滚动相关
 					scrollTop: 0,
 					containerHeight: 0,
@@ -161,6 +260,24 @@
 			this.loadStatistics()
 			this.loadMonthlyRecords()
 			this.loadNotifications()
+		},
+		
+		// 页面显示时连接WebSocket
+		onShow() {
+			console.log('页面显示，连接WebSocket')
+			this.connectWebSocket()
+		},
+		
+		// 页面隐藏时断开WebSocket
+		onHide() {
+			console.log('页面隐藏，断开WebSocket')
+			this.disconnectWebSocket()
+		},
+		
+		// 页面卸载时断开WebSocket
+		onUnload() {
+			console.log('页面卸载，断开WebSocket')
+			this.disconnectWebSocket()
 		},
 		methods: {
 			checkLogin() {
@@ -198,25 +315,68 @@
 			loadStatistics() {
 				const token = uni.getStorageSync('token')
 				
-				// 获取用户部门信息
+				// 获取用户信息，包括部门和管理员权限
 				let departmentId = ''
+				let isAdmin = false
 				const userInfoData = uni.getStorageSync('userInfo')
 				const userInfoStr = userInfoData != null ? userInfoData as string : ''
 				if (userInfoStr != null && userInfoStr != '' && userInfoStr != 'null' && userInfoStr != 'undefined') {
 					try {
 						const parsedUserInfo = JSON.parse(userInfoStr) as UTSJSONObject
 						departmentId = parsedUserInfo.getString('deptId') ?? ''
+						isAdmin = (parsedUserInfo.getNumber('isAdmin') ?? 0) === 1
 					} catch (error) {
 						console.error('用户信息JSON解析失败:', error)
 					}
 				}
 				
-				// 构建部门过滤参数
-				const deptParam = departmentId != null && departmentId != '' ? `?departmentId=${departmentId}` : ''
+                // 构建部门过滤参数 - 管理员用户不需要部门过滤
+                const deptParam = (!isAdmin && departmentId != null && departmentId != '') ? `&responsibilityId=${departmentId}` : ''
 				
-				uni.request({
-					url: getApiUrl(`/statistics/overview${deptParam}`),
-					method: 'GET',
+				// 分别获取待整改、已整改、已复查的数量
+				let pendingCount = 0, completedCount = 0, reviewedCount = 0
+				let completedRequests = 0
+				const totalRequests = 3
+				
+				const updateStatistics = () => {
+					this.statistics = {
+						monthlyPending: pendingCount,
+						monthlyCompleted: completedCount,
+						reviewedCount: reviewedCount
+					}
+				}
+				
+                // 获取待整改数量（状态为0）
+                uni.request({
+                    url: getApiUrl(`/monthly-inspection-record/page?current=1&size=1&recordStatus=0${deptParam}`),
+                    method: 'GET',
+                    header: {
+                        'Authorization': `Bearer ${token}`
+                    },
+                    success: (res) => {
+                        const response = res.data as UTSJSONObject
+                        if (res.statusCode == 200 && (response.getNumber('code') ?? 0) == 200) {
+                            const data = response.getJSON('data') as UTSJSONObject
+                            pendingCount = data.getNumber('total') ?? 0
+                        }
+                        completedRequests++
+                        if (completedRequests === totalRequests) {
+                            updateStatistics()
+                        }
+                    },
+					fail: (error) => {
+						console.log('加载待整改数据失败:', error)
+						completedRequests++
+						if (completedRequests === totalRequests) {
+							updateStatistics()
+						}
+					}
+				})
+				
+                // 获取已整改数量（状态为1）
+                uni.request({
+                    url: getApiUrl(`/monthly-inspection-record/page?current=1&size=1&recordStatus=1${deptParam}`),
+                    method: 'GET',
 					header: {
 						'Authorization': `Bearer ${token}`
 					},
@@ -224,42 +384,102 @@
 						const response = res.data as UTSJSONObject
 						if (res.statusCode == 200 && (response.getNumber('code') ?? 0) == 200) {
 							const data = response.getJSON('data') as UTSJSONObject
-							// 暂时使用原有接口数据，后续可调整
-							this.statistics = {
-								monthlyPending: data.getNumber('totalTasks') ?? 0,
-								monthlyCompleted: data.getNumber('todayRecords') ?? 0,
-								reviewedCount: data.getNumber('monthRecords') ?? 0
-							}
+							completedCount = data.getNumber('total') ?? 0
+						}
+						completedRequests++
+						if (completedRequests === totalRequests) {
+							updateStatistics()
 						}
 					},
 					fail: (error) => {
-						console.log('加载统计数据失败:', error)
+						console.log('加载已整改数据失败:', error)
+						completedRequests++
+						if (completedRequests === totalRequests) {
+							updateStatistics()
+						}
 					}
 				})
+				
+                // 获取已复查数量（状态为2）
+                uni.request({
+                    url: getApiUrl(`/monthly-inspection-record/page?current=1&size=1&recordStatus=2${deptParam}`),
+                    method: 'GET',
+                    header: {
+                        'Authorization': `Bearer ${token}`
+                    },
+                    success: (res) => {
+                        const response = res.data as UTSJSONObject
+                        if (res.statusCode == 200 && (response.getNumber('code') ?? 0) == 200) {
+                            const data = response.getJSON('data') as UTSJSONObject
+                            reviewedCount = data.getNumber('total') ?? 0
+                        }
+                        // 额外获取延迟整改数量（状态为0且整改期限 < 今天），用于从待整改数量中排除
+                        const now = new Date()
+                        const y = now.getFullYear()
+                        const m = now.getMonth() + 1
+                        const d = now.getDate()
+                        const mm = m < 10 ? ('0' + m) : ('' + m)
+                        const dd = d < 10 ? ('0' + d) : ('' + d)
+                        const today = `${y}-${mm}-${dd}`
+                        uni.request({
+                            url: getApiUrl(`/monthly-inspection-record/page?current=1&size=1&recordStatus=0&rectificationDeadlineBefore=${today}${deptParam}`),
+                            method: 'GET',
+                            header: { 'Authorization': `Bearer ${token}` },
+                            success: (res2) => {
+                                const resp2 = res2.data as UTSJSONObject
+                                if (res2.statusCode == 200 && (resp2.getNumber('code') ?? 0) == 200) {
+                                    const data2 = resp2.getJSON('data') as UTSJSONObject
+                                    const delayedCount = data2.getNumber('total') ?? 0
+                                    // 排除延迟整改数量
+                                    //pendingCount = Math.max(0, pendingCount - delayedCount)
+                                }
+                                completedRequests++
+                                if (completedRequests === totalRequests) {
+                                    updateStatistics()
+                                }
+                            },
+                            fail: (_) => {
+                                completedRequests++
+                                if (completedRequests === totalRequests) {
+                                    updateStatistics()
+                                }
+                            }
+                        })
+                    },
+                    fail: (error) => {
+                        console.log('加载已复查数据失败:', error)
+                        completedRequests++
+                        if (completedRequests === totalRequests) {
+                            updateStatistics()
+                        }
+                    }
+                })
 			},
 			
 			loadMonthlyRecords() {
 				const token = uni.getStorageSync('token')
 				
-				// 获取用户部门信息
+				// 获取用户信息，包括部门和管理员权限
 				let departmentId = ''
+				let isAdmin = false
 				const userInfoData = uni.getStorageSync('userInfo')
 				const userInfoStr = userInfoData != null ? userInfoData as string : ''
 				if (userInfoStr != null && userInfoStr != '' && userInfoStr != 'null' && userInfoStr != 'undefined') {
 					try {
 						const parsedUserInfo = JSON.parse(userInfoStr) as UTSJSONObject
 						departmentId = parsedUserInfo.getString('deptId') ?? ''
+						isAdmin = (parsedUserInfo.getNumber('isAdmin') ?? 0) === 1
 					} catch (error) {
 						console.error('用户信息JSON解析失败:', error)
 					}
 				}
 				
-				// 构建部门过滤参数
-				const deptParam = departmentId != null && departmentId != '' ? `&departmentId=${departmentId}` : ''
+                // 构建部门过滤参数 - 管理员用户不需要部门过滤
+                const deptParam = (!isAdmin && departmentId != null && departmentId != '') ? `&responsibilityId=${departmentId}` : ''
 				
-				uni.request({
-					url: getApiUrl(`/inspection-record/page?pageNum=1&pageSize=10${deptParam}`),
-					method: 'GET',
+                uni.request({
+                    url: getApiUrl(`/monthly-inspection-record/page?current=1&size=10${deptParam}`),
+                    method: 'GET',
 					header: {
 						'Authorization': `Bearer ${token}`
 					},
@@ -288,8 +508,9 @@
 				})
 			},
 			
+			// 获取月检记录的状态文本
 			getStatusText(status: string): string {
-				if (status == "0") return '待整改'
+				if (status == "0") return '待执行'
 				if (status == "1") return '已整改'
 				if (status == "2") return '已复查'
 				return '未知'
@@ -302,21 +523,38 @@
 				return 'status-unknown'
 			},
 			
+			// 获取月检任务的状态文本 - 与Web端保持一致
+			// 任务状态：0-未开始，1-进行中，2-已完成
+			getTaskStatusText(status: string): string {
+				if (status == "0") return '未开始'
+				if (status == "1") return '进行中'
+				if (status == "2") return '已完成'
+				return '未知'
+			},
+			
+			getTaskStatusClass(status: string): string {
+				if (status == "0") return 'status-pending'
+				if (status == "1") return 'status-processing'
+				if (status == "2") return 'status-completed'
+				return 'status-unknown'
+			},
+			
 			goToPendingIssues() {
+				const now = new Date()
+				const y = now.getFullYear()
+				const m = now.getMonth() + 1
+				const d = now.getDate()
+				const mm = m < 10 ? ('0' + m) : ('' + m)
+				const dd = d < 10 ? ('0' + d) : ('' + d)
+				const today = `${y}-${mm}-${dd}`
 				uni.navigateTo({
-					url: '/pages/record/record?status=0'
+					url: `/pages/record/record?status=0&monthly=true&deadlineFrom=${today}`
 				})
 			},
 			
 			goToCompletedIssues() {
 				uni.navigateTo({
-					url: '/pages/record/record?status=1'
-				})
-			},
-			
-			goToReviewedRecords() {
-				uni.navigateTo({
-					url: '/pages/record/record?status=2'
+					url: '/pages/record/record?status=1&monthly=true'
 				})
 			},
 			
@@ -327,20 +565,116 @@
 			},
 			
 			goToDelayedRecord() {
+				const now = new Date()
+				const y = now.getFullYear()
+				const m = now.getMonth() + 1
+				const d = now.getDate()
+				const mm = m < 10 ? ('0' + m) : ('' + m)
+				const dd = d < 10 ? ('0' + d) : ('' + d)
+				const today = `${y}-${mm}-${dd}`
 				uni.navigateTo({
-					url: '/pages/record/delayed'
+					url: `/pages/record/record?status=0&monthly=true&delayed=true&deadlineBefore=${today}`
 				})
 			},
 			
 			goToRecords() {
-				uni.switchTab({
-					url: '/pages/record/record'
+				uni.showToast({
+					title: '记录查看功能开发中',
+					icon: 'none'
 				})
 			},
 			
 			goToAddRecord() {
+				this.openTaskPicker()
+			},
+			openTaskPicker() {
+				const token = uni.getStorageSync('token')
+				
+				// 获取用户信息，包括部门和管理员权限 - 与loadTaskNotifications()保持一致
+				let departmentId = ''
+				let isAdmin = false
+				const userInfoData = uni.getStorageSync('userInfo')
+				const userInfoStr = userInfoData != null ? userInfoData as string : ''
+				if (userInfoStr != null && userInfoStr != '' && userInfoStr != 'null' && userInfoStr != 'undefined') {
+					try {
+						const parsedUserInfo = JSON.parse(userInfoStr) as UTSJSONObject
+						departmentId = parsedUserInfo.getString('deptId') ?? ''
+						isAdmin = (parsedUserInfo.getNumber('isAdmin') ?? 0) === 1
+					} catch (error) {
+						console.error('用户信息JSON解析失败:', error)
+					}
+				}
+				
+				console.log('openTaskPicker: 部门ID=', departmentId, '是否管理员=', isAdmin)
+				
+				// 使用部门ID获取月检任务，非管理员用户需要部门过滤
+				if (!isAdmin && (departmentId == null || departmentId == '')) {
+					console.log('非管理员用户部门ID为空，无法加载月检任务')
+					this.taskPickerLoading = false
+					this.taskPickerList = []
+					this.showTaskPickerModal = true
+					uni.showToast({
+						title: '未设置所属部门',
+						icon: 'none'
+					})
+					return
+				}
+				
+				// 构建请求URL - 使用部门ID而非用户ID，与loadTaskNotifications()保持一致
+				const url = isAdmin ? 
+					getApiUrl(`/notifications/department/tasks`) : 
+					getApiUrl(`/notifications/department/${departmentId}/tasks`)
+				
+				this.taskPickerLoading = true
+				console.log('请求月检任务URL:', url)
+				
+				uni.request({
+					url: url,
+					method: 'GET',
+					header: { 'Authorization': `Bearer ${token}` },
+					success: (res) => {
+						console.log('月检任务选择器请求响应:', res)
+						const list = [] as Array<UTSJSONObject>
+						if (res.statusCode === 200) {
+							const arr = res.data as Array<UTSJSONObject>
+							console.log('获取到的月检任务数据:', arr.length, '条')
+							// 与loadTaskNotifications()保持一致：返回所有任务，不过滤状态
+							// 通知栏能获取到任务，说明任务可能包含所有状态，所以这里也应该返回所有任务
+							for (let i = 0; i < arr.length; i++) {
+								const item = arr[i]
+								console.log('处理任务:', item.getString('taskNo'), '状态:', item.getString('status'))
+								list.push(item)
+							}
+							console.log('月检任务总数:', list.length)
+						} else {
+							console.log('月检任务选择器请求失败，响应码:', res.statusCode)
+						}
+						this.taskPickerList = list
+						this.showTaskPickerModal = true
+						this.taskPickerLoading = false
+					},
+					fail: (error) => {
+						console.log('加载月检任务选择器失败:', error)
+						this.taskPickerLoading = false
+						this.taskPickerList = []
+						this.showTaskPickerModal = true
+					}
+				})
+			},
+			closeTaskPicker() {
+				this.showTaskPickerModal = false
+			},
+			pickTaskAndGo(item: UTSJSONObject) {
+				const taskNo = item.getString('taskNo') ?? ''
+				if (taskNo != null && taskNo != '') {
+					uni.navigateTo({ url: `/pages/monthly/task-record?taskId=${taskNo}` })
+					this.showTaskPickerModal = false
+				}
+			},
+			
+			goToReviewedRecords() {
 				uni.navigateTo({
-					url: '/pages/record/add'
+					url: '/pages/record/record?status=2&monthly=true'
 				})
 			},
 			
@@ -349,22 +683,22 @@
 				const userId = this.userInfo.getString('id') ?? ''
 				console.log('开始加载通知，用户ID:', userId)
 				
-      if (userId == null || userId == '') {
-       console.log('用户ID为空，无法加载通知')
-       return
+				if (userId == null || userId == '') {
+					console.log('用户ID为空，无法加载通知')
+					return
 				}
 				
+				// 使用与web端一致的通知API接口
 				uni.request({
-					url: getApiUrl(`/monthly-inspection-task/user/${userId}`),
+					url: getApiUrl(`/notifications/user/${userId}`),
 					method: 'GET',
 					header: {
 						'Authorization': `Bearer ${token}`
 					},
 					success: (res) => {
 						console.log('通知请求响应:', res)
-						const response = res.data as UTSJSONObject
-						if (res.statusCode == 200 && (response.getNumber('code') ?? 0) == 200) {
-							const data = response.getArray('data') as Array<UTSJSONObject>
+						if (res.statusCode == 200) {
+							const data = res.data as Array<UTSJSONObject>
 							console.log('获取到的通知数据:', data.length, '条')
 							this.notifications = []
 							let unreadCount = 0
@@ -374,10 +708,10 @@
 									id: item.getString('id') ?? '',
 									taskId: item.getString('taskId') ?? '',
 									taskNo: item.getString('taskNo') ?? '',
-									title: `月检任务通知 - ${item.getString('taskNo')}`,
-									content: `您有新的月检任务需要处理，任务编号：${item.getString('taskNo')}`,
+									title: item.getString('title') ?? '',
+									content: item.getString('content') ?? '',
 									createTime: item.getString('createTime') ?? '',
-									isRead: false
+									isRead: item.getBoolean('isRead') ?? false
 								}
 								this.notifications.push(notification)
 								if (!notification.isRead) {
@@ -387,15 +721,115 @@
 							this.notificationCount = unreadCount
 							console.log('设置通知条数:', this.notificationCount)
 						} else {
-							console.log('通知请求失败，响应码:', res.statusCode, '业务码:', response.getNumber('code'))
+							console.log('通知请求失败，响应码:', res.statusCode)
 						}
 					},
 					fail: (error) => {
 						console.log('加载通知失败:', error)
 					}
 				})
+				
+				// 加载月检任务通知
+				this.loadTaskNotifications()
 			},
 			
+			// 加载月检任务通知
+			loadTaskNotifications() {
+				const token = uni.getStorageSync('token')
+				
+				// 获取用户信息，包括部门和管理员权限
+				let departmentId = ''
+				let isAdmin = false
+				const userInfoData = uni.getStorageSync('userInfo')
+				const userInfoStr = userInfoData != null ? userInfoData as string : ''
+				if (userInfoStr != null && userInfoStr != '' && userInfoStr != 'null' && userInfoStr != 'undefined') {
+					try {
+						const parsedUserInfo = JSON.parse(userInfoStr) as UTSJSONObject
+						departmentId = parsedUserInfo.getString('deptId') ?? ''
+						isAdmin = (parsedUserInfo.getNumber('isAdmin') ?? 0) === 1
+					} catch (error) {
+						console.error('用户信息JSON解析失败:', error)
+					}
+				}
+				
+				// 使用部门ID获取月检任务通知，管理员用户不需要部门过滤
+				if (!isAdmin && (departmentId == null || departmentId == '')) {
+					console.log('非管理员用户部门ID为空，无法加载月检任务通知')
+					return
+				}
+				
+				// 构建请求URL - 使用部门ID而非用户ID
+				const url = isAdmin ? 
+					getApiUrl(`/notifications/department/tasks`) : 
+					getApiUrl(`/notifications/department/${departmentId}/tasks`)
+				
+				uni.request({
+					url: url,
+					method: 'GET',
+					header: {
+						'Authorization': `Bearer ${token}`
+					},
+					success: (res) => {
+						console.log('月检任务通知请求响应:', res)
+						if (res.statusCode == 200) {
+							// 后端返回的是ResponseEntity<List<Notification>>，直接是数组
+							const data = res.data as Array<UTSJSONObject>
+							console.log('获取到的月检任务通知数据:', data.length, '条')
+							this.taskNotifications = []
+							for (let i = 0; i < data.length; i++) {
+								const item = data[i]
+								const taskNotification: TaskNotification = {
+									id: item.getString('id') ?? '',
+									taskId: item.getString('taskId') ?? '',
+									taskNo: item.getString('taskNo') ?? '',
+									title: item.getString('title') ?? '',
+									content: item.getString('content') ?? '',
+									createTime: item.getString('createTime') ?? '',
+									status: item.getString('status') ?? '',
+									inspectionMonth: item.getString('inspectionMonth') ?? ''
+								}
+								this.taskNotifications.push(taskNotification)
+								console.log('处理月检任务通知:', taskNotification)
+							}
+						} else {
+							console.log('月检任务通知请求失败，响应码:', res.statusCode)
+						}
+					},
+					fail: (error) => {
+						console.log('加载月检任务通知失败:', error)
+					}
+				})
+			},
+			
+			// 切换通知标签页
+			switchNotificationTab(tab: string) {
+				this.activeNotificationTab = tab
+				if (tab === 'tasks') {
+					// 切换到月检任务时，刷新数据
+					this.loadTaskNotifications()
+				}
+			},
+			
+			// 刷新月检任务通知
+			refreshTaskNotifications() {
+				this.loadTaskNotifications()
+				uni.showToast({
+					title: '刷新成功',
+					icon: 'success',
+					duration: 1500
+				})
+			},
+			
+			// 处理月检任务通知点击
+			handleTaskNotificationClick(taskNotification: TaskNotification) {
+				// 跳转到月检任务录入页面，传递任务信息
+				uni.navigateTo({
+					url: `/pages/monthly/task-record?taskId=${taskNotification.taskNo}`
+				})
+				
+				this.hideNotifications()
+			},
+
 			showNotifications() {
 				this.showNotificationModal = true
 			},
@@ -405,6 +839,11 @@
 			},
 			
 			handleNotificationClick(notification: Notification) {
+				// 如果未读，则调用API标记为已读
+				if (!notification.isRead) {
+					this.markNotificationAsRead(notification.id)
+				}
+				
 				// 标记为已读
 				notification.isRead = true
 				this.updateNotificationCount()
@@ -415,6 +854,30 @@
 				})
 				
 				this.hideNotifications()
+			},
+			
+			// 标记通知为已读
+			markNotificationAsRead(notificationId: string) {
+				const token = uni.getStorageSync('token')
+				const userId = this.userInfo.getString('id') ?? ''
+				
+				if (userId == null || userId == '' || notificationId == null || notificationId == '') {
+					return
+				}
+				
+				uni.request({
+					url: getApiUrl(`/notifications/user/${userId}/read/${notificationId}`),
+					method: 'PUT',
+					header: {
+						'Authorization': `Bearer ${token}`
+					},
+					success: (res) => {
+						console.log('标记通知已读成功:', res)
+					},
+					fail: (error) => {
+						console.log('标记通知已读失败:', error)
+					}
+				})
 			},
 			
 			updateNotificationCount() {
@@ -434,10 +897,32 @@
 			},
 			
 			markAllAsRead() {
-				for (let i = 0; i < this.notifications.length; i++) {
-					this.notifications[i].isRead = true
+				const token = uni.getStorageSync('token')
+				const userId = this.userInfo.getString('id') ?? ''
+				
+				if (userId == null || userId == '') {
+					return
 				}
-				this.notificationCount = 0
+				
+				// 调用API标记所有通知为已读
+				uni.request({
+					url: getApiUrl(`/notifications/user/${userId}/read-all`),
+					method: 'PUT',
+					header: {
+						'Authorization': `Bearer ${token}`
+					},
+					success: (res) => {
+						console.log('标记所有通知已读成功:', res)
+						// 更新本地状态
+						for (let i = 0; i < this.notifications.length; i++) {
+							this.notifications[i].isRead = true
+						}
+						this.notificationCount = 0
+					},
+					fail: (error) => {
+						console.log('标记所有通知已读失败:', error)
+					}
+				})
 			},
 			
 			// 初始化容器高度
@@ -462,6 +947,223 @@
 			// 刷新恢复
 			onRefreshRestore() {
 				this.isRefreshing = false
+			},
+			
+			// WebSocket连接方法
+			connectWebSocket() {
+				const token = uni.getStorageSync('token')
+				const userId = this.userInfo.getString('id') ?? ''
+				
+      if (token == null || token == '' || userId == null || userId == '') {
+					console.log('缺少token或用户ID，无法连接WebSocket')
+					return
+				}
+				
+      // 如果已经连接，先断开
+      if (this.socketTask != null) {
+       this.disconnectWebSocket()
+      }
+				
+				// 构建WebSocket URL (使用SockJS端点)
+				const wsUrl = `ws://localhost:8081/ws/websocket`
+				console.log('正在连接WebSocket:', wsUrl)
+				
+				this.socketTask = uni.connectSocket({
+					url: wsUrl,
+					protocols: ['v10.stomp', 'v11.stomp', 'v12.stomp'],
+					success: () => {
+						console.log('WebSocket连接请求发送成功')
+					},
+					fail: (error) => {
+						console.error('WebSocket连接失败:', error)
+						this.handleWebSocketError()
+					}
+				})
+				
+				// 监听WebSocket连接打开
+				uni.onSocketOpen((res) => {
+					console.log('WebSocket连接已打开', res)
+					this.isSocketConnected = true
+					this.reconnectAttempts = 0
+					
+					// 发送STOMP连接帧
+					const token = uni.getStorageSync('token')
+					const userId = this.userInfo.getString('id') ?? ''
+					this.sendStompConnect(token as string, userId as string)
+				})
+				
+				// 监听WebSocket消息
+				uni.onSocketMessage((message) => {
+					const messageData = message.data as string
+					console.log('收到WebSocket消息:', messageData)
+					this.handleWebSocketMessage(messageData)
+				})
+				
+				// 监听WebSocket连接关闭
+				uni.onSocketClose((event) => {
+					console.log('WebSocket连接已关闭:', event)
+					this.isSocketConnected = false
+					this.socketTask = null
+					
+					// 如果不是主动断开，尝试重连
+					if (event.code != 1000) {
+						this.attemptReconnect()
+					}
+				})
+				
+				// 监听WebSocket错误
+				uni.onSocketError((error) => {
+					console.error('WebSocket错误:', error)
+					this.handleWebSocketError()
+				})
+			},
+			
+			// 发送STOMP连接帧
+			sendStompConnect(token: string, userId: string) {
+        const connectFrame = `CONNECT
+Accept-version:1.0,1.1,1.2
+host:localhost
+Authorization:Bearer ${token}
+
+` + String.fromCharCode(0)
+				
+				if (this.isSocketConnected) {
+					uni.sendSocketMessage({
+						data: connectFrame,
+						success: () => {
+							console.log('STOMP连接帧发送成功')
+							// 连接成功后订阅用户通知
+							setTimeout(() => {
+								this.subscribeToNotifications(userId)
+							}, 1000)
+						},
+						fail: (error) => {
+							console.error('STOMP连接帧发送失败:', error)
+						}
+					})
+				}
+			},
+			
+			// 订阅用户通知
+			subscribeToNotifications(userId: string) {
+        const subscribeFrame = `SUBSCRIBE
+id:sub-0
+destination:/user/${userId}/queue/notifications
+
+` + String.fromCharCode(0)
+				
+				if (this.isSocketConnected) {
+					uni.sendSocketMessage({
+						data: subscribeFrame,
+						success: () => {
+							console.log('订阅通知成功')
+						},
+						fail: (error) => {
+							console.error('订阅通知失败:', error)
+						}
+					})
+				}
+			},
+			
+			// 处理WebSocket消息
+			handleWebSocketMessage(data: string) {
+				try {
+					// 解析STOMP消息
+					if (data.startsWith('CONNECTED')) {
+						console.log('STOMP连接成功')
+						return
+					}
+					
+					if (data.startsWith('MESSAGE')) {
+						// 提取消息体
+						const lines = data.split('\n')
+						let messageBody = ''
+						let isBody = false
+						
+						for (let i = 0; i < lines.length; i++) {
+							if (isBody) {
+								messageBody += lines[i]
+							} else if (lines[i] === '') {
+								isBody = true
+							}
+						}
+						
+						// 移除结尾的空字符
+						messageBody = messageBody.replace(/\x00$/, '')
+						
+        if (messageBody != null && messageBody != '') {
+							console.log('收到通知消息:', messageBody)
+							const notification = JSON.parse(messageBody) as UTSJSONObject
+							this.handleNewNotification(notification)
+						}
+					}
+				} catch (error) {
+					console.error('处理WebSocket消息失败:', error)
+				}
+			},
+			
+			// 处理新通知
+			handleNewNotification(notificationData: UTSJSONObject) {
+				const newNotification: Notification = {
+					id: notificationData.getString('id') ?? '',
+					taskId: notificationData.getString('taskId') ?? '',
+					taskNo: notificationData.getString('taskNo') ?? '',
+					title: notificationData.getString('title') ?? '',
+					content: notificationData.getString('content') ?? '',
+					createTime: notificationData.getString('createTime') ?? '',
+					isRead: false
+				}
+				
+				// 添加到通知列表顶部
+				this.notifications.unshift(newNotification)
+				
+				// 更新未读计数
+				this.notificationCount++
+				
+				// 显示系统通知
+				uni.showToast({
+					title: `新通知: ${newNotification.title}`,
+					icon: 'none',
+					duration: 3000
+				})
+				
+				console.log('新通知已添加，当前未读数量:', this.notificationCount)
+			},
+			
+			// 断开WebSocket连接
+			disconnectWebSocket() {
+				if (this.isSocketConnected) {
+					console.log('正在断开WebSocket连接')
+					uni.closeSocket({
+						code: 1000,
+						reason: '主动断开'
+					})
+					this.socketTask = null
+					this.isSocketConnected = false
+				}
+			},
+			
+			// 处理WebSocket错误
+			handleWebSocketError() {
+				this.isSocketConnected = false
+				this.attemptReconnect()
+			},
+			
+			// 尝试重连
+			attemptReconnect() {
+				if (this.reconnectAttempts >= this.maxReconnectAttempts) {
+					console.log('达到最大重连次数，停止重连')
+					return
+				}
+				
+				this.reconnectAttempts++
+				console.log(`第${this.reconnectAttempts}次重连尝试，${this.reconnectInterval}ms后重连`)
+				
+				setTimeout(() => {
+					if (!this.isSocketConnected) {
+						this.connectWebSocket()
+					}
+				}, this.reconnectInterval)
 			}
 		}
 	}
@@ -899,10 +1601,12 @@
 	.notification-content {
 		width: 90%;
 		max-width: 400px;
-		max-height: 70%;
+		height: 500px;
 		background-color: #fff;
 		border-radius: 12px;
 		overflow: hidden;
+		display: flex;
+		flex-direction: column;
 	}
 	
 	.notification-header {
@@ -911,6 +1615,8 @@
 		align-items: center;
 		padding: 20px;
 		border-bottom: 1px solid #f0f0f0;
+		flex-shrink: 0;
+		background-color: #fff;
 	}
 	
 	.notification-title {
@@ -941,8 +1647,8 @@
 	}
 	
 	.notification-list {
-		max-height: 400px;
-		overflow-y: auto;
+		height: 400px;
+		width: 100%;
 	}
 	
 	.empty-notifications {
@@ -1003,5 +1709,210 @@
 		font-size: 18px;
 		color: #ccc;
 		flex-shrink: 0;
+	}
+	
+	/* 标签页样式 */
+	.notification-tabs {
+		display: flex;
+		border-bottom: 1px solid #f0f0f0;
+		background-color: #fff;
+		flex-shrink: 0;
+	}
+	
+	.tab-item {
+		flex: 1;
+		padding: 15px 20px;
+		text-align: center;
+		background-color: #f8f9fa;
+		border-bottom: 2px solid transparent;
+		transition: all 0.3s ease;
+	}
+	
+	.tab-item.active {
+		background-color: #fff;
+		border-bottom-color: #007AFF;
+	}
+	
+	.tab-text {
+		font-size: 16px;
+		color: #666;
+		font-weight: 500;
+	}
+	
+	.tab-item.active .tab-text {
+		color: #007AFF;
+		font-weight: 600;
+	}
+	
+	/* 标签页内容 */
+	.tab-content {
+		flex: 1;
+		display: flex;
+		flex-direction: column;
+		overflow: hidden;
+	}
+	
+	.tab-header {
+		display: flex;
+		justify-content: flex-end;
+		align-items: center;
+		padding: 15px 20px;
+		border-bottom: 1px solid #f0f0f0;
+		background-color: #fff;
+		flex-shrink: 0;
+	}
+	
+	.refresh-btn {
+		font-size: 14px;
+		color: #007AFF;
+		padding: 5px 10px;
+		border: 1px solid #007AFF;
+		border-radius: 4px;
+		background-color: transparent;
+	}
+	
+	.refresh-btn:active {
+		background-color: #f0f8ff;
+	}
+	
+	/* 月检任务通知特殊样式 */
+	.task-notification {
+		padding: 20px;
+		border-left: 4px solid #007AFF;
+		background-color: #f8fafe;
+	}
+	
+	.task-status-badge {
+		position: absolute;
+		top: 15px;
+		right: 15px;
+		padding: 4px 8px;
+		border-radius: 12px;
+		font-size: 12px;
+		font-weight: 500;
+	}
+	
+	.task-status-badge .status-text {
+		color: inherit;
+	}
+	
+	.task-status-badge.status-pending {
+		background-color: #fff3cd;
+		color: #856404;
+		border: 1px solid #ffeaa7;
+	}
+	
+	.task-status-badge.status-completed {
+		background-color: #d4edda;
+		color: #155724;
+		border: 1px solid #c3e6cb;
+	}
+	
+	.task-status-badge.status-accepted {
+		background-color: #e2e3e5;
+		color: #383d41;
+		border: 1px solid #d6d8db;
+	}
+	
+	.task-status-badge.status-unknown {
+		background-color: #f8f9fa;
+		color: #6c757d;
+		border: 1px solid #dee2e6;
+	}
+	
+	/* 月检任务通知内容样式 */
+	.task-notification .notification-item-content {
+		white-space: pre-line;
+		line-height: 1.6;
+		margin-bottom: 8px;
+	}
+	
+	.task-notification .notification-item-title {
+		font-size: 17px;
+		font-weight: 600;
+		color: #007AFF;
+		margin-bottom: 8px;
+	}
+	
+	.task-notification:hover {
+		background-color: #f0f8ff;
+	}
+	
+.task-notification:active {
+		background-color: #e6f3ff;
+	}
+
+	.task-picker-overlay {
+		position: fixed;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		background-color: rgba(0, 0, 0, 0.5);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		z-index: 1000;
+	}
+
+	.task-picker {
+		width: 90%;
+		max-width: 400px;
+		max-height: 70vh;
+		background-color: #fff;
+		border-radius: 12px;
+		overflow: hidden;
+		display: flex;
+		flex-direction: column;
+	}
+
+	.task-picker-header {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		padding: 16px 20px;
+		border-bottom: 1px solid #f0f0f0;
+	}
+
+	.task-picker-close {
+		font-size: 20px;
+		color: #999;
+		width: 30px;
+		height: 30px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.task-picker-body {
+		padding: 12px 16px;
+		overflow-y: auto;
+		max-height: 55vh;
+	}
+
+	.empty-tasks {
+		padding: 40px 20px;
+		text-align: center;
+		color: #999;
+	}
+
+	.task-item {
+		padding: 12px 10px;
+		border-bottom: 1px solid #f0f0f0;
+	}
+
+	.task-item:last-child {
+		border-bottom: none;
+	}
+
+	.task-title {
+		font-size: 14px;
+		color: #333;
+		margin-bottom: 6px;
+	}
+
+	.task-sub {
+		font-size: 12px;
+		color: #666;
 	}
 </style>

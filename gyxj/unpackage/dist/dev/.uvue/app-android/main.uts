@@ -15,14 +15,17 @@ export function main(app: IApp) {
 export class UniAppConfig extends io.dcloud.uniapp.appframe.AppConfig {
     override name: string = "榆林公司岗检系统";
     override appid: string = "__UNI__B5A0920";
-    override versionName: string = "1.0.1";
-    override versionCode: string = "101";
+    override versionName: string = "1.0.2";
+    override versionCode: string = "102";
     override uniCompilerVersion: string = "4.76";
     constructor() { super(); }
 }
 import GenPagesHomeHomeClass from './pages/home/home.uvue';
 import GenPagesWeeklyWeeklyClass from './pages/weekly/weekly.uvue';
 import GenPagesMonthlyMonthlyClass from './pages/monthly/monthly.uvue';
+import GenPagesMonthlyRectifyClass from './pages/monthly/rectify.uvue';
+import GenPagesMonthlyReviewClass from './pages/monthly/review.uvue';
+import GenPagesMonthlyViewClass from './pages/monthly/view.uvue';
 import GenPagesMonthlyTaskRecordClass from './pages/monthly/task-record.uvue';
 import GenPagesProfileProfileClass from './pages/profile/profile.uvue';
 import GenPagesIndexIndexClass from './pages/index/index.uvue';
@@ -38,6 +41,9 @@ function definePageRoutes() {
     __uniRoutes.push({ path: "pages/home/home", component: GenPagesHomeHomeClass, meta: { isQuit: true } as UniPageMeta, style: _uM([["navigationBarTitleText", "首页"], ["enablePullDownRefresh", true], ["disableScroll", false]]) } as UniPageRoute);
     __uniRoutes.push({ path: "pages/weekly/weekly", component: GenPagesWeeklyWeeklyClass, meta: { isQuit: false } as UniPageMeta, style: _uM([["navigationBarTitleText", "周检"]]) } as UniPageRoute);
     __uniRoutes.push({ path: "pages/monthly/monthly", component: GenPagesMonthlyMonthlyClass, meta: { isQuit: false } as UniPageMeta, style: _uM([["navigationBarTitleText", "月检"]]) } as UniPageRoute);
+    __uniRoutes.push({ path: "pages/monthly/rectify", component: GenPagesMonthlyRectifyClass, meta: { isQuit: false } as UniPageMeta, style: _uM([["navigationBarTitleText", "确认整改"]]) } as UniPageRoute);
+    __uniRoutes.push({ path: "pages/monthly/review", component: GenPagesMonthlyReviewClass, meta: { isQuit: false } as UniPageMeta, style: _uM([["navigationBarTitleText", "确认复查"]]) } as UniPageRoute);
+    __uniRoutes.push({ path: "pages/monthly/view", component: GenPagesMonthlyViewClass, meta: { isQuit: false } as UniPageMeta, style: _uM([["navigationBarTitleText", "记录查看"]]) } as UniPageRoute);
     __uniRoutes.push({ path: "pages/monthly/task-record", component: GenPagesMonthlyTaskRecordClass, meta: { isQuit: false } as UniPageMeta, style: _uM([["navigationBarTitleText", "月检任务录入"]]) } as UniPageRoute);
     __uniRoutes.push({ path: "pages/profile/profile", component: GenPagesProfileProfileClass, meta: { isQuit: false } as UniPageMeta, style: _uM([["navigationBarTitleText", "我的"]]) } as UniPageRoute);
     __uniRoutes.push({ path: "pages/index/index", component: GenPagesIndexIndexClass, meta: { isQuit: false } as UniPageMeta, style: _uM([["navigationBarTitleText", "首页"]]) } as UniPageRoute);

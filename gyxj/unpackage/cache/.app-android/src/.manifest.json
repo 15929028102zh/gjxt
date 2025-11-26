@@ -4,69 +4,81 @@
     "compiler_version": "4.76"
   },
   "files": {
+    "pages/profile/profile.kt": {
+      "md5": "6b4512dd546155bb129375b6309a0ce5acccefe2",
+      "class": "GenPagesProfileProfile"
+    },
     "pages/monthly/task-record.kt": {
-      "md5": "33a12f78f0442c54d0caba0810f49cb011f651e8",
+      "md5": "3c7911057e34b1be470b9bb6ae9fe08572a2a258",
       "class": "GenPagesMonthlyTaskRecord"
     },
-    "index.kt": {
-      "class": "",
-      "md5": "a26ea2c733c5e40b7ed3c4679c5a39559c027587"
-    },
     "pages/home/home.kt": {
-      "md5": "81e990e16cf608a92b902a42cd6cff5d5af8701b",
-      "class": "GenPagesHomeHome"
-    },
-    "pages/index/index.kt": {
-      "md5": "a80101846283b3b2d4122305fad8c71aad36ff6f",
-      "class": "GenPagesIndexIndex"
-    },
-    "pages/weekly/weekly.kt": {
-      "md5": "c0c3d3d4c40ea7473e57ef38e039e775fe1b24ea",
-      "class": "GenPagesWeeklyWeekly"
-    },
-    "pages/monthly/monthly.kt": {
-      "class": "GenPagesMonthlyMonthly",
-      "md5": "5fbb9d39fdf0385806108e725ab9ad93f47b339d"
+      "class": "GenPagesHomeHome",
+      "md5": "840651ac2a3adb587e7fdc5f01eeede2509e5e8b"
     },
     "pages/record/detail.kt": {
       "class": "GenPagesRecordDetail",
-      "md5": "eb1b8c8c7f9fe18a648b01c8362e3b62933d4f0c"
+      "md5": "01235d52ed8008bff01d3869f97d5634dbb4e446"
     },
-    "pages/record/add.kt": {
-      "md5": "9d472045f23b2f30eace526dd497706e7531c31c",
-      "class": "GenPagesRecordAdd"
+    "pages/monthly/review.kt": {
+      "class": "GenPagesMonthlyReview",
+      "md5": "ee81b071dc4a7fe56842267c816c1958c221e1a9"
     },
-    "pages/login/login.kt": {
-      "class": "GenPagesLoginLogin",
-      "md5": "5ffa649694a06ff36d16edb4be26159ea398b4a3"
+    "pages/weekly/weekly.kt": {
+      "md5": "58b8f2eecc71285469341ded7e4f5c0e41cf4f73",
+      "class": "GenPagesWeeklyWeekly"
+    },
+    "pages/chart-test/chart-test.kt": {
+      "md5": "dfc672e247d21519a00633fab5f72874afb09158",
+      "class": "GenPagesChartTestChartTest"
+    },
+    "pages/monthly/rectify.kt": {
+      "class": "GenPagesMonthlyRectify",
+      "md5": "b4b88db75d4b0757493dd4b37c9bb5a12008d759"
+    },
+    "pages/record/record.kt": {
+      "md5": "1211f97bb3ee097669cdef1546d9beef544db6cc",
+      "class": "GenPagesRecordRecord"
     },
     "uni_modules/tui-xechars/components/tui-xechars/tui-xechars.kt": {
       "md5": "09bd6cb97a06ec8e854da53967cbfbcf803eb685",
       "class": "GenUniModulesTuiXecharsComponentsTuiXecharsTuiXechars"
     },
-    "pages/chart-test/chart-test.kt": {
-      "class": "GenPagesChartTestChartTest",
-      "md5": "dfc672e247d21519a00633fab5f72874afb09158"
+    "pages/record/add.kt": {
+      "class": "GenPagesRecordAdd",
+      "md5": "9d472045f23b2f30eace526dd497706e7531c31c"
     },
-    "pages/record/record.kt": {
-      "md5": "15fcaa5fd363c9010a896fd86d1074cffb29235b",
-      "class": "GenPagesRecordRecord"
+    "pages/monthly/view.kt": {
+      "class": "GenPagesMonthlyView",
+      "md5": "dc878f1aa02c15870d5b998571ccbb50813403a1"
+    },
+    "pages/login/login.kt": {
+      "md5": "5ffa649694a06ff36d16edb4be26159ea398b4a3",
+      "class": "GenPagesLoginLogin"
+    },
+    "pages/monthly/monthly.kt": {
+      "md5": "2afe3e50a0d6b9eb9c5c74663d807717313bfaaf",
+      "class": "GenPagesMonthlyMonthly"
+    },
+    "pages/record/review.kt": {
+      "class": "GenPagesRecordReview",
+      "md5": "22edfd240ca8f8b44d4a784af312a0e53364b3c7"
     },
     "pages/statistics/statistics.kt": {
       "md5": "9d2ffe57315566f39712842949db7563bb1a8102",
       "class": "GenPagesStatisticsStatistics"
     },
-    "pages/profile/profile.kt": {
-      "class": "GenPagesProfileProfile",
-      "md5": "6b4512dd546155bb129375b6309a0ce5acccefe2"
+    "index.kt": {
+      "md5": "5d4e43a7bb1dadaab3602451caa08aa3ce0f55c3",
+      "class": ""
+    },
+    "pages/index/index.kt": {
+      "md5": "e1cfccd9af0215f32176eba3cbb9a764f0b90199",
+      "class": "GenPagesIndexIndex"
     },
     "pages/test/test.kt": {
-      "class": "GenPagesTestTest",
-      "md5": "d11fccc3a58ba546f673a8f01c390a4aa6e74083"
-    },
-    "pages/record/review.kt": {
-      "md5": "f0a4ce6916991e5b48d5c7538b22b8fd4b6054d4",
-      "class": "GenPagesRecordReview"
+      "md5": "d11fccc3a58ba546f673a8f01c390a4aa6e74083",
+      "class": "GenPagesTestTest"
     }
   }
 }

@@ -66,9 +66,9 @@ fun tryConnectSocket(host: String, port: String, id: String): UTSPromise<SocketT
     )
 }
 fun initRuntimeSocketService(): UTSPromise<Boolean> {
-    val hosts: String = "192.168.93.1,192.168.229.1,192.168.76.128,127.0.0.1"
+    val hosts: String = "192.168.93.1,192.168.229.1,10.116.43.194,127.0.0.1"
     val port: String = "8090"
-    val id: String = "app-android_QmzJMs"
+    val id: String = "app-android_Os-WZC"
     if (hosts == "" || port == "" || id == "") {
         return UTSPromise.resolve(false)
     }
@@ -11396,8 +11396,8 @@ open class ApiConfigReactiveObject : ApiConfig, IUTSReactive<ApiConfig> {
         }
 }
 val getBaseUrl = fun(): String {
-    return "http://192.168.76.128:8081"
-    return "http://192.168.0.18:8081"
+    return "http://10.116.40.104:8081"
+    return "http://10.116.40.104:8081"
 }
 val apiConfig = reactive(ApiConfig(baseUrl = getBaseUrl()))
 val getApiUrl = fun(endpoint: String): String {
@@ -11414,7 +11414,7 @@ open class StatsData (
     open var reviewed: Number,
 ) : UTSReactiveObject(), IUTSSourceMap {
     override fun `__$getOriginalPosition`(): UTSSourceMapPosition? {
-        return UTSSourceMapPosition("StatsData", "pages/home/home.uvue", 142, 7)
+        return UTSSourceMapPosition("StatsData", "pages/home/home.uvue", 110, 7)
     }
     override fun __v_create(__v_isReadonly: Boolean, __v_isShallow: Boolean, __v_skip: Boolean): UTSReactiveObject {
         return StatsDataReactiveObject(this, __v_isReadonly, __v_isShallow, __v_skip)
@@ -11481,58 +11481,6 @@ open class StatsDataReactiveObject : StatsData, IUTSReactive<StatsData> {
             val oldValue = __v_raw.reviewed
             __v_raw.reviewed = value
             _tRS(__v_raw, "reviewed", oldValue, value)
-        }
-}
-open class TrendData (
-    @JsonNotNull
-    open var months: UTSArray<String>,
-    @JsonNotNull
-    open var values: UTSArray<Number>,
-) : UTSReactiveObject(), IUTSSourceMap {
-    override fun `__$getOriginalPosition`(): UTSSourceMapPosition? {
-        return UTSSourceMapPosition("TrendData", "pages/home/home.uvue", 195, 7)
-    }
-    override fun __v_create(__v_isReadonly: Boolean, __v_isShallow: Boolean, __v_skip: Boolean): UTSReactiveObject {
-        return TrendDataReactiveObject(this, __v_isReadonly, __v_isShallow, __v_skip)
-    }
-}
-open class TrendDataReactiveObject : TrendData, IUTSReactive<TrendData> {
-    override var __v_raw: TrendData
-    override var __v_isReadonly: Boolean
-    override var __v_isShallow: Boolean
-    override var __v_skip: Boolean
-    constructor(__v_raw: TrendData, __v_isReadonly: Boolean, __v_isShallow: Boolean, __v_skip: Boolean) : super(months = __v_raw.months, values = __v_raw.values) {
-        this.__v_raw = __v_raw
-        this.__v_isReadonly = __v_isReadonly
-        this.__v_isShallow = __v_isShallow
-        this.__v_skip = __v_skip
-    }
-    override fun __v_clone(__v_isReadonly: Boolean, __v_isShallow: Boolean, __v_skip: Boolean): TrendDataReactiveObject {
-        return TrendDataReactiveObject(this.__v_raw, __v_isReadonly, __v_isShallow, __v_skip)
-    }
-    override var months: UTSArray<String>
-        get() {
-            return _tRG(__v_raw, "months", __v_raw.months, __v_isReadonly, __v_isShallow)
-        }
-        set(value) {
-            if (!__v_canSet("months")) {
-                return
-            }
-            val oldValue = __v_raw.months
-            __v_raw.months = value
-            _tRS(__v_raw, "months", oldValue, value)
-        }
-    override var values: UTSArray<Number>
-        get() {
-            return _tRG(__v_raw, "values", __v_raw.values, __v_isReadonly, __v_isShallow)
-        }
-        set(value) {
-            if (!__v_canSet("values")) {
-                return
-            }
-            val oldValue = __v_raw.values
-            __v_raw.values = value
-            _tRS(__v_raw, "values", oldValue, value)
         }
 }
 val GenPagesHomeHomeClass = CreateVueComponent(GenPagesHomeHome::class.java, fun(): VueComponentOptions {
@@ -11725,7 +11673,7 @@ open class MonthlyRecord (
     open var status: String,
 ) : UTSReactiveObject(), IUTSSourceMap {
     override fun `__$getOriginalPosition`(): UTSSourceMapPosition? {
-        return UTSSourceMapPosition("MonthlyRecord", "pages/monthly/monthly.uvue", 111, 7)
+        return UTSSourceMapPosition("MonthlyRecord", "pages/monthly/monthly.uvue", 188, 7)
     }
     override fun __v_create(__v_isReadonly: Boolean, __v_isShallow: Boolean, __v_skip: Boolean): UTSReactiveObject {
         return MonthlyRecordReactiveObject(this, __v_isReadonly, __v_isShallow, __v_skip)
@@ -11815,7 +11763,7 @@ open class MonthlyStatistics (
     open var reviewedCount: Number,
 ) : UTSReactiveObject(), IUTSSourceMap {
     override fun `__$getOriginalPosition`(): UTSSourceMapPosition? {
-        return UTSSourceMapPosition("MonthlyStatistics", "pages/monthly/monthly.uvue", 119, 7)
+        return UTSSourceMapPosition("MonthlyStatistics", "pages/monthly/monthly.uvue", 196, 7)
     }
     override fun __v_create(__v_isReadonly: Boolean, __v_isShallow: Boolean, __v_skip: Boolean): UTSReactiveObject {
         return MonthlyStatisticsReactiveObject(this, __v_isReadonly, __v_isShallow, __v_skip)
@@ -11889,7 +11837,7 @@ open class Notification (
     open var isRead: Boolean = false,
 ) : UTSReactiveObject(), IUTSSourceMap {
     override fun `__$getOriginalPosition`(): UTSSourceMapPosition? {
-        return UTSSourceMapPosition("Notification", "pages/monthly/monthly.uvue", 125, 7)
+        return UTSSourceMapPosition("Notification", "pages/monthly/monthly.uvue", 202, 7)
     }
     override fun __v_create(__v_isReadonly: Boolean, __v_isShallow: Boolean, __v_skip: Boolean): UTSReactiveObject {
         return NotificationReactiveObject(this, __v_isReadonly, __v_isShallow, __v_skip)
@@ -11994,6 +11942,142 @@ open class NotificationReactiveObject : Notification, IUTSReactive<Notification>
             _tRS(__v_raw, "isRead", oldValue, value)
         }
 }
+open class TaskNotification (
+    @JsonNotNull
+    open var id: String,
+    @JsonNotNull
+    open var taskId: String,
+    @JsonNotNull
+    open var taskNo: String,
+    @JsonNotNull
+    open var title: String,
+    @JsonNotNull
+    open var content: String,
+    @JsonNotNull
+    open var createTime: String,
+    @JsonNotNull
+    open var status: String,
+    @JsonNotNull
+    open var inspectionMonth: String,
+) : UTSReactiveObject(), IUTSSourceMap {
+    override fun `__$getOriginalPosition`(): UTSSourceMapPosition? {
+        return UTSSourceMapPosition("TaskNotification", "pages/monthly/monthly.uvue", 212, 7)
+    }
+    override fun __v_create(__v_isReadonly: Boolean, __v_isShallow: Boolean, __v_skip: Boolean): UTSReactiveObject {
+        return TaskNotificationReactiveObject(this, __v_isReadonly, __v_isShallow, __v_skip)
+    }
+}
+open class TaskNotificationReactiveObject : TaskNotification, IUTSReactive<TaskNotification> {
+    override var __v_raw: TaskNotification
+    override var __v_isReadonly: Boolean
+    override var __v_isShallow: Boolean
+    override var __v_skip: Boolean
+    constructor(__v_raw: TaskNotification, __v_isReadonly: Boolean, __v_isShallow: Boolean, __v_skip: Boolean) : super(id = __v_raw.id, taskId = __v_raw.taskId, taskNo = __v_raw.taskNo, title = __v_raw.title, content = __v_raw.content, createTime = __v_raw.createTime, status = __v_raw.status, inspectionMonth = __v_raw.inspectionMonth) {
+        this.__v_raw = __v_raw
+        this.__v_isReadonly = __v_isReadonly
+        this.__v_isShallow = __v_isShallow
+        this.__v_skip = __v_skip
+    }
+    override fun __v_clone(__v_isReadonly: Boolean, __v_isShallow: Boolean, __v_skip: Boolean): TaskNotificationReactiveObject {
+        return TaskNotificationReactiveObject(this.__v_raw, __v_isReadonly, __v_isShallow, __v_skip)
+    }
+    override var id: String
+        get() {
+            return _tRG(__v_raw, "id", __v_raw.id, __v_isReadonly, __v_isShallow)
+        }
+        set(value) {
+            if (!__v_canSet("id")) {
+                return
+            }
+            val oldValue = __v_raw.id
+            __v_raw.id = value
+            _tRS(__v_raw, "id", oldValue, value)
+        }
+    override var taskId: String
+        get() {
+            return _tRG(__v_raw, "taskId", __v_raw.taskId, __v_isReadonly, __v_isShallow)
+        }
+        set(value) {
+            if (!__v_canSet("taskId")) {
+                return
+            }
+            val oldValue = __v_raw.taskId
+            __v_raw.taskId = value
+            _tRS(__v_raw, "taskId", oldValue, value)
+        }
+    override var taskNo: String
+        get() {
+            return _tRG(__v_raw, "taskNo", __v_raw.taskNo, __v_isReadonly, __v_isShallow)
+        }
+        set(value) {
+            if (!__v_canSet("taskNo")) {
+                return
+            }
+            val oldValue = __v_raw.taskNo
+            __v_raw.taskNo = value
+            _tRS(__v_raw, "taskNo", oldValue, value)
+        }
+    override var title: String
+        get() {
+            return _tRG(__v_raw, "title", __v_raw.title, __v_isReadonly, __v_isShallow)
+        }
+        set(value) {
+            if (!__v_canSet("title")) {
+                return
+            }
+            val oldValue = __v_raw.title
+            __v_raw.title = value
+            _tRS(__v_raw, "title", oldValue, value)
+        }
+    override var content: String
+        get() {
+            return _tRG(__v_raw, "content", __v_raw.content, __v_isReadonly, __v_isShallow)
+        }
+        set(value) {
+            if (!__v_canSet("content")) {
+                return
+            }
+            val oldValue = __v_raw.content
+            __v_raw.content = value
+            _tRS(__v_raw, "content", oldValue, value)
+        }
+    override var createTime: String
+        get() {
+            return _tRG(__v_raw, "createTime", __v_raw.createTime, __v_isReadonly, __v_isShallow)
+        }
+        set(value) {
+            if (!__v_canSet("createTime")) {
+                return
+            }
+            val oldValue = __v_raw.createTime
+            __v_raw.createTime = value
+            _tRS(__v_raw, "createTime", oldValue, value)
+        }
+    override var status: String
+        get() {
+            return _tRG(__v_raw, "status", __v_raw.status, __v_isReadonly, __v_isShallow)
+        }
+        set(value) {
+            if (!__v_canSet("status")) {
+                return
+            }
+            val oldValue = __v_raw.status
+            __v_raw.status = value
+            _tRS(__v_raw, "status", oldValue, value)
+        }
+    override var inspectionMonth: String
+        get() {
+            return _tRG(__v_raw, "inspectionMonth", __v_raw.inspectionMonth, __v_isReadonly, __v_isShallow)
+        }
+        set(value) {
+            if (!__v_canSet("inspectionMonth")) {
+                return
+            }
+            val oldValue = __v_raw.inspectionMonth
+            __v_raw.inspectionMonth = value
+            _tRS(__v_raw, "inspectionMonth", oldValue, value)
+        }
+}
 val GenPagesMonthlyMonthlyClass = CreateVueComponent(GenPagesMonthlyMonthly::class.java, fun(): VueComponentOptions {
     return VueComponentOptions(type = "page", name = "", inheritAttrs = GenPagesMonthlyMonthly.inheritAttrs, inject = GenPagesMonthlyMonthly.inject, props = GenPagesMonthlyMonthly.props, propsNeedCastKeys = GenPagesMonthlyMonthly.propsNeedCastKeys, emits = GenPagesMonthlyMonthly.emits, components = GenPagesMonthlyMonthly.components, styles = GenPagesMonthlyMonthly.styles)
 }
@@ -12001,7 +12085,928 @@ val GenPagesMonthlyMonthlyClass = CreateVueComponent(GenPagesMonthlyMonthly::cla
     return GenPagesMonthlyMonthly(instance, renderer)
 }
 )
+open class RecordDetail (
+    @JsonNotNull
+    open var id: String,
+    @JsonNotNull
+    open var problemDescription: String,
+    @JsonNotNull
+    open var location: String,
+    @JsonNotNull
+    open var rectificationDate: String,
+    @JsonNotNull
+    open var responsibleUnit: String,
+    @JsonNotNull
+    open var responsiblePerson: String,
+    @JsonNotNull
+    open var qualityName: String,
+    @JsonNotNull
+    open var professionalTypeName: String,
+    @JsonNotNull
+    open var departmentName: String,
+    @JsonNotNull
+    open var inspector: String,
+    @JsonNotNull
+    open var groupLeaderName: String,
+    @JsonNotNull
+    open var deputyLeaderName: String,
+    @JsonNotNull
+    open var createTime: String,
+    @JsonNotNull
+    open var rectificationEffect: String,
+    @JsonNotNull
+    open var photos: String,
+    @JsonNotNull
+    open var taskNo: String,
+    @JsonNotNull
+    open var inspectionTime: String,
+    @JsonNotNull
+    open var responsibilityName: String,
+    @JsonNotNull
+    open var issueName: String,
+) : UTSReactiveObject(), IUTSSourceMap {
+    override fun `__$getOriginalPosition`(): UTSSourceMapPosition? {
+        return UTSSourceMapPosition("RecordDetail", "pages/monthly/rectify.uvue", 64, 8)
+    }
+    override fun __v_create(__v_isReadonly: Boolean, __v_isShallow: Boolean, __v_skip: Boolean): UTSReactiveObject {
+        return RecordDetailReactiveObject(this, __v_isReadonly, __v_isShallow, __v_skip)
+    }
+}
+open class RecordDetailReactiveObject : RecordDetail, IUTSReactive<RecordDetail> {
+    override var __v_raw: RecordDetail
+    override var __v_isReadonly: Boolean
+    override var __v_isShallow: Boolean
+    override var __v_skip: Boolean
+    constructor(__v_raw: RecordDetail, __v_isReadonly: Boolean, __v_isShallow: Boolean, __v_skip: Boolean) : super(id = __v_raw.id, problemDescription = __v_raw.problemDescription, location = __v_raw.location, rectificationDate = __v_raw.rectificationDate, responsibleUnit = __v_raw.responsibleUnit, responsiblePerson = __v_raw.responsiblePerson, qualityName = __v_raw.qualityName, professionalTypeName = __v_raw.professionalTypeName, departmentName = __v_raw.departmentName, inspector = __v_raw.inspector, groupLeaderName = __v_raw.groupLeaderName, deputyLeaderName = __v_raw.deputyLeaderName, createTime = __v_raw.createTime, rectificationEffect = __v_raw.rectificationEffect, photos = __v_raw.photos, taskNo = __v_raw.taskNo, inspectionTime = __v_raw.inspectionTime, responsibilityName = __v_raw.responsibilityName, issueName = __v_raw.issueName) {
+        this.__v_raw = __v_raw
+        this.__v_isReadonly = __v_isReadonly
+        this.__v_isShallow = __v_isShallow
+        this.__v_skip = __v_skip
+    }
+    override fun __v_clone(__v_isReadonly: Boolean, __v_isShallow: Boolean, __v_skip: Boolean): RecordDetailReactiveObject {
+        return RecordDetailReactiveObject(this.__v_raw, __v_isReadonly, __v_isShallow, __v_skip)
+    }
+    override var id: String
+        get() {
+            return _tRG(__v_raw, "id", __v_raw.id, __v_isReadonly, __v_isShallow)
+        }
+        set(value) {
+            if (!__v_canSet("id")) {
+                return
+            }
+            val oldValue = __v_raw.id
+            __v_raw.id = value
+            _tRS(__v_raw, "id", oldValue, value)
+        }
+    override var problemDescription: String
+        get() {
+            return _tRG(__v_raw, "problemDescription", __v_raw.problemDescription, __v_isReadonly, __v_isShallow)
+        }
+        set(value) {
+            if (!__v_canSet("problemDescription")) {
+                return
+            }
+            val oldValue = __v_raw.problemDescription
+            __v_raw.problemDescription = value
+            _tRS(__v_raw, "problemDescription", oldValue, value)
+        }
+    override var location: String
+        get() {
+            return _tRG(__v_raw, "location", __v_raw.location, __v_isReadonly, __v_isShallow)
+        }
+        set(value) {
+            if (!__v_canSet("location")) {
+                return
+            }
+            val oldValue = __v_raw.location
+            __v_raw.location = value
+            _tRS(__v_raw, "location", oldValue, value)
+        }
+    override var rectificationDate: String
+        get() {
+            return _tRG(__v_raw, "rectificationDate", __v_raw.rectificationDate, __v_isReadonly, __v_isShallow)
+        }
+        set(value) {
+            if (!__v_canSet("rectificationDate")) {
+                return
+            }
+            val oldValue = __v_raw.rectificationDate
+            __v_raw.rectificationDate = value
+            _tRS(__v_raw, "rectificationDate", oldValue, value)
+        }
+    override var responsibleUnit: String
+        get() {
+            return _tRG(__v_raw, "responsibleUnit", __v_raw.responsibleUnit, __v_isReadonly, __v_isShallow)
+        }
+        set(value) {
+            if (!__v_canSet("responsibleUnit")) {
+                return
+            }
+            val oldValue = __v_raw.responsibleUnit
+            __v_raw.responsibleUnit = value
+            _tRS(__v_raw, "responsibleUnit", oldValue, value)
+        }
+    override var responsiblePerson: String
+        get() {
+            return _tRG(__v_raw, "responsiblePerson", __v_raw.responsiblePerson, __v_isReadonly, __v_isShallow)
+        }
+        set(value) {
+            if (!__v_canSet("responsiblePerson")) {
+                return
+            }
+            val oldValue = __v_raw.responsiblePerson
+            __v_raw.responsiblePerson = value
+            _tRS(__v_raw, "responsiblePerson", oldValue, value)
+        }
+    override var qualityName: String
+        get() {
+            return _tRG(__v_raw, "qualityName", __v_raw.qualityName, __v_isReadonly, __v_isShallow)
+        }
+        set(value) {
+            if (!__v_canSet("qualityName")) {
+                return
+            }
+            val oldValue = __v_raw.qualityName
+            __v_raw.qualityName = value
+            _tRS(__v_raw, "qualityName", oldValue, value)
+        }
+    override var professionalTypeName: String
+        get() {
+            return _tRG(__v_raw, "professionalTypeName", __v_raw.professionalTypeName, __v_isReadonly, __v_isShallow)
+        }
+        set(value) {
+            if (!__v_canSet("professionalTypeName")) {
+                return
+            }
+            val oldValue = __v_raw.professionalTypeName
+            __v_raw.professionalTypeName = value
+            _tRS(__v_raw, "professionalTypeName", oldValue, value)
+        }
+    override var departmentName: String
+        get() {
+            return _tRG(__v_raw, "departmentName", __v_raw.departmentName, __v_isReadonly, __v_isShallow)
+        }
+        set(value) {
+            if (!__v_canSet("departmentName")) {
+                return
+            }
+            val oldValue = __v_raw.departmentName
+            __v_raw.departmentName = value
+            _tRS(__v_raw, "departmentName", oldValue, value)
+        }
+    override var inspector: String
+        get() {
+            return _tRG(__v_raw, "inspector", __v_raw.inspector, __v_isReadonly, __v_isShallow)
+        }
+        set(value) {
+            if (!__v_canSet("inspector")) {
+                return
+            }
+            val oldValue = __v_raw.inspector
+            __v_raw.inspector = value
+            _tRS(__v_raw, "inspector", oldValue, value)
+        }
+    override var groupLeaderName: String
+        get() {
+            return _tRG(__v_raw, "groupLeaderName", __v_raw.groupLeaderName, __v_isReadonly, __v_isShallow)
+        }
+        set(value) {
+            if (!__v_canSet("groupLeaderName")) {
+                return
+            }
+            val oldValue = __v_raw.groupLeaderName
+            __v_raw.groupLeaderName = value
+            _tRS(__v_raw, "groupLeaderName", oldValue, value)
+        }
+    override var deputyLeaderName: String
+        get() {
+            return _tRG(__v_raw, "deputyLeaderName", __v_raw.deputyLeaderName, __v_isReadonly, __v_isShallow)
+        }
+        set(value) {
+            if (!__v_canSet("deputyLeaderName")) {
+                return
+            }
+            val oldValue = __v_raw.deputyLeaderName
+            __v_raw.deputyLeaderName = value
+            _tRS(__v_raw, "deputyLeaderName", oldValue, value)
+        }
+    override var createTime: String
+        get() {
+            return _tRG(__v_raw, "createTime", __v_raw.createTime, __v_isReadonly, __v_isShallow)
+        }
+        set(value) {
+            if (!__v_canSet("createTime")) {
+                return
+            }
+            val oldValue = __v_raw.createTime
+            __v_raw.createTime = value
+            _tRS(__v_raw, "createTime", oldValue, value)
+        }
+    override var rectificationEffect: String
+        get() {
+            return _tRG(__v_raw, "rectificationEffect", __v_raw.rectificationEffect, __v_isReadonly, __v_isShallow)
+        }
+        set(value) {
+            if (!__v_canSet("rectificationEffect")) {
+                return
+            }
+            val oldValue = __v_raw.rectificationEffect
+            __v_raw.rectificationEffect = value
+            _tRS(__v_raw, "rectificationEffect", oldValue, value)
+        }
+    override var photos: String
+        get() {
+            return _tRG(__v_raw, "photos", __v_raw.photos, __v_isReadonly, __v_isShallow)
+        }
+        set(value) {
+            if (!__v_canSet("photos")) {
+                return
+            }
+            val oldValue = __v_raw.photos
+            __v_raw.photos = value
+            _tRS(__v_raw, "photos", oldValue, value)
+        }
+    override var taskNo: String
+        get() {
+            return _tRG(__v_raw, "taskNo", __v_raw.taskNo, __v_isReadonly, __v_isShallow)
+        }
+        set(value) {
+            if (!__v_canSet("taskNo")) {
+                return
+            }
+            val oldValue = __v_raw.taskNo
+            __v_raw.taskNo = value
+            _tRS(__v_raw, "taskNo", oldValue, value)
+        }
+    override var inspectionTime: String
+        get() {
+            return _tRG(__v_raw, "inspectionTime", __v_raw.inspectionTime, __v_isReadonly, __v_isShallow)
+        }
+        set(value) {
+            if (!__v_canSet("inspectionTime")) {
+                return
+            }
+            val oldValue = __v_raw.inspectionTime
+            __v_raw.inspectionTime = value
+            _tRS(__v_raw, "inspectionTime", oldValue, value)
+        }
+    override var responsibilityName: String
+        get() {
+            return _tRG(__v_raw, "responsibilityName", __v_raw.responsibilityName, __v_isReadonly, __v_isShallow)
+        }
+        set(value) {
+            if (!__v_canSet("responsibilityName")) {
+                return
+            }
+            val oldValue = __v_raw.responsibilityName
+            __v_raw.responsibilityName = value
+            _tRS(__v_raw, "responsibilityName", oldValue, value)
+        }
+    override var issueName: String
+        get() {
+            return _tRG(__v_raw, "issueName", __v_raw.issueName, __v_isReadonly, __v_isShallow)
+        }
+        set(value) {
+            if (!__v_canSet("issueName")) {
+                return
+            }
+            val oldValue = __v_raw.issueName
+            __v_raw.issueName = value
+            _tRS(__v_raw, "issueName", oldValue, value)
+        }
+}
+val GenPagesMonthlyRectifyClass = CreateVueComponent(GenPagesMonthlyRectify::class.java, fun(): VueComponentOptions {
+    return VueComponentOptions(type = "page", name = "", inheritAttrs = GenPagesMonthlyRectify.inheritAttrs, inject = GenPagesMonthlyRectify.inject, props = GenPagesMonthlyRectify.props, propsNeedCastKeys = GenPagesMonthlyRectify.propsNeedCastKeys, emits = GenPagesMonthlyRectify.emits, components = GenPagesMonthlyRectify.components, styles = GenPagesMonthlyRectify.styles)
+}
+, fun(instance, renderer): GenPagesMonthlyRectify {
+    return GenPagesMonthlyRectify(instance, renderer)
+}
+)
+open class MonthlyReviewDetail (
+    @JsonNotNull
+    open var id: String,
+    @JsonNotNull
+    open var problemDescription: String,
+    @JsonNotNull
+    open var location: String,
+    @JsonNotNull
+    open var rectificationEffect: String,
+    @JsonNotNull
+    open var rectificationImages: String,
+    @JsonNotNull
+    open var taskNo: String,
+    @JsonNotNull
+    open var inspectionTime: String,
+    @JsonNotNull
+    open var departmentName: String,
+    @JsonNotNull
+    open var professionalTypeName: String,
+    @JsonNotNull
+    open var responsibilityName: String,
+    @JsonNotNull
+    open var issueName: String,
+    @JsonNotNull
+    open var inspector: String,
+    @JsonNotNull
+    open var groupLeaderName: String,
+    @JsonNotNull
+    open var deputyLeaderName: String,
+    @JsonNotNull
+    open var photos: String,
+) : UTSReactiveObject(), IUTSSourceMap {
+    override fun `__$getOriginalPosition`(): UTSSourceMapPosition? {
+        return UTSSourceMapPosition("MonthlyReviewDetail", "pages/monthly/review.uvue", 70, 8)
+    }
+    override fun __v_create(__v_isReadonly: Boolean, __v_isShallow: Boolean, __v_skip: Boolean): UTSReactiveObject {
+        return MonthlyReviewDetailReactiveObject(this, __v_isReadonly, __v_isShallow, __v_skip)
+    }
+}
+open class MonthlyReviewDetailReactiveObject : MonthlyReviewDetail, IUTSReactive<MonthlyReviewDetail> {
+    override var __v_raw: MonthlyReviewDetail
+    override var __v_isReadonly: Boolean
+    override var __v_isShallow: Boolean
+    override var __v_skip: Boolean
+    constructor(__v_raw: MonthlyReviewDetail, __v_isReadonly: Boolean, __v_isShallow: Boolean, __v_skip: Boolean) : super(id = __v_raw.id, problemDescription = __v_raw.problemDescription, location = __v_raw.location, rectificationEffect = __v_raw.rectificationEffect, rectificationImages = __v_raw.rectificationImages, taskNo = __v_raw.taskNo, inspectionTime = __v_raw.inspectionTime, departmentName = __v_raw.departmentName, professionalTypeName = __v_raw.professionalTypeName, responsibilityName = __v_raw.responsibilityName, issueName = __v_raw.issueName, inspector = __v_raw.inspector, groupLeaderName = __v_raw.groupLeaderName, deputyLeaderName = __v_raw.deputyLeaderName, photos = __v_raw.photos) {
+        this.__v_raw = __v_raw
+        this.__v_isReadonly = __v_isReadonly
+        this.__v_isShallow = __v_isShallow
+        this.__v_skip = __v_skip
+    }
+    override fun __v_clone(__v_isReadonly: Boolean, __v_isShallow: Boolean, __v_skip: Boolean): MonthlyReviewDetailReactiveObject {
+        return MonthlyReviewDetailReactiveObject(this.__v_raw, __v_isReadonly, __v_isShallow, __v_skip)
+    }
+    override var id: String
+        get() {
+            return _tRG(__v_raw, "id", __v_raw.id, __v_isReadonly, __v_isShallow)
+        }
+        set(value) {
+            if (!__v_canSet("id")) {
+                return
+            }
+            val oldValue = __v_raw.id
+            __v_raw.id = value
+            _tRS(__v_raw, "id", oldValue, value)
+        }
+    override var problemDescription: String
+        get() {
+            return _tRG(__v_raw, "problemDescription", __v_raw.problemDescription, __v_isReadonly, __v_isShallow)
+        }
+        set(value) {
+            if (!__v_canSet("problemDescription")) {
+                return
+            }
+            val oldValue = __v_raw.problemDescription
+            __v_raw.problemDescription = value
+            _tRS(__v_raw, "problemDescription", oldValue, value)
+        }
+    override var location: String
+        get() {
+            return _tRG(__v_raw, "location", __v_raw.location, __v_isReadonly, __v_isShallow)
+        }
+        set(value) {
+            if (!__v_canSet("location")) {
+                return
+            }
+            val oldValue = __v_raw.location
+            __v_raw.location = value
+            _tRS(__v_raw, "location", oldValue, value)
+        }
+    override var rectificationEffect: String
+        get() {
+            return _tRG(__v_raw, "rectificationEffect", __v_raw.rectificationEffect, __v_isReadonly, __v_isShallow)
+        }
+        set(value) {
+            if (!__v_canSet("rectificationEffect")) {
+                return
+            }
+            val oldValue = __v_raw.rectificationEffect
+            __v_raw.rectificationEffect = value
+            _tRS(__v_raw, "rectificationEffect", oldValue, value)
+        }
+    override var rectificationImages: String
+        get() {
+            return _tRG(__v_raw, "rectificationImages", __v_raw.rectificationImages, __v_isReadonly, __v_isShallow)
+        }
+        set(value) {
+            if (!__v_canSet("rectificationImages")) {
+                return
+            }
+            val oldValue = __v_raw.rectificationImages
+            __v_raw.rectificationImages = value
+            _tRS(__v_raw, "rectificationImages", oldValue, value)
+        }
+    override var taskNo: String
+        get() {
+            return _tRG(__v_raw, "taskNo", __v_raw.taskNo, __v_isReadonly, __v_isShallow)
+        }
+        set(value) {
+            if (!__v_canSet("taskNo")) {
+                return
+            }
+            val oldValue = __v_raw.taskNo
+            __v_raw.taskNo = value
+            _tRS(__v_raw, "taskNo", oldValue, value)
+        }
+    override var inspectionTime: String
+        get() {
+            return _tRG(__v_raw, "inspectionTime", __v_raw.inspectionTime, __v_isReadonly, __v_isShallow)
+        }
+        set(value) {
+            if (!__v_canSet("inspectionTime")) {
+                return
+            }
+            val oldValue = __v_raw.inspectionTime
+            __v_raw.inspectionTime = value
+            _tRS(__v_raw, "inspectionTime", oldValue, value)
+        }
+    override var departmentName: String
+        get() {
+            return _tRG(__v_raw, "departmentName", __v_raw.departmentName, __v_isReadonly, __v_isShallow)
+        }
+        set(value) {
+            if (!__v_canSet("departmentName")) {
+                return
+            }
+            val oldValue = __v_raw.departmentName
+            __v_raw.departmentName = value
+            _tRS(__v_raw, "departmentName", oldValue, value)
+        }
+    override var professionalTypeName: String
+        get() {
+            return _tRG(__v_raw, "professionalTypeName", __v_raw.professionalTypeName, __v_isReadonly, __v_isShallow)
+        }
+        set(value) {
+            if (!__v_canSet("professionalTypeName")) {
+                return
+            }
+            val oldValue = __v_raw.professionalTypeName
+            __v_raw.professionalTypeName = value
+            _tRS(__v_raw, "professionalTypeName", oldValue, value)
+        }
+    override var responsibilityName: String
+        get() {
+            return _tRG(__v_raw, "responsibilityName", __v_raw.responsibilityName, __v_isReadonly, __v_isShallow)
+        }
+        set(value) {
+            if (!__v_canSet("responsibilityName")) {
+                return
+            }
+            val oldValue = __v_raw.responsibilityName
+            __v_raw.responsibilityName = value
+            _tRS(__v_raw, "responsibilityName", oldValue, value)
+        }
+    override var issueName: String
+        get() {
+            return _tRG(__v_raw, "issueName", __v_raw.issueName, __v_isReadonly, __v_isShallow)
+        }
+        set(value) {
+            if (!__v_canSet("issueName")) {
+                return
+            }
+            val oldValue = __v_raw.issueName
+            __v_raw.issueName = value
+            _tRS(__v_raw, "issueName", oldValue, value)
+        }
+    override var inspector: String
+        get() {
+            return _tRG(__v_raw, "inspector", __v_raw.inspector, __v_isReadonly, __v_isShallow)
+        }
+        set(value) {
+            if (!__v_canSet("inspector")) {
+                return
+            }
+            val oldValue = __v_raw.inspector
+            __v_raw.inspector = value
+            _tRS(__v_raw, "inspector", oldValue, value)
+        }
+    override var groupLeaderName: String
+        get() {
+            return _tRG(__v_raw, "groupLeaderName", __v_raw.groupLeaderName, __v_isReadonly, __v_isShallow)
+        }
+        set(value) {
+            if (!__v_canSet("groupLeaderName")) {
+                return
+            }
+            val oldValue = __v_raw.groupLeaderName
+            __v_raw.groupLeaderName = value
+            _tRS(__v_raw, "groupLeaderName", oldValue, value)
+        }
+    override var deputyLeaderName: String
+        get() {
+            return _tRG(__v_raw, "deputyLeaderName", __v_raw.deputyLeaderName, __v_isReadonly, __v_isShallow)
+        }
+        set(value) {
+            if (!__v_canSet("deputyLeaderName")) {
+                return
+            }
+            val oldValue = __v_raw.deputyLeaderName
+            __v_raw.deputyLeaderName = value
+            _tRS(__v_raw, "deputyLeaderName", oldValue, value)
+        }
+    override var photos: String
+        get() {
+            return _tRG(__v_raw, "photos", __v_raw.photos, __v_isReadonly, __v_isShallow)
+        }
+        set(value) {
+            if (!__v_canSet("photos")) {
+                return
+            }
+            val oldValue = __v_raw.photos
+            __v_raw.photos = value
+            _tRS(__v_raw, "photos", oldValue, value)
+        }
+}
+val GenPagesMonthlyReviewClass = CreateVueComponent(GenPagesMonthlyReview::class.java, fun(): VueComponentOptions {
+    return VueComponentOptions(type = "page", name = "", inheritAttrs = GenPagesMonthlyReview.inheritAttrs, inject = GenPagesMonthlyReview.inject, props = GenPagesMonthlyReview.props, propsNeedCastKeys = GenPagesMonthlyReview.propsNeedCastKeys, emits = GenPagesMonthlyReview.emits, components = GenPagesMonthlyReview.components, styles = GenPagesMonthlyReview.styles)
+}
+, fun(instance, renderer): GenPagesMonthlyReview {
+    return GenPagesMonthlyReview(instance, renderer)
+}
+)
+open class MonthlyDetail (
+    @JsonNotNull
+    open var id: String,
+    @JsonNotNull
+    open var recordStatus: Number,
+    @JsonNotNull
+    open var problemDescription: String,
+    @JsonNotNull
+    open var responsibleUnit: String,
+    @JsonNotNull
+    open var responsiblePerson: String,
+    @JsonNotNull
+    open var qualityName: String,
+    @JsonNotNull
+    open var safetyScore: Number,
+    @JsonNotNull
+    open var location: String,
+    @JsonNotNull
+    open var inspector: String,
+    @JsonNotNull
+    open var rectificationEffect: String,
+    @JsonNotNull
+    open var reviewEffect: String,
+    @JsonNotNull
+    open var photos: String,
+    @JsonNotNull
+    open var rectificationImages: String,
+    @JsonNotNull
+    open var reviewImages: String,
+    @JsonNotNull
+    open var taskNo: String,
+    @JsonNotNull
+    open var inspectionTime: String,
+    @JsonNotNull
+    open var departmentName: String,
+    @JsonNotNull
+    open var professionalTypeName: String,
+    @JsonNotNull
+    open var groupLeaderName: String,
+    @JsonNotNull
+    open var deputyLeaderName: String,
+    @JsonNotNull
+    open var responsibilityName: String,
+    @JsonNotNull
+    open var issueName: String,
+    @JsonNotNull
+    open var moduleName: String,
+    @JsonNotNull
+    open var rectificationDeadline: String,
+    @JsonNotNull
+    open var createTime: String,
+) : UTSReactiveObject(), IUTSSourceMap {
+    override fun `__$getOriginalPosition`(): UTSSourceMapPosition? {
+        return UTSSourceMapPosition("MonthlyDetail", "pages/monthly/view.uvue", 145, 8)
+    }
+    override fun __v_create(__v_isReadonly: Boolean, __v_isShallow: Boolean, __v_skip: Boolean): UTSReactiveObject {
+        return MonthlyDetailReactiveObject(this, __v_isReadonly, __v_isShallow, __v_skip)
+    }
+}
+open class MonthlyDetailReactiveObject : MonthlyDetail, IUTSReactive<MonthlyDetail> {
+    override var __v_raw: MonthlyDetail
+    override var __v_isReadonly: Boolean
+    override var __v_isShallow: Boolean
+    override var __v_skip: Boolean
+    constructor(__v_raw: MonthlyDetail, __v_isReadonly: Boolean, __v_isShallow: Boolean, __v_skip: Boolean) : super(id = __v_raw.id, recordStatus = __v_raw.recordStatus, problemDescription = __v_raw.problemDescription, responsibleUnit = __v_raw.responsibleUnit, responsiblePerson = __v_raw.responsiblePerson, qualityName = __v_raw.qualityName, safetyScore = __v_raw.safetyScore, location = __v_raw.location, inspector = __v_raw.inspector, rectificationEffect = __v_raw.rectificationEffect, reviewEffect = __v_raw.reviewEffect, photos = __v_raw.photos, rectificationImages = __v_raw.rectificationImages, reviewImages = __v_raw.reviewImages, taskNo = __v_raw.taskNo, inspectionTime = __v_raw.inspectionTime, departmentName = __v_raw.departmentName, professionalTypeName = __v_raw.professionalTypeName, groupLeaderName = __v_raw.groupLeaderName, deputyLeaderName = __v_raw.deputyLeaderName, responsibilityName = __v_raw.responsibilityName, issueName = __v_raw.issueName, moduleName = __v_raw.moduleName, rectificationDeadline = __v_raw.rectificationDeadline, createTime = __v_raw.createTime) {
+        this.__v_raw = __v_raw
+        this.__v_isReadonly = __v_isReadonly
+        this.__v_isShallow = __v_isShallow
+        this.__v_skip = __v_skip
+    }
+    override fun __v_clone(__v_isReadonly: Boolean, __v_isShallow: Boolean, __v_skip: Boolean): MonthlyDetailReactiveObject {
+        return MonthlyDetailReactiveObject(this.__v_raw, __v_isReadonly, __v_isShallow, __v_skip)
+    }
+    override var id: String
+        get() {
+            return _tRG(__v_raw, "id", __v_raw.id, __v_isReadonly, __v_isShallow)
+        }
+        set(value) {
+            if (!__v_canSet("id")) {
+                return
+            }
+            val oldValue = __v_raw.id
+            __v_raw.id = value
+            _tRS(__v_raw, "id", oldValue, value)
+        }
+    override var recordStatus: Number
+        get() {
+            return _tRG(__v_raw, "recordStatus", __v_raw.recordStatus, __v_isReadonly, __v_isShallow)
+        }
+        set(value) {
+            if (!__v_canSet("recordStatus")) {
+                return
+            }
+            val oldValue = __v_raw.recordStatus
+            __v_raw.recordStatus = value
+            _tRS(__v_raw, "recordStatus", oldValue, value)
+        }
+    override var problemDescription: String
+        get() {
+            return _tRG(__v_raw, "problemDescription", __v_raw.problemDescription, __v_isReadonly, __v_isShallow)
+        }
+        set(value) {
+            if (!__v_canSet("problemDescription")) {
+                return
+            }
+            val oldValue = __v_raw.problemDescription
+            __v_raw.problemDescription = value
+            _tRS(__v_raw, "problemDescription", oldValue, value)
+        }
+    override var responsibleUnit: String
+        get() {
+            return _tRG(__v_raw, "responsibleUnit", __v_raw.responsibleUnit, __v_isReadonly, __v_isShallow)
+        }
+        set(value) {
+            if (!__v_canSet("responsibleUnit")) {
+                return
+            }
+            val oldValue = __v_raw.responsibleUnit
+            __v_raw.responsibleUnit = value
+            _tRS(__v_raw, "responsibleUnit", oldValue, value)
+        }
+    override var responsiblePerson: String
+        get() {
+            return _tRG(__v_raw, "responsiblePerson", __v_raw.responsiblePerson, __v_isReadonly, __v_isShallow)
+        }
+        set(value) {
+            if (!__v_canSet("responsiblePerson")) {
+                return
+            }
+            val oldValue = __v_raw.responsiblePerson
+            __v_raw.responsiblePerson = value
+            _tRS(__v_raw, "responsiblePerson", oldValue, value)
+        }
+    override var qualityName: String
+        get() {
+            return _tRG(__v_raw, "qualityName", __v_raw.qualityName, __v_isReadonly, __v_isShallow)
+        }
+        set(value) {
+            if (!__v_canSet("qualityName")) {
+                return
+            }
+            val oldValue = __v_raw.qualityName
+            __v_raw.qualityName = value
+            _tRS(__v_raw, "qualityName", oldValue, value)
+        }
+    override var safetyScore: Number
+        get() {
+            return _tRG(__v_raw, "safetyScore", __v_raw.safetyScore, __v_isReadonly, __v_isShallow)
+        }
+        set(value) {
+            if (!__v_canSet("safetyScore")) {
+                return
+            }
+            val oldValue = __v_raw.safetyScore
+            __v_raw.safetyScore = value
+            _tRS(__v_raw, "safetyScore", oldValue, value)
+        }
+    override var location: String
+        get() {
+            return _tRG(__v_raw, "location", __v_raw.location, __v_isReadonly, __v_isShallow)
+        }
+        set(value) {
+            if (!__v_canSet("location")) {
+                return
+            }
+            val oldValue = __v_raw.location
+            __v_raw.location = value
+            _tRS(__v_raw, "location", oldValue, value)
+        }
+    override var inspector: String
+        get() {
+            return _tRG(__v_raw, "inspector", __v_raw.inspector, __v_isReadonly, __v_isShallow)
+        }
+        set(value) {
+            if (!__v_canSet("inspector")) {
+                return
+            }
+            val oldValue = __v_raw.inspector
+            __v_raw.inspector = value
+            _tRS(__v_raw, "inspector", oldValue, value)
+        }
+    override var rectificationEffect: String
+        get() {
+            return _tRG(__v_raw, "rectificationEffect", __v_raw.rectificationEffect, __v_isReadonly, __v_isShallow)
+        }
+        set(value) {
+            if (!__v_canSet("rectificationEffect")) {
+                return
+            }
+            val oldValue = __v_raw.rectificationEffect
+            __v_raw.rectificationEffect = value
+            _tRS(__v_raw, "rectificationEffect", oldValue, value)
+        }
+    override var reviewEffect: String
+        get() {
+            return _tRG(__v_raw, "reviewEffect", __v_raw.reviewEffect, __v_isReadonly, __v_isShallow)
+        }
+        set(value) {
+            if (!__v_canSet("reviewEffect")) {
+                return
+            }
+            val oldValue = __v_raw.reviewEffect
+            __v_raw.reviewEffect = value
+            _tRS(__v_raw, "reviewEffect", oldValue, value)
+        }
+    override var photos: String
+        get() {
+            return _tRG(__v_raw, "photos", __v_raw.photos, __v_isReadonly, __v_isShallow)
+        }
+        set(value) {
+            if (!__v_canSet("photos")) {
+                return
+            }
+            val oldValue = __v_raw.photos
+            __v_raw.photos = value
+            _tRS(__v_raw, "photos", oldValue, value)
+        }
+    override var rectificationImages: String
+        get() {
+            return _tRG(__v_raw, "rectificationImages", __v_raw.rectificationImages, __v_isReadonly, __v_isShallow)
+        }
+        set(value) {
+            if (!__v_canSet("rectificationImages")) {
+                return
+            }
+            val oldValue = __v_raw.rectificationImages
+            __v_raw.rectificationImages = value
+            _tRS(__v_raw, "rectificationImages", oldValue, value)
+        }
+    override var reviewImages: String
+        get() {
+            return _tRG(__v_raw, "reviewImages", __v_raw.reviewImages, __v_isReadonly, __v_isShallow)
+        }
+        set(value) {
+            if (!__v_canSet("reviewImages")) {
+                return
+            }
+            val oldValue = __v_raw.reviewImages
+            __v_raw.reviewImages = value
+            _tRS(__v_raw, "reviewImages", oldValue, value)
+        }
+    override var taskNo: String
+        get() {
+            return _tRG(__v_raw, "taskNo", __v_raw.taskNo, __v_isReadonly, __v_isShallow)
+        }
+        set(value) {
+            if (!__v_canSet("taskNo")) {
+                return
+            }
+            val oldValue = __v_raw.taskNo
+            __v_raw.taskNo = value
+            _tRS(__v_raw, "taskNo", oldValue, value)
+        }
+    override var inspectionTime: String
+        get() {
+            return _tRG(__v_raw, "inspectionTime", __v_raw.inspectionTime, __v_isReadonly, __v_isShallow)
+        }
+        set(value) {
+            if (!__v_canSet("inspectionTime")) {
+                return
+            }
+            val oldValue = __v_raw.inspectionTime
+            __v_raw.inspectionTime = value
+            _tRS(__v_raw, "inspectionTime", oldValue, value)
+        }
+    override var departmentName: String
+        get() {
+            return _tRG(__v_raw, "departmentName", __v_raw.departmentName, __v_isReadonly, __v_isShallow)
+        }
+        set(value) {
+            if (!__v_canSet("departmentName")) {
+                return
+            }
+            val oldValue = __v_raw.departmentName
+            __v_raw.departmentName = value
+            _tRS(__v_raw, "departmentName", oldValue, value)
+        }
+    override var professionalTypeName: String
+        get() {
+            return _tRG(__v_raw, "professionalTypeName", __v_raw.professionalTypeName, __v_isReadonly, __v_isShallow)
+        }
+        set(value) {
+            if (!__v_canSet("professionalTypeName")) {
+                return
+            }
+            val oldValue = __v_raw.professionalTypeName
+            __v_raw.professionalTypeName = value
+            _tRS(__v_raw, "professionalTypeName", oldValue, value)
+        }
+    override var groupLeaderName: String
+        get() {
+            return _tRG(__v_raw, "groupLeaderName", __v_raw.groupLeaderName, __v_isReadonly, __v_isShallow)
+        }
+        set(value) {
+            if (!__v_canSet("groupLeaderName")) {
+                return
+            }
+            val oldValue = __v_raw.groupLeaderName
+            __v_raw.groupLeaderName = value
+            _tRS(__v_raw, "groupLeaderName", oldValue, value)
+        }
+    override var deputyLeaderName: String
+        get() {
+            return _tRG(__v_raw, "deputyLeaderName", __v_raw.deputyLeaderName, __v_isReadonly, __v_isShallow)
+        }
+        set(value) {
+            if (!__v_canSet("deputyLeaderName")) {
+                return
+            }
+            val oldValue = __v_raw.deputyLeaderName
+            __v_raw.deputyLeaderName = value
+            _tRS(__v_raw, "deputyLeaderName", oldValue, value)
+        }
+    override var responsibilityName: String
+        get() {
+            return _tRG(__v_raw, "responsibilityName", __v_raw.responsibilityName, __v_isReadonly, __v_isShallow)
+        }
+        set(value) {
+            if (!__v_canSet("responsibilityName")) {
+                return
+            }
+            val oldValue = __v_raw.responsibilityName
+            __v_raw.responsibilityName = value
+            _tRS(__v_raw, "responsibilityName", oldValue, value)
+        }
+    override var issueName: String
+        get() {
+            return _tRG(__v_raw, "issueName", __v_raw.issueName, __v_isReadonly, __v_isShallow)
+        }
+        set(value) {
+            if (!__v_canSet("issueName")) {
+                return
+            }
+            val oldValue = __v_raw.issueName
+            __v_raw.issueName = value
+            _tRS(__v_raw, "issueName", oldValue, value)
+        }
+    override var moduleName: String
+        get() {
+            return _tRG(__v_raw, "moduleName", __v_raw.moduleName, __v_isReadonly, __v_isShallow)
+        }
+        set(value) {
+            if (!__v_canSet("moduleName")) {
+                return
+            }
+            val oldValue = __v_raw.moduleName
+            __v_raw.moduleName = value
+            _tRS(__v_raw, "moduleName", oldValue, value)
+        }
+    override var rectificationDeadline: String
+        get() {
+            return _tRG(__v_raw, "rectificationDeadline", __v_raw.rectificationDeadline, __v_isReadonly, __v_isShallow)
+        }
+        set(value) {
+            if (!__v_canSet("rectificationDeadline")) {
+                return
+            }
+            val oldValue = __v_raw.rectificationDeadline
+            __v_raw.rectificationDeadline = value
+            _tRS(__v_raw, "rectificationDeadline", oldValue, value)
+        }
+    override var createTime: String
+        get() {
+            return _tRG(__v_raw, "createTime", __v_raw.createTime, __v_isReadonly, __v_isShallow)
+        }
+        set(value) {
+            if (!__v_canSet("createTime")) {
+                return
+            }
+            val oldValue = __v_raw.createTime
+            __v_raw.createTime = value
+            _tRS(__v_raw, "createTime", oldValue, value)
+        }
+}
+val GenPagesMonthlyViewClass = CreateVueComponent(GenPagesMonthlyView::class.java, fun(): VueComponentOptions {
+    return VueComponentOptions(type = "page", name = "", inheritAttrs = GenPagesMonthlyView.inheritAttrs, inject = GenPagesMonthlyView.inject, props = GenPagesMonthlyView.props, propsNeedCastKeys = GenPagesMonthlyView.propsNeedCastKeys, emits = GenPagesMonthlyView.emits, components = GenPagesMonthlyView.components, styles = GenPagesMonthlyView.styles)
+}
+, fun(instance, renderer): GenPagesMonthlyView {
+    return GenPagesMonthlyView(instance, renderer)
+}
+)
 open class TaskInfo (
+    @JsonNotNull
+    open var taskId: String,
     @JsonNotNull
     open var taskNumber: String,
     @JsonNotNull
@@ -12016,7 +13021,7 @@ open class TaskInfo (
     open var deputyLeader: String,
 ) : UTSReactiveObject(), IUTSSourceMap {
     override fun `__$getOriginalPosition`(): UTSSourceMapPosition? {
-        return UTSSourceMapPosition("TaskInfo", "pages/monthly/task-record.uvue", 360, 7)
+        return UTSSourceMapPosition("TaskInfo", "pages/monthly/task-record.uvue", 376, 6)
     }
     override fun __v_create(__v_isReadonly: Boolean, __v_isShallow: Boolean, __v_skip: Boolean): UTSReactiveObject {
         return TaskInfoReactiveObject(this, __v_isReadonly, __v_isShallow, __v_skip)
@@ -12027,7 +13032,7 @@ open class TaskInfoReactiveObject : TaskInfo, IUTSReactive<TaskInfo> {
     override var __v_isReadonly: Boolean
     override var __v_isShallow: Boolean
     override var __v_skip: Boolean
-    constructor(__v_raw: TaskInfo, __v_isReadonly: Boolean, __v_isShallow: Boolean, __v_skip: Boolean) : super(taskNumber = __v_raw.taskNumber, inspectionDate = __v_raw.inspectionDate, department = __v_raw.department, profession = __v_raw.profession, groupLeader = __v_raw.groupLeader, deputyLeader = __v_raw.deputyLeader) {
+    constructor(__v_raw: TaskInfo, __v_isReadonly: Boolean, __v_isShallow: Boolean, __v_skip: Boolean) : super(taskId = __v_raw.taskId, taskNumber = __v_raw.taskNumber, inspectionDate = __v_raw.inspectionDate, department = __v_raw.department, profession = __v_raw.profession, groupLeader = __v_raw.groupLeader, deputyLeader = __v_raw.deputyLeader) {
         this.__v_raw = __v_raw
         this.__v_isReadonly = __v_isReadonly
         this.__v_isShallow = __v_isShallow
@@ -12036,6 +13041,18 @@ open class TaskInfoReactiveObject : TaskInfo, IUTSReactive<TaskInfo> {
     override fun __v_clone(__v_isReadonly: Boolean, __v_isShallow: Boolean, __v_skip: Boolean): TaskInfoReactiveObject {
         return TaskInfoReactiveObject(this.__v_raw, __v_isReadonly, __v_isShallow, __v_skip)
     }
+    override var taskId: String
+        get() {
+            return _tRG(__v_raw, "taskId", __v_raw.taskId, __v_isReadonly, __v_isShallow)
+        }
+        set(value) {
+            if (!__v_canSet("taskId")) {
+                return
+            }
+            val oldValue = __v_raw.taskId
+            __v_raw.taskId = value
+            _tRS(__v_raw, "taskId", oldValue, value)
+        }
     override var taskNumber: String
         get() {
             return _tRG(__v_raw, "taskNumber", __v_raw.taskNumber, __v_isReadonly, __v_isShallow)
@@ -12132,9 +13149,13 @@ open class FormData (
     open var quality: String,
     @JsonNotNull
     open var inspector: String,
+    @JsonNotNull
+    open var responsibleUnit: String,
+    @JsonNotNull
+    open var responsiblePerson: String,
 ) : UTSReactiveObject(), IUTSSourceMap {
     override fun `__$getOriginalPosition`(): UTSSourceMapPosition? {
-        return UTSSourceMapPosition("FormData", "pages/monthly/task-record.uvue", 369, 7)
+        return UTSSourceMapPosition("FormData", "pages/monthly/task-record.uvue", 386, 8)
     }
     override fun __v_create(__v_isReadonly: Boolean, __v_isShallow: Boolean, __v_skip: Boolean): UTSReactiveObject {
         return FormDataReactiveObject(this, __v_isReadonly, __v_isShallow, __v_skip)
@@ -12145,7 +13166,7 @@ open class FormDataReactiveObject : FormData, IUTSReactive<FormData> {
     override var __v_isReadonly: Boolean
     override var __v_isShallow: Boolean
     override var __v_skip: Boolean
-    constructor(__v_raw: FormData, __v_isReadonly: Boolean, __v_isShallow: Boolean, __v_skip: Boolean) : super(problemType = __v_raw.problemType, problemDescription = __v_raw.problemDescription, location = __v_raw.location, photos = __v_raw.photos, safetyScore = __v_raw.safetyScore, rectificationDate = __v_raw.rectificationDate, module = __v_raw.module, responsibility = __v_raw.responsibility, issue = __v_raw.issue, quality = __v_raw.quality, inspector = __v_raw.inspector) {
+    constructor(__v_raw: FormData, __v_isReadonly: Boolean, __v_isShallow: Boolean, __v_skip: Boolean) : super(problemType = __v_raw.problemType, problemDescription = __v_raw.problemDescription, location = __v_raw.location, photos = __v_raw.photos, safetyScore = __v_raw.safetyScore, rectificationDate = __v_raw.rectificationDate, module = __v_raw.module, responsibility = __v_raw.responsibility, issue = __v_raw.issue, quality = __v_raw.quality, inspector = __v_raw.inspector, responsibleUnit = __v_raw.responsibleUnit, responsiblePerson = __v_raw.responsiblePerson) {
         this.__v_raw = __v_raw
         this.__v_isReadonly = __v_isReadonly
         this.__v_isShallow = __v_isShallow
@@ -12286,6 +13307,30 @@ open class FormDataReactiveObject : FormData, IUTSReactive<FormData> {
             __v_raw.inspector = value
             _tRS(__v_raw, "inspector", oldValue, value)
         }
+    override var responsibleUnit: String
+        get() {
+            return _tRG(__v_raw, "responsibleUnit", __v_raw.responsibleUnit, __v_isReadonly, __v_isShallow)
+        }
+        set(value) {
+            if (!__v_canSet("responsibleUnit")) {
+                return
+            }
+            val oldValue = __v_raw.responsibleUnit
+            __v_raw.responsibleUnit = value
+            _tRS(__v_raw, "responsibleUnit", oldValue, value)
+        }
+    override var responsiblePerson: String
+        get() {
+            return _tRG(__v_raw, "responsiblePerson", __v_raw.responsiblePerson, __v_isReadonly, __v_isShallow)
+        }
+        set(value) {
+            if (!__v_canSet("responsiblePerson")) {
+                return
+            }
+            val oldValue = __v_raw.responsiblePerson
+            __v_raw.responsiblePerson = value
+            _tRS(__v_raw, "responsiblePerson", oldValue, value)
+        }
 }
 open class OptionItem (
     @JsonNotNull
@@ -12295,7 +13340,7 @@ open class OptionItem (
     open var value: String? = null,
 ) : UTSReactiveObject(), IUTSSourceMap {
     override fun `__$getOriginalPosition`(): UTSSourceMapPosition? {
-        return UTSSourceMapPosition("OptionItem", "pages/monthly/task-record.uvue", 383, 7)
+        return UTSSourceMapPosition("OptionItem", "pages/monthly/task-record.uvue", 402, 7)
     }
     override fun __v_create(__v_isReadonly: Boolean, __v_isShallow: Boolean, __v_skip: Boolean): UTSReactiveObject {
         return OptionItemReactiveObject(this, __v_isReadonly, __v_isShallow, __v_skip)
@@ -12657,9 +13702,11 @@ open class InspectionRecord (
     open var createDate: String,
     @JsonNotNull
     open var status: Number,
+    @JsonNotNull
+    open var rectificationDate: String,
 ) : UTSReactiveObject(), IUTSSourceMap {
     override fun `__$getOriginalPosition`(): UTSSourceMapPosition? {
-        return UTSSourceMapPosition("InspectionRecord", "pages/record/record.uvue", 70, 7)
+        return UTSSourceMapPosition("InspectionRecord", "pages/record/record.uvue", 70, 8)
     }
     override fun __v_create(__v_isReadonly: Boolean, __v_isShallow: Boolean, __v_skip: Boolean): UTSReactiveObject {
         return InspectionRecordReactiveObject(this, __v_isReadonly, __v_isShallow, __v_skip)
@@ -12670,7 +13717,7 @@ open class InspectionRecordReactiveObject : InspectionRecord, IUTSReactive<Inspe
     override var __v_isReadonly: Boolean
     override var __v_isShallow: Boolean
     override var __v_skip: Boolean
-    constructor(__v_raw: InspectionRecord, __v_isReadonly: Boolean, __v_isShallow: Boolean, __v_skip: Boolean) : super(id = __v_raw.id, problemDescription = __v_raw.problemDescription, responsiblePerson = __v_raw.responsiblePerson, inspectorName = __v_raw.inspectorName, createDate = __v_raw.createDate, status = __v_raw.status) {
+    constructor(__v_raw: InspectionRecord, __v_isReadonly: Boolean, __v_isShallow: Boolean, __v_skip: Boolean) : super(id = __v_raw.id, problemDescription = __v_raw.problemDescription, responsiblePerson = __v_raw.responsiblePerson, inspectorName = __v_raw.inspectorName, createDate = __v_raw.createDate, status = __v_raw.status, rectificationDate = __v_raw.rectificationDate) {
         this.__v_raw = __v_raw
         this.__v_isReadonly = __v_isReadonly
         this.__v_isShallow = __v_isShallow
@@ -12750,6 +13797,18 @@ open class InspectionRecordReactiveObject : InspectionRecord, IUTSReactive<Inspe
             val oldValue = __v_raw.status
             __v_raw.status = value
             _tRS(__v_raw, "status", oldValue, value)
+        }
+    override var rectificationDate: String
+        get() {
+            return _tRG(__v_raw, "rectificationDate", __v_raw.rectificationDate, __v_isReadonly, __v_isShallow)
+        }
+        set(value) {
+            if (!__v_canSet("rectificationDate")) {
+                return
+            }
+            val oldValue = __v_raw.rectificationDate
+            __v_raw.rectificationDate = value
+            _tRS(__v_raw, "rectificationDate", oldValue, value)
         }
 }
 val GenPagesRecordRecordClass = CreateVueComponent(GenPagesRecordRecord::class.java, fun(): VueComponentOptions {
@@ -13296,7 +14355,7 @@ open class DepartmentOption1ReactiveObject : DepartmentOption1, IUTSReactive<Dep
             _tRS(__v_raw, "name", oldValue, value)
         }
 }
-open class RecordDetail (
+open class RecordDetail1 (
     @JsonNotNull
     open var id: String,
     @JsonNotNull
@@ -13364,22 +14423,22 @@ open class RecordDetail (
         return UTSSourceMapPosition("RecordDetail", "pages/record/detail.uvue", 290, 7)
     }
     override fun __v_create(__v_isReadonly: Boolean, __v_isShallow: Boolean, __v_skip: Boolean): UTSReactiveObject {
-        return RecordDetailReactiveObject(this, __v_isReadonly, __v_isShallow, __v_skip)
+        return RecordDetail1ReactiveObject(this, __v_isReadonly, __v_isShallow, __v_skip)
     }
 }
-open class RecordDetailReactiveObject : RecordDetail, IUTSReactive<RecordDetail> {
-    override var __v_raw: RecordDetail
+open class RecordDetail1ReactiveObject : RecordDetail1, IUTSReactive<RecordDetail1> {
+    override var __v_raw: RecordDetail1
     override var __v_isReadonly: Boolean
     override var __v_isShallow: Boolean
     override var __v_skip: Boolean
-    constructor(__v_raw: RecordDetail, __v_isReadonly: Boolean, __v_isShallow: Boolean, __v_skip: Boolean) : super(id = __v_raw.id, problemDescription = __v_raw.problemDescription, responsibleUnit = __v_raw.responsibleUnit, responsiblePerson = __v_raw.responsiblePerson, natureId = __v_raw.natureId, natureName = __v_raw.natureName, assessmentSituation = __v_raw.assessmentSituation, assessmentAmount = __v_raw.assessmentAmount, safetyScore = __v_raw.safetyScore, professionId = __v_raw.professionId, professionName = __v_raw.professionName, location = __v_raw.location, inspector = __v_raw.inspector, groupLeader = __v_raw.groupLeader, deputyLeader = __v_raw.deputyLeader, departmentId = __v_raw.departmentId, departmentName = __v_raw.departmentName, rectificationDate = __v_raw.rectificationDate, status = __v_raw.status, createTime = __v_raw.createTime, updateTime = __v_raw.updateTime, problemImageUrls = __v_raw.problemImageUrls, locationName = __v_raw.locationName, severity = __v_raw.severity, taskName = __v_raw.taskName, reporterName = __v_raw.reporterName, suggestions = __v_raw.suggestions, reporterId = __v_raw.reporterId, rectificationEffect = __v_raw.rectificationEffect, rectificationImageUrls = __v_raw.rectificationImageUrls, rectificationTime = __v_raw.rectificationTime) {
+    constructor(__v_raw: RecordDetail1, __v_isReadonly: Boolean, __v_isShallow: Boolean, __v_skip: Boolean) : super(id = __v_raw.id, problemDescription = __v_raw.problemDescription, responsibleUnit = __v_raw.responsibleUnit, responsiblePerson = __v_raw.responsiblePerson, natureId = __v_raw.natureId, natureName = __v_raw.natureName, assessmentSituation = __v_raw.assessmentSituation, assessmentAmount = __v_raw.assessmentAmount, safetyScore = __v_raw.safetyScore, professionId = __v_raw.professionId, professionName = __v_raw.professionName, location = __v_raw.location, inspector = __v_raw.inspector, groupLeader = __v_raw.groupLeader, deputyLeader = __v_raw.deputyLeader, departmentId = __v_raw.departmentId, departmentName = __v_raw.departmentName, rectificationDate = __v_raw.rectificationDate, status = __v_raw.status, createTime = __v_raw.createTime, updateTime = __v_raw.updateTime, problemImageUrls = __v_raw.problemImageUrls, locationName = __v_raw.locationName, severity = __v_raw.severity, taskName = __v_raw.taskName, reporterName = __v_raw.reporterName, suggestions = __v_raw.suggestions, reporterId = __v_raw.reporterId, rectificationEffect = __v_raw.rectificationEffect, rectificationImageUrls = __v_raw.rectificationImageUrls, rectificationTime = __v_raw.rectificationTime) {
         this.__v_raw = __v_raw
         this.__v_isReadonly = __v_isReadonly
         this.__v_isShallow = __v_isShallow
         this.__v_skip = __v_skip
     }
-    override fun __v_clone(__v_isReadonly: Boolean, __v_isShallow: Boolean, __v_skip: Boolean): RecordDetailReactiveObject {
-        return RecordDetailReactiveObject(this.__v_raw, __v_isReadonly, __v_isShallow, __v_skip)
+    override fun __v_clone(__v_isReadonly: Boolean, __v_isShallow: Boolean, __v_skip: Boolean): RecordDetail1ReactiveObject {
+        return RecordDetail1ReactiveObject(this.__v_raw, __v_isReadonly, __v_isShallow, __v_skip)
     }
     override var id: String
         get() {
@@ -13917,7 +14976,7 @@ open class DepartmentOption2ReactiveObject : DepartmentOption2, IUTSReactive<Dep
             _tRS(__v_raw, "name", oldValue, value)
         }
 }
-open class RecordDetail1 (
+open class RecordDetail2 (
     @JsonNotNull
     open var id: String,
     @JsonNotNull
@@ -13989,22 +15048,22 @@ open class RecordDetail1 (
         return UTSSourceMapPosition("RecordDetail", "pages/record/review.uvue", 322, 7)
     }
     override fun __v_create(__v_isReadonly: Boolean, __v_isShallow: Boolean, __v_skip: Boolean): UTSReactiveObject {
-        return RecordDetail1ReactiveObject(this, __v_isReadonly, __v_isShallow, __v_skip)
+        return RecordDetail2ReactiveObject(this, __v_isReadonly, __v_isShallow, __v_skip)
     }
 }
-open class RecordDetail1ReactiveObject : RecordDetail1, IUTSReactive<RecordDetail1> {
-    override var __v_raw: RecordDetail1
+open class RecordDetail2ReactiveObject : RecordDetail2, IUTSReactive<RecordDetail2> {
+    override var __v_raw: RecordDetail2
     override var __v_isReadonly: Boolean
     override var __v_isShallow: Boolean
     override var __v_skip: Boolean
-    constructor(__v_raw: RecordDetail1, __v_isReadonly: Boolean, __v_isShallow: Boolean, __v_skip: Boolean) : super(id = __v_raw.id, problemDescription = __v_raw.problemDescription, responsibleUnit = __v_raw.responsibleUnit, responsiblePerson = __v_raw.responsiblePerson, natureId = __v_raw.natureId, natureName = __v_raw.natureName, assessmentSituation = __v_raw.assessmentSituation, assessmentAmount = __v_raw.assessmentAmount, safetyScore = __v_raw.safetyScore, professionId = __v_raw.professionId, professionName = __v_raw.professionName, location = __v_raw.location, inspector = __v_raw.inspector, groupLeader = __v_raw.groupLeader, deputyLeader = __v_raw.deputyLeader, departmentId = __v_raw.departmentId, departmentName = __v_raw.departmentName, rectificationDate = __v_raw.rectificationDate, status = __v_raw.status, createTime = __v_raw.createTime, updateTime = __v_raw.updateTime, problemImageUrls = __v_raw.problemImageUrls, locationName = __v_raw.locationName, severity = __v_raw.severity, taskName = __v_raw.taskName, reporterName = __v_raw.reporterName, suggestions = __v_raw.suggestions, reporterId = __v_raw.reporterId, rectificationEffect = __v_raw.rectificationEffect, rectificationImageUrls = __v_raw.rectificationImageUrls, rectificationTime = __v_raw.rectificationTime, reviewEffect = __v_raw.reviewEffect, reviewImageUrls = __v_raw.reviewImageUrls) {
+    constructor(__v_raw: RecordDetail2, __v_isReadonly: Boolean, __v_isShallow: Boolean, __v_skip: Boolean) : super(id = __v_raw.id, problemDescription = __v_raw.problemDescription, responsibleUnit = __v_raw.responsibleUnit, responsiblePerson = __v_raw.responsiblePerson, natureId = __v_raw.natureId, natureName = __v_raw.natureName, assessmentSituation = __v_raw.assessmentSituation, assessmentAmount = __v_raw.assessmentAmount, safetyScore = __v_raw.safetyScore, professionId = __v_raw.professionId, professionName = __v_raw.professionName, location = __v_raw.location, inspector = __v_raw.inspector, groupLeader = __v_raw.groupLeader, deputyLeader = __v_raw.deputyLeader, departmentId = __v_raw.departmentId, departmentName = __v_raw.departmentName, rectificationDate = __v_raw.rectificationDate, status = __v_raw.status, createTime = __v_raw.createTime, updateTime = __v_raw.updateTime, problemImageUrls = __v_raw.problemImageUrls, locationName = __v_raw.locationName, severity = __v_raw.severity, taskName = __v_raw.taskName, reporterName = __v_raw.reporterName, suggestions = __v_raw.suggestions, reporterId = __v_raw.reporterId, rectificationEffect = __v_raw.rectificationEffect, rectificationImageUrls = __v_raw.rectificationImageUrls, rectificationTime = __v_raw.rectificationTime, reviewEffect = __v_raw.reviewEffect, reviewImageUrls = __v_raw.reviewImageUrls) {
         this.__v_raw = __v_raw
         this.__v_isReadonly = __v_isReadonly
         this.__v_isShallow = __v_isShallow
         this.__v_skip = __v_skip
     }
-    override fun __v_clone(__v_isReadonly: Boolean, __v_isShallow: Boolean, __v_skip: Boolean): RecordDetail1ReactiveObject {
-        return RecordDetail1ReactiveObject(this.__v_raw, __v_isReadonly, __v_isShallow, __v_skip)
+    override fun __v_clone(__v_isReadonly: Boolean, __v_isShallow: Boolean, __v_skip: Boolean): RecordDetail2ReactiveObject {
+        return RecordDetail2ReactiveObject(this.__v_raw, __v_isReadonly, __v_isShallow, __v_skip)
     }
     override var id: String
         get() {
@@ -14842,8 +15901,8 @@ fun main(app: IApp) {
 open class UniAppConfig : io.dcloud.uniapp.appframe.AppConfig {
     override var name: String = "榆林公司岗检系统"
     override var appid: String = "__UNI__B5A0920"
-    override var versionName: String = "1.0.1"
-    override var versionCode: String = "101"
+    override var versionName: String = "1.0.2"
+    override var versionCode: String = "102"
     override var uniCompilerVersion: String = "4.76"
     constructor() : super() {}
 }
@@ -14851,6 +15910,9 @@ fun definePageRoutes() {
     __uniRoutes.push(UniPageRoute(path = "pages/home/home", component = GenPagesHomeHomeClass, meta = UniPageMeta(isQuit = true), style = _uM("navigationBarTitleText" to "首页", "enablePullDownRefresh" to true, "disableScroll" to false)))
     __uniRoutes.push(UniPageRoute(path = "pages/weekly/weekly", component = GenPagesWeeklyWeeklyClass, meta = UniPageMeta(isQuit = false), style = _uM("navigationBarTitleText" to "周检")))
     __uniRoutes.push(UniPageRoute(path = "pages/monthly/monthly", component = GenPagesMonthlyMonthlyClass, meta = UniPageMeta(isQuit = false), style = _uM("navigationBarTitleText" to "月检")))
+    __uniRoutes.push(UniPageRoute(path = "pages/monthly/rectify", component = GenPagesMonthlyRectifyClass, meta = UniPageMeta(isQuit = false), style = _uM("navigationBarTitleText" to "确认整改")))
+    __uniRoutes.push(UniPageRoute(path = "pages/monthly/review", component = GenPagesMonthlyReviewClass, meta = UniPageMeta(isQuit = false), style = _uM("navigationBarTitleText" to "确认复查")))
+    __uniRoutes.push(UniPageRoute(path = "pages/monthly/view", component = GenPagesMonthlyViewClass, meta = UniPageMeta(isQuit = false), style = _uM("navigationBarTitleText" to "记录查看")))
     __uniRoutes.push(UniPageRoute(path = "pages/monthly/task-record", component = GenPagesMonthlyTaskRecordClass, meta = UniPageMeta(isQuit = false), style = _uM("navigationBarTitleText" to "月检任务录入")))
     __uniRoutes.push(UniPageRoute(path = "pages/profile/profile", component = GenPagesProfileProfileClass, meta = UniPageMeta(isQuit = false), style = _uM("navigationBarTitleText" to "我的")))
     __uniRoutes.push(UniPageRoute(path = "pages/index/index", component = GenPagesIndexIndexClass, meta = UniPageMeta(isQuit = false), style = _uM("navigationBarTitleText" to "首页")))

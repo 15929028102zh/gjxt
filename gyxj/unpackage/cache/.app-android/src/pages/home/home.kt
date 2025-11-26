@@ -33,25 +33,8 @@ open class GenPagesHomeHome : BasePage {
             var monthlyChartInstance: TuiCharts? = null
             val weeklyChartOption = ref(UTSJSONObject())
             val monthlyChartOption = ref(UTSJSONObject())
-            val trendChartOption = ref(UTSJSONObject())
             val weeklyChart = ref(null)
             val monthlyChart = ref(null)
-            val trendChart = ref(null)
-            val trendData = ref(TrendData(months = _uA(
-                "1月",
-                "2月",
-                "3月",
-                "4月",
-                "5月",
-                "6月"
-            ), values = _uA(
-                120,
-                132,
-                101,
-                134,
-                90,
-                230
-            )))
             val scrollTop = ref(0)
             val containerHeight = ref(0)
             val isRefreshing = ref(false)
@@ -130,6 +113,7 @@ open class GenPagesHomeHome : BasePage {
                         try {
                             val token = uni_getStorageSync("token")
                             var departmentId = ""
+                            var isAdmin = false
                             val userInfoData = uni_getStorageSync("userInfo")
                             val userInfoStr = if (userInfoData != null) {
                                 userInfoData as String
@@ -138,11 +122,12 @@ open class GenPagesHomeHome : BasePage {
                             }
                             if (userInfoStr != null && userInfoStr != "" && userInfoStr != "null" && userInfoStr != "undefined") {
                                 try {
-                                    val parsedUserInfo = UTSAndroid.consoleDebugError(JSON.parse(userInfoStr), " at pages/home/home.uvue:301") as UTSJSONObject
+                                    val parsedUserInfo = UTSAndroid.consoleDebugError(JSON.parse(userInfoStr), " at pages/home/home.uvue:257") as UTSJSONObject
                                     departmentId = parsedUserInfo.getString("deptId") ?: ""
+                                    isAdmin = (parsedUserInfo.getNumber("isAdmin") ?: 0) === 1
                                 }
                                  catch (error: Throwable) {
-                                    console.error("用户信息JSON解析失败:", error, " at pages/home/home.uvue:304")
+                                    console.error("用户信息JSON解析失败:", error, " at pages/home/home.uvue:261")
                                 }
                             }
                             var pending: Number = 0
@@ -160,12 +145,12 @@ open class GenPagesHomeHome : BasePage {
                                 updateWeeklyChart()
                                 return@w
                             }
-                            val deptParam = if (departmentId != null && departmentId != "") {
+                            val deptParam = if ((!isAdmin && departmentId != null && departmentId != "")) {
                                 "&departmentId=" + departmentId
                             } else {
                                 ""
                             }
-                            val pendingUrl = getApiUrl("/inspection-record/page?current=1&size=1&status=0" + (if (departmentId != null && departmentId != "") {
+                            val pendingUrl = getApiUrl("/inspection-record/page?current=1&size=1&status=0" + (if ((!isAdmin && departmentId != null && departmentId != "")) {
                                 "&departmentId=" + departmentId
                             } else {
                                 ""
@@ -187,14 +172,14 @@ open class GenPagesHomeHome : BasePage {
                                 }
                             }
                             , fail = fun(error){
-                                console.error("获取待整改数量失败:", error, " at pages/home/home.uvue:363")
+                                console.error("获取待整改数量失败:", error, " at pages/home/home.uvue:320")
                                 completedRequests++
                                 if (completedRequests === totalRequests) {
                                     updateWeeklyStats()
                                 }
                             }
                             ))
-                            val completedUrl = getApiUrl("/inspection-record/page?current=1&size=1&status=1" + (if (departmentId != null && departmentId != "") {
+                            val completedUrl = getApiUrl("/inspection-record/page?current=1&size=1&status=1" + (if ((!isAdmin && departmentId != null && departmentId != "")) {
                                 "&departmentId=" + departmentId
                             } else {
                                 ""
@@ -216,14 +201,14 @@ open class GenPagesHomeHome : BasePage {
                                 }
                             }
                             , fail = fun(error){
-                                console.error("获取已整改数量失败:", error, " at pages/home/home.uvue:393")
+                                console.error("获取已整改数量失败:", error, " at pages/home/home.uvue:350")
                                 completedRequests++
                                 if (completedRequests === totalRequests) {
                                     updateWeeklyStats()
                                 }
                             }
                             ))
-                            val reviewedUrl = getApiUrl("/inspection-record/page?current=1&size=1&status=2" + (if (departmentId != null && departmentId != "") {
+                            val reviewedUrl = getApiUrl("/inspection-record/page?current=1&size=1&status=2" + (if ((!isAdmin && departmentId != null && departmentId != "")) {
                                 "&departmentId=" + departmentId
                             } else {
                                 ""
@@ -245,14 +230,14 @@ open class GenPagesHomeHome : BasePage {
                                 }
                             }
                             , fail = fun(error){
-                                console.error("获取已复查数量失败:", error, " at pages/home/home.uvue:423")
+                                console.error("获取已复查数量失败:", error, " at pages/home/home.uvue:380")
                                 completedRequests++
                                 if (completedRequests === totalRequests) {
                                     updateWeeklyStats()
                                 }
                             }
                             ))
-                            val totalUrl = getApiUrl("/inspection-record/page?current=1&size=1" + (if (departmentId != null && departmentId != "") {
+                            val totalUrl = getApiUrl("/inspection-record/page?current=1&size=1" + (if ((!isAdmin && departmentId != null && departmentId != "")) {
                                 "&departmentId=" + departmentId
                             } else {
                                 ""
@@ -274,7 +259,7 @@ open class GenPagesHomeHome : BasePage {
                                 }
                             }
                             , fail = fun(error){
-                                console.error("获取总记录数量失败:", error, " at pages/home/home.uvue:453")
+                                console.error("获取总记录数量失败:", error, " at pages/home/home.uvue:410")
                                 completedRequests++
                                 if (completedRequests === totalRequests) {
                                     updateWeeklyStats()
@@ -283,74 +268,110 @@ open class GenPagesHomeHome : BasePage {
                             ))
                         }
                          catch (error: Throwable) {
-                            console.error("加载周检统计数据失败:", error, " at pages/home/home.uvue:462")
+                            console.error("加载周检统计数据失败:", error, " at pages/home/home.uvue:419")
                             weeklyStats.value = StatsData(total = 45, pending = 12, completed = 28, reviewed = 5)
                             updateWeeklyChart()
                         }
                 })
             }
-            val loadMonthlyStats = fun(): Unit {
-                val token = uni_getStorageSync("token")
-                var departmentId = ""
-                val userInfoData = uni_getStorageSync("userInfo")
-                val userInfoStr = if (userInfoData != null) {
-                    userInfoData as String
-                } else {
-                    ""
-                }
-                if (userInfoStr != null && userInfoStr != "" && userInfoStr != "null" && userInfoStr != "undefined") {
-                    try {
-                        val parsedUserInfo = UTSAndroid.consoleDebugError(JSON.parse(userInfoStr), " at pages/home/home.uvue:484") as UTSJSONObject
-                        departmentId = parsedUserInfo.getString("deptId") ?: ""
-                    }
-                     catch (error: Throwable) {
-                        console.error("用户信息JSON解析失败:", error, " at pages/home/home.uvue:487")
-                    }
-                }
-                val deptParam = if (departmentId != null && departmentId != "") {
-                    "&departmentId=" + departmentId
-                } else {
-                    ""
-                }
-                uni_request<Any>(RequestOptions(url = getApiUrl("/statistics/monthly?1=1" + deptParam), method = "GET", header = object : UTSJSONObject() {
-                    var `Content-Type` = "application/json"
-                    var Authorization = "Bearer " + token
-                }, success = fun(res){
-                    if (res.statusCode === 200 && res.data != null) {
-                        val data = res.data as StatsData
-                        monthlyStats.value = data
-                    } else {
-                        monthlyStats.value = StatsData(total = 156, pending = 23, completed = 108, reviewed = 25)
-                    }
-                    updateMonthlyChart()
-                }
-                , fail = fun(error){
-                    console.error("加载月检统计数据失败:", error, " at pages/home/home.uvue:517")
-                    monthlyStats.value = StatsData(total = 156, pending = 23, completed = 108, reviewed = 25)
-                    updateMonthlyChart()
-                }
-                ))
+            val loadMonthlyStats = fun(): UTSPromise<Unit> {
+                return wrapUTSPromise(suspend {
+                        try {
+                            val token = uni_getStorageSync("token")
+                            var departmentId = ""
+                            var isAdmin = false
+                            val userInfoData = uni_getStorageSync("userInfo")
+                            val userInfoStr = if (userInfoData != null) {
+                                userInfoData as String
+                            } else {
+                                ""
+                            }
+                            if (userInfoStr != null && userInfoStr != "" && userInfoStr != "null" && userInfoStr != "undefined") {
+                                try {
+                                    val parsedUserInfo = UTSAndroid.consoleDebugError(JSON.parse(userInfoStr), " at pages/home/home.uvue:441") as UTSJSONObject
+                                    departmentId = parsedUserInfo.getString("deptId") ?: ""
+                                    isAdmin = (parsedUserInfo.getNumber("isAdmin") ?: 0) === 1
+                                }
+                                 catch (error: Throwable) {
+                                    console.error("用户信息JSON解析失败:", error, " at pages/home/home.uvue:444")
+                                }
+                            }
+                            val deptParam = if ((!isAdmin && departmentId != null && departmentId != "")) {
+                                "&responsibilityId=" + departmentId
+                            } else {
+                                ""
+                            }
+                            var pending: Number = 0
+                            var completed: Number = 0
+                            var reviewed: Number = 0
+                            var finished: Number = 0
+                            val totalReq: Number = 3
+                            val updateMonthly = fun(){
+                                monthlyStats.value = StatsData(total = pending + completed + reviewed, pending = pending, completed = completed, reviewed = reviewed)
+                                updateMonthlyChart()
+                            }
+                            val req = fun(status: Number, assign: (n: Number) -> Unit){
+                                uni_request<Any>(RequestOptions(url = getApiUrl("/monthly-inspection-record/page?current=1&size=1&recordStatus=" + status + deptParam), method = "GET", header = object : UTSJSONObject() {
+                                    var Authorization = "Bearer " + token
+                                }, success = fun(res){
+                                    val resp = res.data as UTSJSONObject
+                                    if (res.statusCode === 200 && (resp.getNumber("code") ?: 0) === 200) {
+                                        val d = resp.getJSON("data") as UTSJSONObject
+                                        assign(d.getNumber("total") ?: 0)
+                                    }
+                                    finished++
+                                    if (finished === totalReq) {
+                                        updateMonthly()
+                                    }
+                                }
+                                , fail = fun(_){
+                                    finished++
+                                    if (finished === totalReq) {
+                                        updateMonthly()
+                                    }
+                                }
+                                ))
+                            }
+                            req(0, fun(n: Number){
+                                pending = n
+                            }
+                            )
+                            req(1, fun(n: Number){
+                                completed = n
+                            }
+                            )
+                            req(2, fun(n: Number){
+                                reviewed = n
+                            }
+                            )
+                        }
+                         catch (error: Throwable) {
+                            console.error("加载月检统计数据失败:", error, " at pages/home/home.uvue:480")
+                            monthlyStats.value = StatsData(total = 0, pending = 0, completed = 0, reviewed = 0)
+                            updateMonthlyChart()
+                        }
+                })
             }
             val checkLogin = fun(): Boolean {
                 val token = uni_getStorageSync("token")
                 if (token == null || token == "") {
-                    console.log("未登录，跳转到登录页面", " at pages/home/home.uvue:536")
+                    console.log("未登录，跳转到登录页面", " at pages/home/home.uvue:492")
                     uni_reLaunch(ReLaunchOptions(url = "/pages/login/login"))
                     return false
                 }
                 return true
             }
             val loadUserInfo = fun(): Unit {
-                console.log("=== 开始加载用户信息 ===", " at pages/home/home.uvue:547")
+                console.log("=== 开始加载用户信息 ===", " at pages/home/home.uvue:503")
                 val userInfoStr = uni_getStorageSync("userInfo") as String
-                console.log("本地存储原始数据:", userInfoStr, " at pages/home/home.uvue:551")
+                console.log("本地存储原始数据:", userInfoStr, " at pages/home/home.uvue:507")
                 if (userInfoStr != null && userInfoStr != "" && userInfoStr != "null" && userInfoStr != "undefined") {
                     try {
-                        val parsedUserInfo = UTSAndroid.consoleDebugError(JSON.parse(userInfoStr), " at pages/home/home.uvue:555") as UTSJSONObject
-                        console.log("解析后的对象:", parsedUserInfo, " at pages/home/home.uvue:556")
+                        val parsedUserInfo = UTSAndroid.consoleDebugError(JSON.parse(userInfoStr), " at pages/home/home.uvue:511") as UTSJSONObject
+                        console.log("解析后的对象:", parsedUserInfo, " at pages/home/home.uvue:512")
                         val realName = parsedUserInfo.getString("realName")
-                        console.log("realName字段值:", realName, " at pages/home/home.uvue:560")
-                        console.log("realName类型:", UTSAndroid.`typeof`(realName), " at pages/home/home.uvue:561")
+                        console.log("realName字段值:", realName, " at pages/home/home.uvue:516")
+                        console.log("realName类型:", UTSAndroid.`typeof`(realName), " at pages/home/home.uvue:517")
                         userInfo.value = parsedUserInfo
                         val realNameValue = parsedUserInfo.getString("realName")
                         userName.value = if (realNameValue != null) {
@@ -358,29 +379,29 @@ open class GenPagesHomeHome : BasePage {
                         } else {
                             "用户"
                         }
-                        console.log("设置后的 userInfo.value:", userInfo.value, " at pages/home/home.uvue:568")
-                        console.log("设置后的 userName.value:", userName.value, " at pages/home/home.uvue:569")
+                        console.log("设置后的 userInfo.value:", userInfo.value, " at pages/home/home.uvue:524")
+                        console.log("设置后的 userName.value:", userName.value, " at pages/home/home.uvue:525")
                         val testRealName = userInfo.value.getString("realName")
-                        console.log("验证: 设置后的realName:", testRealName, " at pages/home/home.uvue:573")
+                        console.log("验证: 设置后的realName:", testRealName, " at pages/home/home.uvue:529")
                         nextTick(fun(){
-                            console.log("界面更新后检查:", userInfo.value.getString("realName"), " at pages/home/home.uvue:577")
+                            console.log("界面更新后检查:", userInfo.value.getString("realName"), " at pages/home/home.uvue:533")
                             userInfo.value = UTSJSONObject.assign(UTSJSONObject(), userInfo.value)
                         })
                     } catch (error: Throwable) {
-                        console.error("用户信息JSON解析失败:", error, " at pages/home/home.uvue:583")
+                        console.error("用户信息JSON解析失败:", error, " at pages/home/home.uvue:539")
                         userInfo.value = object : UTSJSONObject() {
                             var realName = "解析失败用户"
                         }
                     }
                 } else {
-                    console.log("本地存储中没有有效的用户信息", " at pages/home/home.uvue:589")
+                    console.log("本地存储中没有有效的用户信息", " at pages/home/home.uvue:545")
                     userInfo.value = object : UTSJSONObject() {
                         var realName = "默认用户"
                         var avatar = ""
                     }
                     userName.value = "默认用户"
                 }
-                console.log("=== 用户信息加载完成 ===", " at pages/home/home.uvue:598")
+                console.log("=== 用户信息加载完成 ===", " at pages/home/home.uvue:554")
             }
             val initCurrentDate = fun(): Unit {
                 val now = Date()
@@ -414,7 +435,7 @@ open class GenPagesHomeHome : BasePage {
             }
             val reloadAllData = fun(): UTSPromise<Unit> {
                 return wrapUTSPromise(suspend {
-                        console.log("重新加载所有数据", " at pages/home/home.uvue:643")
+                        console.log("重新加载所有数据", " at pages/home/home.uvue:599")
                         try {
                             initCurrentDate()
                             loadUserInfo()
@@ -429,14 +450,14 @@ open class GenPagesHomeHome : BasePage {
                                 }
                                 )
                             )))
-                            console.log("所有数据加载完成", " at pages/home/home.uvue:664")
+                            console.log("所有数据加载完成", " at pages/home/home.uvue:620")
                         }
                          catch (error: Throwable) {
-                            console.error("数据加载失败:", error, " at pages/home/home.uvue:667")
+                            console.error("数据加载失败:", error, " at pages/home/home.uvue:623")
                         }
                          finally{
                             setTimeout(fun(){
-                                console.log("关闭刷新动画", " at pages/home/home.uvue:671")
+                                console.log("关闭刷新动画", " at pages/home/home.uvue:627")
                                 isRefreshing.value = false
                             }
                             , 500)
@@ -444,12 +465,12 @@ open class GenPagesHomeHome : BasePage {
                 })
             }
             val onRefresh = fun(): Unit {
-                console.log("开始下拉刷新", " at pages/home/home.uvue:679")
+                console.log("开始下拉刷新", " at pages/home/home.uvue:635")
                 isRefreshing.value = true
                 reloadAllData()
             }
             val onRefreshRestore = fun(): Unit {
-                console.log("刷新恢复", " at pages/home/home.uvue:688")
+                console.log("刷新恢复", " at pages/home/home.uvue:644")
                 isRefreshing.value = false
             }
             onMounted(fun(){
@@ -474,7 +495,7 @@ open class GenPagesHomeHome : BasePage {
             )
             val onWeeklyChartInit = fun(chartInstance: TuiCharts): Unit {
                 weeklyChartInstance = chartInstance
-                val pieOption: UTSJSONObject = object : UTSJSONObject(UTSSourceMapPosition("pieOption", "pages/home/home.uvue", 734, 9)) {
+                val pieOption: UTSJSONObject = object : UTSJSONObject(UTSSourceMapPosition("pieOption", "pages/home/home.uvue", 690, 9)) {
                     var type = "pie"
                     var animation = true
                     var dataLabel = true
@@ -554,7 +575,7 @@ open class GenPagesHomeHome : BasePage {
             }
             val onMonthlyChartInit = fun(chartInstance: TuiCharts): Unit {
                 monthlyChartInstance = chartInstance
-                val pieOption: UTSJSONObject = object : UTSJSONObject(UTSSourceMapPosition("pieOption", "pages/home/home.uvue", 808, 9)) {
+                val pieOption: UTSJSONObject = object : UTSJSONObject(UTSSourceMapPosition("pieOption", "pages/home/home.uvue", 764, 9)) {
                     var type = "pie"
                     var animation = true
                     var dataLabel = true
@@ -631,75 +652,6 @@ open class GenPagesHomeHome : BasePage {
                     var yOffset: Number = 35
                 })
                 monthlyPieChart.draw()
-            }
-            val onTrendChartInit = fun(chartInstance: TuiCharts): Unit {
-                chartInstance
-                val columnOption: UTSJSONObject = object : UTSJSONObject(UTSSourceMapPosition("columnOption", "pages/home/home.uvue", 882, 9)) {
-                    var type = "column"
-                    var animation = true
-                    var dataLabel = true
-                    var fontSize: Number = 11
-                    var padding: UTSArray<Number> = _uA(
-                        20,
-                        20,
-                        25,
-                        20
-                    )
-                    var categories = trendData.value.months
-                    var title = object : UTSJSONObject() {
-                        var name = "月度巡检趋势"
-                        var fontSize: Number = 14
-                        var color = "#2c3e50"
-                        var offsetY: Number = 5
-                    }
-                    var extra = object : UTSJSONObject() {
-                        var column = object : UTSJSONObject() {
-                            var type = "group"
-                            var width: Number = 25
-                            var activeBgColor = "#000000"
-                            var activeBgOpacity: Number = 0.08
-                            var barBorderRadius: UTSArray<Number> = _uA(
-                                4,
-                                4,
-                                0,
-                                0
-                            )
-                            var seriesGap: Number = 5
-                        }
-                        var tooltip = object : UTSJSONObject() {
-                            var show = true
-                        }
-                    }
-                    var series = _uA(
-                        object : UTSJSONObject() {
-                            var name = "巡检记录数"
-                            var data = trendData.value.values.map(fun(item: Number): UTSJSONObject {
-                                return object : UTSJSONObject() {
-                                    var value = item
-                                }
-                            }
-                            )
-                        }
-                    )
-                    var xAxis = object : UTSJSONObject() {
-                        var disableGrid = true
-                    }
-                    var yAxis = object : UTSJSONObject() {
-                        var data = _uA(
-                            object : UTSJSONObject() {
-                                var min: Number = 0
-                            }
-                        )
-                    }
-                }
-                val trendColumnChart = chartInstance.add(0, columnOption)
-                trendColumnChart.setCoordinates(object : UTSJSONObject() {
-                    var height: Number = 280
-                    var width: Number = 260
-                    var xOffset: Number = 15
-                    var yOffset: Number = 35
-                })
-                trendColumnChart.draw()
             }
             val goToWeeklyPending = fun(): Unit {
                 uni_navigateTo(NavigateToOptions(url = "/pages/weekly/weekly?status=pending"))
@@ -792,32 +744,6 @@ open class GenPagesHomeHome : BasePage {
                                     "style"
                                 ))
                             ))
-                        ))
-                    )),
-                    _cE("view", _uM("class" to "section"), _uA(
-                        _cE("view", _uM("class" to "section-title"), _uA(
-                            _cE("text", _uM("class" to "title-text"), "月度巡检趋势")
-                        )),
-                        _cE("view", _uM("class" to "chart-container"), _uA(
-                            _cE("view", _uM("class" to "chart-wrapper"), _uA(
-                                _cV(_component_tui_xechars, _uM("ref_key" to "trendChart", "ref" to trendChart, "style" to _nS(_uM("height" to "350px", "width" to "100%", "min-width" to "280px")), "class" to "chart-canvas", "onInitFinished" to onTrendChartInit), null, 8, _uA(
-                                    "style"
-                                ))
-                            ))
-                        ))
-                    )),
-                    _cE("view", _uM("class" to "extra-content"), _uA(
-                        _cE("view", _uM("class" to "info-card"), _uA(
-                            _cE("text", _uM("class" to "info-title"), "系统提示"),
-                            _cE("text", _uM("class" to "info-text"), "定期进行巡检工作，确保设备正常运行")
-                        )),
-                        _cE("view", _uM("class" to "info-card"), _uA(
-                            _cE("text", _uM("class" to "info-title"), "操作指南"),
-                            _cE("text", _uM("class" to "info-text"), "点击上方统计卡片可查看详细记录")
-                        )),
-                        _cE("view", _uM("class" to "info-card"), _uA(
-                            _cE("text", _uM("class" to "info-title"), "数据更新"),
-                            _cE("text", _uM("class" to "info-text"), "数据每小时自动更新一次")
                         ))
                     ))
                 ), 44, _uA(

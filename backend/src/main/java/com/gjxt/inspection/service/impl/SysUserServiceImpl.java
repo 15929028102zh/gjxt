@@ -252,4 +252,18 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
         return this.getOne(queryWrapper);
     }
 
+    @Override
+    public List<SysUser> getAdminsByDeptId(String deptId) {
+        if (org.springframework.util.StringUtils.isEmpty(deptId)) {
+            return java.util.Collections.emptyList();
+        }
+        
+        LambdaQueryWrapper<SysUser> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(SysUser::getDeptId, deptId)
+                   .eq(SysUser::getIsAdmin, 1)
+                   .eq(SysUser::getStatus, 1)
+                   .eq(SysUser::getDeleted, 0);
+        return this.list(queryWrapper);
+    }
+
 }

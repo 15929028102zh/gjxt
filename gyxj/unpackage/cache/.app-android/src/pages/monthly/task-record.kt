@@ -24,8 +24,8 @@ import io.dcloud.uniapp.extapi.uploadFile as uni_uploadFile
 open class GenPagesMonthlyTaskRecord : BasePage {
     constructor(__ins: ComponentInternalInstance, __renderer: String?) : super(__ins, __renderer) {
         onLoad(fun(options: UTSJSONObject) {
-            val taskId = options.getString("taskId")
-            console.log(taskId, " at pages/monthly/task-record.uvue:531")
+            val taskId = options.getString("taskId") ?: ""
+            console.log(taskId, " at pages/monthly/task-record.uvue:553")
             if (taskId != null && taskId != "") {
                 this.loadTaskInfo(taskId)
             }
@@ -250,6 +250,26 @@ open class GenPagesMonthlyTaskRecord : BasePage {
                         _ctx.formData.location = `$event`.detail.value
                     }
                     , "placeholder" to "请输入问题发现的具体位置"), null, 40, _uA(
+                        "modelValue",
+                        "onInput"
+                    ))
+                )),
+                _cE("view", _uM("class" to "form-item"), _uA(
+                    _cE("text", _uM("class" to "form-label-left"), "责任单位"),
+                    _cE("input", _uM("class" to "form-input", "modelValue" to _ctx.formData.responsibleUnit, "onInput" to fun(`$event`: UniInputEvent){
+                        _ctx.formData.responsibleUnit = `$event`.detail.value
+                    }
+                    , "placeholder" to "请输入责任单位"), null, 40, _uA(
+                        "modelValue",
+                        "onInput"
+                    ))
+                )),
+                _cE("view", _uM("class" to "form-item"), _uA(
+                    _cE("text", _uM("class" to "form-label-left"), "责任人"),
+                    _cE("input", _uM("class" to "form-input", "modelValue" to _ctx.formData.responsiblePerson, "onInput" to fun(`$event`: UniInputEvent){
+                        _ctx.formData.responsiblePerson = `$event`.detail.value
+                    }
+                    , "placeholder" to "请输入责任人"), null, 40, _uA(
                         "modelValue",
                         "onInput"
                     ))
@@ -793,7 +813,7 @@ open class GenPagesMonthlyTaskRecord : BasePage {
         val defaultDate = Date()
         defaultDate.setDate(defaultDate.getDate() + 7)
         val defaultDateStr = "" + defaultDate.getFullYear() + "-" + (defaultDate.getMonth() + 1).toString(10).padStart(2, "0") + "-" + defaultDate.getDate().toString(10).padStart(2, "0")
-        return _uM("taskInfo" to TaskInfo(taskNumber = "", inspectionDate = "", department = "", profession = "", groupLeader = "", deputyLeader = ""), "formData" to FormData(problemType = "", problemDescription = "", location = "", photos = _uA(), safetyScore = "", rectificationDate = defaultDateStr, module = "", responsibility = "", issue = "", quality = "", inspector = ""), "containerHeight" to 0, "scrollTop" to 0, "showProblemTypeModal" to false, "selectedProblemType" to "", "problemTypes" to _uA(
+        return _uM("taskInfo" to TaskInfo(taskId = "", taskNumber = "", inspectionDate = "", department = "", profession = "", groupLeader = "", deputyLeader = ""), "formData" to FormData(problemType = "", problemDescription = "", location = "", photos = _uA(), safetyScore = "", rectificationDate = defaultDateStr, module = "", responsibility = "", issue = "", quality = "", inspector = "", responsibleUnit = "", responsiblePerson = ""), "containerHeight" to 0, "scrollTop" to 0, "showProblemTypeModal" to false, "selectedProblemType" to "", "problemTypes" to _uA(
             "安全隐患",
             "设备故障",
             "环境问题",
@@ -883,12 +903,12 @@ open class GenPagesMonthlyTaskRecord : BasePage {
     }
     open var convertToHttpUrl = ::gen_convertToHttpUrl_fn
     open fun gen_convertToHttpUrl_fn(relativePath: String): String {
-        console.log("相对路径:", relativePath, " at pages/monthly/task-record.uvue:606")
+        console.log("相对路径:", relativePath, " at pages/monthly/task-record.uvue:628")
         if (relativePath.startsWith("http://") || relativePath.startsWith("https://")) {
             return relativePath
         }
         val httpUrl = "" + apiConfig.baseUrl + "/api" + relativePath
-        console.log("转换后的HTTP URL:", httpUrl, " at pages/monthly/task-record.uvue:615")
+        console.log("转换后的HTTP URL:", httpUrl, " at pages/monthly/task-record.uvue:637")
         return httpUrl
     }
     open var initContainerHeight = ::gen_initContainerHeight_fn
@@ -900,30 +920,30 @@ open class GenPagesMonthlyTaskRecord : BasePage {
     open fun gen_loadTaskInfo_fn(taskId: String) {
         try {
             val token = uni_getStorageSync("token")
-            console.log(taskId, " at pages/monthly/task-record.uvue:628")
-            uni_request<Any>(RequestOptions(url = getApiUrl("/monthly-inspection-task/" + taskId), method = "GET", header = object : UTSJSONObject() {
+            console.log("接收到的taskId参数:", taskId, " at pages/monthly/task-record.uvue:650")
+            uni_request<Any>(RequestOptions(url = getApiUrl("/monthly-inspection-task/task-no/" + taskId), method = "GET", header = object : UTSJSONObject() {
                 var Authorization = "Bearer " + token
             }, success = fun(res){
                 val respdata = res.data as UTSJSONObject
                 if (respdata.getNumber("code") === 200) {
                     val taskInfo = respdata.getJSON("data")
-                    console.log("获取到的数据:", taskInfo, " at pages/monthly/task-record.uvue:639")
+                    console.log("获取到的任务数据:", taskInfo, " at pages/monthly/task-record.uvue:662")
                     if (taskInfo != null) {
-                        this.taskInfo = TaskInfo(taskNumber = taskInfo.getString("id") ?: "", inspectionDate = taskInfo.getString("inspectionTime") ?: "", department = taskInfo.getString("departmentName") ?: "", profession = taskInfo.getString("professionId") ?: "", groupLeader = taskInfo.getString("groupLeaderName") ?: "", deputyLeader = taskInfo.getString("deputyLeaderName") ?: "")
+                        this.taskInfo = TaskInfo(taskId = taskInfo.getString("id") ?: "", taskNumber = taskInfo.getString("taskNo") ?: "", inspectionDate = taskInfo.getString("inspectionTime") ?: "", department = taskInfo.getString("departmentName") ?: "", profession = taskInfo.getString("professionId") ?: "", groupLeader = taskInfo.getString("groupLeaderName") ?: "", deputyLeader = taskInfo.getString("deputyLeaderName") ?: "")
                         this.autoFillProfession()
                     }
                 }
             }
             , fail = fun(error){
-                console.error("加载任务信息失败:", error, " at pages/monthly/task-record.uvue:655")
-                this.taskInfo = TaskInfo(taskNumber = "YJ202401001", inspectionDate = "2024年1月", department = "生产部", profession = "违法违规", groupLeader = "张三", deputyLeader = "李四")
+                console.error("加载任务信息失败:", error, " at pages/monthly/task-record.uvue:679")
+                this.taskInfo = TaskInfo(taskId = "", taskNumber = "YJ202401001", inspectionDate = "2024年1月", department = "生产部", profession = "违法违规", groupLeader = "张三", deputyLeader = "李四")
                 this.autoFillProfession()
             }
             ))
         }
          catch (error: Throwable) {
-            console.error("加载任务信息失败:", error, " at pages/monthly/task-record.uvue:670")
-            this.taskInfo = TaskInfo(taskNumber = "YJ202401001", inspectionDate = "2024年1月", department = "生产部", profession = "违法违规", groupLeader = "张三", deputyLeader = "李四")
+            console.error("加载任务信息失败:", error, " at pages/monthly/task-record.uvue:695")
+            this.taskInfo = TaskInfo(taskId = "", taskNumber = "YJ202401001", inspectionDate = "2024年1月", department = "生产部", profession = "违法违规", groupLeader = "张三", deputyLeader = "李四")
             this.autoFillProfession()
         }
     }
@@ -946,37 +966,37 @@ open class GenPagesMonthlyTaskRecord : BasePage {
     }
     open var autoFillProfession = ::gen_autoFillProfession_fn
     open fun gen_autoFillProfession_fn() {
-        console.log("开始自动填充性质界定", " at pages/monthly/task-record.uvue:708")
-        console.log("taskInfo:", this.taskInfo, " at pages/monthly/task-record.uvue:709")
-        console.log("typeOptions:", this.typeOptions, " at pages/monthly/task-record.uvue:710")
+        console.log("开始自动填充性质界定", " at pages/monthly/task-record.uvue:734")
+        console.log("taskInfo:", this.taskInfo, " at pages/monthly/task-record.uvue:735")
+        console.log("typeOptions:", this.typeOptions, " at pages/monthly/task-record.uvue:736")
         if (this.taskInfo != null && this.taskInfo.profession != "" && this.typeOptions.length > 0) {
-            console.log("查找性质界定:", this.taskInfo.profession, " at pages/monthly/task-record.uvue:713")
+            console.log("查找性质界定:", this.taskInfo.profession, " at pages/monthly/task-record.uvue:739")
             val index = this.typeOptions.findIndex(fun(item: OptionItem): Boolean {
                 return item.name === this.taskInfo.profession
             })
-            console.log("找到的性质界定索引:", index, " at pages/monthly/task-record.uvue:715")
+            console.log("找到的性质界定索引:", index, " at pages/monthly/task-record.uvue:741")
             if (index !== -1) {
                 this.selectedTypeIndex = index
-                console.log("已设置性质界定索引:", this.selectedTypeIndex, " at pages/monthly/task-record.uvue:719")
-                this.loadModuleOptions((this.typeOptions[index] as OptionItem).id)
+                console.log("已设置性质界定索引:", this.selectedTypeIndex, " at pages/monthly/task-record.uvue:745")
+                this.loadModuleOptions((this.typeOptions[index] as OptionItem).name)
             } else {
-                console.warn("未找到匹配的性质界定:", this.taskInfo.profession, " at pages/monthly/task-record.uvue:723")
+                console.warn("未找到匹配的性质界定:", this.taskInfo.profession, " at pages/monthly/task-record.uvue:749")
                 val fuzzyIndex = this.typeOptions.findIndex(fun(item: OptionItem): Boolean {
                     return item.name.includes(this.taskInfo.profession) || this.taskInfo.profession.includes(item.name)
                 })
                 if (fuzzyIndex !== -1) {
                     this.selectedTypeIndex = fuzzyIndex
-                    console.log("模糊匹配到性质界定索引:", this.selectedTypeIndex, " at pages/monthly/task-record.uvue:730")
-                    this.loadModuleOptions((this.typeOptions[fuzzyIndex] as OptionItem).id)
+                    console.log("模糊匹配到性质界定索引:", this.selectedTypeIndex, " at pages/monthly/task-record.uvue:756")
+                    this.loadModuleOptions((this.typeOptions[fuzzyIndex] as OptionItem).name)
                 }
             }
         } else {
             if (this.taskInfo == null) {
-                console.log("taskInfo为空，等待任务信息加载", " at pages/monthly/task-record.uvue:736")
+                console.log("taskInfo为空，等待任务信息加载", " at pages/monthly/task-record.uvue:762")
             } else if (this.taskInfo.profession == "") {
-                console.log("专业信息为空", " at pages/monthly/task-record.uvue:738")
+                console.log("专业信息为空", " at pages/monthly/task-record.uvue:764")
             } else if (this.typeOptions.length === 0) {
-                console.log("性质界定选项未加载，等待加载完成", " at pages/monthly/task-record.uvue:740")
+                console.log("性质界定选项未加载，等待加载完成", " at pages/monthly/task-record.uvue:766")
             }
         }
         this.loadGjbzDataByProfession()
@@ -990,7 +1010,7 @@ open class GenPagesMonthlyTaskRecord : BasePage {
             val respdata = res.data as UTSJSONObject
             if (respdata.getNumber("code") === 200) {
                 val data = respdata.getArray("data")
-                console.log("获取到的专业类别数据", data, " at pages/monthly/task-record.uvue:761")
+                console.log("获取到的专业类别数据", data, " at pages/monthly/task-record.uvue:787")
                 if (data != null) {
                     val options: UTSArray<OptionItem> = _uA()
                     run {
@@ -1002,16 +1022,16 @@ open class GenPagesMonthlyTaskRecord : BasePage {
                         }
                     }
                     this.typeOptions = options
-                    console.log("专业类别选项已加载:", this.typeOptions, " at pages/monthly/task-record.uvue:772")
+                    console.log("专业类别选项已加载:", this.typeOptions, " at pages/monthly/task-record.uvue:798")
                     this.autoFillProfession()
                 }
             } else {
-                console.error("加载专业类别失败:", respdata.getString("message"), " at pages/monthly/task-record.uvue:777")
+                console.error("加载专业类别失败:", respdata.getString("message"), " at pages/monthly/task-record.uvue:803")
                 this.loadFallbackTypeOptions()
             }
         }
         , fail = fun(error){
-            console.error("加载专业类别失败:", error, " at pages/monthly/task-record.uvue:782")
+            console.error("加载专业类别失败:", error, " at pages/monthly/task-record.uvue:808")
             this.loadFallbackTypeOptions()
         }
         ))
@@ -1025,7 +1045,7 @@ open class GenPagesMonthlyTaskRecord : BasePage {
             OptionItem(id = "4", name = "安全专业"),
             OptionItem(id = "5", name = "环保专业")
         )
-        console.log("使用备用专业类别数据:", this.typeOptions, " at pages/monthly/task-record.uvue:797")
+        console.log("使用备用专业类别数据:", this.typeOptions, " at pages/monthly/task-record.uvue:823")
         this.autoFillProfession()
     }
     open var loadGjbzDataByProfession = ::gen_loadGjbzDataByProfession_fn
@@ -1034,23 +1054,23 @@ open class GenPagesMonthlyTaskRecord : BasePage {
             return
         }
         val token = uni_getStorageSync("token")
-        uni_request<Any>(RequestOptions(url = getApiUrl("/gjbz-data/by-profession/" + UTSAndroid.consoleDebugError(encodeURIComponent(this.taskInfo.profession), " at pages/monthly/task-record.uvue:812")), method = "GET", header = object : UTSJSONObject() {
+        uni_request<Any>(RequestOptions(url = getApiUrl("/gjbz-data/by-profession/" + UTSAndroid.consoleDebugError(encodeURIComponent(this.taskInfo.profession), " at pages/monthly/task-record.uvue:838")), method = "GET", header = object : UTSJSONObject() {
             var Authorization = "Bearer " + token
         }, success = fun(res){
             val respdata = res.data as UTSJSONObject
             if (respdata.getNumber("code") === 200) {
                 val data = respdata.getArray("data")
                 if (data != null && data.length > 0) {
-                    console.log("\u627E\u5230" + data.length + "\u4E2A\u4E0E\u4E13\u4E1A\"" + this.taskInfo.profession + "\"\u76F8\u5173\u7684\u5C97\u68C0\u6807\u51C6\u9879", " at pages/monthly/task-record.uvue:822")
+                    console.log("\u627E\u5230" + data.length + "\u4E2A\u4E0E\u4E13\u4E1A\"" + this.taskInfo.profession + "\"\u76F8\u5173\u7684\u5C97\u68C0\u6807\u51C6\u9879", " at pages/monthly/task-record.uvue:848")
                 } else {
-                    console.log("\u672A\u627E\u5230\u4E0E\u4E13\u4E1A\"" + this.taskInfo.profession + "\"\u76F8\u5173\u7684\u5C97\u68C0\u6807\u51C6\u9879", " at pages/monthly/task-record.uvue:826")
+                    console.log("\u672A\u627E\u5230\u4E0E\u4E13\u4E1A\"" + this.taskInfo.profession + "\"\u76F8\u5173\u7684\u5C97\u68C0\u6807\u51C6\u9879", " at pages/monthly/task-record.uvue:852")
                 }
             } else {
-                console.error("加载岗检标准项失败:", respdata.getString("message"), " at pages/monthly/task-record.uvue:829")
+                console.error("加载岗检标准项失败:", respdata.getString("message"), " at pages/monthly/task-record.uvue:855")
             }
         }
         , fail = fun(error){
-            console.error("加载岗检标准项失败:", error, " at pages/monthly/task-record.uvue:833")
+            console.error("加载岗检标准项失败:", error, " at pages/monthly/task-record.uvue:859")
         }
         ))
     }
@@ -1078,7 +1098,7 @@ open class GenPagesMonthlyTaskRecord : BasePage {
         this.moduleOptions = _uA()
         this.responsibilityOptions = _uA()
         this.issueOptions = _uA()
-        this.loadModuleOptions((this.typeOptions[index] as OptionItem).id)
+        this.loadModuleOptions((this.typeOptions[index] as OptionItem).name)
     }
     open var selectTypeFromFiltered = ::gen_selectTypeFromFiltered_fn
     open fun gen_selectTypeFromFiltered_fn(item: OptionItem) {
@@ -1115,6 +1135,7 @@ open class GenPagesMonthlyTaskRecord : BasePage {
         this.responsibilityOptions = _uA()
         this.issueOptions = _uA()
         this.loadResponsibilityOptions((this.moduleOptions[index] as OptionItem).id)
+        this.loadResponsibilityOptions((this.moduleOptions[index] as OptionItem).name)
     }
     open var selectModuleFromFiltered = ::gen_selectModuleFromFiltered_fn
     open fun gen_selectModuleFromFiltered_fn(item: OptionItem) {
@@ -1148,6 +1169,7 @@ open class GenPagesMonthlyTaskRecord : BasePage {
         this.formData.issue = ""
         this.issueOptions = _uA()
         this.loadIssueOptions((this.responsibilityOptions[index] as OptionItem).id)
+        this.loadIssueOptions((this.responsibilityOptions[index] as OptionItem).name)
     }
     open var selectResponsibilityFromFiltered = ::gen_selectResponsibilityFromFiltered_fn
     open fun gen_selectResponsibilityFromFiltered_fn(item: OptionItem) {
@@ -1204,7 +1226,7 @@ open class GenPagesMonthlyTaskRecord : BasePage {
         this.selectedQualityIndex = index
         this.formData.quality = (this.qualityOptions[index] as OptionItem).name
         this.hideQualityPicker()
-        this.loadQualityDetails((this.qualityOptions[index] as OptionItem).id)
+        this.formData.safetyScore = this.getScoreByQualityName((this.qualityOptions[index] as OptionItem).name)
     }
     open var selectQualityFromFiltered = ::gen_selectQualityFromFiltered_fn
     open fun gen_selectQualityFromFiltered_fn(item: OptionItem) {
@@ -1217,38 +1239,43 @@ open class GenPagesMonthlyTaskRecord : BasePage {
         }
     }
     open var loadModuleOptions = ::gen_loadModuleOptions_fn
-    open fun gen_loadModuleOptions_fn(typeId: String) {
+    open fun gen_loadModuleOptions_fn(typeName: String) {
         val token = uni_getStorageSync("token")
-        uni_request<Any>(RequestOptions(url = getApiUrl("/gjbz-data/options/modules"), method = "GET", header = object : UTSJSONObject() {
+        uni_request<Any>(RequestOptions(url = getApiUrl("/gjbz-data/modules/by-type/" + UTSAndroid.consoleDebugError(encodeURIComponent(typeName), " at pages/monthly/task-record.uvue:1028")), method = "GET", header = object : UTSJSONObject() {
             var Authorization = "Bearer " + token
         }, success = fun(res){
             val respdata = res.data as UTSJSONObject
             if (respdata.getNumber("code") === 200) {
-                val data = respdata.getArray("data")
-                if (data != null) {
-                    val options: UTSArray<OptionItem> = _uA()
+                val modules = respdata.getArray("data") as UTSArray<String>
+                val unique = _uA<String>()
+                if (modules != null) {
                     run {
                         var i: Number = 0
-                        while(i < data.length){
-                            val item = data[i] as String
-                            options.push(OptionItem(id = (i + 1).toString(10), name = item))
+                        while(i < modules.length){
+                            val m = modules[i]
+                            if (m != null && m != "" && unique.indexOf(m) === -1) {
+                                unique.push(m)
+                            }
                             i++
                         }
                     }
-                    this.moduleOptions = options
                 }
+                this.moduleOptions = unique.map(fun(m, idx): OptionItem {
+                    return (OptionItem(id = (idx + 1).toString(10), name = m))
+                }
+                )
             }
         }
         , fail = fun(error){
-            console.error("加载模块选项失败:", error, " at pages/monthly/task-record.uvue:1024")
-            this.moduleOptions = _uA<OptionItem>(OptionItem(id = "module1", name = "模块1"), OptionItem(id = "module2", name = "模块2"), OptionItem(id = "module3", name = "模块3"))
+            console.error("按专业加载模块失败:", error, " at pages/monthly/task-record.uvue:1048")
+            this.moduleOptions = _uA<OptionItem>()
         }
         ))
     }
     open var loadResponsibilityOptions = ::gen_loadResponsibilityOptions_fn
     open fun gen_loadResponsibilityOptions_fn(moduleId: String) {
         val token = uni_getStorageSync("token")
-        uni_request<Any>(RequestOptions(url = getApiUrl("/gjbz-data/options/responsibilities"), method = "GET", header = object : UTSJSONObject() {
+        uni_request<Any>(RequestOptions(url = getApiUrl("/gjbz-data/options/responsibilities/by-module/" + UTSAndroid.consoleDebugError(encodeURIComponent(moduleId), " at pages/monthly/task-record.uvue:1058")), method = "GET", header = object : UTSJSONObject() {
             var Authorization = "Bearer " + token
         }, success = fun(res){
             val respdata = res.data as UTSJSONObject
@@ -1269,7 +1296,7 @@ open class GenPagesMonthlyTaskRecord : BasePage {
             }
         }
         , fail = fun(error){
-            console.error("加载责任选项失败:", error, " at pages/monthly/task-record.uvue:1061")
+            console.error("加载责任选项失败:", error, " at pages/monthly/task-record.uvue:1081")
             this.responsibilityOptions = _uA<OptionItem>(OptionItem(id = "resp1", name = "责任1"), OptionItem(id = "resp2", name = "责任2"), OptionItem(id = "resp3", name = "责任3"))
         }
         ))
@@ -1277,7 +1304,7 @@ open class GenPagesMonthlyTaskRecord : BasePage {
     open var loadIssueOptions = ::gen_loadIssueOptions_fn
     open fun gen_loadIssueOptions_fn(responsibilityId: String) {
         val token = uni_getStorageSync("token")
-        uni_request<Any>(RequestOptions(url = getApiUrl("/gjbz-data/options/issues"), method = "GET", header = object : UTSJSONObject() {
+        uni_request<Any>(RequestOptions(url = getApiUrl("/gjbz-data/options/issues/by-responsibility/" + UTSAndroid.consoleDebugError(encodeURIComponent(responsibilityId), " at pages/monthly/task-record.uvue:1095")), method = "GET", header = object : UTSJSONObject() {
             var Authorization = "Bearer " + token
         }, success = fun(res){
             val respdata = res.data as UTSJSONObject
@@ -1298,7 +1325,7 @@ open class GenPagesMonthlyTaskRecord : BasePage {
             }
         }
         , fail = fun(error){
-            console.error("加载问题选项失败:", error, " at pages/monthly/task-record.uvue:1098")
+            console.error("加载问题选项失败:", error, " at pages/monthly/task-record.uvue:1118")
             this.issueOptions = _uA<OptionItem>(OptionItem(id = "issue1", name = "问题1"), OptionItem(id = "issue2", name = "问题2"), OptionItem(id = "issue3", name = "问题3"))
         }
         ))
@@ -1333,38 +1360,32 @@ open class GenPagesMonthlyTaskRecord : BasePage {
                         }
                     }
                 }
-                console.log("性质界定选项加载完成:", this.qualityOptions, " at pages/monthly/task-record.uvue:1135")
+                console.log("性质界定选项加载完成:", this.qualityOptions, " at pages/monthly/task-record.uvue:1155")
             } else {
                 val message = data.getString("message") ?: "未知错误"
-                console.error("获取性质界定数据失败:", message, " at pages/monthly/task-record.uvue:1138")
+                console.error("获取性质界定数据失败:", message, " at pages/monthly/task-record.uvue:1158")
                 this.qualityOptions = _uA<OptionItem>(OptionItem(id = "1", name = "一般问题"), OptionItem(id = "2", name = "较大问题"), OptionItem(id = "3", name = "严重问题"), OptionItem(id = "4", name = "重大问题"))
             }
         }
         , fail = fun(error){
-            console.error("请求性质界定数据失败:", error, " at pages/monthly/task-record.uvue:1149")
+            console.error("请求性质界定数据失败:", error, " at pages/monthly/task-record.uvue:1169")
             this.qualityOptions = _uA<OptionItem>(OptionItem(id = "1", name = "一般问题"), OptionItem(id = "2", name = "较大问题"), OptionItem(id = "3", name = "严重问题"), OptionItem(id = "4", name = "重大问题"))
         }
         ))
     }
     open var loadQualityDetails = ::gen_loadQualityDetails_fn
     open fun gen_loadQualityDetails_fn(qualityId: String) {
-        setTimeout(fun(){
-            when (qualityId) {
-                "quality1" -> 
-                    this.formData.safetyScore = "5分 - 一般安全记分"
-                "quality2" -> 
-                    this.formData.safetyScore = "10分 - 严重安全记分"
-                "quality3" -> 
-                    this.formData.safetyScore = "20分 - 重大安全记分"
-                else -> 
-                    this.formData.safetyScore = ""
-            }
+        val opt = this.qualityOptions.find(fun(o: OptionItem): Boolean {
+            return o.id === qualityId
         }
-        , 100)
+        )
+        if (opt != null) {
+            this.formData.safetyScore = this.getScoreByQualityName(opt.name)
+        }
     }
     open var autoFillIssueDetails = ::gen_autoFillIssueDetails_fn
     open fun gen_autoFillIssueDetails_fn(issueId: String, issueName: String) {
-        console.log("开始自动填充问题详情:", issueId, issueName, " at pages/monthly/task-record.uvue:1183")
+        console.log("开始自动填充问题详情:", issueId, issueName, " at pages/monthly/task-record.uvue:1191")
         if (this.qualityOptions.length === 0) {
             this.loadQualityOptionsAndFill(issueId, issueName)
             return
@@ -1404,13 +1425,13 @@ open class GenPagesMonthlyTaskRecord : BasePage {
                 }
             } else {
                 val message = data.getString("message") ?: "未知错误"
-                console.error("获取性质界定数据失败:", message, " at pages/monthly/task-record.uvue:1225")
+                console.error("获取性质界定数据失败:", message, " at pages/monthly/task-record.uvue:1233")
                 this.qualityOptions = _uA<OptionItem>(OptionItem(id = "1", name = "一般问题"), OptionItem(id = "2", name = "较大问题"), OptionItem(id = "3", name = "严重问题"), OptionItem(id = "4", name = "重大问题"))
                 this.performAutoFill(issueId, issueName)
             }
         }
         , fail = fun(error){
-            console.error("请求性质界定数据失败:", error, " at pages/monthly/task-record.uvue:1238")
+            console.error("请求性质界定数据失败:", error, " at pages/monthly/task-record.uvue:1246")
             this.qualityOptions = _uA<OptionItem>(OptionItem(id = "1", name = "一般问题"), OptionItem(id = "2", name = "较大问题"), OptionItem(id = "3", name = "严重问题"), OptionItem(id = "4", name = "重大问题"))
             this.performAutoFill(issueId, issueName)
         }
@@ -1454,16 +1475,11 @@ open class GenPagesMonthlyTaskRecord : BasePage {
                     this.formData.quality = matchedQualityName
                 }
             }
-            val scoreMatch = safetyScoreText.match(UTSRegExp("(\\d+)分", ""))
-            if (scoreMatch != null && scoreMatch.length > 1 && scoreMatch[1] != null) {
-                this.formData.safetyScore = scoreMatch[1] as String
-            } else {
-                this.formData.safetyScore = "5"
-            }
-            console.log("自动填充完成:", _uO("originalQuality" to qualityName, "matchedQuality" to matchedQualityName, "safetyScore" to this.formData.safetyScore, "selectedQualityIndex" to this.selectedQualityIndex), " at pages/monthly/task-record.uvue:1305")
+            this.formData.safetyScore = this.getScoreByQualityName(matchedQualityName)
+            console.log("自动填充完成:", _uO("originalQuality" to qualityName, "matchedQuality" to matchedQualityName, "safetyScore" to this.formData.safetyScore, "selectedQualityIndex" to this.selectedQualityIndex), " at pages/monthly/task-record.uvue:1307")
             uni_showToast(ShowToastOptions(title = "\u5DF2\u81EA\u52A8\u586B\u5145\uFF1A" + matchedQualityName + "\uFF0C" + this.formData.safetyScore + "\u5206", icon = "success", duration = 2000))
         } else {
-            console.log("未找到匹配的问题映射规则", " at pages/monthly/task-record.uvue:1319")
+            console.log("未找到匹配的问题映射规则", " at pages/monthly/task-record.uvue:1321")
         }
     }
     open var getIssueQualityMapping = ::gen_getIssueQualityMapping_fn
@@ -1555,6 +1571,24 @@ open class GenPagesMonthlyTaskRecord : BasePage {
             var safetyScore = "5分 - 一般安全记分"
         }
     }
+    open var getScoreByQualityName = ::gen_getScoreByQualityName_fn
+    open fun gen_getScoreByQualityName_fn(qualityName: String): String {
+        val s: String = if ((qualityName == null)) {
+            ""
+        } else {
+            qualityName
+        }
+        if (s.indexOf("重要") >= 0) {
+            return "5"
+        }
+        if (s.indexOf("一般") >= 0) {
+            return "3"
+        }
+        if (s.indexOf("观察") >= 0) {
+            return "1"
+        }
+        return "0"
+    }
     open var addPhoto = ::gen_addPhoto_fn
     open fun gen_addPhoto_fn() {
         uni_chooseImage(ChooseImageOptions(count = 3 - this.formData.photos.length, sizeType = _uA(
@@ -1572,27 +1606,27 @@ open class GenPagesMonthlyTaskRecord : BasePage {
     }
     open var uploadImage = ::gen_uploadImage_fn
     open fun gen_uploadImage_fn(imagePath: String) {
-        console.log("=== 移动端图片上传调试信息 ===", " at pages/monthly/task-record.uvue:1379")
-        console.log("选择的图片路径:", imagePath, " at pages/monthly/task-record.uvue:1380")
+        console.log("=== 移动端图片上传调试信息 ===", " at pages/monthly/task-record.uvue:1388")
+        console.log("选择的图片路径:", imagePath, " at pages/monthly/task-record.uvue:1389")
         uni_showLoading(ShowLoadingOptions(title = "上传中..."))
         uni_uploadFile(UploadFileOptions(url = getApiUrl("/upload/image"), filePath = imagePath, name = "file", header = object : UTSJSONObject() {
             var Authorization = uni_getStorageSync("token")
         }, success = fun(uploadRes){
             uni_hideLoading()
-            console.log("上传响应状态码:", uploadRes.statusCode, " at pages/monthly/task-record.uvue:1395")
-            console.log("上传响应数据:", uploadRes.data, " at pages/monthly/task-record.uvue:1396")
+            console.log("上传响应状态码:", uploadRes.statusCode, " at pages/monthly/task-record.uvue:1404")
+            console.log("上传响应数据:", uploadRes.data, " at pages/monthly/task-record.uvue:1405")
             try {
-                val result = UTSAndroid.consoleDebugError(JSON.parse(uploadRes.data), " at pages/monthly/task-record.uvue:1399") as UTSJSONObject
-                console.log("解析后的响应数据:", result, " at pages/monthly/task-record.uvue:1400")
+                val result = UTSAndroid.consoleDebugError(JSON.parse(uploadRes.data), " at pages/monthly/task-record.uvue:1408") as UTSJSONObject
+                console.log("解析后的响应数据:", result, " at pages/monthly/task-record.uvue:1409")
                 val code = result.getNumber("code")
                 if (code === 200) {
                     val data = result.getJSON("data")
                     if (data != null) {
                         val url = data.getString("url")
-                        console.log("服务器返回的图片URL:", url, " at pages/monthly/task-record.uvue:1408")
+                        console.log("服务器返回的图片URL:", url, " at pages/monthly/task-record.uvue:1417")
                         if (url != null) {
                             this.formData.photos.push(url)
-                            console.log("当前photos数组:", this.formData.photos, " at pages/monthly/task-record.uvue:1411")
+                            console.log("当前photos数组:", this.formData.photos, " at pages/monthly/task-record.uvue:1420")
                         }
                     }
                 } else {
@@ -1600,20 +1634,20 @@ open class GenPagesMonthlyTaskRecord : BasePage {
                     if (message == null) {
                         message = "上传失败"
                     }
-                    console.error("上传失败，服务器响应:", result, " at pages/monthly/task-record.uvue:1419")
+                    console.error("上传失败，服务器响应:", result, " at pages/monthly/task-record.uvue:1428")
                     uni_showToast(ShowToastOptions(title = message, icon = "none"))
                 }
             }
              catch (e: Throwable) {
-                console.error("解析响应数据失败:", e, " at pages/monthly/task-record.uvue:1426")
-                console.error("原始响应数据:", uploadRes.data, " at pages/monthly/task-record.uvue:1427")
+                console.error("解析响应数据失败:", e, " at pages/monthly/task-record.uvue:1435")
+                console.error("原始响应数据:", uploadRes.data, " at pages/monthly/task-record.uvue:1436")
                 uni_showToast(ShowToastOptions(title = "上传失败", icon = "none"))
             }
-            console.log("=== 移动端图片上传调试信息结束 ===", " at pages/monthly/task-record.uvue:1433")
+            console.log("=== 移动端图片上传调试信息结束 ===", " at pages/monthly/task-record.uvue:1442")
         }
         , fail = fun(error){
             uni_hideLoading()
-            console.error("图片上传失败:", error, " at pages/monthly/task-record.uvue:1437")
+            console.error("图片上传失败:", error, " at pages/monthly/task-record.uvue:1446")
             uni_showToast(ShowToastOptions(title = "上传失败", icon = "none"))
         }
         ))
@@ -1663,6 +1697,14 @@ open class GenPagesMonthlyTaskRecord : BasePage {
             uni_showToast(ShowToastOptions(title = "请选择整改期限", icon = "none"))
             return
         }
+        if (this.formData.responsibleUnit.trim() == "") {
+            uni_showToast(ShowToastOptions(title = "请输入责任单位", icon = "none"))
+            return
+        }
+        if (this.formData.responsiblePerson.trim() == "") {
+            uni_showToast(ShowToastOptions(title = "请输入责任人", icon = "none"))
+            return
+        }
         if (this.formData.inspector.trim() == "") {
             uni_showToast(ShowToastOptions(title = "请输入检查人", icon = "none"))
             return
@@ -1673,11 +1715,11 @@ open class GenPagesMonthlyTaskRecord : BasePage {
             var userId = ""
             if (userInfoStr != null && userInfoStr != "") {
                 try {
-                    val userInfo = UTSAndroid.consoleDebugError(JSON.parse(userInfoStr), " at pages/monthly/task-record.uvue:1515") as UTSJSONObject
+                    val userInfo = UTSAndroid.consoleDebugError(JSON.parse(userInfoStr), " at pages/monthly/task-record.uvue:1534") as UTSJSONObject
                     userId = userInfo.getString("id") ?: ""
                 }
                  catch (e: Throwable) {
-                    console.error("解析用户信息失败:", e, " at pages/monthly/task-record.uvue:1518")
+                    console.error("解析用户信息失败:", e, " at pages/monthly/task-record.uvue:1537")
                 }
             }
             if (userId == "") {
@@ -1685,7 +1727,7 @@ open class GenPagesMonthlyTaskRecord : BasePage {
                 uni_showToast(ShowToastOptions(title = "获取用户信息失败，请重新登录", icon = "none"))
                 return
             }
-            val saveData: UTSJSONObject = _uO("__\$originalPosition" to UTSSourceMapPosition("saveData", "pages/monthly/task-record.uvue", 1529, 13), "taskId" to this.taskInfo.taskNumber, "professionalCategory" to if (this.selectedTypeIndex !== -1 && this.typeOptions[this.selectedTypeIndex] != null) {
+            val saveData: UTSJSONObject = _uO("__\$originalPosition" to UTSSourceMapPosition("saveData", "pages/monthly/task-record.uvue", 1548, 15), "taskId" to this.taskInfo.taskId, "professionalCategory" to if (this.selectedTypeIndex !== -1 && this.typeOptions[this.selectedTypeIndex] != null) {
                 this.typeOptions[this.selectedTypeIndex].name
             } else {
                 ""
@@ -1710,7 +1752,7 @@ open class GenPagesMonthlyTaskRecord : BasePage {
             } else {
                 ""
             }
-            , "problemDescription" to this.formData.problemDescription, "location" to this.formData.location, "rectificationDate" to this.formData.rectificationDate, "inspector" to this.formData.inspector, "safetyScore" to this.formData.safetyScore, "photos" to this.formData.photos)
+            , "problemDescription" to this.formData.problemDescription, "location" to this.formData.location, "rectificationDate" to this.formData.rectificationDate, "inspector" to this.formData.inspector, "safetyScore" to this.formData.safetyScore, "photos" to this.formData.photos, "responsibleUnit" to this.formData.responsibleUnit, "responsiblePerson" to this.formData.responsiblePerson)
             uni_request<Any>(RequestOptions(url = getApiUrl("/monthly-inspection-record"), method = "POST", header = object : UTSJSONObject() {
                 var `Content-Type` = "application/json"
                 var Authorization = if (uni_getStorageSync("token") != null) {
@@ -1739,14 +1781,14 @@ open class GenPagesMonthlyTaskRecord : BasePage {
             }
             , fail = fun(error){
                 uni_hideLoading()
-                console.error("保存失败:", error, " at pages/monthly/task-record.uvue:1572")
+                console.error("保存失败:", error, " at pages/monthly/task-record.uvue:1593")
                 uni_showToast(ShowToastOptions(title = "保存失败", icon = "none"))
             }
             ))
         }
          catch (error: Throwable) {
             uni_hideLoading()
-            console.error("保存失败:", error, " at pages/monthly/task-record.uvue:1578")
+            console.error("保存失败:", error, " at pages/monthly/task-record.uvue:1599")
             uni_showToast(ShowToastOptions(title = "保存失败", icon = "none"))
         }
     }
@@ -1793,7 +1835,7 @@ open class GenPagesMonthlyTaskRecord : BasePage {
                 0
             }
         )
-        console.log("初始化日期数组:", _uO("selectedYear" to this.selectedYear, "selectedMonth" to this.selectedMonth, "selectedDay" to this.selectedDay, "yearIndex" to yearIndex, "monthIndex" to monthIndex, "dayIndex" to dayIndex, "pickerValue" to this.pickerValue, "daysArray" to this.days), " at pages/monthly/task-record.uvue:1607")
+        console.log("初始化日期数组:", _uO("selectedYear" to this.selectedYear, "selectedMonth" to this.selectedMonth, "selectedDay" to this.selectedDay, "yearIndex" to yearIndex, "monthIndex" to monthIndex, "dayIndex" to dayIndex, "pickerValue" to this.pickerValue, "daysArray" to this.days), " at pages/monthly/task-record.uvue:1628")
     }
     open var updateDays = ::gen_updateDays_fn
     open fun gen_updateDays_fn() {
@@ -1830,7 +1872,7 @@ open class GenPagesMonthlyTaskRecord : BasePage {
         if (dayIndex < 0) {
             dayIndex = (this.days.length - 1) as Int
             this.selectedDay = this.days[dayIndex]
-            console.log("日期不存在，调整为月末:", this.selectedDay, " at pages/monthly/task-record.uvue:1650")
+            console.log("日期不存在，调整为月末:", this.selectedDay, " at pages/monthly/task-record.uvue:1671")
         }
         this.pickerValue = _uA(
             if (yearIndex >= 0) {
@@ -1842,7 +1884,7 @@ open class GenPagesMonthlyTaskRecord : BasePage {
             monthIndex,
             dayIndex
         )
-        console.log("显示日期选择器:", _uO("selectedDate" to this.formData.rectificationDate, "selectedYear" to this.selectedYear, "selectedMonth" to this.selectedMonth, "selectedDay" to this.selectedDay, "yearIndex" to yearIndex, "monthIndex" to monthIndex, "dayIndex" to dayIndex, "pickerValue" to this.pickerValue), " at pages/monthly/task-record.uvue:1655")
+        console.log("显示日期选择器:", _uO("selectedDate" to this.formData.rectificationDate, "selectedYear" to this.selectedYear, "selectedMonth" to this.selectedMonth, "selectedDay" to this.selectedDay, "yearIndex" to yearIndex, "monthIndex" to monthIndex, "dayIndex" to dayIndex, "pickerValue" to this.pickerValue), " at pages/monthly/task-record.uvue:1676")
         this.datePickerVisible = true
     }
     open var hideDatePicker = ::gen_hideDatePicker_fn
@@ -1853,14 +1895,14 @@ open class GenPagesMonthlyTaskRecord : BasePage {
     open fun gen_onPickerChange_fn(e: UniPickerViewChangeEvent) {
         val value = e.detail.value as UTSArray<Number>
         val oldDaysLength = this.days.length
-        console.log("picker原始变化事件:", _uO("value" to value, "oldSelectedYear" to this.selectedYear, "oldSelectedMonth" to this.selectedMonth, "oldSelectedDay" to this.selectedDay, "oldDaysLength" to oldDaysLength), " at pages/monthly/task-record.uvue:1677")
+        console.log("picker原始变化事件:", _uO("value" to value, "oldSelectedYear" to this.selectedYear, "oldSelectedMonth" to this.selectedMonth, "oldSelectedDay" to this.selectedDay, "oldDaysLength" to oldDaysLength), " at pages/monthly/task-record.uvue:1698")
         this.selectedYear = this.years[value[0]]
         this.selectedMonth = value[1] + 1
         this.updateDays()
         var newDayIndex = value[2]
         if (newDayIndex >= this.days.length) {
             newDayIndex = this.days.length - 1
-            console.log("日期超出范围，调整为月末:", this.days[newDayIndex], " at pages/monthly/task-record.uvue:1697")
+            console.log("日期超出范围，调整为月末:", this.days[newDayIndex], " at pages/monthly/task-record.uvue:1718")
         }
         this.selectedDay = this.days[newDayIndex]
         if (oldDaysLength !== this.days.length) {
@@ -1874,7 +1916,7 @@ open class GenPagesMonthlyTaskRecord : BasePage {
                     value[1],
                     newDayIndex
                 )
-                console.log("延迟更新pickerValue:", _uO("newPickerValue" to this.pickerValue, "selectedYear" to this.selectedYear, "selectedMonth" to this.selectedMonth, "selectedDay" to this.selectedDay), " at pages/monthly/task-record.uvue:1712")
+                console.log("延迟更新pickerValue:", _uO("newPickerValue" to this.pickerValue, "selectedYear" to this.selectedYear, "selectedMonth" to this.selectedMonth, "selectedDay" to this.selectedDay), " at pages/monthly/task-record.uvue:1733")
             }, 50)
         } else {
             this.pickerValue = _uA(
@@ -1882,7 +1924,7 @@ open class GenPagesMonthlyTaskRecord : BasePage {
                 value[1],
                 newDayIndex
             )
-            console.log("直接更新pickerValue:", _uO("newPickerValue" to this.pickerValue, "selectedYear" to this.selectedYear, "selectedMonth" to this.selectedMonth, "selectedDay" to this.selectedDay), " at pages/monthly/task-record.uvue:1722")
+            console.log("直接更新pickerValue:", _uO("newPickerValue" to this.pickerValue, "selectedYear" to this.selectedYear, "selectedMonth" to this.selectedMonth, "selectedDay" to this.selectedDay), " at pages/monthly/task-record.uvue:1743")
         }
     }
     open var confirmDatePicker = ::gen_confirmDatePicker_fn
@@ -1894,7 +1936,7 @@ open class GenPagesMonthlyTaskRecord : BasePage {
         val month = selectedMonth.toString(10).padStart(2, "0")
         val day = selectedDay.toString(10).padStart(2, "0")
         val newDate = "" + year + "-" + month + "-" + day
-        console.log("确认日期选择:", _uO("pickerValue" to this.pickerValue, "yearsArray" to this.years, "monthsArray" to this.months, "daysArray" to this.days, "selectedYear" to selectedYear, "selectedMonth" to selectedMonth, "selectedDay" to selectedDay, "formattedDate" to newDate), " at pages/monthly/task-record.uvue:1743")
+        console.log("确认日期选择:", _uO("pickerValue" to this.pickerValue, "yearsArray" to this.years, "monthsArray" to this.months, "daysArray" to this.days, "selectedYear" to selectedYear, "selectedMonth" to selectedMonth, "selectedDay" to selectedDay, "formattedDate" to newDate), " at pages/monthly/task-record.uvue:1764")
         this.formData.rectificationDate = newDate
         this.hideDatePicker()
     }

@@ -230,7 +230,7 @@ public interface ISysInspectionRecordService extends IService<SysInspectionRecor
      * @param endTime 结束时间
      */
     void exportRecordsToExcel(javax.servlet.http.HttpServletResponse response, 
-                             String problemDescription, String responsiblePerson, 
+                             String problemDescription, String responsiblePerson, String inspectorId,
                              String professionId, String natureId, String departmentId, 
                              Integer status, LocalDateTime startTime, LocalDateTime endTime);
 
@@ -356,5 +356,67 @@ public interface ISysInspectionRecordService extends IService<SysInspectionRecor
      * @return 是否成功
      */
     boolean batchDeleteRecords(List<String> ids);
+
+    /**
+     * 部门×专业矩阵统计
+     *
+     * @param departmentId 部门ID（可选）
+     * @param status 状态（可选）
+     * @param startDate 开始日期（yyyy-MM-dd，可选）
+     * @param endDate 结束日期（yyyy-MM-dd，可选）
+     * @return 每个部门-专业组合的计数
+     */
+    List<Map<String, Object>> getDepartmentProfessionMatrix(String departmentId, String status, String startDate, String endDate);
+
+    /**
+     * 部门×问题属性矩阵统计
+     *
+     * @param departmentId 部门ID（可选）
+     * @param status 状态（可选）
+     * @param startDate 开始日期（yyyy-MM-dd，可选）
+     * @param endDate 结束日期（yyyy-MM-dd，可选）
+     * @return 每个部门-问题属性组合的计数
+     */
+    List<Map<String, Object>> getDepartmentNatureMatrix(String departmentId, String status, String startDate, String endDate);
+
+    /**
+     * 回退记录（发送审核通知到部门管理员）
+     *
+     * @param id 记录ID
+     * @return 是否成功
+     */
+    boolean rejectRecord(String id);
+
+    /**
+     * 查询待审核记录
+     *
+     * @param current 当前页
+     * @param size 每页大小
+     * @param departmentId 部门ID（可选）
+     * @param status 状态（可选）
+     * @param startTime 开始时间（可选）
+     * @param endTime 结束时间（可选）
+     * @return 分页结果
+     */
+    PageResult<SysInspectionRecord> getAuditRecords(Long current, Long size, String departmentId, String status, 
+                                                   LocalDateTime startTime, LocalDateTime endTime);
+
+    /**
+     * 审核确认（审核成功，记录回退到待整改状态）
+     *
+     * @param id 记录ID
+     * @param auditorId 审核人 ID
+     * @param auditReason 审核意见
+     * @return 是否成功
+     */
+    boolean confirmAudit(String id, String auditorId, String auditReason);
+    
+    /**
+     * 拒绝审核（将记录状态从待审核(3)改回已提交(1)）
+     *
+     * @param id 记录ID
+     * @return 是否成功
+     */
+    boolean rejectAudit(String id);
 
 }

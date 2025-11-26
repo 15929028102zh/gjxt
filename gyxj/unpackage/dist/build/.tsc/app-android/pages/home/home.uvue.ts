@@ -22,12 +22,6 @@ import { ref, onMounted, onUnmounted, nextTick, reactive } from 'vue'
 
 	
 	// 用户信息
-	type TrendData = {
-		months: string[]
-		values: number[]
-	}
-	
-	// 趋势图表数据
 	
 const __sfc__ = defineComponent({
   __name: 'home',
@@ -58,23 +52,16 @@ const _cache = __ins.renderCache;
 	// 图表实例
 	let weeklyChartInstance : TuiCharts | null = null
 	let monthlyChartInstance : TuiCharts | null = null
-	let trendChartInstance : TuiCharts | null = null
 	
 	// 图表配置选项
 	const weeklyChartOption = ref({} as UTSJSONObject)
 	const monthlyChartOption = ref({} as UTSJSONObject)
-	const trendChartOption = ref({} as UTSJSONObject)
 	
 	// 图表引用
 	const weeklyChart = ref(null)
 	const monthlyChart = ref(null)
-	const trendChart = ref(null)
 	
 	// 趋势图表数据类型
-	const trendData = ref({
-		months: ['1月', '2月', '3月', '4月', '5月', '6月'],
-		values: [120, 132, 101, 134, 90, 230]
-	} as TrendData)
 	
 	// 滚动相关
 	const scrollTop = ref(0)
@@ -165,14 +152,16 @@ const _cache = __ins.renderCache;
 		try {
 			const token = uni.getStorageSync('token')
 			
-			// 获取用户部门信息
+			// 获取用户信息，包括部门和管理员权限
 			let departmentId = ''
+			let isAdmin = false
 			const userInfoData = uni.getStorageSync('userInfo')
 			const userInfoStr = userInfoData != null ? userInfoData as string : ''
 			if (userInfoStr != null && userInfoStr != '' && userInfoStr != 'null' && userInfoStr != 'undefined') {
 				try {
 					const parsedUserInfo = JSON.parse(userInfoStr) as UTSJSONObject
 					departmentId = parsedUserInfo.getString('deptId') ?? ''
+					isAdmin = (parsedUserInfo.getNumber('isAdmin') ?? 0) === 1
 				} catch (error) {
 					console.error('用户信息JSON解析失败:', error)
 				}
@@ -208,11 +197,11 @@ const _cache = __ins.renderCache;
 				return
 			}
 			
-			// 构建部门过滤参数
-			const deptParam = departmentId != null && departmentId != '' ? `&departmentId=${departmentId}` : ''
+			// 构建部门过滤参数 - 管理员用户不需要部门过滤
+			const deptParam = (!isAdmin && departmentId != null && departmentId != '') ? `&departmentId=${departmentId}` : ''
 			
 			// 获取待整改数量（状态为0）- 使用分页查询API获取准确数量
-			const pendingUrl = getApiUrl(`/inspection-record/page?current=1&size=1&status=0${departmentId != null && departmentId != '' ? '&departmentId=' + departmentId : ''}`)
+			const pendingUrl = getApiUrl(`/inspection-record/page?current=1&size=1&status=0${(!isAdmin && departmentId != null && departmentId != '') ? '&departmentId=' + departmentId : ''}`)
 			uni.request({
 				url: pendingUrl,
 				method: 'GET',
@@ -242,7 +231,7 @@ const _cache = __ins.renderCache;
 			})
 			
 			// 获取已整改数量（状态为1）- 使用分页查询API获取准确数量
-			const completedUrl = getApiUrl(`/inspection-record/page?current=1&size=1&status=1${departmentId != null && departmentId != '' ? '&departmentId=' + departmentId : ''}`)
+			const completedUrl = getApiUrl(`/inspection-record/page?current=1&size=1&status=1${(!isAdmin && departmentId != null && departmentId != '') ? '&departmentId=' + departmentId : ''}`)
 			uni.request({
 				url: completedUrl,
 				method: 'GET',
@@ -272,7 +261,7 @@ const _cache = __ins.renderCache;
 			})
 			
 			// 获取已复查数量（状态为2）- 使用分页查询API获取准确数量
-			const reviewedUrl = getApiUrl(`/inspection-record/page?current=1&size=1&status=2${departmentId != null && departmentId != '' ? '&departmentId=' + departmentId : ''}`)
+			const reviewedUrl = getApiUrl(`/inspection-record/page?current=1&size=1&status=2${(!isAdmin && departmentId != null && departmentId != '') ? '&departmentId=' + departmentId : ''}`)
 			uni.request({
 				url: reviewedUrl,
 				method: 'GET',
@@ -302,7 +291,7 @@ const _cache = __ins.renderCache;
 			})
 			
 			// 获取总记录数量 - 使用分页查询API获取准确数量
-			const totalUrl = getApiUrl(`/inspection-record/page?current=1&size=1${departmentId != null && departmentId != '' ? '&departmentId=' + departmentId : ''}`)
+			const totalUrl = getApiUrl(`/inspection-record/page?current=1&size=1${(!isAdmin && departmentId != null && departmentId != '') ? '&departmentId=' + departmentId : ''}`)
 			uni.request({
 				url: totalUrl,
 				method: 'GET',
@@ -345,60 +334,59 @@ const _cache = __ins.renderCache;
 	}
 
 	// 加载月检统计数据
-	const loadMonthlyStats = () : void => {
-		const token = uni.getStorageSync('token')
-		
-		// 获取用户部门信息
-		let departmentId = ''
-		const userInfoData = uni.getStorageSync('userInfo')
-		const userInfoStr = userInfoData != null ? userInfoData as string : ''
-		if (userInfoStr != null && userInfoStr != '' && userInfoStr != 'null' && userInfoStr != 'undefined') {
-			try {
-				const parsedUserInfo = JSON.parse(userInfoStr) as UTSJSONObject
-				departmentId = parsedUserInfo.getString('deptId') ?? ''
-			} catch (error) {
-				console.error('用户信息JSON解析失败:', error)
-			}
-		}
-		
-		// 构建部门过滤参数
-		const deptParam = departmentId != null && departmentId != '' ? `&departmentId=${departmentId}` : ''
-		
-		uni.request({
-			url: getApiUrl(`/statistics/monthly?1=1${deptParam}`),
-			method: 'GET',
-			header: {
-				'Content-Type': 'application/json',
-				'Authorization': `Bearer ${token}`
-			},
-			success: (res) => {
-				if (res.statusCode === 200 && res.data != null) {
-					const data = res.data as StatsData
-					monthlyStats.value = data
-				} else {
-					// 如果API调用失败，使用模拟数据
-					monthlyStats.value = {
-						total: 156,
-						pending: 23,
-						completed: 108,
-						reviewed: 25
-					} as StatsData
-				}
-				updateMonthlyChart()
-			},
-			fail: (error) => {
-				console.error('加载月检统计数据失败:', error)
-				// 使用模拟数据作为后备
-				monthlyStats.value = {
-					total: 156,
-					pending: 23,
-					completed: 108,
-					reviewed: 25
-				} as StatsData
-				updateMonthlyChart()
-			}
-		})
-	}
+    const loadMonthlyStats = async () : Promise<void> => {
+        try {
+            const token = uni.getStorageSync('token')
+            let departmentId = ''
+            let isAdmin = false
+            const userInfoData = uni.getStorageSync('userInfo')
+            const userInfoStr = userInfoData != null ? userInfoData as string : ''
+            if (userInfoStr != null && userInfoStr != '' && userInfoStr != 'null' && userInfoStr != 'undefined') {
+                try {
+                    const parsedUserInfo = JSON.parse(userInfoStr) as UTSJSONObject
+                    departmentId = parsedUserInfo.getString('deptId') ?? ''
+                    isAdmin = (parsedUserInfo.getNumber('isAdmin') ?? 0) === 1
+                } catch (error) { console.error('用户信息JSON解析失败:', error) }
+            }
+            const deptParam = (!isAdmin && departmentId != null && departmentId != '') ? `&responsibilityId=${departmentId}` : ''
+            let pending = 0, completed = 0, reviewed = 0
+            let finished = 0
+            const totalReq = 3
+            const updateMonthly = () => {
+                monthlyStats.value = {
+                    total: pending + completed + reviewed,
+                    pending: pending,
+                    completed: completed,
+                    reviewed: reviewed
+                } as StatsData
+                updateMonthlyChart()
+            }
+            const req = (status: number, assign: (n:number)=>void) => {
+                uni.request({
+                    url: getApiUrl(`/monthly-inspection-record/page?current=1&size=1&recordStatus=${status}${deptParam}`),
+                    method: 'GET',
+                    header: { 'Authorization': `Bearer ${token}` },
+                    success: (res) => {
+                        const resp = res.data as UTSJSONObject
+                        if (res.statusCode === 200 && (resp.getNumber('code') ?? 0) === 200) {
+                            const d = resp.getJSON('data') as UTSJSONObject
+                            assign(d.getNumber('total') ?? 0)
+                        }
+                        finished++
+                        if (finished === totalReq) updateMonthly()
+                    },
+                    fail: (_) => { finished++; if (finished === totalReq) updateMonthly() }
+                })
+            }
+            req(0, (n: number) => { pending = n })
+            req(1, (n: number) => { completed = n })
+            req(2, (n: number) => { reviewed = n })
+        } catch (error) {
+            console.error('加载月检统计数据失败:', error)
+            monthlyStats.value = { total: 0, pending: 0, completed: 0, reviewed: 0 } as StatsData
+            updateMonthlyChart()
+        }
+    }
 
 
 
@@ -748,60 +736,6 @@ const _cache = __ins.renderCache;
 		monthlyPieChart.draw()
 	}
 	
-	const onTrendChartInit = (chartInstance : TuiCharts) : void => {
-		trendChartInstance = chartInstance
-		
-		// 创建柱状图
-		const columnOption = {
-			type: 'column',
-			animation: true,
-			dataLabel: true,
-			fontSize: 11,
-			padding: [20, 20, 25, 20],
-			categories: trendData.value.months,
-			title: {
-				name: '月度巡检趋势',
-				fontSize: 14,
-				color: '#2c3e50',
-				offsetY: 5
-			},
-			extra: {
-				column: {
-					type: 'group',
-					width: 25,
-					activeBgColor: '#000000',
-					activeBgOpacity: 0.08,
-					barBorderRadius: [4, 4, 0, 0],
-					seriesGap: 5
-				},
-				tooltip: {
-					show: true
-				}
-			},
-			series: [
-				{
-					name: '巡检记录数',
-					data: trendData.value.values.map((item: number) => {
-						return { value: item }
-					})
-				}
-			],
-			xAxis: {
-				disableGrid: true
-			},
-			yAxis: {
-				data: [
-					{
-						min: 0
-					}
-				]
-			}
-		} as UTSJSONObject
-		
-		const trendColumnChart = chartInstance.add(0, columnOption)
-		trendColumnChart.setCoordinates({ height: 280, width: 260, xOffset: 15, yOffset: 35 })
-		trendColumnChart.draw()
-	}
 
 	// 最终的跳转方法
 	const goToWeeklyPending = () : void => {
@@ -950,36 +884,6 @@ const _component_tui_xechars = resolveEasyComponent("tui-xechars",_easycom_tui_x
             onInitFinished: onMonthlyChartInit
           }), null, 8 /* PROPS */, ["style"])
         ])
-      ])
-    ]),
-    _cE("view", _uM({ class: "section" }), [
-      _cE("view", _uM({ class: "section-title" }), [
-        _cE("text", _uM({ class: "title-text" }), "月度巡检趋势")
-      ]),
-      _cE("view", _uM({ class: "chart-container" }), [
-        _cE("view", _uM({ class: "chart-wrapper" }), [
-          _cV(_component_tui_xechars, _uM({
-            ref_key: "trendChart",
-            ref: trendChart,
-            style: _nS(_uM({"height":"350px","width":"100%","min-width":"280px"})),
-            class: "chart-canvas",
-            onInitFinished: onTrendChartInit
-          }), null, 8 /* PROPS */, ["style"])
-        ])
-      ])
-    ]),
-    _cE("view", _uM({ class: "extra-content" }), [
-      _cE("view", _uM({ class: "info-card" }), [
-        _cE("text", _uM({ class: "info-title" }), "系统提示"),
-        _cE("text", _uM({ class: "info-text" }), "定期进行巡检工作，确保设备正常运行")
-      ]),
-      _cE("view", _uM({ class: "info-card" }), [
-        _cE("text", _uM({ class: "info-title" }), "操作指南"),
-        _cE("text", _uM({ class: "info-text" }), "点击上方统计卡片可查看详细记录")
-      ]),
-      _cE("view", _uM({ class: "info-card" }), [
-        _cE("text", _uM({ class: "info-title" }), "数据更新"),
-        _cE("text", _uM({ class: "info-text" }), "数据每小时自动更新一次")
       ])
     ])
   ], 44 /* STYLE, PROPS, NEED_HYDRATION */, ["scroll-top", "refresher-triggered"])

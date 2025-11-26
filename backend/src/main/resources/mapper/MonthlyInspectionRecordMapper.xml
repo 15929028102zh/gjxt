@@ -23,6 +23,14 @@
         <result column="suggestion" property="suggestion" />
         <result column="photos" property="photos" />
         <result column="rectification_date" property="rectificationDate" />
+        <result column="rectification_suggestion" property="rectificationSuggestion" />
+        <result column="rectification_effect" property="rectificationEffect" />
+        <result column="rectification_images" property="rectificationImages" />
+        <result column="rectification_time" property="rectificationTime" />
+        <result column="review_suggestion" property="reviewSuggestion" />
+        <result column="review_effect" property="reviewEffect" />
+        <result column="review_images" property="reviewImages" />
+        <result column="review_time" property="reviewTime" />
         <result column="inspector" property="inspector" />
         <result column="safety_score" property="safetyScore" />
         <result column="record_status" property="recordStatus" />
@@ -37,7 +45,10 @@
         id, record_no, task_id, professional_type_id, professional_type_name,
         module_id, module_name, responsibility_id, responsibility_name, issue_id, issue_name,
         quality_id, quality_name, problem_type, problem_description, location, suggestion,
-        photos, rectification_date, inspector, safety_score, record_status,
+        photos, rectification_date,
+        rectification_suggestion, rectification_effect, rectification_images, rectification_time,
+        review_suggestion, review_effect, review_images, review_time,
+        inspector, safety_score, record_status,
         create_user_id, create_time, update_time, deleted
     </sql>
 
@@ -45,11 +56,13 @@
     <select id="selectRecordPage" resultMap="BaseResultMap">
         SELECT
             r.*,
-            u.username as create_user_name,
+            COALESCE(qd.dict_label, r.quality_name) AS quality_name,
+            u.real_name as create_user_name,
             d.dept_name as department_name
         FROM sys_monthly_inspection_record r
         LEFT JOIN sys_user u ON r.create_user_id = u.id
         LEFT JOIN sys_dept d ON r.responsibility_id = d.id
+        LEFT JOIN sys_dictionary qd ON qd.dict_value = r.quality_id AND qd.dict_type = '性质界定' AND qd.deleted = 0
         WHERE r.deleted = 0
         <if test="params.taskId != null and params.taskId != ''">
             AND r.task_id = #{params.taskId}
@@ -63,6 +76,10 @@
         <if test="params.recordStatus != null">
             AND r.record_status = #{params.recordStatus}
         </if>
+        <if test="params.rectificationDeadlineBefore != null and params.rectificationDeadlineBefore != ''">
+            AND r.rectification_date IS NOT NULL
+            AND r.rectification_date <![CDATA[ < ]]> #{params.rectificationDeadlineBefore}
+        </if>
         <if test="params.createUserId != null and params.createUserId != ''">
             AND r.create_user_id = #{params.createUserId}
         </if>
@@ -71,15 +88,15 @@
 
     <!-- 根据ID查询月检记录详情（带关联信息） -->
     <select id="selectRecordById" resultType="com.gjxt.inspection.entity.MonthlyInspectionRecord">
-        SELECT r.*,
-               u.username as create_user_name,
+        SELECT r.*, COALESCE(qd.dict_label, r.quality_name) AS quality_name,
+               u.real_name as create_user_name,
                task_dept.dept_name as department_name,
                resp_dept.dept_name as responsibility_name,
                t.task_no as task_no,
                t.inspection_time as inspection_time,
                r.rectification_date as rectification_deadline,
-               leader.username as group_leader_name,
-               deputy.username as deputy_leader_name
+               leader.real_name as group_leader_name,
+               deputy.real_name as deputy_leader_name
         FROM sys_monthly_inspection_record r
         LEFT JOIN sys_user u ON r.create_user_id = u.id
         LEFT JOIN sys_dept resp_dept ON r.responsibility_id = resp_dept.id
@@ -87,6 +104,7 @@
         LEFT JOIN sys_dept task_dept ON t.department_id = task_dept.id
         LEFT JOIN sys_user leader ON t.group_leader_id = leader.id
         LEFT JOIN sys_user deputy ON t.deputy_leader_id = deputy.id
+        LEFT JOIN sys_dictionary qd ON qd.dict_value = r.quality_id AND qd.dict_type = '性质界定' AND qd.deleted = 0
         WHERE r.id = #{id} AND r.deleted = 0
     </select>
 
@@ -184,6 +202,26 @@
         WHERE record_no IS NOT NULL
         ORDER BY create_time DESC
         LIMIT 1
+    </select>
+
+    <!-- 查询部门统计数据 -->
+    <select id="selectDepartmentStatistics" resultType="java.util.Map">
+        SELECT
+            d.id as department_id,
+            d.dept_name as department_name,
+            COUNT(r.id) as record_count,
+            COUNT(CASE WHEN r.record_status = 0 THEN 1 END) as draft_count,
+            COUNT(CASE WHEN r.record_status = 1 THEN 1 END) as submitted_count,
+            COUNT(CASE WHEN r.record_status = 2 THEN 1 END) as audited_count,
+            AVG(r.safety_score) as avg_safety_score
+        FROM sys_dept d
+        LEFT JOIN sys_monthly_inspection_record r ON d.id = r.responsibility_id AND r.deleted = 0
+        <if test="recordStatus != null">
+            AND r.record_status = #{recordStatus}
+        </if>
+        WHERE d.deleted = 0
+        GROUP BY d.id, d.dept_name
+        ORDER BY record_count DESC
     </select>
 
 </mapper>

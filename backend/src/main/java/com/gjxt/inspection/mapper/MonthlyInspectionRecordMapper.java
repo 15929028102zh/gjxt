@@ -93,4 +93,12 @@ public interface MonthlyInspectionRecordMapper extends BaseMapper<MonthlyInspect
      * @return 最新记录编号
      */
     String selectLatestRecordNo();
+
+    /**
+     * 查询部门统计数据
+     *
+     * @param recordStatus 记录状态
+     * @return 部门统计数据
+     */
+    List<Map<String, Object>> selectDepartmentStatistics(@Param("recordStatus") Integer recordStatus);
 }

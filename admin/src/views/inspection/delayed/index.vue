@@ -114,11 +114,11 @@
         导出Excel
       </el-button>
       <el-button 
+        v-if="hasWeeklyPermission()"
         type="danger" 
         @click="handleBatchDelete" 
         :disabled="selectedIds.length === 0"
         :icon="Delete"
-        v-if="hasDelayedPermission()"
       >
         批量删除
       </el-button>
@@ -174,7 +174,6 @@
               查看
             </el-button>
             <el-button 
-              v-if="hasDelayedPermission()"
               size="small" 
               type="warning" 
               @click="handleRectification(row)" 
@@ -185,7 +184,6 @@
               确认整改
             </el-button>
             <el-button 
-              v-if="hasDelayedPermission()"
               size="small" 
               type="success" 
               @click="handleReview(row)" 
@@ -196,15 +194,15 @@
               确认复查
             </el-button>
             <el-button 
-               size="small" 
-               type="danger" 
-               @click="handleDelete(row)" 
-               :icon="Delete"
-               class="action-btn delete-btn"
-               v-if="hasDelayedPermission()"
-             >
-               删除
-             </el-button>
+              v-if="hasWeeklyPermission()"
+              size="small" 
+              type="danger" 
+              @click="handleDelete(row)" 
+              :icon="Delete"
+              class="action-btn delete-btn"
+            >
+              删除
+            </el-button>
           </div>
         </template>
       </el-table-column>
@@ -257,25 +255,10 @@ import {
   Download 
 } from '@element-plus/icons-vue'
 import { inspectionApi, getDictByType, getDeptList } from '@/api/inspection'
+import { hasWeeklyPermission } from '@/utils/permission'
 import RectificationDialog from '../weekly/components/RectificationDialog.vue'
 import ReviewDialog from '../weekly/components/ReviewDialog.vue'
 import ViewDialog from '../weekly/components/ViewDialog.vue'
-import { useUserStore } from '@/stores/user'
-
-// 用户store
-const userStore = useUserStore()
-
-// 权限控制函数
-const hasDelayedPermission = () => {
-  const userInfo = userStore.userInfo
-  if (!userInfo) return false
-  
-  // 管理员有所有权限
-  if (userInfo.isAdmin === 1) return true
-  
-  // 检查周检权限字段：0=允许编辑删除，1=禁用编辑删除
-  return userInfo.weeklyPermission === 0
-}
 
 // 响应式数据
 const loading = ref(false)
@@ -626,7 +609,7 @@ const getCurrentUserDepartment = () => {
   try {
     const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}')
     // 判断是否为管理员
-    isAdminUser.value = userInfo.username === 'admin'
+    isAdminUser.value = userInfo.isAdmin === 1
     
     // 非管理员用户自动设置部门
     if (!isAdminUser.value && userInfo.deptId) {

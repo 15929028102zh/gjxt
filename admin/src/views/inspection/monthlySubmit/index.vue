@@ -103,12 +103,22 @@
           </template>
         </el-table-column>
         <el-table-column prop="createTime" label="记录时间" width="180" />
-        <el-table-column label="操作" width="150" fixed="right">
+        <el-table-column label="操作" width="220" fixed="right">
           <template #default="{ row }">
-             <el-button type="success" size="small" @click="handleSubmit(row)">
-               提交
-             </el-button>
-           </template>
+            <el-button
+              type="primary"
+              size="small"
+              v-if="hasMonthlyPermission()"
+              @click="handleEdit(row)"
+            >编辑</el-button>
+            <el-button
+              type="danger"
+              size="small"
+              v-if="hasMonthlyPermission()"
+              @click="handleDelete(row)"
+            >删除</el-button>
+            <el-button type="success" size="small" @click="handleSubmit(row)">提交</el-button>
+          </template>
         </el-table-column>
       </el-table>
 
@@ -126,6 +136,13 @@
       </div>
     </div>
   </div>
+
+  <!-- 编辑对话框 -->
+  <EditDialog
+    v-model="editDialog.visible"
+    :record="editDialog.record"
+    @success="handleEditSuccess"
+  />
 </template>
 
 <script setup>
@@ -133,6 +150,8 @@ import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search, Refresh, Upload } from '@element-plus/icons-vue'
 import { monthlyRecordApi, getDeptList } from '@/api/monthlyRecord'
+import { isAdmin as isAdminPermission, hasMonthlyPermission } from '@/utils/permission'
+import EditDialog from './components/EditDialog.vue'
 
 // 搜索表单
 const searchForm = reactive({
@@ -160,6 +179,12 @@ const departmentList = ref([])
 // 用户权限
 const isAdminUser = ref(false)
 
+// 编辑弹窗状态
+const editDialog = reactive({
+  visible: false,
+  record: null
+})
+
 // 获取部门名称
 const getDepartmentName = (departmentId) => {
   if (!departmentId) return '-'
@@ -171,9 +196,13 @@ const getDepartmentName = (departmentId) => {
 const loadDepartmentList = async () => {
   try {
     const response = await getDeptList()
-    if (response.code === 200) {
-      departmentList.value = response.data || []
-    }
+    // 兼容多种数据结构：数组、data数组、data.list
+    const list = Array.isArray(response)
+      ? response
+      : (Array.isArray(response?.data)
+        ? response.data
+        : (response?.data?.list || []))
+    departmentList.value = list
   } catch (error) {
     console.error('加载部门数据失败:', error)
   }
@@ -270,6 +299,40 @@ const handleBatchSubmit = async () => {
   }
 }
 
+// 编辑
+const handleEdit = (row) => {
+  editDialog.record = { ...row }
+  editDialog.visible = true
+}
+
+// 删除
+const handleDelete = async (row) => {
+  try {
+    await ElMessageBox.confirm(
+      `确定要删除责任人为"${row.responsiblePerson}"的记录吗？`,
+      '删除确认',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }
+    )
+
+    const response = await monthlyRecordApi.delete(row.id)
+    if (response.code === 200) {
+      ElMessage.success('删除成功')
+      fetchData()
+    } else {
+      ElMessage.error(response.message || '删除失败')
+    }
+  } catch (error) {
+    if (error !== 'cancel') {
+      console.error('删除失败:', error)
+      ElMessage.error('删除失败')
+    }
+  }
+}
+
 // 单个提交
 const handleSubmit = async (row) => {
   try {
@@ -298,6 +361,13 @@ const handleSubmit = async (row) => {
   }
 }
 
+
+// 编辑成功回调
+const handleEditSuccess = () => {
+  editDialog.visible = false
+  fetchData()
+}
+
 // 分页变化
 const handleSizeChange = (size) => {
   pagination.size = size
@@ -315,7 +385,7 @@ const getCurrentUserDepartment = () => {
   try {
     const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}')
     // 判断是否为管理员
-    isAdminUser.value = userInfo.isAdmin === 1 || userInfo.username === 'admin'
+    isAdminUser.value = isAdminPermission()
     
     // 非管理员用户自动设置部门
     if (!isAdminUser.value && userInfo.deptId) {

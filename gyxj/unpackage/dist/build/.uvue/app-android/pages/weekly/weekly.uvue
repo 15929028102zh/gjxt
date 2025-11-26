@@ -86,22 +86,27 @@ const __sfc__ = defineComponent({
         loadStatistics() {
             console.log('开始加载统计数据');
             const token = uni.getStorageSync('token');
-            // 获取用户部门信息
+            // 获取用户信息，包括部门和管理员权限
             let departmentId = '';
+            let isAdmin = false;
             const userInfoData = uni.getStorageSync('userInfo');
             const userInfoStr = userInfoData != null ? userInfoData as string : '';
             if (userInfoStr != null && userInfoStr != '' && userInfoStr != 'null' && userInfoStr != 'undefined') {
                 try {
                     const parsedUserInfo = JSON.parse(userInfoStr) as UTSJSONObject;
                     departmentId = parsedUserInfo.getString('deptId') ?? '';
+                    isAdmin = (parsedUserInfo.getNumber('isAdmin') ?? 0) === 1;
                     console.log("获取到的部门id", departmentId);
+                    console.log("是否为管理员", isAdmin);
                 }
                 catch (error: any) {
                     console.error('用户信息JSON解析失败:', error);
                 }
             }
+            // 构建部门过滤参数 - 管理员用户不需要部门过滤
+            const deptParam = (!isAdmin && departmentId != null && departmentId != '') ? `&departmentId=${departmentId}` : '';
             // 获取待整改数量（状态为0）- 使用分页查询API获取准确数量
-            const pendingUrl = getApiUrl(`/inspection-record/page?current=1&size=1&status=0${departmentId != null && departmentId != '' ? '&departmentId=' + departmentId : ''}`);
+            const pendingUrl = getApiUrl(`/inspection-record/page?current=1&size=1&status=0${deptParam}`);
             console.log('待整改数量请求URL:', pendingUrl);
             uni.request({
                 url: pendingUrl,
@@ -126,7 +131,7 @@ const __sfc__ = defineComponent({
                 }
             });
             // 获取已整改数量（状态为1）- 使用分页查询API获取准确数量
-            const completedUrl = getApiUrl(`/inspection-record/page?current=1&size=1&status=1${departmentId != null && departmentId != '' ? '&departmentId=' + departmentId : ''}`);
+            const completedUrl = getApiUrl(`/inspection-record/page?current=1&size=1&status=1${deptParam}`);
             console.log('已整改数量请求URL:', completedUrl);
             uni.request({
                 url: completedUrl,
@@ -151,7 +156,7 @@ const __sfc__ = defineComponent({
                 }
             });
             // 获取已复查数量（状态为2）- 使用分页查询API获取准确数量
-            const reviewedUrl = getApiUrl(`/inspection-record/page?current=1&size=1&status=2${departmentId != null && departmentId != '' ? '&departmentId=' + departmentId : ''}`);
+            const reviewedUrl = getApiUrl(`/inspection-record/page?current=1&size=1&status=2${deptParam}`);
             console.log('已复查数量请求URL:', reviewedUrl);
             uni.request({
                 url: reviewedUrl,
@@ -178,20 +183,24 @@ const __sfc__ = defineComponent({
         },
         loadRecentRecords() {
             const token = uni.getStorageSync('token');
-            // 获取用户部门信息
+            // 获取用户信息，包括部门和管理员权限
             let departmentId = '';
+            let isAdmin = false;
             const userInfoData = uni.getStorageSync('userInfo');
             const userInfoStr = userInfoData != null ? userInfoData as string : '';
             if (userInfoStr != null && userInfoStr != '' && userInfoStr != 'null' && userInfoStr != 'undefined') {
                 try {
                     const parsedUserInfo = JSON.parse(userInfoStr) as UTSJSONObject;
                     departmentId = parsedUserInfo.getString('deptId') ?? '';
+                    isAdmin = (parsedUserInfo.getNumber('isAdmin') ?? 0) === 1;
                 }
                 catch (error: any) {
                     console.error('用户信息JSON解析失败:', error);
                 }
             }
-            const apiUrl = getApiUrl(`/inspection-record/page?current=1&size=5&status=0${departmentId != null && departmentId != '' ? '&departmentId=' + departmentId : ''}`);
+            // 构建部门过滤参数 - 管理员用户不需要部门过滤
+            const deptParam = (!isAdmin && departmentId != null && departmentId != '') ? `&departmentId=${departmentId}` : '';
+            const apiUrl = getApiUrl(`/inspection-record/page?current=1&size=5&status=0${deptParam}`);
             console.log('请求URL:', apiUrl);
             uni.request({
                 url: apiUrl,

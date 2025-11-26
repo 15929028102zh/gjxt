@@ -117,13 +117,29 @@
 				<text class="char-count">{{formData.problemDescription.length}}/500</text>
 			</view>
 			
-			<!-- 发现位置 -->
-			<view class="form-item">
-				<text class="form-label-left">发现位置</text>
-				<input class="form-input" 
-					   v-model="formData.location" 
-					   placeholder="请输入问题发现的具体位置" />
-			</view>
+      <!-- 发现位置 -->
+      <view class="form-item">
+        <text class="form-label-left">发现位置</text>
+        <input class="form-input" 
+               v-model="formData.location" 
+               placeholder="请输入问题发现的具体位置" />
+      </view>
+
+      <!-- 责任单位 -->
+      <view class="form-item">
+        <text class="form-label-left">责任单位</text>
+        <input class="form-input" 
+               v-model="formData.responsibleUnit" 
+               placeholder="请输入责任单位" />
+      </view>
+
+      <!-- 责任人 -->
+      <view class="form-item">
+        <text class="form-label-left">责任人</text>
+        <input class="form-input" 
+               v-model="formData.responsiblePerson" 
+               placeholder="请输入责任人" />
+      </view>
 			
 			<!-- 整改期限 -->
 			<view class="form-item">
@@ -357,16 +373,17 @@
 <script lang="uts">
 	import { getApiUrl, apiConfig } from '@/config/api.uts'
 	
-	type TaskInfo = {
-		taskNumber: string
-		inspectionDate: string
-		department: string
-		profession: string
-		groupLeader: string
-		deputyLeader: string
-	}
+type TaskInfo = {
+    taskId: string
+    taskNumber: string
+    inspectionDate: string
+    department: string
+    profession: string
+    groupLeader: string
+    deputyLeader: string
+}
 	
-	type FormData = {
+  type FormData = {
 		problemType: string
 		problemDescription: string
 		location: string
@@ -376,9 +393,11 @@
 		module: string
 		responsibility: string
 		issue: string
-		quality: string
-		inspector: string
-	}
+    quality: string
+    inspector: string
+    responsibleUnit: string
+    responsiblePerson: string
+  }
 	
 	type OptionItem = {
 		id: string
@@ -433,16 +452,17 @@
 			defaultDate.setDate(defaultDate.getDate() + 7)
 			const defaultDateStr = `${defaultDate.getFullYear()}-${(defaultDate.getMonth() + 1).toString().padStart(2, '0')}-${defaultDate.getDate().toString().padStart(2, '0')}`
 			
-			return {
-				taskInfo: {
-					taskNumber: '',
-					inspectionDate: '',
-					department: '',
-					profession: '',
-					groupLeader: '',
-					deputyLeader: ''
-				} as TaskInfo,
-				formData: {
+        return {
+            taskInfo: {
+                taskId: '',
+                taskNumber: '',
+                inspectionDate: '',
+                department: '',
+                profession: '',
+                groupLeader: '',
+                deputyLeader: ''
+            } as TaskInfo,
+          formData: {
 			problemType: '',
 			problemDescription: '',
 			location: '',
@@ -452,9 +472,11 @@
 			module: '',
 			responsibility: '',
 			issue: '',
-			quality: '',
-			inspector: ''
-		} as FormData,
+            quality: '',
+            inspector: ''
+            ,responsibleUnit: '',
+            responsiblePerson: ''
+          } as FormData,
 				containerHeight: 0,
 				scrollTop: 0,
 				showProblemTypeModal: false,
@@ -526,8 +548,8 @@
 		})
 	},
 
-	onLoad(options : UTSJSONObject) {
-			const taskId = options.getString('taskId')
+	onLoad(options: UTSJSONObject) {
+			const taskId = options.getString('taskId') ?? ''
 			console.log(taskId)
 			
 			if (taskId != null && taskId != '') {
@@ -625,27 +647,29 @@
 			loadTaskInfo(taskId: string) {
 				try {
 					const token = uni.getStorageSync('token')
-					console.log(taskId)
+					console.log('接收到的taskId参数:', taskId)
+					// 使用task-no接口根据任务编号获取任务详情
 					uni.request({
-						url: getApiUrl(`/monthly-inspection-task/${taskId}`),
+						url: getApiUrl(`/monthly-inspection-task/task-no/${taskId}`),
 						method: 'GET',
 						header: {
 							'Authorization': `Bearer ${token}`
 						},
 						success: (res) => {
 							const respdata=res.data as UTSJSONObject;
-							if ( respdata.getNumber('code')=== 200) {
-								const taskInfo = respdata.getJSON('data')
-								console.log("获取到的数据:",taskInfo)
-								if (taskInfo != null) {
-									this.taskInfo = {
-										taskNumber: taskInfo.getString('id') ?? '',
-										inspectionDate: taskInfo.getString('inspectionTime') ?? '',
-										department: taskInfo.getString('departmentName') ?? '',
-										profession: taskInfo.getString('professionId') ?? '',
-										groupLeader: taskInfo.getString('groupLeaderName') ?? '',
-										deputyLeader: taskInfo.getString('deputyLeaderName') ?? ''
-									}
+                            if ( respdata.getNumber('code')=== 200) {
+                                const taskInfo = respdata.getJSON('data')
+                                console.log("获取到的任务数据:",taskInfo)
+                                if (taskInfo != null) {
+                                    this.taskInfo = {
+                                        taskId: taskInfo.getString('id') ?? '',
+                                        taskNumber: taskInfo.getString('taskNo') ?? '',
+                                        inspectionDate: taskInfo.getString('inspectionTime') ?? '',
+                                        department: taskInfo.getString('departmentName') ?? '',
+                                        profession: taskInfo.getString('professionId') ?? '',
+                                        groupLeader: taskInfo.getString('groupLeaderName') ?? '',
+                                        deputyLeader: taskInfo.getString('deputyLeaderName') ?? ''
+                                    }
 									// 自动填充性质界定
 									this.autoFillProfession()
 								}
@@ -654,14 +678,15 @@
 						fail: (error) => {
 							console.error('加载任务信息失败:', error)
 							// 模拟数据
-							this.taskInfo = {
-								taskNumber: 'YJ202401001',
-								inspectionDate: '2024年1月',
-								department: '生产部',
-								profession: '违法违规',
-								groupLeader: '张三',
-								deputyLeader: '李四'
-							}
+                        this.taskInfo = {
+                            taskId: '',
+                            taskNumber: 'YJ202401001',
+                            inspectionDate: '2024年1月',
+                            department: '生产部',
+                            profession: '违法违规',
+                            groupLeader: '张三',
+                            deputyLeader: '李四'
+                        }
 							// 自动填充性质界定
 						this.autoFillProfession()
 						}
@@ -669,14 +694,15 @@
 				} catch (error) {
 					console.error('加载任务信息失败:', error)
 					// 模拟数据
-					this.taskInfo = {
-						taskNumber: 'YJ202401001',
-						inspectionDate: '2024年1月',
-						department: '生产部',
-						profession: '违法违规',
-						groupLeader: '张三',
-						deputyLeader: '李四'
-					}
+                    this.taskInfo = {
+                        taskId: '',
+                        taskNumber: 'YJ202401001',
+                        inspectionDate: '2024年1月',
+                        department: '生产部',
+                        profession: '违法违规',
+                        groupLeader: '张三',
+                        deputyLeader: '李四'
+                    }
 					// 自动填充性质界定
 					this.autoFillProfession()
 				}
@@ -703,8 +729,8 @@
 				this.selectedProblemType = type
 			},
 			
-			// 自动填充性质界定
-			autoFillProfession() {
+            // 自动填充性质界定
+            autoFillProfession() {
 				console.log('开始自动填充性质界定')
 				console.log('taskInfo:', this.taskInfo)
 				console.log('typeOptions:', this.typeOptions)
@@ -717,8 +743,8 @@
 					if (index !== -1) {
 						this.selectedTypeIndex = index
 						console.log('已设置性质界定索引:', this.selectedTypeIndex)
-						// 自动加载模块选项
-						this.loadModuleOptions((this.typeOptions[index] as OptionItem).id)
+                        // 自动加载模块选项（按专业名称过滤模块）
+                        this.loadModuleOptions((this.typeOptions[index] as OptionItem).name)
 					} else {
 						console.warn('未找到匹配的性质界定:', this.taskInfo.profession)
 						// 尝试模糊匹配
@@ -728,7 +754,7 @@
 						if (fuzzyIndex !== -1) {
 							this.selectedTypeIndex = fuzzyIndex
 							console.log('模糊匹配到性质界定索引:', this.selectedTypeIndex)
-							this.loadModuleOptions((this.typeOptions[fuzzyIndex] as OptionItem).id)
+                            this.loadModuleOptions((this.typeOptions[fuzzyIndex] as OptionItem).name)
 						}
 					}
 				} else {
@@ -853,7 +879,7 @@
 				this.showTypePopup = false
 				this.typeSearchKeyword = ''
 			},
-			selectType(index: number) {
+            selectType(index: number) {
 				this.selectedTypeIndex = index
 				this.hideTypePicker()
 				// 重置下级选择
@@ -863,8 +889,8 @@
 				this.moduleOptions = []
 				this.responsibilityOptions = []
 				this.issueOptions = []
-				// 加载模块选项
-				this.loadModuleOptions((this.typeOptions[index] as OptionItem).id)
+                // 加载模块选项（按专业名称过滤）
+                this.loadModuleOptions((this.typeOptions[index] as OptionItem).name)
 			},
 			selectTypeFromFiltered(item: OptionItem) {
 				// 找到原始数组中的索引
@@ -900,6 +926,7 @@
 				this.issueOptions = []
 				// 加载责任选项
 				this.loadResponsibilityOptions((this.moduleOptions[index] as OptionItem).id)
+				this.loadResponsibilityOptions((this.moduleOptions[index] as OptionItem).name)
 			},
 			selectModuleFromFiltered(item: OptionItem) {
 				// 找到原始数组中的索引
@@ -932,6 +959,7 @@
 				this.issueOptions = []
 				// 加载问题选项
 				this.loadIssueOptions((this.responsibilityOptions[index] as OptionItem).id)
+				this.loadIssueOptions((this.responsibilityOptions[index] as OptionItem).name)
 			},
 			selectResponsibilityFromFiltered(item: OptionItem) {
 				// 找到原始数组中的索引
@@ -983,8 +1011,7 @@
 				// 回写选中的值到表单数据
 				this.formData.quality = (this.qualityOptions[index] as OptionItem).name
 				this.hideQualityPicker()
-				// 自动带出扣分值和安全记分关联项
-				this.loadQualityDetails((this.qualityOptions[index] as OptionItem).id)
+				this.formData.safetyScore = this.getScoreByQualityName((this.qualityOptions[index] as OptionItem).name)
 			},
 			selectQualityFromFiltered(item: OptionItem) {
 				// 找到原始数组中的索引
@@ -994,116 +1021,109 @@
 				}
 			},
 			
-			// 加载模块选项
-			loadModuleOptions(typeId: string) {
-				const token = uni.getStorageSync('token')
-				uni.request({
-					url: getApiUrl('/gjbz-data/options/modules'),
-					method: 'GET',
-					header: {
-						'Authorization': `Bearer ${token}`
-					},
-					success: (res) => {
-						const respdata = res.data as UTSJSONObject
-						if (respdata.getNumber('code') === 200) {
-							const data = respdata.getArray('data')
-							if (data != null) {
-								const options: OptionItem[] = []
-								for (let i = 0; i < data.length; i++) {
-									const item = data[i] as string
-									options.push({
-										id: (i + 1).toString(),
-										name: item
-									} as OptionItem)
-								}
-								this.moduleOptions = options
-							}
-						}
-					},
-					fail: (error) => {
-						console.error('加载模块选项失败:', error)
-						this.moduleOptions = [
-							{ id: 'module1', name: '模块1' },
-							{ id: 'module2', name: '模块2' },
-							{ id: 'module3', name: '模块3' }
-						] as OptionItem[]
-					}
-				})
-			},
+            // 加载模块选项（按专业类型精确过滤）
+            loadModuleOptions(typeName: string) {
+                const token = uni.getStorageSync('token')
+                uni.request({
+                    url: getApiUrl(`/gjbz-data/modules/by-type/${encodeURIComponent(typeName)}`),
+                    method: 'GET',
+                    header: {
+                        'Authorization': `Bearer ${token}`
+                    },
+                    success: (res) => {
+                        const respdata = res.data as UTSJSONObject
+                        if (respdata.getNumber('code') === 200) {
+                            const modules = respdata.getArray('data') as string[]
+                            const unique = [] as string[]
+                            if (modules != null) {
+                                for (let i = 0; i < modules.length; i++) {
+                                    const m = modules[i]
+                                    if (m != null && m != '' && unique.indexOf(m) === -1) unique.push(m)
+                                }
+                            }
+                            this.moduleOptions = unique.map((m, idx) => ({ id: (idx + 1).toString(), name: m } as OptionItem))
+                        }
+                    },
+                    fail: (error) => {
+                        console.error('按专业加载模块失败:', error)
+                        this.moduleOptions = [] as OptionItem[]
+                    }
+                })
+            },
 			
 			// 加载责任选项
-			loadResponsibilityOptions(moduleId: string) {
-				const token = uni.getStorageSync('token')
-				uni.request({
-					url: getApiUrl('/gjbz-data/options/responsibilities'),
-					method: 'GET',
-					header: {
-						'Authorization': `Bearer ${token}`
-					},
-					success: (res) => {
-						const respdata = res.data as UTSJSONObject
-						if (respdata.getNumber('code') === 200) {
-							const data = respdata.getArray('data')
-							if (data != null) {
-								const options: OptionItem[] = []
-								for (let i = 0; i < data.length; i++) {
-									const item = data[i] as string
-									options.push({
-										id: (i + 1).toString(),
-										name: item
-									} as OptionItem)
-								}
-								this.responsibilityOptions = options
-							}
-						}
-					},
-					fail: (error) => {
-						console.error('加载责任选项失败:', error)
-						this.responsibilityOptions = [
-							{ id: 'resp1', name: '责任1' },
-							{ id: 'resp2', name: '责任2' },
-							{ id: 'resp3', name: '责任3' }
-						] as OptionItem[]
-					}
-				})
-			},
+            loadResponsibilityOptions(moduleId: string) {
+                const token = uni.getStorageSync('token')
+                uni.request({
+                    url: getApiUrl(`/gjbz-data/options/responsibilities/by-module/${encodeURIComponent(moduleId)}`),
+                    method: 'GET',
+                    header: {
+                        'Authorization': `Bearer ${token}`
+                    },
+                    success: (res) => {
+                        const respdata = res.data as UTSJSONObject
+                        if (respdata.getNumber('code') === 200) {
+                            const data = respdata.getArray('data')
+                            if (data != null) {
+                                const options: OptionItem[] = []
+                                for (let i = 0; i < data.length; i++) {
+                                    const item = data[i] as string
+                                    options.push({
+                                        id: (i + 1).toString(),
+                                        name: item
+                                    } as OptionItem)
+                                }
+                                this.responsibilityOptions = options
+                            }
+                        }
+                    },
+                    fail: (error) => {
+                        console.error('加载责任选项失败:', error)
+                        this.responsibilityOptions = [
+                            { id: 'resp1', name: '责任1' },
+                            { id: 'resp2', name: '责任2' },
+                            { id: 'resp3', name: '责任3' }
+                        ] as OptionItem[]
+                    }
+                })
+            },
 			
 			// 加载问题选项
-			loadIssueOptions(responsibilityId: string) {
-				const token = uni.getStorageSync('token')
-				uni.request({
-					url: getApiUrl('/gjbz-data/options/issues'),
-					method: 'GET',
-					header: {
-						'Authorization': `Bearer ${token}`
-					},
-					success: (res) => {
-						const respdata = res.data as UTSJSONObject
-						if (respdata.getNumber('code') === 200) {
-							const data = respdata.getArray('data')
-							if (data != null) {
-								const options: OptionItem[] = []
-								for (let i = 0; i < data.length; i++) {
-									const item = data[i] as string
-									options.push({
-										id: (i + 1).toString(),
-										name: item
-									} as OptionItem)
-								}
-								this.issueOptions = options
-							}
-						}
-					},
-					fail: (error) => {
-						console.error('加载问题选项失败:', error)
-						this.issueOptions = [
-							{ id: 'issue1', name: '问题1' },
-							{ id: 'issue2', name: '问题2' },
-							{ id: 'issue3', name: '问题3' }
-						] as OptionItem[]
-					}
-				})
-			},
+            loadIssueOptions(responsibilityId: string) {
+                const token = uni.getStorageSync('token')
+                uni.request({
+                    url: getApiUrl(`/gjbz-data/options/issues/by-responsibility/${encodeURIComponent(responsibilityId)}`),
+                    method: 'GET',
+                    header: {
+                        'Authorization': `Bearer ${token}`
+                    },
+                    success: (res) => {
+                        const respdata = res.data as UTSJSONObject
+                        if (respdata.getNumber('code') === 200) {
+                            const data = respdata.getArray('data')
+                            if (data != null) {
+                                const options: OptionItem[] = []
+                                for (let i = 0; i < data.length; i++) {
+                                    const item = data[i] as string
+                                    options.push({
+                                        id: (i + 1).toString(),
+                                        name: item
+                                    } as OptionItem)
+                                }
+                                this.issueOptions = options
+                            }
+                        }
+                    },
+                    fail: (error) => {
+                        console.error('加载问题选项失败:', error)
+                        this.issueOptions = [
+                            { id: 'issue1', name: '问题1' },
+                            { id: 'issue2', name: '问题2' },
+                            { id: 'issue3', name: '问题3' }
+                        ] as OptionItem[]
+                    }
+                })
+            },
 			
 			// 加载性质界定选项
 			loadQualityOptions() {
@@ -1160,22 +1180,10 @@
 			
 			// 加载性质界定详情（扣分值和安全记分关联项）
 			loadQualityDetails(qualityId: string) {
-				// 模拟API调用
-				setTimeout(() => {
-					switch (qualityId) {
-						case 'quality1':
-					this.formData.safetyScore = '5分 - 一般安全记分'
-					break
-				case 'quality2':
-					this.formData.safetyScore = '10分 - 严重安全记分'
-					break
-				case 'quality3':
-					this.formData.safetyScore = '20分 - 重大安全记分'
-					break
-				default:
-					this.formData.safetyScore = ''
-					}
-			}, 100)
+				const opt = this.qualityOptions.find((o: OptionItem) => o.id === qualityId)
+				if (opt != null) {
+					this.formData.safetyScore = this.getScoreByQualityName(opt.name)
+				}
 			},
 			
 			// 根据选择的问题自动填充问题性质和对应分数
@@ -1294,13 +1302,7 @@
 					}
 				}
 					
-					// 设置安全记分 - 只提取数字部分
-      const scoreMatch = safetyScoreText.match(/(\d+)分/)
-      if (scoreMatch != null && scoreMatch.length > 1 && scoreMatch[1] != null) {
-       this.formData.safetyScore = scoreMatch[1] as string
-      } else {
-       this.formData.safetyScore = '5' // 默认值
-					}
+					this.formData.safetyScore = this.getScoreByQualityName(matchedQualityName)
 				
 				console.log('自动填充完成:', {
 					originalQuality: qualityName,
@@ -1321,7 +1323,7 @@
 			},
 			
 			// 获取问题与性质界定的映射关系
-  getIssueQualityMapping(issueName: string): UTSJSONObject {
+			getIssueQualityMapping(issueName: string): UTSJSONObject {
     // 定义问题与性质界定的映射规则
 			const mappingRules = [
 				// 严重问题类型
@@ -1357,6 +1359,13 @@
 					quality: '一般问题',
 					safetyScore: '5分 - 一般安全记分'
 				}
+			},
+			getScoreByQualityName(qualityName: string): string {
+				const s: string = (qualityName == null) ? '' : qualityName
+				if (s.indexOf('重要') >= 0) return '5'
+				if (s.indexOf('一般') >= 0) return '3'
+				if (s.indexOf('观察') >= 0) return '1'
+				return '0'
 			},
 			
 			// 添加照片
@@ -1494,10 +1503,20 @@
 					return
 				}
 				
-				if (this.formData.rectificationDate == '') {
-					uni.showToast({ title: '请选择整改期限', icon: 'none' })
-					return
-				}
+        if (this.formData.rectificationDate == '') {
+          uni.showToast({ title: '请选择整改期限', icon: 'none' })
+          return
+        }
+
+        if (this.formData.responsibleUnit.trim() == '') {
+          uni.showToast({ title: '请输入责任单位', icon: 'none' })
+          return
+        }
+
+        if (this.formData.responsiblePerson.trim() == '') {
+          uni.showToast({ title: '请输入责任人', icon: 'none' })
+          return
+        }
 				
 				if (this.formData.inspector.trim() == '') {
 					uni.showToast({ title: '请输入检查人', icon: 'none' })
@@ -1526,20 +1545,22 @@
 					}
 					
 					// 构建保存数据
-      const saveData = {
-        taskId: this.taskInfo.taskNumber,
+        const saveData = {
+        taskId: this.taskInfo.taskId,
         professionalCategory: this.selectedTypeIndex !== -1 && this.typeOptions[this.selectedTypeIndex] != null ? this.typeOptions[this.selectedTypeIndex].name : '',
         module: this.selectedModuleIndex !== -1 && this.moduleOptions[this.selectedModuleIndex] != null ? this.moduleOptions[this.selectedModuleIndex].name : '',
         responsibility: this.selectedResponsibilityIndex !== -1 && this.responsibilityOptions[this.selectedResponsibilityIndex] != null ? this.responsibilityOptions[this.selectedResponsibilityIndex].name : '',
         issue: this.selectedIssueIndex !== -1 && this.issueOptions[this.selectedIssueIndex] != null ? this.issueOptions[this.selectedIssueIndex].name : '',
         qualityDetermination: this.selectedQualityIndex !== -1 && this.qualityOptions[this.selectedQualityIndex] != null ? this.qualityOptions[this.selectedQualityIndex].name : '',
-						problemDescription: this.formData.problemDescription,
-						location: this.formData.location,
-						rectificationDate: this.formData.rectificationDate,
-						inspector: this.formData.inspector,
-						safetyScore: this.formData.safetyScore,
-						photos: this.formData.photos
-					}
+            problemDescription: this.formData.problemDescription,
+            location: this.formData.location,
+            rectificationDate: this.formData.rectificationDate,
+            inspector: this.formData.inspector,
+            safetyScore: this.formData.safetyScore,
+            photos: this.formData.photos,
+            responsibleUnit: this.formData.responsibleUnit,
+            responsiblePerson: this.formData.responsiblePerson
+        }
 					
 					// 调用月检记录保存接口
 					uni.request({

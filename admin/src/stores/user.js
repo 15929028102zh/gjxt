@@ -41,7 +41,7 @@ export const useUserStore = defineStore('user', () => {
   
   // 计算属性：是否为管理员
   const isAdmin = computed(() => {
-    return userInfo.value?.isAdmin || userInfo.value?.username === 'admin'
+    return userInfo.value?.isAdmin === 1
   })
   
   // 计算属性：用户权限列表
@@ -65,6 +65,7 @@ export const useUserStore = defineStore('user', () => {
     isLoggedIn,
     isAdmin,
     permissions,
+    initUserInfo,
     setUserInfo,
     clearUserInfo,
     hasPermission

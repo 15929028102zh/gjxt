@@ -166,4 +166,12 @@ public interface ISysUserService extends IService<SysUser> {
      */
     SysUser getUserPermissions(String userId);
 
+    /**
+     * 根据部门ID获取部门管理员
+     *
+     * @param deptId 部门ID
+     * @return 部门管理员列表
+     */
+    java.util.List<SysUser> getAdminsByDeptId(String deptId);
+
 }

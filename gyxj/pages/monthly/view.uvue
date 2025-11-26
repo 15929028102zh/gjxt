@@ -1,0 +1,295 @@
+<template>
+  <scroll-view class="container" scroll-y="true" :style="{height: containerHeight + 'px'}">
+    <view v-if="loading" class="loading">
+      <text>加载中...</text>
+    </view>
+    <view v-else-if="detail != null" class="content">
+      <view class="header">
+        <text class="title">月检记录详情</text>
+        <view class="status" :class="getStatusClass(detail.recordStatus)">
+          <text>{{ getStatusText(detail.recordStatus) }}</text>
+        </view>
+      </view>
+
+      <!-- 问题图片 → 整改效果 → 整改图片 → 复查效果 → 复查图片 -->
+      <view class="photos" v-if="problemImages.length > 0">
+        <text class="label">问题图片</text>
+        <view class="image-list">
+          <image v-for="(img, idx) in problemImages" :key="idx" :src="img" class="photo" mode="aspectFill" @click="preview(img, problemImages)"></image>
+        </view>
+      </view>
+
+      <view class="item">
+        <text class="label">整改效果</text>
+        <text class="value">{{ detail.rectificationEffect }}</text>
+      </view>
+
+      <view class="photos" v-if="rectificationImages.length > 0">
+        <text class="label">整改图片</text>
+        <view class="image-list">
+          <image v-for="(img, idx) in rectificationImages" :key="idx" :src="img" class="photo" mode="aspectFill" @click="preview(img, rectificationImages)"></image>
+        </view>
+      </view>
+
+      <view class="item">
+        <text class="label">复查效果</text>
+        <text class="value">{{ detail.reviewEffect }}</text>
+      </view>
+
+      <view class="photos" v-if="reviewImages.length > 0">
+        <text class="label">复查图片</text>
+        <view class="image-list">
+          <image v-for="(img, idx) in reviewImages" :key="idx" :src="img" class="photo" mode="aspectFill" @click="preview(img, reviewImages)"></image>
+        </view>
+      </view>
+
+      <view class="item">
+        <text class="label">问题描述</text>
+        <text class="value">{{ detail.problemDescription }}</text>
+      </view>
+
+      <view class="item">
+        <text class="label">任务编号</text>
+        <text class="value">{{ detail.taskNo }}</text>
+      </view>
+
+      <view class="item">
+        <text class="label">月检时间</text>
+        <text class="value">{{ detail.inspectionTime }}</text>
+      </view>
+
+      <view class="item">
+        <text class="label">模块</text>
+        <text class="value">{{ detail.moduleName }}</text>
+      </view>
+
+      <view class="item">
+        <text class="label">所属部门</text>
+        <text class="value">{{ detail.departmentName }}</text>
+      </view>
+
+      <view class="item">
+        <text class="label">检查专业</text>
+        <text class="value">{{ detail.professionalTypeName }}</text>
+      </view>
+
+      <view class="item">
+        <text class="label">检查组长</text>
+        <text class="value">{{ detail.groupLeaderName }}</text>
+      </view>
+
+      <view class="item">
+        <text class="label">检查副组长</text>
+        <text class="value">{{ detail.deputyLeaderName }}</text>
+      </view>
+
+      <view class="item">
+        <text class="label">责任单位</text>
+        <text class="value">{{ detail.responsibleUnit }}</text>
+      </view>
+
+      <view class="item">
+        <text class="label">责任人</text>
+        <text class="value">{{ detail.responsiblePerson }}</text>
+      </view>
+
+      <view class="item">
+        <text class="label">性质界定</text>
+        <text class="value">{{ detail.qualityName }}</text>
+      </view>
+
+      <view class="item">
+        <text class="label">安全记分</text>
+        <text class="value">{{ detail.safetyScore }}</text>
+      </view>
+
+      <view class="item">
+        <text class="label">责任要素</text>
+        <text class="value">{{ detail.responsibilityName }}</text>
+      </view>
+
+      <view class="item">
+        <text class="label">检查内容</text>
+        <text class="value">{{ detail.issueName }}</text>
+      </view>
+
+      <view class="item">
+        <text class="label">发生部位</text>
+        <text class="value">{{ detail.location }}</text>
+      </view>
+
+      <view class="item">
+        <text class="label">整改期限</text>
+        <text class="value">{{ detail.rectificationDeadline }}</text>
+      </view>
+
+      <view class="item">
+        <text class="label">检查人</text>
+        <text class="value">{{ detail.inspector }}</text>
+      </view>
+
+      <view class="item">
+        <text class="label">创建时间</text>
+        <text class="value">{{ detail.createTime }}</text>
+      </view>
+
+      
+    </view>
+    <view v-else class="empty"><text>记录不存在</text></view>
+  </scroll-view>
+</template>
+
+<script lang="uts">
+  import { getApiUrl, apiConfig } from '@/config/api.uts'
+
+  type MonthlyDetail = {
+    id: string
+    recordStatus: number
+    problemDescription: string
+    responsibleUnit: string
+    responsiblePerson: string
+    qualityName: string
+    safetyScore: number
+    location: string
+    inspector: string
+    rectificationEffect: string
+    reviewEffect: string
+    photos: string
+    rectificationImages: string
+    reviewImages: string
+    taskNo: string
+    inspectionTime: string
+    departmentName: string
+    professionalTypeName: string
+    groupLeaderName: string
+    deputyLeaderName: string
+    responsibilityName: string
+    issueName: string
+    moduleName: string
+    rectificationDeadline: string
+    createTime: string
+  }
+
+  export default {
+    data() {
+      return {
+        id: '',
+        detail: null as MonthlyDetail | null,
+        loading: true,
+        containerHeight: 0,
+        problemImages: [] as string[],
+        rectificationImages: [] as string[],
+        reviewImages: [] as string[]
+      }
+    },
+    onLoad(options: UTSJSONObject) {
+      this.id = options.getString('id') ?? ''
+      this.initContainer()
+      this.loadDetail()
+    },
+    methods: {
+      initContainer() {
+        uni.getSystemInfo({
+          success: (res) => { this.containerHeight = res.windowHeight }
+        })
+      },
+      loadDetail() {
+        const token = uni.getStorageSync('token')
+        uni.request({
+          url: getApiUrl(`/monthly-inspection-record/${this.id}`),
+          method: 'GET',
+          header: { 'Authorization': `Bearer ${token}` },
+          success: (res) => {
+            const data = res.data as UTSJSONObject
+            if (res.statusCode === 200 && (data.getNumber('code') ?? 0) === 200) {
+              const d = data.getJSON('data')
+              if (d != null) {
+                this.detail = {
+                  id: d.getString('id') ?? '',
+                  recordStatus: d.getNumber('recordStatus') ?? 0,
+                  problemDescription: d.getString('problemDescription') ?? '',
+                  responsibleUnit: d.getString('responsibleUnit') ?? '',
+                  responsiblePerson: d.getString('responsiblePerson') ?? '',
+                  qualityName: d.getString('qualityName') ?? '',
+                  safetyScore: d.getNumber('safetyScore') ?? 0,
+                  location: d.getString('location') ?? '',
+                  inspector: d.getString('inspector') ?? '',
+                  rectificationEffect: (d.getString('rectificationEffect') ?? d.getString('rectificationSuggestion') ?? ''),
+                  reviewEffect: (d.getString('reviewEffect') ?? d.getString('reviewSuggestion') ?? ''),
+                  photos: d.getString('photos') ?? '',
+                  rectificationImages: d.getString('rectificationImages') ?? '',
+                  reviewImages: d.getString('reviewImages') ?? '',
+                  taskNo: d.getString('taskNo') ?? '',
+                  inspectionTime: d.getString('inspectionTime') ?? '',
+                  departmentName: d.getString('departmentName') ?? '',
+                  professionalTypeName: d.getString('professionalTypeName') ?? '',
+                  groupLeaderName: d.getString('groupLeaderName') ?? '',
+                  deputyLeaderName: d.getString('deputyLeaderName') ?? '',
+                  responsibilityName: d.getString('responsibilityName') ?? '',
+                  issueName: d.getString('issueName') ?? '',
+                  moduleName: d.getString('moduleName') ?? '',
+                  rectificationDeadline: d.getString('rectificationDeadline') ?? '',
+                  createTime: d.getString('createTime') ?? ''
+                }
+                this.problemImages = this.parseImages(this.detail.photos)
+                this.rectificationImages = this.parseImages(this.detail.rectificationImages)
+                this.reviewImages = this.parseImages(this.detail.reviewImages)
+              }
+            }
+            this.loading = false
+          },
+          fail: (_) => { this.loading = false }
+        })
+      },
+      parseImages(s: string): string[] {
+        if (s == null || s.trim() === '') return []
+        try {
+          if (s.trim().startsWith('[') && s.trim().endsWith(']')) {
+            const arr = JSON.parse(s) as string[]
+            return arr.map(u => this.toUrl(u)).filter(u => u !== '')
+          }
+        } catch (_) {}
+        return s.split(',').map(u => u.trim()).filter(u => u !== '').map(u => this.toUrl(u))
+      },
+      toUrl(p: string): string {
+        if (p == null || p.trim() === '') return ''
+        if (p.startsWith('http://') || p.startsWith('https://')) return p
+        return `${apiConfig.baseUrl}/api${p}`
+      },
+      preview(current: string, urls: string[]) {
+        uni.previewImage({ current, urls })
+      },
+      getStatusText(s: number): string {
+        if (s === 0) return '待整改'
+        if (s === 1) return '已整改'
+        if (s === 2) return '已复查'
+        return '未知'
+      },
+      getStatusClass(s: number): string {
+        if (s === 0) return 'status-pending'
+        if (s === 1) return 'status-completed'
+        if (s === 2) return 'status-reviewed'
+        return 'status-unknown'
+      }
+    }
+  }
+</script>
+
+<style>
+.container { background: #f5f5f5; }
+.loading { padding: 20px; text-align: center; }
+.content { padding: 16px; }
+.header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.title { font-size: 18px; font-weight: bold; }
+.status { padding: 4px 8px; border-radius: 4px; }
+.status-pending { background: #fff7e6; color: #d48806; }
+.status-completed { background: #f6ffed; color: #389e0d; }
+.status-reviewed { background: #e6f7ff; color: #096dd9; }
+.status-unknown { background: #f0f0f0; color: #666; }
+.item { background: #fff; margin-bottom: 8px; padding: 12px; border-radius: 8px; }
+.label { display: block; font-size: 14px; color: #666; margin-bottom: 6px; }
+.value { font-size: 14px; color: #333; }
+.photos { background: #fff; margin-bottom: 8px; padding: 12px; border-radius: 8px; }
+.image-list { display: flex; flex-wrap: wrap; gap: 8px; }
+.photo { width: 100px; height: 100px; border-radius: 6px; }
+</style>

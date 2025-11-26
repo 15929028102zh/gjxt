@@ -1,5 +1,6 @@
-import { getApiUrl } from '@/config/api.uts';
+import { getApiUrl, apiConfig } from '@/config/api.uts';
 type TaskInfo = {
+    taskId: string;
     taskNumber: string;
     inspectionDate: string;
     department: string;
@@ -11,7 +12,6 @@ type FormData = {
     problemType: string;
     problemDescription: string;
     location: string;
-    suggestion: string;
     photos: string[];
     safetyScore: string;
     rectificationDate: string;
@@ -20,6 +20,8 @@ type FormData = {
     issue: string;
     quality: string;
     inspector: string;
+    responsibleUnit: string;
+    responsiblePerson: string;
 };
 type OptionItem = {
     id: string;
@@ -57,9 +59,24 @@ const __sfc__ = defineComponent({
         responsibilitySearchKeyword: string;
         issueSearchKeyword: string;
         qualitySearchKeyword: string;
+        // 日期选择器相关
+        datePickerVisible: boolean;
+        pickerValue: number[];
+        years: number[];
+        months: number[];
+        days: number[];
+        selectedYear: number;
+        selectedMonth: number;
+        selectedDay: number;
+        pickerDebounceTimer: number | null;
     } {
+        // 计算默认整改时间（当前日期往后推7天）
+        const defaultDate = new Date();
+        defaultDate.setDate(defaultDate.getDate() + 7);
+        const defaultDateStr = `${defaultDate.getFullYear()}-${(defaultDate.getMonth() + 1).toString(10).padStart(2, '0')}-${defaultDate.getDate().toString(10).padStart(2, '0')}`;
         return {
             taskInfo: {
+                taskId: '',
                 taskNumber: '',
                 inspectionDate: '',
                 department: '',
@@ -71,15 +88,16 @@ const __sfc__ = defineComponent({
                 problemType: '',
                 problemDescription: '',
                 location: '',
-                suggestion: '',
                 photos: [],
                 safetyScore: '',
-                rectificationDate: '',
+                rectificationDate: defaultDateStr,
                 module: '',
                 responsibility: '',
                 issue: '',
                 quality: '',
-                inspector: ''
+                inspector: '',
+                responsibleUnit: '',
+                responsiblePerson: ''
             } as FormData,
             containerHeight: 0,
             scrollTop: 0,
@@ -114,19 +132,49 @@ const __sfc__ = defineComponent({
             moduleSearchKeyword: '',
             responsibilitySearchKeyword: '',
             issueSearchKeyword: '',
-            qualitySearchKeyword: ''
+            qualitySearchKeyword: '',
+            // 日期选择器相关
+            datePickerVisible: false,
+            pickerValue: [0, 0, 0],
+            years: [] as number[],
+            months: [] as number[],
+            days: [] as number[],
+            selectedYear: ((): number => {
+                const tempDate = new Date();
+                tempDate.setDate(tempDate.getDate() + 7);
+                return tempDate.getFullYear();
+            })() as number,
+            selectedMonth: ((): number => {
+                const tempDate = new Date();
+                tempDate.setDate(tempDate.getDate() + 7);
+                return tempDate.getMonth() + 1;
+            })() as number,
+            selectedDay: ((): number => {
+                const tempDate = new Date();
+                tempDate.setDate(tempDate.getDate() + 7);
+                return tempDate.getDate();
+            })() as number,
+            // 防抖定时器
+            pickerDebounceTimer: null as number | null
         };
     },
+    // 预览照片
+    previewPhoto(photo: string) {
+        uni.previewImage({
+            current: this.convertToHttpUrl(photo),
+            urls: this.formData.photos.map((p: string): string => this.convertToHttpUrl(p)) as string[]
+        });
+    },
     onLoad(options: UTSJSONObject) {
-        const taskId = options.getString('taskNo');
+        const taskId = options.getString('taskId') ?? '';
         console.log(taskId);
         if (taskId != null && taskId != '') {
             this.loadTaskInfo(taskId);
         }
         // 初始化级联选择器数据
         this.loadTypeOptions();
-        // 初始化整改期限默认值
-        this.formData.rectificationDate = this.getDefaultRectificationDate();
+        // 初始化日期选择器数据
+        this.initDateArrays();
     },
     onReady() {
         this.initContainerHeight();
@@ -172,8 +220,6 @@ const __sfc__ = defineComponent({
         // 获取默认整改期限（当前日期往后推三个月）
         getDefaultRectificationDate(): string {
             const now = new Date();
-            // 往后推三个月
-            now.setMonth(now.getMonth() + 3);
             const year = now.getFullYear();
             const month = (now.getMonth() + 1).toString(10);
             const day = now.getDate().toString(10);
@@ -182,6 +228,19 @@ const __sfc__ = defineComponent({
                 return num.length < 2 ? `0${num}` : num;
             };
             return `${year}-${padZero(month)}-${padZero(day)}`;
+        },
+        // 将相对路径转换为HTTP访问路径
+        convertToHttpUrl(relativePath: string): string {
+            console.log('相对路径:', relativePath);
+            // 如果已经是HTTP路径，直接返回
+            if (relativePath.startsWith('http://') || relativePath.startsWith('https://')) {
+                return relativePath;
+            }
+            // 直接拼接完整的HTTP URL
+            // 后端已返回相对路径，如: /files/images/20250818/xxx.jpg
+            const httpUrl = `${apiConfig.baseUrl}/api${relativePath}`;
+            console.log('转换后的HTTP URL:', httpUrl);
+            return httpUrl;
         },
         // 初始化容器高度
         initContainerHeight() {
@@ -192,9 +251,10 @@ const __sfc__ = defineComponent({
         loadTaskInfo(taskId: string) {
             try {
                 const token = uni.getStorageSync('token');
-                console.log(taskId);
+                console.log('接收到的taskId参数:', taskId);
+                // 使用task-no接口根据任务编号获取任务详情
                 uni.request({
-                    url: getApiUrl(`/monthly-inspection-task/${taskId}`),
+                    url: getApiUrl(`/monthly-inspection-task/task-no/${taskId}`),
                     method: 'GET',
                     header: {
                         'Authorization': `Bearer ${token}`
@@ -203,9 +263,10 @@ const __sfc__ = defineComponent({
                         const respdata = res.data as UTSJSONObject;
                         if (respdata.getNumber('code') === 200) {
                             const taskInfo = respdata.getJSON('data');
-                            console.log("获取到的数据:", taskInfo);
+                            console.log("获取到的任务数据:", taskInfo);
                             if (taskInfo != null) {
                                 this.taskInfo = {
+                                    taskId: taskInfo.getString('id') ?? '',
                                     taskNumber: taskInfo.getString('taskNo') ?? '',
                                     inspectionDate: taskInfo.getString('inspectionTime') ?? '',
                                     department: taskInfo.getString('departmentName') ?? '',
@@ -222,6 +283,7 @@ const __sfc__ = defineComponent({
                         console.error('加载任务信息失败:', error);
                         // 模拟数据
                         this.taskInfo = {
+                            taskId: '',
                             taskNumber: 'YJ202401001',
                             inspectionDate: '2024年1月',
                             department: '生产部',
@@ -238,6 +300,7 @@ const __sfc__ = defineComponent({
                 console.error('加载任务信息失败:', error);
                 // 模拟数据
                 this.taskInfo = {
+                    taskId: '',
                     taskNumber: 'YJ202401001',
                     inspectionDate: '2024年1月',
                     department: '生产部',
@@ -278,8 +341,8 @@ const __sfc__ = defineComponent({
                 if (index !== -1) {
                     this.selectedTypeIndex = index;
                     console.log('已设置性质界定索引:', this.selectedTypeIndex);
-                    // 自动加载模块选项
-                    this.loadModuleOptions((this.typeOptions[index] as OptionItem).id);
+                    // 自动加载模块选项（按专业名称过滤模块）
+                    this.loadModuleOptions((this.typeOptions[index] as OptionItem).name);
                 }
                 else {
                     console.warn('未找到匹配的性质界定:', this.taskInfo.profession);
@@ -288,7 +351,7 @@ const __sfc__ = defineComponent({
                     if (fuzzyIndex !== -1) {
                         this.selectedTypeIndex = fuzzyIndex;
                         console.log('模糊匹配到性质界定索引:', this.selectedTypeIndex);
-                        this.loadModuleOptions((this.typeOptions[fuzzyIndex] as OptionItem).id);
+                        this.loadModuleOptions((this.typeOptions[fuzzyIndex] as OptionItem).name);
                     }
                 }
             }
@@ -416,8 +479,8 @@ const __sfc__ = defineComponent({
             this.moduleOptions = [];
             this.responsibilityOptions = [];
             this.issueOptions = [];
-            // 加载模块选项
-            this.loadModuleOptions((this.typeOptions[index] as OptionItem).id);
+            // 加载模块选项（按专业名称过滤）
+            this.loadModuleOptions((this.typeOptions[index] as OptionItem).name);
         },
         selectTypeFromFiltered(item: OptionItem) {
             // 找到原始数组中的索引
@@ -452,6 +515,7 @@ const __sfc__ = defineComponent({
             this.issueOptions = [];
             // 加载责任选项
             this.loadResponsibilityOptions((this.moduleOptions[index] as OptionItem).id);
+            this.loadResponsibilityOptions((this.moduleOptions[index] as OptionItem).name);
         },
         selectModuleFromFiltered(item: OptionItem) {
             // 找到原始数组中的索引
@@ -483,6 +547,7 @@ const __sfc__ = defineComponent({
             this.issueOptions = [];
             // 加载问题选项
             this.loadIssueOptions((this.responsibilityOptions[index] as OptionItem).id);
+            this.loadIssueOptions((this.responsibilityOptions[index] as OptionItem).name);
         },
         selectResponsibilityFromFiltered(item: OptionItem) {
             // 找到原始数组中的索引
@@ -532,8 +597,7 @@ const __sfc__ = defineComponent({
             // 回写选中的值到表单数据
             this.formData.quality = (this.qualityOptions[index] as OptionItem).name;
             this.hideQualityPicker();
-            // 自动带出扣分值和安全记分关联项
-            this.loadQualityDetails((this.qualityOptions[index] as OptionItem).id);
+            this.formData.safetyScore = this.getScoreByQualityName((this.qualityOptions[index] as OptionItem).name);
         },
         selectQualityFromFiltered(item: OptionItem) {
             // 找到原始数组中的索引
@@ -542,11 +606,11 @@ const __sfc__ = defineComponent({
                 this.selectQuality(index);
             }
         },
-        // 加载模块选项
-        loadModuleOptions(typeId: string) {
+        // 加载模块选项（按专业类型精确过滤）
+        loadModuleOptions(typeName: string) {
             const token = uni.getStorageSync('token');
             uni.request({
-                url: getApiUrl('/gjbz-data/options/modules'),
+                url: getApiUrl(`/gjbz-data/modules/by-type/${encodeURIComponent(typeName)}`),
                 method: 'GET',
                 header: {
                     'Authorization': `Bearer ${token}`
@@ -554,27 +618,21 @@ const __sfc__ = defineComponent({
                 success: (res) => {
                     const respdata = res.data as UTSJSONObject;
                     if (respdata.getNumber('code') === 200) {
-                        const data = respdata.getArray('data');
-                        if (data != null) {
-                            const options: OptionItem[] = [];
-                            for (let i = 0; i < data.length; i++) {
-                                const item = data[i] as string;
-                                options.push({
-                                    id: (i + 1).toString(10),
-                                    name: item
-                                } as OptionItem);
+                        const modules = respdata.getArray('data') as string[];
+                        const unique = [] as string[];
+                        if (modules != null) {
+                            for (let i = 0; i < modules.length; i++) {
+                                const m = modules[i];
+                                if (m != null && m != '' && unique.indexOf(m) === -1)
+                                    unique.push(m);
                             }
-                            this.moduleOptions = options;
                         }
+                        this.moduleOptions = unique.map((m, idx): OptionItem => ({ id: (idx + 1).toString(10), name: m } as OptionItem));
                     }
                 },
                 fail: (error) => {
-                    console.error('加载模块选项失败:', error);
-                    this.moduleOptions = [
-                        { id: 'module1', name: '模块1' } as OptionItem,
-                        { id: 'module2', name: '模块2' } as OptionItem,
-                        { id: 'module3', name: '模块3' } as OptionItem
-                    ] as OptionItem[];
+                    console.error('按专业加载模块失败:', error);
+                    this.moduleOptions = [] as OptionItem[];
                 }
             });
         },
@@ -582,7 +640,7 @@ const __sfc__ = defineComponent({
         loadResponsibilityOptions(moduleId: string) {
             const token = uni.getStorageSync('token');
             uni.request({
-                url: getApiUrl('/gjbz-data/options/responsibilities'),
+                url: getApiUrl(`/gjbz-data/options/responsibilities/by-module/${encodeURIComponent(moduleId)}`),
                 method: 'GET',
                 header: {
                     'Authorization': `Bearer ${token}`
@@ -618,7 +676,7 @@ const __sfc__ = defineComponent({
         loadIssueOptions(responsibilityId: string) {
             const token = uni.getStorageSync('token');
             uni.request({
-                url: getApiUrl('/gjbz-data/options/issues'),
+                url: getApiUrl(`/gjbz-data/options/issues/by-responsibility/${encodeURIComponent(responsibilityId)}`),
                 method: 'GET',
                 header: {
                     'Authorization': `Bearer ${token}`
@@ -705,22 +763,10 @@ const __sfc__ = defineComponent({
         },
         // 加载性质界定详情（扣分值和安全记分关联项）
         loadQualityDetails(qualityId: string) {
-            // 模拟API调用
-            setTimeout(() => {
-                switch (qualityId) {
-                    case 'quality1':
-                        this.formData.safetyScore = '5分 - 一般安全记分';
-                        break;
-                    case 'quality2':
-                        this.formData.safetyScore = '10分 - 严重安全记分';
-                        break;
-                    case 'quality3':
-                        this.formData.safetyScore = '20分 - 重大安全记分';
-                        break;
-                    default:
-                        this.formData.safetyScore = '';
-                }
-            }, 100);
+            const opt = this.qualityOptions.find((o: OptionItem): boolean => o.id === qualityId);
+            if (opt != null) {
+                this.formData.safetyScore = this.getScoreByQualityName(opt.name);
+            }
         },
         // 根据选择的问题自动填充问题性质和对应分数
         autoFillIssueDetails(issueId: string, issueName: string) {
@@ -829,14 +875,7 @@ const __sfc__ = defineComponent({
                         this.formData.quality = matchedQualityName;
                     }
                 }
-                // 设置安全记分 - 只提取数字部分
-                const scoreMatch = safetyScoreText.match(/(\d+)分/);
-                if (scoreMatch != null && scoreMatch.length > 1 && scoreMatch[1] != null) {
-                    this.formData.safetyScore = scoreMatch[1] as string;
-                }
-                else {
-                    this.formData.safetyScore = '5'; // 默认值
-                }
+                this.formData.safetyScore = this.getScoreByQualityName(matchedQualityName);
                 console.log('自动填充完成:', {
                     originalQuality: qualityName,
                     matchedQuality: matchedQualityName,
@@ -888,6 +927,16 @@ const __sfc__ = defineComponent({
                 safetyScore: '5分 - 一般安全记分'
             };
         },
+        getScoreByQualityName(qualityName: string): string {
+            const s: string = (qualityName == null) ? '' : qualityName;
+            if (s.indexOf('重要') >= 0)
+                return '5';
+            if (s.indexOf('一般') >= 0)
+                return '3';
+            if (s.indexOf('观察') >= 0)
+                return '1';
+            return '0';
+        },
         // 添加照片
         addPhoto() {
             uni.chooseImage({
@@ -895,7 +944,76 @@ const __sfc__ = defineComponent({
                 sizeType: ['compressed'],
                 sourceType: ['camera', 'album'],
                 success: (res) => {
-                    this.formData.photos.push(...res.tempFilePaths);
+                    // 逐个上传选择的图片
+                    res.tempFilePaths.forEach(tempPath => {
+                        this.uploadImage(tempPath);
+                    });
+                }
+            });
+        },
+        // 上传图片到服务器
+        uploadImage(imagePath: string) {
+            console.log('=== 移动端图片上传调试信息 ===');
+            console.log('选择的图片路径:', imagePath);
+            uni.showLoading({
+                title: '上传中...'
+            });
+            uni.uploadFile({
+                url: getApiUrl('/upload/image'),
+                filePath: imagePath,
+                name: 'file',
+                header: {
+                    'Authorization': uni.getStorageSync('token')
+                },
+                success: (uploadRes) => {
+                    uni.hideLoading();
+                    console.log('上传响应状态码:', uploadRes.statusCode);
+                    console.log('上传响应数据:', uploadRes.data);
+                    try {
+                        const result = JSON.parse(uploadRes.data) as UTSJSONObject;
+                        console.log('解析后的响应数据:', result);
+                        const code = result.getNumber('code');
+                        if (code === 200) {
+                            // 上传成功，将服务器返回的URL添加到photos数组
+                            const data = result.getJSON('data');
+                            if (data != null) {
+                                const url = data.getString('url');
+                                console.log('服务器返回的图片URL:', url);
+                                if (url != null) {
+                                    this.formData.photos.push(url);
+                                    console.log('当前photos数组:', this.formData.photos);
+                                }
+                            }
+                        }
+                        else {
+                            let message = result.getString('message');
+                            if (message == null) {
+                                message = '上传失败';
+                            }
+                            console.error('上传失败，服务器响应:', result);
+                            uni.showToast({
+                                title: message,
+                                icon: 'none'
+                            });
+                        }
+                    }
+                    catch (e: any) {
+                        console.error('解析响应数据失败:', e);
+                        console.error('原始响应数据:', uploadRes.data);
+                        uni.showToast({
+                            title: '上传失败',
+                            icon: 'none'
+                        });
+                    }
+                    console.log('=== 移动端图片上传调试信息结束 ===');
+                },
+                fail: (error) => {
+                    uni.hideLoading();
+                    console.error('图片上传失败:', error);
+                    uni.showToast({
+                        title: '上传失败',
+                        icon: 'none'
+                    });
                 }
             });
         },
@@ -906,8 +1024,8 @@ const __sfc__ = defineComponent({
         // 预览照片
         previewPhoto(photo: string) {
             uni.previewImage({
-                current: photo,
-                urls: this.formData.photos
+                current: this.convertToHttpUrl(photo),
+                urls: this.formData.photos.map((p: string): string => this.convertToHttpUrl(p)) as string[]
             });
         },
         // 保存记录
@@ -941,12 +1059,16 @@ const __sfc__ = defineComponent({
                 uni.showToast({ title: '请输入发现位置', icon: 'none' });
                 return;
             }
-            if (this.formData.suggestion.trim() == '') {
-                uni.showToast({ title: '请输入整改建议', icon: 'none' });
-                return;
-            }
             if (this.formData.rectificationDate == '') {
                 uni.showToast({ title: '请选择整改期限', icon: 'none' });
+                return;
+            }
+            if (this.formData.responsibleUnit.trim() == '') {
+                uni.showToast({ title: '请输入责任单位', icon: 'none' });
+                return;
+            }
+            if (this.formData.responsiblePerson.trim() == '') {
+                uni.showToast({ title: '请输入责任人', icon: 'none' });
                 return;
             }
             if (this.formData.inspector.trim() == '') {
@@ -974,7 +1096,7 @@ const __sfc__ = defineComponent({
                 }
                 // 构建保存数据
                 const saveData = {
-                    taskId: this.taskInfo.taskNumber,
+                    taskId: this.taskInfo.taskId,
                     professionalCategory: this.selectedTypeIndex !== -1 && this.typeOptions[this.selectedTypeIndex] != null ? this.typeOptions[this.selectedTypeIndex].name : '',
                     module: this.selectedModuleIndex !== -1 && this.moduleOptions[this.selectedModuleIndex] != null ? this.moduleOptions[this.selectedModuleIndex].name : '',
                     responsibility: this.selectedResponsibilityIndex !== -1 && this.responsibilityOptions[this.selectedResponsibilityIndex] != null ? this.responsibilityOptions[this.selectedResponsibilityIndex].name : '',
@@ -982,11 +1104,12 @@ const __sfc__ = defineComponent({
                     qualityDetermination: this.selectedQualityIndex !== -1 && this.qualityOptions[this.selectedQualityIndex] != null ? this.qualityOptions[this.selectedQualityIndex].name : '',
                     problemDescription: this.formData.problemDescription,
                     location: this.formData.location,
-                    suggestion: this.formData.suggestion,
                     rectificationDate: this.formData.rectificationDate,
                     inspector: this.formData.inspector,
                     safetyScore: this.formData.safetyScore,
-                    photos: this.formData.photos
+                    photos: this.formData.photos,
+                    responsibleUnit: this.formData.responsibleUnit,
+                    responsiblePerson: this.formData.responsiblePerson
                 } as UTSJSONObject;
                 // 调用月检记录保存接口
                 uni.request({
@@ -997,7 +1120,10 @@ const __sfc__ = defineComponent({
                         'Authorization': uni.getStorageSync('token') != null ? uni.getStorageSync('token') as string : '',
                         'userId': userId
                     },
-                    data: saveData,
+                    data: {
+                        ...saveData,
+                        photos: this.formData.photos.join(',') // 将数组转换为逗号分隔的字符串
+                    },
                     success: (res) => {
                         uni.hideLoading();
                         const respdate = res.data as UTSJSONObject;
@@ -1024,6 +1150,156 @@ const __sfc__ = defineComponent({
                 console.error('保存失败:', error);
                 uni.showToast({ title: '保存失败', icon: 'none' });
             }
+        },
+        // 初始化日期数组
+        initDateArrays() {
+            // 生成年份数组（当前年份到未来2年）
+            const currentYear = new Date().getFullYear();
+            this.years = [];
+            for (let i = currentYear; i <= currentYear + 2; i++) {
+                this.years.push(i);
+            }
+            // 生成月份数组
+            this.months = [];
+            for (let i = 1; i <= 12; i++) {
+                this.months.push(i);
+            }
+            // 生成日期数组
+            this.updateDays();
+            // 设置默认选择值
+            const yearIndex = this.years.findIndex((year): boolean => year === this.selectedYear);
+            const monthIndex = (this.selectedMonth as number) - 1;
+            const dayIndex = this.days.findIndex((day): boolean => day === this.selectedDay);
+            this.pickerValue = [yearIndex >= 0 ? yearIndex : 0, monthIndex, dayIndex >= 0 ? dayIndex : 0];
+            console.log('初始化日期数组:', {
+                selectedYear: this.selectedYear,
+                selectedMonth: this.selectedMonth,
+                selectedDay: this.selectedDay,
+                yearIndex, monthIndex, dayIndex,
+                pickerValue: this.pickerValue,
+                daysArray: this.days
+            });
+        },
+        // 更新日期数组
+        updateDays() {
+            const daysInMonth = new Date(this.selectedYear, this.selectedMonth, 0).getDate();
+            this.days = [];
+            for (let i = 1; i <= daysInMonth; i++) {
+                this.days.push(i);
+            }
+        },
+        // 显示日期选择器
+        showDatePicker() {
+            // 如果当前有设置的日期，使用该日期作为选择器的默认值
+            if (this.formData.rectificationDate !== '') {
+                const dateParts = this.formData.rectificationDate.split('-');
+                if (dateParts.length === 3) {
+                    this.selectedYear = parseInt(dateParts[0]);
+                    this.selectedMonth = parseInt(dateParts[1]);
+                    this.selectedDay = parseInt(dateParts[2]);
+                }
+            }
+            // 更新日期数组
+            this.updateDays();
+            // 设置picker的默认选择值
+            const yearIndex = this.years.findIndex((year): boolean => year === this.selectedYear);
+            const monthIndex = this.selectedMonth - 1;
+            let dayIndex = this.days.findIndex((day): boolean => day === this.selectedDay);
+            // 如果找不到对应的日期（比如选择了31号但当前月只有30天），则选择最后一天
+            if (dayIndex < 0) {
+                dayIndex = (this.days.length - 1) as Int;
+                this.selectedDay = this.days[dayIndex];
+                console.log('日期不存在，调整为月末:', this.selectedDay);
+            }
+            this.pickerValue = [yearIndex >= 0 ? yearIndex : 0, monthIndex, dayIndex];
+            console.log('显示日期选择器:', {
+                selectedDate: this.formData.rectificationDate,
+                selectedYear: this.selectedYear,
+                selectedMonth: this.selectedMonth,
+                selectedDay: this.selectedDay,
+                yearIndex, monthIndex, dayIndex,
+                pickerValue: this.pickerValue
+            });
+            this.datePickerVisible = true;
+        },
+        // 隐藏日期选择器
+        hideDatePicker() {
+            this.datePickerVisible = false;
+        },
+        // picker-view变化事件
+        onPickerChange(e: UniPickerViewChangeEvent) {
+            const value = e.detail.value as number[];
+            const oldDaysLength = this.days.length;
+            console.log('picker原始变化事件:', {
+                value: value,
+                oldSelectedYear: this.selectedYear,
+                oldSelectedMonth: this.selectedMonth,
+                oldSelectedDay: this.selectedDay,
+                oldDaysLength: oldDaysLength
+            });
+            // 更新选择的年月日
+            this.selectedYear = this.years[value[0]];
+            this.selectedMonth = value[1] + 1; // 月份索引从0开始，实际月份从1开始
+            // 更新日期数组（因为年月变化可能影响该月的天数）
+            this.updateDays();
+            // 处理日期变化
+            let newDayIndex = value[2];
+            if (newDayIndex >= this.days.length) {
+                // 如果选择的日期超出了当前月的天数，调整为月末
+                newDayIndex = this.days.length - 1;
+                console.log('日期超出范围，调整为月末:', this.days[newDayIndex]);
+            }
+            this.selectedDay = this.days[newDayIndex];
+            // 如果天数数组长度发生变化，需要延迟更新pickerValue以避免冲突
+            if (oldDaysLength !== this.days.length) {
+                // 使用防抖机制，避免频繁更新
+                const timer = this.pickerDebounceTimer;
+                if (timer != null) {
+                    clearTimeout(timer);
+                }
+                this.pickerDebounceTimer = setTimeout(() => {
+                    this.pickerValue = [value[0], value[1], newDayIndex];
+                    console.log('延迟更新pickerValue:', {
+                        newPickerValue: this.pickerValue,
+                        selectedYear: this.selectedYear,
+                        selectedMonth: this.selectedMonth,
+                        selectedDay: this.selectedDay
+                    });
+                }, 50); // 50ms延迟，提供更快速的平滑视觉效果
+            }
+            else {
+                // 直接更新
+                this.pickerValue = [value[0], value[1], newDayIndex];
+                console.log('直接更新pickerValue:', {
+                    newPickerValue: this.pickerValue,
+                    selectedYear: this.selectedYear,
+                    selectedMonth: this.selectedMonth,
+                    selectedDay: this.selectedDay
+                });
+            }
+        },
+        // 确认日期选择
+        confirmDatePicker() {
+            // 直接从pickerValue索引获取实际选择的值
+            const selectedYear = this.years[this.pickerValue[0]];
+            const selectedMonth = this.pickerValue[1] + 1; // 月份索引从0开始，实际月份从1开始
+            const selectedDay = this.days[this.pickerValue[2]];
+            const year = selectedYear.toString(10).padStart(4, '0');
+            const month = selectedMonth.toString(10).padStart(2, '0');
+            const day = selectedDay.toString(10).padStart(2, '0');
+            const newDate = `${year}-${month}-${day}`;
+            console.log('确认日期选择:', {
+                pickerValue: this.pickerValue,
+                yearsArray: this.years,
+                monthsArray: this.months,
+                daysArray: this.days,
+                selectedYear: selectedYear,
+                selectedMonth: selectedMonth,
+                selectedDay: selectedDay,
+                formattedDate: newDate
+            });
+            this.formData.rectificationDate = newDate;
+            this.hideDatePicker();
         }
     }
 });
@@ -1031,6 +1307,8 @@ export default __sfc__;
 function GenPagesMonthlyTaskRecordRender(this: InstanceType<typeof __sfc__>): any | null {
     const _ctx = this;
     const _cache = this.$.renderCache;
+    const _component_picker_view_column = resolveComponent("picker-view-column");
+    const _component_picker_view = resolveComponent("picker-view");
     return _cE("scroll-view", _uM({
         class: "container",
         "scroll-y": "true",
@@ -1163,25 +1441,106 @@ function GenPagesMonthlyTaskRecordRender(this: InstanceType<typeof __sfc__>): an
                 }), null, 40 /* PROPS, NEED_HYDRATION */, ["modelValue", "onInput"])
             ]),
             _cE("view", _uM({ class: "form-item" }), [
-                _cE("text", _uM({ class: "form-label" }), "整改建议"),
-                _cE("textarea", _uM({
-                    class: "textarea-input",
-                    modelValue: _ctx.formData.suggestion,
-                    onInput: ($event: UniInputEvent) => { (_ctx.formData.suggestion) = $event.detail.value; },
-                    placeholder: "请提出整改建议",
-                    maxlength: "300"
-                }), null, 40 /* PROPS, NEED_HYDRATION */, ["modelValue", "onInput"]),
-                _cE("text", _uM({ class: "char-count" }), _tD(_ctx.formData.suggestion.length) + "/300", 1 /* TEXT */)
+                _cE("text", _uM({ class: "form-label-left" }), "责任单位"),
+                _cE("input", _uM({
+                    class: "form-input",
+                    modelValue: _ctx.formData.responsibleUnit,
+                    onInput: ($event: UniInputEvent) => { (_ctx.formData.responsibleUnit) = $event.detail.value; },
+                    placeholder: "请输入责任单位"
+                }), null, 40 /* PROPS, NEED_HYDRATION */, ["modelValue", "onInput"])
+            ]),
+            _cE("view", _uM({ class: "form-item" }), [
+                _cE("text", _uM({ class: "form-label-left" }), "责任人"),
+                _cE("input", _uM({
+                    class: "form-input",
+                    modelValue: _ctx.formData.responsiblePerson,
+                    onInput: ($event: UniInputEvent) => { (_ctx.formData.responsiblePerson) = $event.detail.value; },
+                    placeholder: "请输入责任人"
+                }), null, 40 /* PROPS, NEED_HYDRATION */, ["modelValue", "onInput"])
             ]),
             _cE("view", _uM({ class: "form-item" }), [
                 _cE("text", _uM({ class: "form-label-left" }), "整改期限"),
-                _cE("input", _uM({
-                    class: "form-input",
-                    type: "date",
-                    modelValue: _ctx.formData.rectificationDate,
-                    onInput: ($event: UniInputEvent) => { (_ctx.formData.rectificationDate) = $event.detail.value; },
-                    placeholder: "请选择整改期限"
-                }), null, 40 /* PROPS, NEED_HYDRATION */, ["modelValue", "onInput"])
+                _cE("view", _uM({
+                    class: "picker-container",
+                    onClick: _ctx.showDatePicker
+                }), [
+                    _cE("text", _uM({
+                        class: _nC(["picker-text-full", _uM({ placeholder: _ctx.formData.rectificationDate === '' })])
+                    }), _tD(_ctx.formData.rectificationDate !== '' ? _ctx.formData.rectificationDate : '请选择整改期限'), 3 /* TEXT, CLASS */)
+                ], 8 /* PROPS */, ["onClick"]),
+                isTrue(_ctx.datePickerVisible)
+                    ? _cE("view", _uM({
+                        key: 0,
+                        class: "date-picker-modal",
+                        onClick: _ctx.hideDatePicker
+                    }), [
+                        _cE("view", _uM({
+                            class: "date-picker-content",
+                            onClick: withModifiers(() => { }, ["stop"])
+                        }), [
+                            _cE("view", _uM({ class: "date-picker-header" }), [
+                                _cE("text", _uM({
+                                    class: "date-picker-cancel",
+                                    onClick: _ctx.hideDatePicker
+                                }), "取消", 8 /* PROPS */, ["onClick"]),
+                                _cE("text", _uM({ class: "date-picker-title" }), "选择日期"),
+                                _cE("text", _uM({
+                                    class: "date-picker-confirm",
+                                    onClick: _ctx.confirmDatePicker
+                                }), "确定", 8 /* PROPS */, ["onClick"])
+                            ]),
+                            _cV(_component_picker_view, _uM({
+                                class: "date-picker-view",
+                                value: _ctx.pickerValue,
+                                onChange: _ctx.onPickerChange,
+                                "indicator-style": "height: 70px; top: 20%; margin-top: -20px;"
+                            }), _uM({
+                                default: withSlotCtx((): any[] => [
+                                    _cV(_component_picker_view_column, null, _uM({
+                                        default: withSlotCtx((): any[] => [
+                                            _cE(Fragment, null, RenderHelpers.renderList(_ctx.years, (year, index, __index, _cached): any => {
+                                                return _cE("view", _uM({
+                                                    key: index,
+                                                    class: _nC(["picker-item", _uM({ selected: index === _ctx.pickerValue[0] })])
+                                                }), _tD(year) + "年 ", 3 /* TEXT, CLASS */);
+                                            }), 128 /* KEYED_FRAGMENT */)
+                                        ]),
+                                        _: 1 /* STABLE */
+                                    })),
+                                    _cV(_component_picker_view_column, null, _uM({
+                                        default: withSlotCtx((): any[] => [
+                                            _cE(Fragment, null, RenderHelpers.renderList(_ctx.months, (month, index, __index, _cached): any => {
+                                                return _cE("view", _uM({
+                                                    key: index,
+                                                    class: _nC(["picker-item", _uM({ selected: index === _ctx.pickerValue[1] })])
+                                                }), _tD(month) + "月 ", 3 /* TEXT, CLASS */);
+                                            }), 128 /* KEYED_FRAGMENT */)
+                                        ]),
+                                        _: 1 /* STABLE */
+                                    })),
+                                    _cV(_component_picker_view_column, null, _uM({
+                                        default: withSlotCtx((): any[] => [
+                                            _cE(Fragment, null, RenderHelpers.renderList(_ctx.days, (day, index, __index, _cached): any => {
+                                                return _cE("view", _uM({
+                                                    key: index,
+                                                    class: _nC(["picker-item", _uM({ selected: index === _ctx.pickerValue[2] })])
+                                                }), _tD(day) + "日 ", 3 /* TEXT, CLASS */);
+                                            }), 128 /* KEYED_FRAGMENT */),
+                                            _cE(Fragment, null, RenderHelpers.renderList(2, (i, __key, __index, _cached): any => {
+                                                return _cE("view", _uM({
+                                                    key: 'empty-day-' + i,
+                                                    class: "picker-item picker-item-spacer"
+                                                }));
+                                            }), 64 /* STABLE_FRAGMENT */)
+                                        ]),
+                                        _: 1 /* STABLE */
+                                    }))
+                                ]),
+                                _: 1 /* STABLE */
+                            }), 8 /* PROPS */, ["value", "onChange"])
+                        ], 8 /* PROPS */, ["onClick"])
+                    ], 8 /* PROPS */, ["onClick"])
+                    : _cC("v-if", true)
             ]),
             _cE("view", _uM({ class: "form-item" }), [
                 _cE("text", _uM({ class: "form-label-left" }), "检查人"),
@@ -1201,7 +1560,7 @@ function GenPagesMonthlyTaskRecordRender(this: InstanceType<typeof __sfc__>): an
                             class: "photo-item"
                         }), [
                             _cE("image", _uM({
-                                src: photo,
+                                src: _ctx.convertToHttpUrl(photo),
                                 class: "photo-preview",
                                 onClick: () => { _ctx.previewPhoto(photo); }
                             }), null, 8 /* PROPS */, ["src", "onClick"]),
@@ -1581,4 +1940,4 @@ function GenPagesMonthlyTaskRecordRender(this: InstanceType<typeof __sfc__>): an
             : _cC("v-if", true)
     ], 12 /* STYLE, PROPS */, ["scroll-top"]);
 }
-const GenPagesMonthlyTaskRecordStyles = [_uM([["container", _pS(_uM([["backgroundColor", "#f5f5f5"], ["position", "relative"], ["zIndex", 1], ["paddingBottom", "180rpx"]]))], ["header", _pS(_uM([["display", "flex"], ["justifyContent", "space-between"], ["alignItems", "center"], ["paddingTop", 20], ["paddingRight", 20], ["paddingBottom", 20], ["paddingLeft", 20], ["backgroundColor", "#ffffff"], ["borderBottomWidth", 1], ["borderBottomStyle", "solid"], ["borderBottomColor", "#f0f0f0"]]))], ["header-left", _pS(_uM([["display", "flex"], ["alignItems", "center"], ["gap", "5px"]]))], ["back-icon", _pS(_uM([["fontSize", 24], ["color", "#007AFF"]]))], ["back-text", _pS(_uM([["fontSize", 16], ["color", "#007AFF"]]))], ["header-title", _pS(_uM([["fontSize", 18], ["fontWeight", "bold"], ["color", "#333333"]]))], ["header-right", _pS(_uM([["display", "flex"], ["alignItems", "center"]]))], ["save-btn", _pS(_uM([["fontSize", 16], ["color", "#007AFF"]]))], ["task-info", _pS(_uM([["backgroundColor", "#ffffff"], ["marginTop", 10], ["marginRight", 20], ["marginBottom", 10], ["marginLeft", 20], ["borderTopLeftRadius", 8], ["borderTopRightRadius", 8], ["borderBottomRightRadius", 8], ["borderBottomLeftRadius", 8], ["paddingTop", 20], ["paddingRight", 20], ["paddingBottom", 20], ["paddingLeft", 20]]))], ["info-item", _pS(_uM([["display", "flex"], ["paddingTop", 12], ["paddingRight", 0], ["paddingBottom", 12], ["paddingLeft", 0], ["borderBottomWidth", 1], ["borderBottomStyle", "solid"], ["borderBottomColor", "#f0f0f0"], ["borderBottomWidth:last-child", "medium"], ["borderBottomStyle:last-child", "none"], ["borderBottomColor:last-child", "#000000"]]))], ["info-label", _pS(_uM([["fontSize", 14], ["color", "#666666"], ["width", 100], ["flexShrink", 0], ["textAlign", "left"], ["marginRight", 12]]))], ["info-value", _pS(_uM([["fontSize", 14], ["color", "#333333"], ["flex", 1], ["textAlign", "left"]]))], ["form-section", _pS(_uM([["backgroundColor", "#ffffff"], ["marginTop", 10], ["marginRight", 20], ["marginBottom", 10], ["marginLeft", 20], ["borderTopLeftRadius", 8], ["borderTopRightRadius", 8], ["borderBottomRightRadius", 8], ["borderBottomLeftRadius", 8], ["paddingTop", 20], ["paddingRight", 20], ["paddingBottom", 20], ["paddingLeft", 20]]))], ["section-title", _pS(_uM([["display", "flex"], ["alignItems", "center"], ["marginBottom", 20]]))], ["title-text", _pS(_uM([["fontSize", 16], ["fontWeight", "bold"], ["color", "#333333"]]))], ["required-mark", _pS(_uM([["fontSize", 16], ["color", "#ff4757"], ["marginLeft", 4]]))], ["form-item", _pS(_uM([["marginBottom", 20], ["marginBottom:last-child", 0]]))], ["form-item-inline", _pS(_uM([["marginBottom", 20], ["display", "flex"], ["flexDirection", "column"], ["gap", "8px"], ["paddingTop", 0], ["paddingRight", 20], ["paddingBottom", 0], ["paddingLeft", 20]]))], ["form-label", _pS(_uM([["fontSize", 14], ["color", "#333333"], ["marginBottom", 8]]))], ["form-label-inline", _pS(_uM([["fontSize", 14], ["color", "#333333"], ["marginBottom", 0]]))], ["picker-wrapper", _pS(_uM([["display", "flex"], ["justifyContent", "space-between"], ["alignItems", "center"], ["paddingTop", 12], ["paddingRight", 15], ["paddingBottom", 12], ["paddingLeft", 15], ["borderTopWidth", 1], ["borderRightWidth", 1], ["borderBottomWidth", 1], ["borderLeftWidth", 1], ["borderTopStyle", "solid"], ["borderRightStyle", "solid"], ["borderBottomStyle", "solid"], ["borderLeftStyle", "solid"], ["borderTopColor", "#e9ecef"], ["borderRightColor", "#e9ecef"], ["borderBottomColor", "#e9ecef"], ["borderLeftColor", "#e9ecef"], ["borderTopLeftRadius", 6], ["borderTopRightRadius", 6], ["borderBottomRightRadius", 6], ["borderBottomLeftRadius", 6], ["backgroundColor", "#ffffff"]]))], ["picker-wrapper-inline", _uM([["", _uM([["display", "flex"], ["justifyContent", "space-between"], ["alignItems", "center"], ["paddingTop", 12], ["paddingRight", 15], ["paddingBottom", 12], ["paddingLeft", 15], ["borderTopWidth", 1], ["borderRightWidth", 1], ["borderBottomWidth", 1], ["borderLeftWidth", 1], ["borderTopStyle", "solid"], ["borderRightStyle", "solid"], ["borderBottomStyle", "solid"], ["borderLeftStyle", "solid"], ["borderTopColor", "#e9ecef"], ["borderRightColor", "#e9ecef"], ["borderBottomColor", "#e9ecef"], ["borderLeftColor", "#e9ecef"], ["borderTopLeftRadius", 6], ["borderTopRightRadius", 6], ["borderBottomRightRadius", 6], ["borderBottomLeftRadius", 6], ["backgroundColor", "#ffffff"], ["width", "100%"], ["transitionProperty", "all"], ["transitionDuration", "0.3s"], ["transitionTimingFunction", "ease"], ["cursor", "pointer"], ["borderTopColor:hover", "#667eea"], ["borderRightColor:hover", "#667eea"], ["borderBottomColor:hover", "#667eea"], ["borderLeftColor:hover", "#667eea"], ["boxShadow:hover", "0 0 0 2px rgba(102, 126, 234, 0.1)"], ["transform:active", "scale(0.98)"]])], [".disabled", _uM([["backgroundColor", "#f5f5f5"], ["color", "#999999"], ["cursor", "not-allowed"], ["opacity", 0.6]])], [".disabled:hover", _uM([["borderTopColor", "#e9ecef"], ["borderRightColor", "#e9ecef"], ["borderBottomColor", "#e9ecef"], ["borderLeftColor", "#e9ecef"], ["boxShadow", "none"]])]])], ["text-input-inline", _pS(_uM([["paddingTop", 12], ["paddingRight", 15], ["paddingBottom", 12], ["paddingLeft", 15], ["borderTopWidth", 1], ["borderRightWidth", 1], ["borderBottomWidth", 1], ["borderLeftWidth", 1], ["borderTopStyle", "solid"], ["borderRightStyle", "solid"], ["borderBottomStyle", "solid"], ["borderLeftStyle", "solid"], ["borderTopColor", "#e9ecef"], ["borderRightColor", "#e9ecef"], ["borderBottomColor", "#e9ecef"], ["borderLeftColor", "#e9ecef"], ["borderTopLeftRadius", 6], ["borderTopRightRadius", 6], ["borderBottomRightRadius", 6], ["borderBottomLeftRadius", 6], ["fontSize", 14], ["color", "#333333"], ["backgroundColor", "#ffffff"], ["flex", 1]]))], ["bottom-save-container", _pS(_uM([["position", "fixed"], ["bottom", 0], ["left", 0], ["right", 0], ["paddingTop", "20rpx"], ["paddingRight", "30rpx"], ["paddingBottom", "40rpx"], ["paddingLeft", "30rpx"], ["backgroundImage", "linear-gradient(to top, rgba(85, 170, 255, 1.0) 0%, rgba(85, 170, 255, 0.9) 100%)"], ["backgroundColor", "rgba(0,0,0,0)"], ["backdropFilter", "blur(10rpx)"], ["borderTopWidth", "1rpx"], ["borderTopStyle", "solid"], ["borderTopColor", "rgba(240,240,240,0.8)"], ["zIndex", 999]]))], ["bottom-save-btn", _pS(_uM([["width", "100%"], ["height", "96rpx"], ["backgroundImage", "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)"], ["backgroundColor", "rgba(0,0,0,0)"], ["borderTopLeftRadius", "48rpx"], ["borderTopRightRadius", "48rpx"], ["borderBottomRightRadius", "48rpx"], ["borderBottomLeftRadius", "48rpx"], ["display", "flex"], ["alignItems", "center"], ["justifyContent", "center"], ["boxShadow", "0 12rpx 32rpx rgba(79, 172, 254, 0.4)"], ["transitionProperty", "all"], ["transitionDuration", "0.3s"], ["transitionTimingFunction", "cubic-bezier(0.4,0,0.2,1)"], ["position", "relative"], ["overflow", "hidden"], ["content::before", "''"], ["position::before", "absolute"], ["top::before", 0], ["left::before", "-100%"], ["width::before", "100%"], ["height::before", "100%"], ["backgroundImage::before", "linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent)"], ["backgroundColor::before", "rgba(0,0,0,0)"], ["transitionProperty::before", "left"], ["transitionDuration::before", "0.6s"], ["transform:active", "translateY(2rpx) scale(0.98)"], ["boxShadow:active", "0 8rpx 24rpx rgba(79, 172, 254, 0.3)"], ["left:active::before", "100%"]]))], ["bottom-save-text", _pS(_uM([["color", "#000000"], ["fontSize", "34rpx"], ["fontWeight", "700"], ["letterSpacing", "3rpx"], ["position", "relative"], ["zIndex", 1]]))], ["picker-text", _uM([["", _uM([["fontSize", 14], ["color", "#333333"]])], [".placeholder", _uM([["color", "#999999"]])]])], ["picker-arrow", _pS(_uM([["fontSize", 16], ["color", "#cccccc"]]))], ["text-input", _pS(_uM([["paddingTop", 12], ["paddingRight", 15], ["paddingBottom", 12], ["paddingLeft", 15], ["borderTopWidth", 1], ["borderRightWidth", 1], ["borderBottomWidth", 1], ["borderLeftWidth", 1], ["borderTopStyle", "solid"], ["borderRightStyle", "solid"], ["borderBottomStyle", "solid"], ["borderLeftStyle", "solid"], ["borderTopColor", "#e9ecef"], ["borderRightColor", "#e9ecef"], ["borderBottomColor", "#e9ecef"], ["borderLeftColor", "#e9ecef"], ["borderTopLeftRadius", 6], ["borderTopRightRadius", 6], ["borderBottomRightRadius", 6], ["borderBottomLeftRadius", 6], ["fontSize", 14], ["color", "#333333"], ["backgroundColor", "#ffffff"]]))], ["textarea-input", _pS(_uM([["paddingTop", 12], ["paddingRight", 15], ["paddingBottom", 12], ["paddingLeft", 15], ["borderTopWidth", 1], ["borderRightWidth", 1], ["borderBottomWidth", 1], ["borderLeftWidth", 1], ["borderTopStyle", "solid"], ["borderRightStyle", "solid"], ["borderBottomStyle", "solid"], ["borderLeftStyle", "solid"], ["borderTopColor", "#e9ecef"], ["borderRightColor", "#e9ecef"], ["borderBottomColor", "#e9ecef"], ["borderLeftColor", "#e9ecef"], ["borderTopLeftRadius", 6], ["borderTopRightRadius", 6], ["borderBottomRightRadius", 6], ["borderBottomLeftRadius", 6], ["fontSize", 14], ["color", "#333333"], ["backgroundColor", "#ffffff"], ["minHeight", 80], ["resize", "none"]]))], ["char-count", _pS(_uM([["fontSize", 12], ["color", "#999999"], ["textAlign", "right"], ["marginTop", 5]]))], ["photo-upload", _pS(_uM([["display", "flex"], ["flexWrap", "wrap"], ["gap", "10px"], ["marginBottom", 5]]))], ["photo-item", _pS(_uM([["position", "relative"], ["width", 80], ["height", 80]]))], ["photo-preview", _pS(_uM([["width", "100%"], ["height", "100%"], ["borderTopLeftRadius", 6], ["borderTopRightRadius", 6], ["borderBottomRightRadius", 6], ["borderBottomLeftRadius", 6], ["objectFit", "cover"]]))], ["photo-delete", _pS(_uM([["position", "absolute"], ["top", -5], ["right", -5], ["width", 20], ["height", 20], ["backgroundColor", "#ff4757"], ["borderTopLeftRadius", 10], ["borderTopRightRadius", 10], ["borderBottomRightRadius", 10], ["borderBottomLeftRadius", 10], ["display", "flex"], ["alignItems", "center"], ["justifyContent", "center"]]))], ["delete-icon", _pS(_uM([["fontSize", 12], ["color", "#ffffff"], ["fontWeight", "bold"]]))], ["photo-add", _pS(_uM([["width", 80], ["height", 80], ["borderTopWidth", 1], ["borderRightWidth", 1], ["borderBottomWidth", 1], ["borderLeftWidth", 1], ["borderTopStyle", "dashed"], ["borderRightStyle", "dashed"], ["borderBottomStyle", "dashed"], ["borderLeftStyle", "dashed"], ["borderTopColor", "#cccccc"], ["borderRightColor", "#cccccc"], ["borderBottomColor", "#cccccc"], ["borderLeftColor", "#cccccc"], ["borderTopLeftRadius", 6], ["borderTopRightRadius", 6], ["borderBottomRightRadius", 6], ["borderBottomLeftRadius", 6], ["display", "flex"], ["flexDirection", "column"], ["alignItems", "center"], ["justifyContent", "center"], ["backgroundColor", "#f8f9fa"]]))], ["add-icon", _pS(_uM([["fontSize", 24], ["color", "#999999"], ["marginBottom", 4]]))], ["add-text", _pS(_uM([["fontSize", 12], ["color", "#999999"]]))], ["photo-tip", _pS(_uM([["fontSize", 12], ["color", "#999999"]]))], ["popup-overlay", _pS(_uM([["!position", "fixed"], ["!top", 0], ["!left", 0], ["!width", "100%"], ["!height", "100%"], ["backgroundColor", "rgba(0,0,0,0.5)"], ["display", "flex"], ["alignItems", "center"], ["justifyContent", "center"], ["!zIndex", 9999], ["animation", "fadeIn 0.3s ease"], ["pointerEvents", "auto"]]))], ["picker-modal", _pS(_uM([["!position", "fixed"], ["!top", 0], ["!left", 0], ["!width", "100%"], ["!height", "100%"], ["backgroundColor", "rgba(0,0,0,0.5)"], ["display", "flex"], ["alignItems", "center"], ["justifyContent", "center"], ["!zIndex", 9999], ["animation", "fadeIn 0.3s ease"], ["pointerEvents", "auto"]]))], ["popup-content", _pS(_uM([["!width", "90%"], ["maxWidth", 500], ["backgroundColor", "#ffffff"], ["borderTopLeftRadius", 12], ["borderTopRightRadius", 12], ["borderBottomRightRadius", 12], ["borderBottomLeftRadius", 12], ["overflow", "hidden"], ["animation", "scaleIn 0.3s ease"], ["boxShadow", "0 8px 32px rgba(0, 0, 0, 0.2)"], ["position", "relative"], ["zIndex", 10000]]))], ["picker-content", _pS(_uM([["!width", "90%"], ["maxWidth", 500], ["backgroundColor", "#ffffff"], ["borderTopLeftRadius", 12], ["borderTopRightRadius", 12], ["borderBottomRightRadius", 12], ["borderBottomLeftRadius", 12], ["overflow", "hidden"], ["animation", "scaleIn 0.3s ease"], ["boxShadow", "0 8px 32px rgba(0, 0, 0, 0.2)"], ["position", "relative"], ["zIndex", 10000]]))], ["popup-header", _pS(_uM([["display", "flex"], ["justifyContent", "space-between"], ["alignItems", "center"], ["paddingTop", 15], ["paddingRight", 20], ["paddingBottom", 15], ["paddingLeft", 20], ["borderBottomWidth", 1], ["borderBottomStyle", "solid"], ["borderBottomColor", "#e9ecef"], ["backgroundImage", "linear-gradient(135deg, #667eea 0%, #764ba2 100%)"], ["backgroundColor", "rgba(0,0,0,0)"], ["position", "relative"]]))], ["picker-header", _pS(_uM([["display", "flex"], ["justifyContent", "space-between"], ["alignItems", "center"], ["paddingTop", 15], ["paddingRight", 20], ["paddingBottom", 15], ["paddingLeft", 20], ["borderBottomWidth", 1], ["borderBottomStyle", "solid"], ["borderBottomColor", "#e9ecef"], ["backgroundImage", "linear-gradient(135deg, #667eea 0%, #764ba2 100%)"], ["backgroundColor", "rgba(0,0,0,0)"], ["position", "relative"], ["content::after", "''"], ["position::after", "absolute"], ["bottom::after", 0], ["left::after", "50%"], ["transform::after", "translateX(-50%)"], ["width::after", 30], ["height::after", 3], ["backgroundColor::after", "rgba(255,255,255,0.3)"], ["borderTopLeftRadius::after", 2], ["borderTopRightRadius::after", 2], ["borderBottomRightRadius::after", 2], ["borderBottomLeftRadius::after", 2]]))], ["picker-cancel", _pS(_uM([["fontSize", 16], ["color", "rgba(255,255,255,0.8)"]]))], ["picker-title", _pS(_uM([["fontSize", 16], ["color", "#ffffff"], ["letterSpacing", 1]]))], ["picker-confirm", _pS(_uM([["fontSize", 16], ["color", "#ffffff"], ["backgroundColor", "rgba(255,255,255,0.2)"], ["paddingTop", 6], ["paddingRight", 12], ["paddingBottom", 6], ["paddingLeft", 12], ["borderTopLeftRadius", 15], ["borderTopRightRadius", 15], ["borderBottomRightRadius", 15], ["borderBottomLeftRadius", 15], ["transitionProperty", "all"], ["transitionDuration", "0.2s"], ["transitionTimingFunction", "ease"], ["backgroundColor:active", "rgba(255,255,255,0.3)"], ["transform:active", "scale(0.95)"]]))], ["popup-title", _pS(_uM([["fontSize", 16], ["color", "#ffffff"], ["letterSpacing", 1]]))], ["popup-close", _pS(_uM([["fontSize", 24], ["color", "rgba(255,255,255,0.8)"], ["width", 30], ["height", 30], ["display", "flex"], ["alignItems", "center"], ["justifyContent", "center"], ["borderTopLeftRadius", 15], ["borderTopRightRadius", 15], ["borderBottomRightRadius", 15], ["borderBottomLeftRadius", 15], ["transitionProperty", "all"], ["transitionDuration", "0.2s"], ["transitionTimingFunction", "ease"], ["backgroundColor:active", "rgba(255,255,255,0.2)"], ["transform:active", "scale(0.9)"]]))], ["popup-search", _pS(_uM([["paddingTop", 15], ["paddingRight", 20], ["paddingBottom", 15], ["paddingLeft", 20], ["borderBottomWidth", 1], ["borderBottomStyle", "solid"], ["borderBottomColor", "#e9ecef"], ["backgroundColor", "#f8f9fa"]]))], ["search-input", _pS(_uM([["width", "100%"], ["height", 40], ["paddingTop", 0], ["paddingRight", 15], ["paddingBottom", 0], ["paddingLeft", 15], ["borderTopWidth", 1], ["borderRightWidth", 1], ["borderBottomWidth", 1], ["borderLeftWidth", 1], ["borderTopStyle", "solid"], ["borderRightStyle", "solid"], ["borderBottomStyle", "solid"], ["borderLeftStyle", "solid"], ["borderTopColor", "#dddddd"], ["borderRightColor", "#dddddd"], ["borderBottomColor", "#dddddd"], ["borderLeftColor", "#dddddd"], ["borderTopLeftRadius", 20], ["borderTopRightRadius", 20], ["borderBottomRightRadius", 20], ["borderBottomLeftRadius", 20], ["fontSize", 14], ["backgroundColor", "#ffffff"], ["outline", "none"], ["transitionProperty", "all"], ["transitionDuration", "0.2s"], ["transitionTimingFunction", "ease"], ["borderTopColor:focus", "#667eea"], ["borderRightColor:focus", "#667eea"], ["borderBottomColor:focus", "#667eea"], ["borderLeftColor:focus", "#667eea"], ["boxShadow:focus", "0 0 0 2px rgba(102, 126, 234, 0.2)"]]))], ["popup-list", _pS(_uM([["maxHeight", 350], ["overflowY", "auto"]]))], ["popup-empty", _pS(_uM([["paddingTop", 40], ["paddingRight", 20], ["paddingBottom", 40], ["paddingLeft", 20], ["textAlign", "center"]]))], ["empty-text", _pS(_uM([["fontSize", 14], ["color", "#999999"]]))], ["picker-list", _pS(_uM([["maxHeight", 300], ["overflowY", "auto"]]))], ["picker-item", _uM([["", _uM([["display", "flex"], ["justifyContent", "space-between"], ["alignItems", "center"], ["paddingTop", 15], ["paddingRight", 20], ["paddingBottom", 15], ["paddingLeft", 20], ["borderBottomWidth", 1], ["borderBottomStyle", "solid"], ["borderBottomColor", "#f0f0f0"], ["transitionProperty", "all"], ["transitionDuration", "0.2s"], ["transitionTimingFunction", "ease"], ["cursor", "pointer"], ["position", "relative"], ["backgroundColor:hover", "#f8f9fa"], ["color:hover", "#667eea"], ["backgroundColor:active", "#e9ecef"], ["transform:active", "scale(0.98)"], ["borderBottomWidth:last-child", "medium"], ["borderBottomStyle:last-child", "none"], ["borderBottomColor:last-child", "#000000"]])], [".selected", _uM([["backgroundColor", "#f8f9ff"]])]])], ["popup-item", _pS(_uM([["display", "flex"], ["justifyContent", "space-between"], ["alignItems", "center"], ["paddingTop", 15], ["paddingRight", 20], ["paddingBottom", 15], ["paddingLeft", 20], ["borderBottomWidth", 1], ["borderBottomStyle", "solid"], ["borderBottomColor", "#f0f0f0"], ["transitionProperty", "all"], ["transitionDuration", "0.2s"], ["transitionTimingFunction", "ease"], ["cursor", "pointer"], ["backgroundColor:hover", "#f8f9fa"]]))], ["popup-item-selected", _pS(_uM([["backgroundColor", "#e8f2ff"], ["borderLeftWidth", 4], ["borderLeftStyle", "solid"], ["borderLeftColor", "#667eea"], ["paddingLeft", 16], ["backgroundColor:hover", "#ddeeff"]]))], ["popup-item-text", _pS(_uM([["fontSize", 16], ["color", "#333333"], ["fontWeight", "400"]]))], ["picker-item-text", _pS(_uM([["fontSize", 16], ["color", "#333333"]]))], ["level-item", _pS(_uM([["flex", 1]]))], ["level-name", _pS(_uM([["fontSize", 16], ["color", "#333333"], ["marginBottom", 4]]))], ["level-desc", _pS(_uM([["fontSize", 12], ["color", "#999999"]]))], ["popup-item-check", _pS(_uM([["fontSize", 18], ["color", "#667eea"], ["fontWeight", "bold"], ["animation", "checkIn 0.3s ease"]]))], ["popup-loading", _pS(_uM([["display", "flex"], ["justifyContent", "center"], ["alignItems", "center"], ["paddingTop", 40], ["paddingRight", 20], ["paddingBottom", 40], ["paddingLeft", 20]]))], ["loading-text", _pS(_uM([["fontSize", 14], ["color", "#999999"]]))], ["form-label-left", _pS(_uM([["fontSize", 16], ["color", "#333333"], ["marginBottom", 10], ["fontWeight", "400"], ["textAlign", "left"]]))], ["custom-picker-full", _uM([["", _uM([["width", "100%"], ["paddingTop", "20rpx"], ["paddingRight", "20rpx"], ["paddingBottom", "20rpx"], ["paddingLeft", "20rpx"], ["borderTopWidth", 1], ["borderRightWidth", 1], ["borderBottomWidth", 1], ["borderLeftWidth", 1], ["borderTopStyle", "solid"], ["borderRightStyle", "solid"], ["borderBottomStyle", "solid"], ["borderLeftStyle", "solid"], ["borderTopColor", "#dddddd"], ["borderRightColor", "#dddddd"], ["borderBottomColor", "#dddddd"], ["borderLeftColor", "#dddddd"], ["borderTopLeftRadius", "8rpx"], ["borderTopRightRadius", "8rpx"], ["borderBottomRightRadius", "8rpx"], ["borderBottomLeftRadius", "8rpx"], ["backgroundColor", "#ffffff"], ["minHeight", "80rpx"], ["display", "flex"], ["alignItems", "center"]])], [".disabled", _uM([["backgroundImage", "none"], ["backgroundColor", "#f5f5f5"], ["borderTopColor", "#dddddd"], ["borderRightColor", "#dddddd"], ["borderBottomColor", "#dddddd"], ["borderLeftColor", "#dddddd"], ["opacity", 0.6]])]])], ["picker-text-full", _uM([["", _uM([["fontSize", "32rpx"], ["color", "#333333"], ["width", "100%"], ["textAlign", "left"]])], [".placeholder", _uM([["color", "#999999"]])]])], ["form-input", _pS(_uM([["flex", 1], ["paddingTop", 12], ["paddingRight", 15], ["paddingBottom", 12], ["paddingLeft", 15], ["backgroundImage", "none"], ["backgroundColor", "#f8f9fa"], ["borderTopLeftRadius", 8], ["borderTopRightRadius", 8], ["borderBottomRightRadius", 8], ["borderBottomLeftRadius", 8], ["borderTopWidth", 1], ["borderRightWidth", 1], ["borderBottomWidth", 1], ["borderLeftWidth", 1], ["borderTopStyle", "solid"], ["borderRightStyle", "solid"], ["borderBottomStyle", "solid"], ["borderLeftStyle", "solid"], ["borderTopColor", "#e9ecef"], ["borderRightColor", "#e9ecef"], ["borderBottomColor", "#e9ecef"], ["borderLeftColor", "#e9ecef"], ["fontSize", 16], ["color", "#333333"], ["boxSizing", "border-box"], ["width", "100%"]]))], ["@FONT-FACE", _uM([["0", _uM([])], ["1", _uM([])], ["2", _uM([])], ["3", _uM([])]])], ["@TRANSITION", _uM([["picker-wrapper-inline", _uM([["property", "all"], ["duration", "0.3s"], ["timingFunction", "ease"]])], ["bottom-save-btn", _uM([["property", "all"], ["duration", "0.3s"], ["timingFunction", "cubic-bezier(0.4,0,0.2,1)"], ["property::before", "left"], ["duration::before", "0.6s"]])], ["picker-confirm", _uM([["property", "all"], ["duration", "0.2s"], ["timingFunction", "ease"]])], ["popup-close", _uM([["property", "all"], ["duration", "0.2s"], ["timingFunction", "ease"]])], ["search-input", _uM([["property", "all"], ["duration", "0.2s"], ["timingFunction", "ease"]])], ["picker-item", _uM([["property", "all"], ["duration", "0.2s"], ["timingFunction", "ease"]])], ["popup-item", _uM([["property", "all"], ["duration", "0.2s"], ["timingFunction", "ease"]])]])]])];
+const GenPagesMonthlyTaskRecordStyles = [_uM([["container", _pS(_uM([["backgroundColor", "#f5f5f5"], ["position", "relative"], ["zIndex", 1], ["paddingBottom", "180rpx"]]))], ["header", _pS(_uM([["display", "flex"], ["justifyContent", "space-between"], ["alignItems", "center"], ["paddingTop", 20], ["paddingRight", 20], ["paddingBottom", 20], ["paddingLeft", 20], ["backgroundColor", "#ffffff"], ["borderBottomWidth", 1], ["borderBottomStyle", "solid"], ["borderBottomColor", "#f0f0f0"]]))], ["header-left", _pS(_uM([["display", "flex"], ["alignItems", "center"], ["gap", "5px"]]))], ["back-icon", _pS(_uM([["fontSize", 24], ["color", "#007AFF"]]))], ["back-text", _pS(_uM([["fontSize", 16], ["color", "#007AFF"]]))], ["header-title", _pS(_uM([["fontSize", 18], ["fontWeight", "bold"], ["color", "#333333"]]))], ["header-right", _pS(_uM([["display", "flex"], ["alignItems", "center"]]))], ["save-btn", _pS(_uM([["fontSize", 16], ["color", "#007AFF"]]))], ["task-info", _pS(_uM([["backgroundColor", "#ffffff"], ["marginTop", 10], ["marginRight", 20], ["marginBottom", 10], ["marginLeft", 20], ["borderTopLeftRadius", 8], ["borderTopRightRadius", 8], ["borderBottomRightRadius", 8], ["borderBottomLeftRadius", 8], ["paddingTop", 20], ["paddingRight", 20], ["paddingBottom", 20], ["paddingLeft", 20]]))], ["info-item", _pS(_uM([["display", "flex"], ["paddingTop", 12], ["paddingRight", 0], ["paddingBottom", 12], ["paddingLeft", 0], ["borderBottomWidth", 1], ["borderBottomStyle", "solid"], ["borderBottomColor", "#f0f0f0"], ["borderBottomWidth:last-child", "medium"], ["borderBottomStyle:last-child", "none"], ["borderBottomColor:last-child", "#000000"]]))], ["info-label", _pS(_uM([["fontSize", 14], ["color", "#666666"], ["width", 100], ["flexShrink", 0], ["textAlign", "left"], ["marginRight", 12]]))], ["info-value", _pS(_uM([["fontSize", 14], ["color", "#333333"], ["flex", 1], ["textAlign", "left"]]))], ["form-section", _pS(_uM([["backgroundColor", "#ffffff"], ["marginTop", 10], ["marginRight", 20], ["marginBottom", 10], ["marginLeft", 20], ["borderTopLeftRadius", 8], ["borderTopRightRadius", 8], ["borderBottomRightRadius", 8], ["borderBottomLeftRadius", 8], ["paddingTop", 20], ["paddingRight", 20], ["paddingBottom", 20], ["paddingLeft", 20]]))], ["section-title", _pS(_uM([["display", "flex"], ["alignItems", "center"], ["marginBottom", 20]]))], ["title-text", _pS(_uM([["fontSize", 16], ["fontWeight", "bold"], ["color", "#333333"]]))], ["required-mark", _pS(_uM([["fontSize", 16], ["color", "#ff4757"], ["marginLeft", 4]]))], ["form-item", _pS(_uM([["marginBottom", 20], ["marginBottom:last-child", 0]]))], ["form-item-inline", _pS(_uM([["marginBottom", 20], ["display", "flex"], ["flexDirection", "column"], ["gap", "8px"], ["paddingTop", 0], ["paddingRight", 20], ["paddingBottom", 0], ["paddingLeft", 20]]))], ["form-label", _pS(_uM([["fontSize", 14], ["color", "#333333"], ["marginBottom", 8]]))], ["form-label-inline", _pS(_uM([["fontSize", 14], ["color", "#333333"], ["marginBottom", 0]]))], ["picker-wrapper", _pS(_uM([["display", "flex"], ["justifyContent", "space-between"], ["alignItems", "center"], ["paddingTop", 12], ["paddingRight", 15], ["paddingBottom", 12], ["paddingLeft", 15], ["borderTopWidth", 1], ["borderRightWidth", 1], ["borderBottomWidth", 1], ["borderLeftWidth", 1], ["borderTopStyle", "solid"], ["borderRightStyle", "solid"], ["borderBottomStyle", "solid"], ["borderLeftStyle", "solid"], ["borderTopColor", "#e9ecef"], ["borderRightColor", "#e9ecef"], ["borderBottomColor", "#e9ecef"], ["borderLeftColor", "#e9ecef"], ["borderTopLeftRadius", 6], ["borderTopRightRadius", 6], ["borderBottomRightRadius", 6], ["borderBottomLeftRadius", 6], ["backgroundColor", "#ffffff"]]))], ["picker-wrapper-inline", _uM([["", _uM([["display", "flex"], ["justifyContent", "space-between"], ["alignItems", "center"], ["paddingTop", 12], ["paddingRight", 15], ["paddingBottom", 12], ["paddingLeft", 15], ["borderTopWidth", 1], ["borderRightWidth", 1], ["borderBottomWidth", 1], ["borderLeftWidth", 1], ["borderTopStyle", "solid"], ["borderRightStyle", "solid"], ["borderBottomStyle", "solid"], ["borderLeftStyle", "solid"], ["borderTopColor", "#e9ecef"], ["borderRightColor", "#e9ecef"], ["borderBottomColor", "#e9ecef"], ["borderLeftColor", "#e9ecef"], ["borderTopLeftRadius", 6], ["borderTopRightRadius", 6], ["borderBottomRightRadius", 6], ["borderBottomLeftRadius", 6], ["backgroundColor", "#ffffff"], ["width", "100%"], ["transitionProperty", "all"], ["transitionDuration", "0.3s"], ["transitionTimingFunction", "ease"], ["cursor", "pointer"], ["borderTopColor:hover", "#667eea"], ["borderRightColor:hover", "#667eea"], ["borderBottomColor:hover", "#667eea"], ["borderLeftColor:hover", "#667eea"], ["boxShadow:hover", "0 0 0 2px rgba(102, 126, 234, 0.1)"], ["transform:active", "scale(0.98)"]])], [".disabled", _uM([["backgroundColor", "#f5f5f5"], ["color", "#999999"], ["cursor", "not-allowed"], ["opacity", 0.6]])], [".disabled:hover", _uM([["borderTopColor", "#e9ecef"], ["borderRightColor", "#e9ecef"], ["borderBottomColor", "#e9ecef"], ["borderLeftColor", "#e9ecef"], ["boxShadow", "none"]])]])], ["text-input-inline", _pS(_uM([["paddingTop", 12], ["paddingRight", 15], ["paddingBottom", 12], ["paddingLeft", 15], ["borderTopWidth", 1], ["borderRightWidth", 1], ["borderBottomWidth", 1], ["borderLeftWidth", 1], ["borderTopStyle", "solid"], ["borderRightStyle", "solid"], ["borderBottomStyle", "solid"], ["borderLeftStyle", "solid"], ["borderTopColor", "#e9ecef"], ["borderRightColor", "#e9ecef"], ["borderBottomColor", "#e9ecef"], ["borderLeftColor", "#e9ecef"], ["borderTopLeftRadius", 6], ["borderTopRightRadius", 6], ["borderBottomRightRadius", 6], ["borderBottomLeftRadius", 6], ["fontSize", 14], ["color", "#333333"], ["backgroundColor", "#ffffff"], ["flex", 1]]))], ["bottom-save-container", _pS(_uM([["position", "fixed"], ["bottom", 0], ["left", 0], ["right", 0], ["paddingTop", "20rpx"], ["paddingRight", "30rpx"], ["paddingBottom", "40rpx"], ["paddingLeft", "30rpx"], ["backgroundImage", "linear-gradient(to top, rgba(85, 170, 255, 1.0) 0%, rgba(85, 170, 255, 0.9) 100%)"], ["backgroundColor", "rgba(0,0,0,0)"], ["backdropFilter", "blur(10rpx)"], ["borderTopWidth", "1rpx"], ["borderTopStyle", "solid"], ["borderTopColor", "rgba(240,240,240,0.8)"], ["zIndex", 999]]))], ["bottom-save-btn", _pS(_uM([["width", "100%"], ["height", "96rpx"], ["backgroundImage", "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)"], ["backgroundColor", "rgba(0,0,0,0)"], ["borderTopLeftRadius", "48rpx"], ["borderTopRightRadius", "48rpx"], ["borderBottomRightRadius", "48rpx"], ["borderBottomLeftRadius", "48rpx"], ["display", "flex"], ["alignItems", "center"], ["justifyContent", "center"], ["boxShadow", "0 12rpx 32rpx rgba(79, 172, 254, 0.4)"], ["transitionProperty", "all"], ["transitionDuration", "0.3s"], ["transitionTimingFunction", "cubic-bezier(0.4,0,0.2,1)"], ["position", "relative"], ["overflow", "hidden"], ["content::before", "''"], ["position::before", "absolute"], ["top::before", 0], ["left::before", "-100%"], ["width::before", "100%"], ["height::before", "100%"], ["backgroundImage::before", "linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent)"], ["backgroundColor::before", "rgba(0,0,0,0)"], ["transitionProperty::before", "left"], ["transitionDuration::before", "0.6s"], ["transform:active", "translateY(2rpx) scale(0.98)"], ["boxShadow:active", "0 8rpx 24rpx rgba(79, 172, 254, 0.3)"], ["left:active::before", "100%"]]))], ["bottom-save-text", _pS(_uM([["color", "#000000"], ["fontSize", "34rpx"], ["fontWeight", "700"], ["letterSpacing", "3rpx"], ["position", "relative"], ["zIndex", 1]]))], ["picker-text", _uM([["", _uM([["fontSize", 14], ["color", "#333333"]])], [".placeholder", _uM([["color", "#999999"]])]])], ["picker-arrow", _pS(_uM([["fontSize", 16], ["color", "#cccccc"]]))], ["text-input", _pS(_uM([["paddingTop", 12], ["paddingRight", 15], ["paddingBottom", 12], ["paddingLeft", 15], ["borderTopWidth", 1], ["borderRightWidth", 1], ["borderBottomWidth", 1], ["borderLeftWidth", 1], ["borderTopStyle", "solid"], ["borderRightStyle", "solid"], ["borderBottomStyle", "solid"], ["borderLeftStyle", "solid"], ["borderTopColor", "#e9ecef"], ["borderRightColor", "#e9ecef"], ["borderBottomColor", "#e9ecef"], ["borderLeftColor", "#e9ecef"], ["borderTopLeftRadius", 6], ["borderTopRightRadius", 6], ["borderBottomRightRadius", 6], ["borderBottomLeftRadius", 6], ["fontSize", 14], ["color", "#333333"], ["backgroundColor", "#ffffff"]]))], ["textarea-input", _pS(_uM([["paddingTop", 12], ["paddingRight", 15], ["paddingBottom", 12], ["paddingLeft", 15], ["borderTopWidth", 1], ["borderRightWidth", 1], ["borderBottomWidth", 1], ["borderLeftWidth", 1], ["borderTopStyle", "solid"], ["borderRightStyle", "solid"], ["borderBottomStyle", "solid"], ["borderLeftStyle", "solid"], ["borderTopColor", "#e9ecef"], ["borderRightColor", "#e9ecef"], ["borderBottomColor", "#e9ecef"], ["borderLeftColor", "#e9ecef"], ["borderTopLeftRadius", 6], ["borderTopRightRadius", 6], ["borderBottomRightRadius", 6], ["borderBottomLeftRadius", 6], ["fontSize", 14], ["color", "#333333"], ["backgroundColor", "#ffffff"], ["minHeight", 80], ["resize", "none"]]))], ["char-count", _pS(_uM([["fontSize", 12], ["color", "#999999"], ["textAlign", "right"], ["marginTop", 5]]))], ["photo-upload", _pS(_uM([["display", "flex"], ["flexWrap", "wrap"], ["gap", "10px"], ["marginBottom", 5]]))], ["photo-item", _pS(_uM([["position", "relative"], ["width", 80], ["height", 80]]))], ["photo-preview", _pS(_uM([["width", "100%"], ["height", "100%"], ["borderTopLeftRadius", 6], ["borderTopRightRadius", 6], ["borderBottomRightRadius", 6], ["borderBottomLeftRadius", 6], ["objectFit", "cover"]]))], ["photo-delete", _pS(_uM([["position", "absolute"], ["top", -5], ["right", -5], ["width", 20], ["height", 20], ["backgroundColor", "#ff4757"], ["borderTopLeftRadius", 10], ["borderTopRightRadius", 10], ["borderBottomRightRadius", 10], ["borderBottomLeftRadius", 10], ["display", "flex"], ["alignItems", "center"], ["justifyContent", "center"]]))], ["delete-icon", _pS(_uM([["fontSize", 12], ["color", "#ffffff"], ["fontWeight", "bold"]]))], ["photo-add", _pS(_uM([["width", 80], ["height", 80], ["borderTopWidth", 1], ["borderRightWidth", 1], ["borderBottomWidth", 1], ["borderLeftWidth", 1], ["borderTopStyle", "dashed"], ["borderRightStyle", "dashed"], ["borderBottomStyle", "dashed"], ["borderLeftStyle", "dashed"], ["borderTopColor", "#cccccc"], ["borderRightColor", "#cccccc"], ["borderBottomColor", "#cccccc"], ["borderLeftColor", "#cccccc"], ["borderTopLeftRadius", 6], ["borderTopRightRadius", 6], ["borderBottomRightRadius", 6], ["borderBottomLeftRadius", 6], ["display", "flex"], ["flexDirection", "column"], ["alignItems", "center"], ["justifyContent", "center"], ["backgroundColor", "#f8f9fa"]]))], ["add-icon", _pS(_uM([["fontSize", 24], ["color", "#999999"], ["marginBottom", 4]]))], ["add-text", _pS(_uM([["fontSize", 12], ["color", "#999999"]]))], ["photo-tip", _pS(_uM([["fontSize", 12], ["color", "#999999"]]))], ["popup-overlay", _pS(_uM([["!position", "fixed"], ["!top", 0], ["!left", 0], ["!width", "100%"], ["!height", "100%"], ["backgroundColor", "rgba(0,0,0,0.5)"], ["display", "flex"], ["alignItems", "center"], ["justifyContent", "center"], ["!zIndex", 9999], ["animation", "fadeIn 0.3s ease"], ["pointerEvents", "auto"]]))], ["picker-modal", _pS(_uM([["!position", "fixed"], ["!top", 0], ["!left", 0], ["!width", "100%"], ["!height", "100%"], ["backgroundColor", "rgba(0,0,0,0.5)"], ["display", "flex"], ["alignItems", "center"], ["justifyContent", "center"], ["!zIndex", 9999], ["animation", "fadeIn 0.3s ease"], ["pointerEvents", "auto"]]))], ["popup-content", _pS(_uM([["!width", "90%"], ["maxWidth", 500], ["backgroundColor", "#ffffff"], ["borderTopLeftRadius", 12], ["borderTopRightRadius", 12], ["borderBottomRightRadius", 12], ["borderBottomLeftRadius", 12], ["overflow", "hidden"], ["animation", "scaleIn 0.3s ease"], ["boxShadow", "0 8px 32px rgba(0, 0, 0, 0.2)"], ["position", "relative"], ["zIndex", 10000]]))], ["picker-content", _pS(_uM([["!width", "90%"], ["maxWidth", 500], ["backgroundColor", "#ffffff"], ["borderTopLeftRadius", 12], ["borderTopRightRadius", 12], ["borderBottomRightRadius", 12], ["borderBottomLeftRadius", 12], ["overflow", "hidden"], ["animation", "scaleIn 0.3s ease"], ["boxShadow", "0 8px 32px rgba(0, 0, 0, 0.2)"], ["position", "relative"], ["zIndex", 10000]]))], ["popup-header", _pS(_uM([["display", "flex"], ["justifyContent", "space-between"], ["alignItems", "center"], ["paddingTop", 15], ["paddingRight", 20], ["paddingBottom", 15], ["paddingLeft", 20], ["borderBottomWidth", 1], ["borderBottomStyle", "solid"], ["borderBottomColor", "#e9ecef"], ["backgroundImage", "linear-gradient(135deg, #667eea 0%, #764ba2 100%)"], ["backgroundColor", "rgba(0,0,0,0)"], ["position", "relative"]]))], ["picker-header", _pS(_uM([["display", "flex"], ["justifyContent", "space-between"], ["alignItems", "center"], ["paddingTop", 15], ["paddingRight", 20], ["paddingBottom", 15], ["paddingLeft", 20], ["borderBottomWidth", 1], ["borderBottomStyle", "solid"], ["borderBottomColor", "#e9ecef"], ["backgroundImage", "linear-gradient(135deg, #667eea 0%, #764ba2 100%)"], ["backgroundColor", "rgba(0,0,0,0)"], ["position", "relative"], ["content::after", "''"], ["position::after", "absolute"], ["bottom::after", 0], ["left::after", "50%"], ["transform::after", "translateX(-50%)"], ["width::after", 30], ["height::after", 3], ["backgroundColor::after", "rgba(255,255,255,0.3)"], ["borderTopLeftRadius::after", 2], ["borderTopRightRadius::after", 2], ["borderBottomRightRadius::after", 2], ["borderBottomLeftRadius::after", 2]]))], ["picker-cancel", _pS(_uM([["fontSize", 16], ["color", "rgba(255,255,255,0.8)"]]))], ["picker-title", _pS(_uM([["fontSize", 16], ["color", "#ffffff"], ["letterSpacing", 1]]))], ["picker-confirm", _pS(_uM([["fontSize", 16], ["color", "#ffffff"], ["backgroundColor", "rgba(255,255,255,0.2)"], ["paddingTop", 6], ["paddingRight", 12], ["paddingBottom", 6], ["paddingLeft", 12], ["borderTopLeftRadius", 15], ["borderTopRightRadius", 15], ["borderBottomRightRadius", 15], ["borderBottomLeftRadius", 15], ["transitionProperty", "all"], ["transitionDuration", "0.2s"], ["transitionTimingFunction", "ease"], ["backgroundColor:active", "rgba(255,255,255,0.3)"], ["transform:active", "scale(0.95)"]]))], ["popup-title", _pS(_uM([["fontSize", 16], ["color", "#ffffff"], ["letterSpacing", 1]]))], ["popup-close", _pS(_uM([["fontSize", 24], ["color", "rgba(255,255,255,0.8)"], ["width", 30], ["height", 30], ["display", "flex"], ["alignItems", "center"], ["justifyContent", "center"], ["borderTopLeftRadius", 15], ["borderTopRightRadius", 15], ["borderBottomRightRadius", 15], ["borderBottomLeftRadius", 15], ["transitionProperty", "all"], ["transitionDuration", "0.2s"], ["transitionTimingFunction", "ease"], ["backgroundColor:active", "rgba(255,255,255,0.2)"], ["transform:active", "scale(0.9)"]]))], ["popup-search", _pS(_uM([["paddingTop", 15], ["paddingRight", 20], ["paddingBottom", 15], ["paddingLeft", 20], ["borderBottomWidth", 1], ["borderBottomStyle", "solid"], ["borderBottomColor", "#e9ecef"], ["backgroundColor", "#f8f9fa"]]))], ["search-input", _pS(_uM([["width", "100%"], ["height", 40], ["paddingTop", 0], ["paddingRight", 15], ["paddingBottom", 0], ["paddingLeft", 15], ["borderTopWidth", 1], ["borderRightWidth", 1], ["borderBottomWidth", 1], ["borderLeftWidth", 1], ["borderTopStyle", "solid"], ["borderRightStyle", "solid"], ["borderBottomStyle", "solid"], ["borderLeftStyle", "solid"], ["borderTopColor", "#dddddd"], ["borderRightColor", "#dddddd"], ["borderBottomColor", "#dddddd"], ["borderLeftColor", "#dddddd"], ["borderTopLeftRadius", 20], ["borderTopRightRadius", 20], ["borderBottomRightRadius", 20], ["borderBottomLeftRadius", 20], ["fontSize", 14], ["backgroundColor", "#ffffff"], ["outline", "none"], ["transitionProperty", "all"], ["transitionDuration", "0.2s"], ["transitionTimingFunction", "ease"], ["borderTopColor:focus", "#667eea"], ["borderRightColor:focus", "#667eea"], ["borderBottomColor:focus", "#667eea"], ["borderLeftColor:focus", "#667eea"], ["boxShadow:focus", "0 0 0 2px rgba(102, 126, 234, 0.2)"]]))], ["popup-list", _pS(_uM([["maxHeight", 350], ["overflowY", "auto"]]))], ["popup-empty", _pS(_uM([["paddingTop", 40], ["paddingRight", 20], ["paddingBottom", 40], ["paddingLeft", 20], ["textAlign", "center"]]))], ["empty-text", _pS(_uM([["fontSize", 14], ["color", "#999999"]]))], ["picker-list", _pS(_uM([["maxHeight", 300], ["overflowY", "auto"]]))], ["picker-item", _uM([["", _uM([["display", "flex"], ["justifyContent", "center"], ["alignItems", "center"], ["paddingTop", 15], ["paddingRight", 20], ["paddingBottom", 15], ["paddingLeft", 20], ["borderBottomWidth", 1], ["borderBottomStyle", "solid"], ["borderBottomColor", "#f0f0f0"], ["transitionProperty", "all"], ["transitionDuration", "0.3s"], ["transitionTimingFunction", "cubic-bezier(0.4,0,0.2,1)"], ["cursor", "pointer"], ["position", "relative"], ["backgroundColor:hover", "#f0f8ff"], ["color:hover", "#007AFF"], ["backgroundColor:active", "#e9ecef"], ["transform:active", "scale(0.98)"], ["borderBottomWidth:last-child", "medium"], ["borderBottomStyle:last-child", "none"], ["borderBottomColor:last-child", "#000000"], ["height", 60], ["fontSize", 16], ["color", "#666666"], ["borderTopLeftRadius", 8], ["borderTopRightRadius", 8], ["borderBottomRightRadius", 8], ["borderBottomLeftRadius", 8], ["marginTop", 4], ["marginRight", 8], ["marginBottom", 4], ["marginLeft", 8], ["zIndex", 2], ["opacity", 0.6], ["backgroundColor", "rgba(0,0,0,0.02)"]])], [".selected", _uM([["backgroundColor", "rgba(0,0,0,0)"], ["backgroundImage", "linear-gradient(135deg, #007AFF 0%, #0056CC 100%)"], ["color", "#ffffff"], ["fontWeight", "700"], ["boxShadow", "0 4px 12px rgba(0, 122, 255, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2)"], ["transform", "scale(1.05)"], ["zIndex", 3], ["opacity", 1], ["fontSize", 18], ["borderTopWidth", 2], ["borderRightWidth", 2], ["borderBottomWidth", 2], ["borderLeftWidth", 2], ["borderTopStyle", "solid"], ["borderRightStyle", "solid"], ["borderBottomStyle", "solid"], ["borderLeftStyle", "solid"], ["borderTopColor", "#ffffff"], ["borderRightColor", "#ffffff"], ["borderBottomColor", "#ffffff"], ["borderLeftColor", "#ffffff"], ["textShadow", "0 1px 2px rgba(0, 0, 0, 0.3)"]])]])], ["popup-item", _pS(_uM([["display", "flex"], ["justifyContent", "space-between"], ["alignItems", "center"], ["paddingTop", 15], ["paddingRight", 20], ["paddingBottom", 15], ["paddingLeft", 20], ["borderBottomWidth", 1], ["borderBottomStyle", "solid"], ["borderBottomColor", "#f0f0f0"], ["transitionProperty", "all"], ["transitionDuration", "0.2s"], ["transitionTimingFunction", "ease"], ["cursor", "pointer"], ["backgroundColor:hover", "#f8f9fa"]]))], ["popup-item-selected", _pS(_uM([["backgroundColor", "#e8f2ff"], ["borderLeftWidth", 4], ["borderLeftStyle", "solid"], ["borderLeftColor", "#667eea"], ["paddingLeft", 16], ["backgroundColor:hover", "#ddeeff"]]))], ["popup-item-text", _pS(_uM([["fontSize", 16], ["color", "#333333"], ["fontWeight", "400"]]))], ["picker-item-text", _pS(_uM([["fontSize", 16], ["color", "#333333"]]))], ["level-item", _pS(_uM([["flex", 1]]))], ["level-name", _pS(_uM([["fontSize", 16], ["color", "#333333"], ["marginBottom", 4]]))], ["level-desc", _pS(_uM([["fontSize", 12], ["color", "#999999"]]))], ["popup-item-check", _pS(_uM([["fontSize", 18], ["color", "#667eea"], ["fontWeight", "bold"], ["animation", "checkIn 0.3s ease"]]))], ["popup-loading", _pS(_uM([["display", "flex"], ["justifyContent", "center"], ["alignItems", "center"], ["paddingTop", 40], ["paddingRight", 20], ["paddingBottom", 40], ["paddingLeft", 20]]))], ["loading-text", _pS(_uM([["fontSize", 14], ["color", "#999999"]]))], ["form-label-left", _pS(_uM([["fontSize", 16], ["color", "#333333"], ["marginBottom", 10], ["fontWeight", "400"], ["textAlign", "left"]]))], ["custom-picker-full", _uM([["", _uM([["width", "100%"], ["paddingTop", "20rpx"], ["paddingRight", "20rpx"], ["paddingBottom", "20rpx"], ["paddingLeft", "20rpx"], ["borderTopWidth", 1], ["borderRightWidth", 1], ["borderBottomWidth", 1], ["borderLeftWidth", 1], ["borderTopStyle", "solid"], ["borderRightStyle", "solid"], ["borderBottomStyle", "solid"], ["borderLeftStyle", "solid"], ["borderTopColor", "#dddddd"], ["borderRightColor", "#dddddd"], ["borderBottomColor", "#dddddd"], ["borderLeftColor", "#dddddd"], ["borderTopLeftRadius", "8rpx"], ["borderTopRightRadius", "8rpx"], ["borderBottomRightRadius", "8rpx"], ["borderBottomLeftRadius", "8rpx"], ["backgroundColor", "#ffffff"], ["minHeight", "80rpx"], ["display", "flex"], ["alignItems", "center"]])], [".disabled", _uM([["backgroundImage", "none"], ["backgroundColor", "#f5f5f5"], ["borderTopColor", "#dddddd"], ["borderRightColor", "#dddddd"], ["borderBottomColor", "#dddddd"], ["borderLeftColor", "#dddddd"], ["opacity", 0.6]])]])], ["picker-container", _pS(_uM([["width", "100%"], ["paddingTop", "20rpx"], ["paddingRight", "20rpx"], ["paddingBottom", "20rpx"], ["paddingLeft", "20rpx"], ["borderTopWidth", 1], ["borderRightWidth", 1], ["borderBottomWidth", 1], ["borderLeftWidth", 1], ["borderTopStyle", "solid"], ["borderRightStyle", "solid"], ["borderBottomStyle", "solid"], ["borderLeftStyle", "solid"], ["borderTopColor", "#dddddd"], ["borderRightColor", "#dddddd"], ["borderBottomColor", "#dddddd"], ["borderLeftColor", "#dddddd"], ["borderTopLeftRadius", "8rpx"], ["borderTopRightRadius", "8rpx"], ["borderBottomRightRadius", "8rpx"], ["borderBottomLeftRadius", "8rpx"], ["backgroundColor", "#ffffff"], ["minHeight", "80rpx"], ["display", "flex"], ["alignItems", "center"]]))], ["picker-text-full", _uM([["", _uM([["fontSize", "32rpx"], ["color", "#333333"], ["width", "100%"], ["textAlign", "left"]])], [".placeholder", _uM([["color", "#999999"]])]])], ["date-picker-modal", _pS(_uM([["position", "fixed"], ["top", 0], ["left", 0], ["right", 0], ["bottom", 0], ["backgroundColor", "rgba(0,0,0,0.5)"], ["display", "flex"], ["alignItems", "flex-end"], ["zIndex", 1000]]))], ["date-picker-content", _pS(_uM([["width", "100%"], ["backgroundColor", "#ffffff"], ["borderTopLeftRadius", 16], ["borderTopRightRadius", 16], ["borderBottomRightRadius", 0], ["borderBottomLeftRadius", 0], ["paddingBottom", "env(safe-area-inset-bottom)"]]))], ["date-picker-header", _pS(_uM([["display", "flex"], ["justifyContent", "space-between"], ["alignItems", "center"], ["paddingTop", 16], ["paddingRight", 20], ["paddingBottom", 16], ["paddingLeft", 20], ["borderBottomWidth", 1], ["borderBottomStyle", "solid"], ["borderBottomColor", "#f0f0f0"]]))], ["date-picker-cancel", _pS(_uM([["fontSize", 16], ["color", "#999999"]]))], ["date-picker-title", _pS(_uM([["fontSize", 18], ["color", "#333333"]]))], ["date-picker-confirm", _pS(_uM([["fontSize", 16], ["color", "#007AFF"]]))], ["date-picker-view", _pS(_uM([["height", 320], ["paddingTop", 0], ["paddingRight", 20], ["paddingBottom", 20], ["paddingLeft", 20], ["position", "relative"]]))], ["picker-item-spacer", _pS(_uM([["pointerEvents", "none"], ["opacity", 0], ["!backgroundImage", "none"], ["!backgroundColor", "rgba(0,0,0,0)"]]))], ["form-input", _pS(_uM([["flex", 1], ["paddingTop", 12], ["paddingRight", 15], ["paddingBottom", 12], ["paddingLeft", 15], ["backgroundImage", "none"], ["backgroundColor", "#f8f9fa"], ["borderTopLeftRadius", 8], ["borderTopRightRadius", 8], ["borderBottomRightRadius", 8], ["borderBottomLeftRadius", 8], ["borderTopWidth", 1], ["borderRightWidth", 1], ["borderBottomWidth", 1], ["borderLeftWidth", 1], ["borderTopStyle", "solid"], ["borderRightStyle", "solid"], ["borderBottomStyle", "solid"], ["borderLeftStyle", "solid"], ["borderTopColor", "#e9ecef"], ["borderRightColor", "#e9ecef"], ["borderBottomColor", "#e9ecef"], ["borderLeftColor", "#e9ecef"], ["fontSize", 16], ["color", "#333333"], ["boxSizing", "border-box"], ["width", "100%"]]))], ["@FONT-FACE", _uM([["0", _uM([])], ["1", _uM([])], ["2", _uM([])], ["3", _uM([])]])], ["@TRANSITION", _uM([["picker-wrapper-inline", _uM([["property", "all"], ["duration", "0.3s"], ["timingFunction", "ease"]])], ["bottom-save-btn", _uM([["property", "all"], ["duration", "0.3s"], ["timingFunction", "cubic-bezier(0.4,0,0.2,1)"], ["property::before", "left"], ["duration::before", "0.6s"]])], ["picker-confirm", _uM([["property", "all"], ["duration", "0.2s"], ["timingFunction", "ease"]])], ["popup-close", _uM([["property", "all"], ["duration", "0.2s"], ["timingFunction", "ease"]])], ["search-input", _uM([["property", "all"], ["duration", "0.2s"], ["timingFunction", "ease"]])], ["picker-item", _uM([["property", "all"], ["duration", "0.3s"], ["timingFunction", "cubic-bezier(0.4,0,0.2,1)"]])], ["popup-item", _uM([["property", "all"], ["duration", "0.2s"], ["timingFunction", "ease"]])]])]])];

@@ -221,3 +221,19 @@ java -jar target/inspection-system-1.0.0.jar --spring.config.location=applicatio
 ## 联系方式
 
 如有问题，请联系开发团队。
+### 2025-11-14 修复：月检整改/复查字段缺失
+
+问题：后端实体 `sys_monthly_inspection_record` 包含整改/复查字段，但数据库表缺少对应列，导致查询报 `Unknown column 'rectification_suggestion'`。
+
+处理：
+- 新增 `alter_monthly_inspection_record_add_rectify_review.sql`，为表添加以下列：
+  - `rectification_suggestion`、`rectification_effect`、`rectification_images`、`rectification_time`
+  - `review_suggestion`、`review_effect`、`review_images`、`review_time`
+- 更新 `monthly_inspection_record_table.sql`（建表DDL）与 `MonthlyInspectionRecordMapper.xml`（ResultMap与Base_Column_List）。
+
+执行方式（MySQL）：
+- 在目标库执行：
+  - `source backend/alter_monthly_inspection_record_add_rectify_review.sql`
+  - 或在SQL客户端复制执行其中的 `ALTER TABLE` 语句。
+
+注意：若已有历史数据，此脚本仅新增列，不会影响现有数据；新列为可空，兼容旧记录。

@@ -3,8 +3,8 @@
   "name": "榆林公司岗检系统",
   "description": "",
   "version": {
-    "name": "1.0.1",
-    "code": "101"
+    "name": "1.0.4",
+    "code": "104"
   },
   "uni-app-x": {
     "compilerVersion": "4.76"
@@ -13,14 +13,15 @@
     "distribute": {
       "modules": {
         "uni-event": {},
+        "uni-websocket": {},
+        "uni-getSystemInfo": {},
+        "uni-storage": {},
+        "uni-prompt": {},
         "uni-exit": {},
         "uni-network": {},
-        "uni-getSystemInfo": {},
         "uni-canvas": {},
-        "uni-prompt": {},
-        "uni-media": {},
         "uni-previewImage": {},
-        "uni-storage": {},
+        "uni-media": {},
         "uni-getElementById": {}
       },
       "icons": {

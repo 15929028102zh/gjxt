@@ -10,6 +10,10 @@ import com.gjxt.inspection.entity.SysInspectionRecord;
 import com.gjxt.inspection.mapper.SysInspectionRecordMapper;
 import com.gjxt.inspection.service.ISysDictionaryService;
 import com.gjxt.inspection.service.ISysInspectionRecordService;
+import com.gjxt.inspection.service.ISysUserService;
+import com.gjxt.inspection.service.NotificationService;
+import com.gjxt.inspection.entity.Notification;
+import com.gjxt.inspection.entity.SysUser;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -51,6 +55,12 @@ public class SysInspectionRecordServiceImpl extends ServiceImpl<SysInspectionRec
     
     @Autowired
     private com.gjxt.inspection.util.UserContextUtil userContextUtil;
+
+    @Autowired
+    private NotificationService notificationService;
+
+    @Autowired
+    private ISysUserService userService;
 
     @Override
     public PageResult<SysInspectionRecord> getRecordPage(Long current, Long size, String taskId,
@@ -251,6 +261,16 @@ public class SysInspectionRecordServiceImpl extends ServiceImpl<SysInspectionRec
         monthly.put("monthlyTrend", recordMapper.selectMonthlyTrendStatistics(departmentId));
         
         return monthly;
+    }
+
+    @Override
+    public List<Map<String, Object>> getDepartmentProfessionMatrix(String departmentId, String status, String startDate, String endDate) {
+        return recordMapper.selectDepartmentProfessionMatrix(departmentId, status, startDate, endDate);
+    }
+
+    @Override
+    public List<Map<String, Object>> getDepartmentNatureMatrix(String departmentId, String status, String startDate, String endDate) {
+        return recordMapper.selectDepartmentNatureMatrix(departmentId, status, startDate, endDate);
     }
 
     @Override
@@ -496,7 +516,7 @@ public class SysInspectionRecordServiceImpl extends ServiceImpl<SysInspectionRec
 
     @Override
     public void exportRecordsToExcel(HttpServletResponse response, String problemDescription, 
-                                    String responsiblePerson, String professionId, String natureId, 
+                                    String responsiblePerson, String inspectorId, String professionId, String natureId, 
                                     String departmentId, Integer status, LocalDateTime startTime, 
                                     LocalDateTime endTime) {
         try {
@@ -507,7 +527,7 @@ public class SysInspectionRecordServiceImpl extends ServiceImpl<SysInspectionRec
                     status != null ? status.toString() : null, // status
                     (professionId != null && !professionId.trim().isEmpty()) ? Long.valueOf(professionId) : null, // professionId
                     null, // locationId
-                    null, // checkerId
+                    (inspectorId != null && !inspectorId.trim().isEmpty()) ? inspectorId : null, // checkerName
                     responsiblePerson, // responsiblePerson
                     startTime, // startTime
                     endTime, // endTime
@@ -558,7 +578,7 @@ public class SysInspectionRecordServiceImpl extends ServiceImpl<SysInspectionRec
             dataStyle.setBorderRight(BorderStyle.THIN);
             
             // 填充数据
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+            DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd"); // 只显示年月日
             for (int i = 0; i < records.size(); i++) {
                 SysInspectionRecord record = records.get(i);
                 Row row = sheet.createRow(i + 1);
@@ -591,7 +611,7 @@ public class SysInspectionRecordServiceImpl extends ServiceImpl<SysInspectionRec
                 // 整改期限
                 Cell cell5 = row.createCell(5);
                 cell5.setCellValue(record.getRectificationDeadline() != null ? 
-                    record.getRectificationDeadline().format(formatter) : "");
+                    record.getRectificationDeadline().format(dateFormatter) : "");
                 cell5.setCellStyle(dataStyle);
                 
                 // 检查人
@@ -617,7 +637,7 @@ public class SysInspectionRecordServiceImpl extends ServiceImpl<SysInspectionRec
                 // 整改时间
                 Cell cell10 = row.createCell(10);
                 cell10.setCellValue(record.getRectificationTime() != null ? 
-                    record.getRectificationTime().format(formatter) : "");
+                    record.getRectificationTime().format(dateFormatter) : "");
                 cell10.setCellStyle(dataStyle);
                 
                 // 复查效果
@@ -633,7 +653,7 @@ public class SysInspectionRecordServiceImpl extends ServiceImpl<SysInspectionRec
                 // 复查时间
                 Cell cell13 = row.createCell(13);
                 cell13.setCellValue(record.getReviewTime() != null ? 
-                    record.getReviewTime().format(formatter) : "");
+                    record.getReviewTime().format(dateFormatter) : "");
                 cell13.setCellStyle(dataStyle);
                 
                 // 性质界定
@@ -756,6 +776,139 @@ public class SysInspectionRecordServiceImpl extends ServiceImpl<SysInspectionRec
         } catch (Exception e) {
             log.error("单个更新状态异常：{}", e.getMessage(), e);
             throw new RuntimeException("单个更新状态失败: " + e.getMessage());
+        }
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public boolean rejectRecord(String id) {
+        try {
+            SysInspectionRecord record = this.getById(id);
+            if (record == null) {
+                log.error("记录不存在，ID: {}", id);
+                return false;
+            }
+            
+            // 获取部门管理员
+            List<SysUser> admins = userService.getAdminsByDeptId(record.getDepartmentId());
+            if (admins == null || admins.isEmpty()) {
+                log.warn("部门没有管理员，部门ID: {}", record.getDepartmentId());
+            } else {
+                // 发送通知给所有部门管理员
+                for (SysUser admin : admins) {
+                    Notification notification = new Notification();
+                    notification.setType("AUDIT");
+                    notification.setTitle("待审核的周检记录");
+                    notification.setContent("您有一条待审核的周检记录，请及时处理。问题描述：" + record.getProblemDescription());
+                    notification.setUserId(admin.getId());
+                    notification.setUserName(admin.getRealName());
+                    notification.setDepartmentId(record.getDepartmentId());
+                    notification.setIsRead(false);
+                    notification.setCreateTime(LocalDateTime.now());
+                    notification.setPriority("high");
+                    notification.setActionUrl("/inspection/audit?recordId=" + id);
+                    
+                    notificationService.createNotification(notification);
+                }
+            }
+            
+            // 更新记录状态为待审核
+            record.setStatus(3); // 3-待审核
+            record.setAuditStatus(0); // 0-未审核
+            record.setUpdateTime(LocalDateTime.now());
+            
+            return this.updateById(record);
+        } catch (Exception e) {
+            log.error("回退记录失败，ID: {}", id, e);
+            return false;
+        }
+    }
+
+    @Override
+    public PageResult<SysInspectionRecord> getAuditRecords(Long current, Long size, String departmentId, String status,
+                                                          LocalDateTime startTime, LocalDateTime endTime) {
+        Page<SysInspectionRecord> page = new Page<>(current, size);
+        LambdaQueryWrapper<SysInspectionRecord> wrapper = new LambdaQueryWrapper<>();
+        
+        // 查询待审核的记录（status=3）
+        wrapper.eq(SysInspectionRecord::getStatus, 3);
+        
+        if (StringUtils.hasText(departmentId)) {
+            wrapper.eq(SysInspectionRecord::getDepartmentId, departmentId);
+        }
+        
+        if (StringUtils.hasText(status)) {
+            wrapper.eq(SysInspectionRecord::getAuditStatus, status);
+        }
+        
+        if (startTime != null) {
+            wrapper.ge(SysInspectionRecord::getCreateTime, startTime);
+        }
+        
+        if (endTime != null) {
+            wrapper.le(SysInspectionRecord::getCreateTime, endTime);
+        }
+        
+        wrapper.orderByDesc(SysInspectionRecord::getCreateTime);
+        IPage<SysInspectionRecord> result = this.page(page, wrapper);
+        
+        return new PageResult<>(result.getCurrent(), result.getSize(), result.getTotal(), result.getRecords());
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public boolean confirmAudit(String id, String auditorId, String auditReason) {
+        try {
+            SysInspectionRecord record = this.getById(id);
+            if (record == null) {
+                log.error("记录不存在，ID: {}", id);
+                return false;
+            }
+            
+            // 审核成功，记录变更为已提交状态（4）
+            record.setStatus(4); // 4-已提交
+            record.setAuditStatus(1); // 1-已审核
+            record.setAuditReason(auditReason);
+            record.setAuditorId(auditorId);
+            record.setAuditTime(LocalDateTime.now());
+            
+            // 清空整改图片、整改建议、复查图片、复查建议
+            record.setRectificationImageUrls(null);
+            record.setRectificationEffect(null);
+            record.setReviewImageUrls(null);
+            record.setReviewEffect(null);
+            
+            record.setUpdateTime(LocalDateTime.now());
+            
+            return this.updateById(record);
+        } catch (Exception e) {
+            log.error("审核记录失败，ID: {}", id, e);
+            return false;
+        }
+    }
+    
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public boolean rejectAudit(String id) {
+        try {
+            SysInspectionRecord record = this.getById(id);
+            if (record == null) {
+                log.error("记录不存在，ID: {}", id);
+                return false;
+            }
+            
+            // 拒绝审核，将记录状态从待审核(3)改回已提交(1)
+            if (record.getStatus() != null && record.getStatus() == 3) {
+                record.setStatus(1); // 1-已提交
+                record.setAuditStatus(0); // 0-未审核
+                record.setUpdateTime(LocalDateTime.now());
+                return this.updateById(record);
+            }
+            
+            return false;
+        } catch (Exception e) {
+            log.error("拒绝审核失败，ID: {}", id, e);
+            return false;
         }
     }
 }

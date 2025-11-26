@@ -178,7 +178,7 @@ public interface SysInspectionRecordMapper extends BaseMapper<SysInspectionRecor
     List<SysInspectionRecord> selectExportData(@Param("status") String status,
                                                @Param("professionId") Long professionId,
                                                @Param("locationId") Long locationId,
-                                               @Param("checkerId") Long checkerId,
+                                               @Param("checkerName") String checkerName,
                                                @Param("responsiblePerson") String responsiblePerson,
                                                @Param("startTime") LocalDateTime startTime,
                                                @Param("endTime") LocalDateTime endTime,
@@ -249,5 +249,33 @@ public interface SysInspectionRecordMapper extends BaseMapper<SysInspectionRecor
     IPage<SysInspectionRecord> selectDelayedRectificationRecords(Page<SysInspectionRecord> page,
                                                                 @Param("currentTime") LocalDateTime currentTime,
                                                                 @Param("departmentId") String departmentId);
+
+    /**
+     * 部门×专业矩阵统计
+     *
+     * @param departmentId 部门ID（可选）
+     * @param status 状态（可选）
+     * @param startDate 开始日期（yyyy-MM-dd，可选）
+     * @param endDate 结束日期（yyyy-MM-dd，可选）
+     * @return 每个部门-专业组合的计数
+     */
+    List<Map<String, Object>> selectDepartmentProfessionMatrix(@Param("departmentId") String departmentId,
+                                                               @Param("status") String status,
+                                                               @Param("startDate") String startDate,
+                                                               @Param("endDate") String endDate);
+
+    /**
+     * 部门×问题属性矩阵统计
+     *
+     * @param departmentId 部门ID（可选）
+     * @param status 状态（可选）
+     * @param startDate 开始日期（yyyy-MM-dd，可选）
+     * @param endDate 结束日期（yyyy-MM-dd，可选）
+     * @return 每个部门-问题属性组合的计数
+     */
+    List<Map<String, Object>> selectDepartmentNatureMatrix(@Param("departmentId") String departmentId,
+                                                           @Param("status") String status,
+                                                           @Param("startDate") String startDate,
+                                                           @Param("endDate") String endDate);
 
 }

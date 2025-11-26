@@ -107,6 +107,40 @@ export const monthlyRecordApi = {
       method: 'get',
       params
     })
+  },
+
+  // 回退记录（发送审核通知）
+  rejectRecord(id) {
+    return request({
+      url: `/monthly-inspection-record/${id}/reject`,
+      method: 'post'
+    })
+  },
+
+  // 查询待审核记录
+  getAuditRecords(params) {
+    return request({
+      url: '/monthly-inspection-record/audit-list',
+      method: 'get',
+      params
+    })
+  },
+
+  // 审核确认
+  confirmAudit(id, data) {
+    return request({
+      url: `/monthly-inspection-record/${id}/audit`,
+      method: 'put',
+      data
+    })
+  },
+  
+  // 拒绝审核（将状态从待审核(3)改回已提交(1)）
+  rejectAudit(id) {
+    return request({
+      url: `/monthly-inspection-record/${id}/reject-audit`,
+      method: 'put'
+    })
   }
 }
 
@@ -161,6 +195,12 @@ export const monthlyTaskApi = {
       url: `/monthly-inspection-task/user/${userId}`,
       method: 'get'
     })
+  },
+  getByTaskNo(taskNo) {
+    return request({
+      url: `/monthly-inspection-task/task-no/${taskNo}`,
+      method: 'get'
+    })
   }
 }
 
@@ -205,10 +245,10 @@ export const getDeptList = (params) => {
   })
 }
 
-// 获取专业列表API
+// 获取专业列表API - 从岗检标准接口获取
 export const getProfessionList = (params) => {
   return request({
-    url: '/dictionary/type/专业',
+    url: '/gjbz-data/options/types',
     method: 'get',
     params
   })
@@ -270,6 +310,76 @@ export const getProblemList = (params) => {
 export const getProblemByResponsibilityId = (responsibilityId) => {
   return request({
     url: `/problem/responsibility/${responsibilityId}`,
+    method: 'get'
+  })
+}
+
+// ========== 移动端兼容的级联接口 ==========
+// 获取专业类别选项（移动端兼容）
+export const getTypeOptions = () => {
+  return request({
+    url: '/gjbz-data/options/types',
+    method: 'get'
+  })
+}
+
+// 获取模块选项（移动端兼容）
+export const getModuleOptions = () => {
+  return request({
+    url: '/gjbz-data/options/modules',
+    method: 'get'
+  })
+}
+
+// 获取责任选项（移动端兼容）
+export const getResponsibilityOptions = () => {
+  return request({
+    url: '/gjbz-data/options/responsibilities',
+    method: 'get'
+  })
+}
+
+// 获取问题选项（移动端兼容）
+export const getIssueOptions = () => {
+  return request({
+    url: '/gjbz-data/options/issues',
+    method: 'get'
+  })
+}
+
+// 获取问题选项（包含质量等级）
+export const getIssueOptionsWithQuality = () => {
+  return request({
+    url: '/gjbz-data/options/issues-with-quality',
+    method: 'get'
+  })
+}
+
+// 回退记录（发送审核通知）
+export const rejectRecord = (id) => {
+  return request({
+    url: `/monthly-inspection-record/${id}/reject`,
+    method: 'post'
+  })
+}
+
+export const getResponsibilitiesByModuleName = (moduleName) => {
+  return request({
+    url: `/gjbz-data/options/responsibilities/by-module/${encodeURIComponent(moduleName)}`,
+    method: 'get'
+  })
+}
+
+export const getIssuesByResponsibilityName = (responsibilityName) => {
+  return request({
+    url: `/gjbz-data/options/issues/by-responsibility/${encodeURIComponent(responsibilityName)}`,
+    method: 'get'
+  })
+}
+
+export const getModulesByTypeName = (typeName) => {
+  return request({
+    url: `/gjbz-data/modules/by-type/${encodeURIComponent(typeName)}`,
     method: 'get'
   })
 }

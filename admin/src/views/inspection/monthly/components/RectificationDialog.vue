@@ -59,9 +59,9 @@
         <el-row :gutter="20">
           <!-- 性质界定 -->
           <el-col :span="12">
-            <el-form-item label="性质界定" prop="natureDefinition">
+            <el-form-item label="性质界定" prop="qualityId">
               <el-select 
-                v-model="form.natureDefinition" 
+                v-model="form.qualityId" 
                 placeholder="请选择问题性质"
                 style="width: 100%;"
                 disabled
@@ -191,6 +191,7 @@ import { ref, reactive, computed, watch, nextTick } from 'vue'
 import { ElMessage } from 'element-plus'
 import DragUpload from '@/components/DragUpload.vue'
 import { monthlyRecordApi, getProfessionList, getNatureDefinitionList, getDeptList, getModuleByProfessionId, getResponsibilityByModuleId, getProblemByResponsibilityId } from '@/api/monthlyRecord'
+import { gjbzDataApi } from '@/api/gjbz'
 
 const props = defineProps({
   visible: {
@@ -218,6 +219,7 @@ const departmentOptions = ref([])
 const form = reactive({
   id: '',
   natureDefinition: '',
+  qualityId: '',
   professionId: '',
   departmentId: '',
   status: 1,
@@ -228,7 +230,7 @@ const form = reactive({
 
 // 表单验证规则
 const rules = {
-  natureDefinition: [
+  qualityId: [
     { required: true, message: '请选择性质界定', trigger: 'change' }
   ],
   professionId: [
@@ -303,11 +305,16 @@ const loadRecordDetail = async (id) => {
       const record = response.data
       // 回写表单数据
       form.id = record.id
-      form.natureDefinition = record.natureDefinition || ''
+      form.qualityId = record.qualityId || record.quality || record.qualityDetermination || record.natureDefinition || ''
       form.professionId = record.professionId || ''
       form.departmentId = record.departmentId || ''
       form.rectificationSuggestion = record.rectificationSuggestion || ''
       form.rectificationEffect = record.rectificationEffect || ''
+      // 若接口返回编码，转换为汉字名称以用于展示
+      if (form.qualityId && /^[0-9]+$/.test(String(form.qualityId))) {
+        const byCode = natureOptions.value.find(item => String(item.code) === String(form.qualityId))
+        if (byCode) form.qualityId = byCode.name
+      }
       
       // 处理整改图片
       if (record.rectificationImages) {
@@ -330,17 +337,29 @@ const loadRecordDetail = async (id) => {
 const loadOptions = async () => {
   try {
     const [professionResponse, natureResponse, deptResponse] = await Promise.all([
-      getProfessionList(),
+      gjbzDataApi.getTypes(),
       getNatureDefinitionList(),
       getDeptList()
     ])
 
     if (professionResponse.code === 200) {
-      professionOptions.value = professionResponse.data
+      // 使用与移动端相同的解析方式
+      const data = professionResponse.data
+      if (data && Array.isArray(data)) {
+        professionOptions.value = data.map((item, index) => ({
+          id: (index + 1).toString(),
+          name: item
+        }))
+      }
     }
 
     if (natureResponse.code === 200) {
-      natureOptions.value = natureResponse.data
+      const data = natureResponse.data || []
+      natureOptions.value = data.map(item => ({
+        id: item.id,
+        name: item.dictValue || item.dictLabel,
+        code: item.dictCode
+      }))
     }
 
     if (deptResponse.code === 200) {

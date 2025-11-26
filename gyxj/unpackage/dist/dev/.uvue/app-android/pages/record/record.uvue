@@ -6,13 +6,14 @@ type RecordStatusTab = {
     value: string;
 };
 type InspectionRecord = {
-    __$originalPosition?: UTSSourceMapPosition<"InspectionRecord", "pages/record/record.uvue", 70, 7>;
+    __$originalPosition?: UTSSourceMapPosition<"InspectionRecord", "pages/record/record.uvue", 70, 8>;
     id: string;
     problemDescription: string;
     responsiblePerson: string;
     inspectorName: string;
     createDate: string;
     status: number;
+    rectificationDate: string;
 };
 const __sfc__ = defineComponent({
     data() {
@@ -27,6 +28,9 @@ const __sfc__ = defineComponent({
             status: '0',
             isDelayed: false,
             isReviewed: false,
+            isMonthly: false,
+            deadlineBefore: '',
+            deadlineFrom: '',
             isRefreshing: false,
             containerHeight: 0 // 容器高度
         };
@@ -45,6 +49,16 @@ const __sfc__ = defineComponent({
         if (options['type'] != null && options['type'] == 'reviewed') {
             this.isReviewed = true;
             this.status = '2'; // 设置状态为已复查
+        }
+        // 检查是否是月检记录
+        if (options['monthly'] != null && options['monthly'] == 'true') {
+            this.isMonthly = true;
+        }
+        if (options['deadlineBefore'] != null) {
+            this.deadlineBefore = options['deadlineBefore'] as string;
+        }
+        if (options['deadlineFrom'] != null) {
+            this.deadlineFrom = options['deadlineFrom'] as string;
         }
         this.initContainerHeight();
         this.loadRecords();
@@ -79,7 +93,7 @@ const __sfc__ = defineComponent({
         },
         // 处理记录更新事件
         handleRecordUpdated() {
-            console.log('接收到记录更新事件，开始刷新数据', " at pages/record/record.uvue:146");
+            console.log('接收到记录更新事件，开始刷新数据', " at pages/record/record.uvue:160");
             this.refreshRecords();
         },
         // 初始化容器高度
@@ -98,26 +112,36 @@ const __sfc__ = defineComponent({
                 this.loadingMore = true;
             }
             const token = uni.getStorageSync('token');
-            // 获取用户部门信息
+            // 获取用户信息，包括部门和管理员权限
             let departmentId = '';
+            let isAdmin = false;
             const userInfoData = uni.getStorageSync('userInfo');
             const userInfoStr = userInfoData != null ? userInfoData as string : '';
             if (userInfoStr != null && userInfoStr != '' && userInfoStr != 'null' && userInfoStr != 'undefined') {
                 try {
-                    const parsedUserInfo = UTSAndroid.consoleDebugError(JSON.parse(userInfoStr), " at pages/record/record.uvue:175") as UTSJSONObject;
+                    const parsedUserInfo = UTSAndroid.consoleDebugError(JSON.parse(userInfoStr), " at pages/record/record.uvue:190") as UTSJSONObject;
                     departmentId = parsedUserInfo.getString('deptId') ?? '';
+                    isAdmin = (parsedUserInfo.getNumber('isAdmin') ?? 0) === 1;
                 }
                 catch (error: any) {
-                    console.error('用户信息JSON解析失败:', error, " at pages/record/record.uvue:178");
+                    console.error('用户信息JSON解析失败:', error, " at pages/record/record.uvue:194");
                 }
             }
-            // 根据是否是延迟整改选择不同的API
+            // 根据是否是延迟整改或月检记录选择不同的API
+            // 管理员用户不需要部门过滤，查询所有数据
             let apiUrl = '';
-            if (this.isDelayed) {
-                apiUrl = getApiUrl(`/inspection-record/delayed?current=${this.pageNum}&size=${this.pageSize}${departmentId != null && departmentId != '' ? '&departmentId=' + departmentId : ''}`);
+            if (this.isMonthly && this.isDelayed) {
+                const dl = (this.deadlineBefore != null && this.deadlineBefore != '') ? this.deadlineBefore : this.formatToday();
+                apiUrl = getApiUrl(`/monthly-inspection-record/page?current=${this.pageNum}&size=${this.pageSize}&recordStatus=0&rectificationDeadlineBefore=${dl}${(!isAdmin && departmentId != null && departmentId != '') ? '&responsibilityId=' + departmentId : ''}`);
+            }
+            else if (this.isDelayed) {
+                apiUrl = getApiUrl(`/inspection-record/delayed?current=${this.pageNum}&size=${this.pageSize}${(!isAdmin && departmentId != null && departmentId != '') ? '&departmentId=' + departmentId : ''}`);
+            }
+            else if (this.isMonthly) {
+                apiUrl = getApiUrl(`/monthly-inspection-record/page?current=${this.pageNum}&size=${this.pageSize}&recordStatus=${this.status}${(!isAdmin && departmentId != null && departmentId != '') ? '&responsibilityId=' + departmentId : ''}`);
             }
             else {
-                apiUrl = getApiUrl(`/inspection-record/page?current=${this.pageNum}&size=${this.pageSize}&status=${this.status}${departmentId != null && departmentId != '' ? '&departmentId=' + departmentId : ''}`);
+                apiUrl = getApiUrl(`/inspection-record/page?current=${this.pageNum}&size=${this.pageSize}&status=${this.status}${(!isAdmin && departmentId != null && departmentId != '') ? '&departmentId=' + departmentId : ''}`);
             }
             uni.request({
                 url: apiUrl,
@@ -135,30 +159,74 @@ const __sfc__ = defineComponent({
                             for (let i = 0; i < records.length; i++) {
                                 const item = records[i];
                                 // 打印原始数据对象，检查字段内容
-                                console.log('原始数据对象:', item, " at pages/record/record.uvue:207");
-                                console.log('problemDescription字段:', item.getString('problemDescription'), " at pages/record/record.uvue:208");
+                                console.log('原始数据对象:', item, " at pages/record/record.uvue:229");
+                                console.log('problemDescription字段:', item.getString('problemDescription'), " at pages/record/record.uvue:230");
                                 const createTime = item.getString('createTime') ?? '';
+                                const rd0 = item.getString('rectificationDate') ?? '';
+                                const rd1 = rd0 != '' ? rd0 : (item.getString('rectification_date') ?? '');
+                                const rd2 = rd1 != '' ? rd1 : (item.getString('rectificationDeadline') ?? '');
+                                const rd3 = rd2 != '' ? rd2 : (item.getString('rectificationTime') ?? '');
+                                const rd4 = rd3 != '' ? rd3 : (item.getString('deadline') ?? '');
+                                const rd5 = rd4 != '' ? rd4 : (item.getString('rectifyDeadline') ?? '');
                                 const record: InspectionRecord = {
-                                    id: item.getString('id') ?? '',
+                                    id: (item.getString('id') ?? item.getString('recordId') ?? ''),
                                     problemDescription: item.getString('problemDescription') ?? '',
                                     responsiblePerson: item.getString('responsiblePerson') ?? '',
                                     inspectorName: item.getString('inspector') ?? '',
                                     createDate: this.formatDate(createTime),
-                                    status: item.getNumber('status') ?? 0
+                                    status: this.isMonthly ? (item.getNumber('recordStatus') ?? 0) : (item.getNumber('status') ?? 0),
+                                    rectificationDate: this.normalizeDate(rd5)
                                 };
                                 // 打印处理后的记录对象
-                                console.log('处理后的记录对象:', record, " at pages/record/record.uvue:220");
+                                console.log('处理后的记录对象:', record, " at pages/record/record.uvue:249");
                                 newRecords.push(record);
                             }
                         }
+                        // 统一过滤
+                        let filtered = newRecords;
+                        // 月检待整改列表排除延迟整改（整改期限小于今天）
+                        if (this.isMonthly && !this.isDelayed && this.status === '0') {
+                            const start = (this.deadlineFrom != null && this.deadlineFrom != '') ? this.deadlineFrom : this.formatToday();
+                            const todayInt = this.dateToInt(start);
+                            filtered = newRecords.filter((r): boolean => {
+                                const d = (r.rectificationDate == null) ? '' : r.rectificationDate;
+                                if (d === '')
+                                    return false;
+                                const di = this.dateToInt(d);
+                                if (di < 0)
+                                    return false;
+                                return di >= todayInt;
+                            });
+                        }
+                        // 月检延迟整改：仅保留“待整改且延期>0”的记录（整改期限 < 今天）
+                        if (this.isMonthly && this.isDelayed) {
+                            const today = this.formatToday();
+                            const todayInt = this.dateToInt(today);
+                            filtered = newRecords.filter((r): boolean => {
+                                const d = (r.rectificationDate == null) ? '' : r.rectificationDate;
+                                if (d === '')
+                                    return false;
+                                const di = this.dateToInt(d);
+                                if (di < 0)
+                                    return false;
+                                return (r.status === 0) && (di < todayInt);
+                            });
+                        }
                         if (this.pageNum === 1) {
-                            this.recordList = newRecords;
+                            this.recordList = filtered;
                         }
                         else {
-                            this.recordList = this.recordList.concat(newRecords);
+                            this.recordList = this.recordList.concat(filtered);
                         }
-                        this.totalCount = dataObj?.getNumber('total') ?? newRecords.length;
-                        this.hasMore = newRecords.length >= this.pageSize;
+                        // 统一列表计数与月检页：月检待整改需排除延迟整改数量
+                        const serverTotal = dataObj?.getNumber('total') ?? newRecords.length;
+                        if (this.isMonthly && !this.isDelayed && this.status === '0' && this.pageNum === 1) {
+                            this.totalCount = filtered.length;
+                        }
+                        else {
+                            this.totalCount = filtered.length;
+                        }
+                        this.hasMore = filtered.length >= this.pageSize;
                     }
                     else {
                         const errorMessage = responseData.getString('message') ?? '';
@@ -171,7 +239,7 @@ const __sfc__ = defineComponent({
                     this.loadingMore = false;
                 },
                 fail: (error) => {
-                    console.error('加载记录失败:', error, " at pages/record/record.uvue:244");
+                    console.error('加载记录失败:', error, " at pages/record/record.uvue:305");
                     uni.showToast({
                         title: '网络错误',
                         icon: 'none'
@@ -184,7 +252,7 @@ const __sfc__ = defineComponent({
         getStatusText(status: number | null): string {
             if (status == null)
                 return '未知';
-            const statusMap: UTSJSONObject = { __$originalPosition: new UTSSourceMapPosition("statusMap", "pages/record/record.uvue", 257, 10),
+            const statusMap: UTSJSONObject = { __$originalPosition: new UTSSourceMapPosition("statusMap", "pages/record/record.uvue", 318, 10),
                 "0": '待整改',
                 "1": '已整改',
                 "2": '已复查'
@@ -201,10 +269,46 @@ const __sfc__ = defineComponent({
             }
             return dateTimeStr;
         },
+        formatToday(): string {
+            const now = new Date();
+            const y = now.getFullYear();
+            const m = now.getMonth() + 1;
+            const d = now.getDate();
+            const mm = m < 10 ? ('0' + m) : ('' + m);
+            const dd = d < 10 ? ('0' + d) : ('' + d);
+            return `${y}-${mm}-${dd}`;
+        },
+        normalizeDate(s: string): string {
+            if (s == null || s === '')
+                return '';
+            // 支持 "yyyy-MM-dd", "yyyy-MM-dd HH:mm:ss", "yyyy-MM-ddTHH:mm:ss"
+            const t = s.replace('T', ' ');
+            const core = t.length >= 10 ? t.substring(0, 10) : t;
+            const parts = core.split('-');
+            if (parts.length < 3)
+                return '';
+            const y = parts[0];
+            const m = parts[1].length === 1 ? ('0' + parts[1]) : parts[1];
+            const d = parts[2].length === 1 ? ('0' + parts[2]) : parts[2];
+            return `${y}-${m}-${d}`;
+        },
+        dateToInt(s: string): number {
+            if (s == null || s === '')
+                return -1;
+            const parts = s.split('-');
+            if (parts.length < 3)
+                return -1;
+            const y = parseInt(parts[0]);
+            const m = parseInt(parts[1]);
+            const d = parseInt(parts[2]);
+            if (isNaN(y) || isNaN(m) || isNaN(d))
+                return -1;
+            return (y * 10000) + (m * 100) + d;
+        },
         getStatusClass(status: number | null): string {
             if (status == null)
                 return 'status-unknown';
-            const classMap: UTSJSONObject = { __$originalPosition: new UTSSourceMapPosition("classMap", "pages/record/record.uvue", 277, 11),
+            const classMap: UTSJSONObject = { __$originalPosition: new UTSSourceMapPosition("classMap", "pages/record/record.uvue", 370, 11),
                 "0": 'status-pending',
                 "1": 'status-completed',
                 "2": 'status-accepted'
@@ -215,6 +319,15 @@ const __sfc__ = defineComponent({
         getStatusTitle(): string {
             if (this.isDelayed)
                 return '延迟整改';
+            if (this.isMonthly) {
+                if (this.status == '0')
+                    return '月检待整改';
+                if (this.status == '1')
+                    return '月检已整改';
+                if (this.status == '2')
+                    return '月检已复查';
+                return '月检';
+            }
             if (this.status == '0')
                 return '待整改';
             if (this.status == '1')
@@ -225,11 +338,14 @@ const __sfc__ = defineComponent({
         },
         goToDetail(record: InspectionRecord) {
             // 根据页面模式和记录状态进行不同的跳转
+            if (this.isMonthly && this.isDelayed) {
+                // 月检延迟整改：使用月检整改页，按月检记录ID加载
+                uni.navigateTo({ url: `/pages/monthly/rectify?id=${record.id}` });
+                return;
+            }
             if (this.isDelayed) {
-                // 延迟整改模式：跳转到detail.uvue页面进行整改效果录入
-                uni.navigateTo({
-                    url: `/pages/record/detail?id=${record.id}&delayed=true`
-                });
+                // 周检/通用延迟整改：跳问题详情整改页
+                uni.navigateTo({ url: `/pages/record/detail?id=${record.id}&delayed=true` });
             }
             else if (this.isReviewed) {
                 // 已复查记录模式：与延迟整改使用相同逻辑跳转到review.uvue页面
@@ -237,17 +353,26 @@ const __sfc__ = defineComponent({
                     url: `/pages/record/review?id=${record.id}&reviewed=true`
                 });
             }
+            else if (this.isMonthly) {
+                // 月检：根据状态跳转
+                if (record.status === 0) {
+                    uni.navigateTo({ url: `/pages/monthly/rectify?id=${record.id}` });
+                }
+                else if (record.status === 1) {
+                    uni.navigateTo({ url: `/pages/monthly/review?id=${record.id}` });
+                }
+                else {
+                    // 已复查或其他状态跳转到只读查看页
+                    uni.navigateTo({ url: `/pages/monthly/view?id=${record.id}` });
+                }
+            }
             else if (record.status === 0) {
-                // 待整改：跳转到detail页面
-                uni.navigateTo({
-                    url: `/pages/record/detail?id=${record.id}`
-                });
+                // 非月检：待整改跳详情
+                uni.navigateTo({ url: `/pages/record/detail?id=${record.id}` });
             }
             else if (record.status === 1) {
-                // 已整改：跳转到review.uvue页面
-                uni.navigateTo({
-                    url: `/pages/record/review?id=${record.id}`
-                });
+                // 非月检：已整改跳复查
+                uni.navigateTo({ url: `/pages/record/review?id=${record.id}` });
             }
             else {
                 // 其他状态：跳转到review.uvue页面（只读模式）
@@ -338,7 +463,7 @@ const __sfc__ = defineComponent({
                 },
                 fail: (error) => {
                     uni.hideLoading();
-                    console.error('删除记录失败:', error, " at pages/record/record.uvue:415");
+                    console.error('删除记录失败:', error, " at pages/record/record.uvue:523");
                     uni.showToast({
                         title: '网络错误',
                         icon: 'none'

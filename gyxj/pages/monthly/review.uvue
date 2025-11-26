@@ -1,0 +1,244 @@
+<template>
+  <scroll-view class="container" scroll-y="true" :style="{height: containerHeight + 'px'}">
+    <view v-if="loading" class="loading-state"><text>加载中...</text></view>
+    <view v-else-if="detail != null" class="content">
+      <view class="section">
+        <text class="title">问题信息</text>
+        <view class="field"><text class="label">问题描述</text><text class="value">{{detail.problemDescription}}</text></view>
+        <view class="field"><text class="label">发生部位</text><text class="value">{{detail.location}}</text></view>
+        <view class="field"><text class="label">任务编号</text><text class="value">{{detail.taskNo}}</text></view>
+        <view class="field"><text class="label">月检时间</text><text class="value">{{detail.inspectionTime}}</text></view>
+        <view class="field"><text class="label">所属部门</text><text class="value">{{detail.departmentName}}</text></view>
+        <view class="field"><text class="label">检查专业</text><text class="value">{{detail.professionalTypeName}}</text></view>
+        <view class="field"><text class="label">责任要素</text><text class="value">{{detail.responsibilityName}}</text></view>
+        <view class="field"><text class="label">检查内容</text><text class="value">{{detail.issueName}}</text></view>
+        <view class="field"><text class="label">检查人</text><text class="value">{{detail.inspector}}</text></view>
+        <view class="field"><text class="label">检查组长</text><text class="value">{{detail.groupLeaderName}}</text></view>
+        <view class="field"><text class="label">检查副组长</text><text class="value">{{detail.deputyLeaderName}}</text></view>
+      </view>
+
+      <view class="section" v-if="problemImages.length > 0">
+        <text class="title">问题图片</text>
+        <view class="image-list">
+          <view class="image-item" v-for="(img, i) in problemImages" :key="i">
+            <image :src="convertToHttpUrl(img)" mode="aspectFill" class="image" @click="previewProblem(i)"></image>
+          </view>
+        </view>
+      </view>
+
+      <view class="section">
+        <text class="title">整改效果</text>
+        <view class="field"><text class="label">整改效果</text><text class="value">{{detail.rectificationEffect}}</text></view>
+        <view class="image-list">
+          <view class="image-item" v-for="(img, i) in rectImages" :key="i">
+            <image :src="convertToHttpUrl(img)" mode="aspectFill" class="image" @click="previewRect(i)"></image>
+          </view>
+          <view v-if="rectImages.length == 0" class="no-image"><text>暂无整改图片</text></view>
+        </view>
+      </view>
+
+      <view class="section">
+        <text class="title">复查效果</text>
+        <textarea class="textarea" v-model="reviewSuggestion" placeholder="请填写复查效果" maxlength="500"></textarea>
+      </view>
+
+      <view class="section">
+        <text class="title">复查图片（最多3张，已选{{reviewImages.length}}张）</text>
+        <view class="image-list">
+          <view class="image-item" v-for="(img, i) in reviewImages" :key="i">
+            <image :src="convertToHttpUrl(img)" mode="aspectFill" class="image" @click="previewReview(i)"></image>
+            <view class="delete" @click="removeReview(i)"><text>×</text></view>
+          </view>
+          <view v-if="reviewImages.length < 3" class="add" @click="chooseReview">
+            <text class="add-icon">+</text>
+            <text class="add-text">添加图片</text>
+          </view>
+        </view>
+      </view>
+
+      <view class="footer">
+        <button class="submit" @click="submitReview" :disabled="saving">{{saving ? '提交中...' : '确认复查'}}</button>
+      </view>
+    </view>
+    <view v-else class="error"><text>记录不存在或已删除</text></view>
+  </scroll-view>
+</template>
+
+<script lang="uts">
+  import { getApiUrl, apiConfig } from '@/config/api.uts'
+
+  type MonthlyReviewDetail = {
+    id: string
+    problemDescription: string
+    location: string
+    rectificationEffect: string
+    rectificationImages: string
+    taskNo: string
+    inspectionTime: string
+    departmentName: string
+    professionalTypeName: string
+    responsibilityName: string
+    issueName: string
+    inspector: string
+    groupLeaderName: string
+    deputyLeaderName: string
+    photos: string
+  }
+
+  export default {
+    data() {
+      return {
+        id: '',
+        detail: null as MonthlyReviewDetail | null,
+        rectImages: [] as string[],
+        reviewSuggestion: '',
+        reviewImages: [] as string[],
+        loading: true,
+        saving: false,
+        problemImages: [] as string[],
+        containerHeight: 0
+      }
+    },
+    onLoad(options: UTSJSONObject) {
+      this.id = options.getString('id') ?? ''
+      this.loadDetail()
+    },
+    onReady() {
+      uni.getSystemInfo({ success: (res) => { this.containerHeight = res.windowHeight } })
+    },
+    methods: {
+      convertToHttpUrl(path: string): string {
+        if (path == null || path == '') return ''
+        if (path.startsWith('http://') || path.startsWith('https://')) return path
+        return `${apiConfig.baseUrl}/api${path}`
+      },
+      loadDetail() {
+        const token = uni.getStorageSync('token')
+        uni.request({
+          url: getApiUrl(`/monthly-inspection-record/${this.id}`),
+          method: 'GET',
+          header: { 'Authorization': `Bearer ${token}` },
+          success: (res) => {
+            const data = res.data as UTSJSONObject
+            if (res.statusCode === 200 && (data.getNumber('code') ?? 0) === 200) {
+              const d = data.getJSON('data') as UTSJSONObject | null
+              if (d != null) {
+                this.detail = {
+                  id: d!!.getString('id') ?? '',
+                  problemDescription: d!!.getString('problemDescription') ?? '',
+                  location: d!!.getString('location') ?? '',
+                  rectificationEffect: (d!!.getString('rectificationEffect') ?? d!!.getString('rectificationSuggestion') ?? ''),
+                  rectificationImages: d!!.getString('rectificationImages') ?? '',
+                  taskNo: d!!.getString('taskNo') ?? '',
+                  inspectionTime: d!!.getString('inspectionTime') ?? '',
+                  departmentName: d!!.getString('departmentName') ?? '',
+                  professionalTypeName: d!!.getString('professionalTypeName') ?? '',
+                  responsibilityName: d!!.getString('responsibilityName') ?? '',
+                  issueName: d!!.getString('issueName') ?? '',
+                  inspector: d!!.getString('inspector') ?? '',
+                  groupLeaderName: d!!.getString('groupLeaderName') ?? '',
+                  deputyLeaderName: d!!.getString('deputyLeaderName') ?? '',
+                  photos: d!!.getString('photos') ?? ''
+                }
+                if (this.detail.photos != null && this.detail.photos != '') {
+                  const p = this.detail.photos
+                  if (p.trim().startsWith('[') && p.trim().endsWith(']')) {
+                    try { this.problemImages = (JSON.parse(p) as string[]) } catch (_) {}
+                  } else { this.problemImages = p.split(',').map((u) => u.trim()).filter((u) => u != '') }
+                }
+                const imgs = this.detail.rectificationImages
+                if (imgs != null && imgs != '') {
+                  if (imgs.trim().startsWith('[') && imgs.trim().endsWith(']')) {
+                    try { this.rectImages = (JSON.parse(imgs) as string[]) } catch (_) {}
+                  } else { this.rectImages = imgs.split(',').map((u) => u.trim()).filter((u) => u != '') }
+                }
+              }
+            } else { uni.showToast({ title: data.getString('message') ?? '加载失败', icon: 'none' }) }
+            this.loading = false
+          },
+          fail: (_) => { this.loading = false; uni.showToast({ title: '网络错误', icon: 'none' }) }
+        })
+      },
+      previewRect(i: number) { uni.previewImage({ current: i, urls: this.rectImages.map((u) => this.convertToHttpUrl(u)) }) },
+      previewProblem(i: number) { uni.previewImage({ current: i, urls: this.problemImages.map((u) => this.convertToHttpUrl(u)) }) },
+      chooseReview() {
+        if (this.reviewImages.length >= 3) { uni.showToast({ title: '最多3张', icon: 'none' }); return }
+        uni.chooseImage({
+          count: 3 - this.reviewImages.length,
+          sourceType: ['camera', 'album'],
+          success: (res) => {
+            const token = uni.getStorageSync('token')
+            res.tempFilePaths.forEach((p) => {
+              uni.uploadFile({
+                url: getApiUrl('/upload/image'),
+                filePath: p,
+                name: 'file',
+                header: { 'Authorization': `Bearer ${token}` },
+                success: (upRes) => {
+                  try {
+                    const result = JSON.parse(upRes.data) as UTSJSONObject
+                    if (upRes.statusCode === 200 && (result.getNumber('code') ?? 0) === 200) {
+                      const dataObj = result.getJSON('data')
+                      const url = dataObj?.getString('filePath') ?? ''
+                      if (url != '') this.reviewImages.push(url)
+                    } else { uni.showToast({ title: result.getString('message') ?? '上传失败', icon: 'none' }) }
+                  } catch (_) { uni.showToast({ title: '上传失败', icon: 'none' }) }
+                },
+                fail: (_) => { uni.showToast({ title: '上传失败', icon: 'none' }) }
+              })
+            })
+          }
+        })
+      },
+      previewReview(i: number) { uni.previewImage({ current: i, urls: this.reviewImages.map((u) => this.convertToHttpUrl(u)) }) },
+      removeReview(i: number) { this.reviewImages.splice(i, 1) },
+      submitReview() {
+        if (this.saving) return
+        if (this.reviewSuggestion.trim() == '') { uni.showToast({ title: '请填写复查效果', icon: 'none' }); return }
+        this.saving = true
+        const token = uni.getStorageSync('token')
+        const data = {
+          reviewSuggestion: this.reviewSuggestion,
+          reviewImages: this.reviewImages.join(',')
+        }
+        uni.request({
+          url: getApiUrl(`/monthly-inspection-record/${this.id}/review`),
+          method: 'PUT',
+          header: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+          data: data,
+          success: (res) => {
+            const resp = res.data as UTSJSONObject
+            if (res.statusCode === 200 && (resp.getNumber('code') ?? 0) === 200) {
+              uni.showToast({ title: '复查确认成功', icon: 'success' })
+              setTimeout(function(){ uni.navigateBack() }, 1200)
+            } else { uni.showToast({ title: resp.getString('message') ?? '提交失败', icon: 'none' }) }
+            this.saving = false
+          },
+          fail: (_) => { this.saving = false; uni.showToast({ title: '网络错误', icon: 'none' }) }
+        })
+      }
+    }
+  }
+</script>
+
+<style>
+  .container { background: #f5f5f5 }
+  .loading-state, .error { padding: 20px; text-align: center; color: #666 }
+  .content { padding: 12px 16px }
+  .section { background: #fff; border-radius: 10px; padding: 16px; margin-bottom: 14px; box-shadow: 0 2px 8px rgba(0,0,0,0.06) }
+  .title { font-size: 16px; font-weight: 600; color: #303133; margin-bottom: 12px }
+  .field { margin-bottom: 10px; display: flex; justify-content: space-between }
+  .label { font-size: 14px; color: #666 }
+  .value { font-size: 14px; color: #333; text-align: right; max-width: 60% }
+  .textarea { width: 100%; min-height: 100px; padding: 12px; border: 1px solid #e0e0e0; border-radius: 8px; background: #fff; font-size: 14px }
+  .image-list { display: flex; flex-wrap: wrap; gap: 10px }
+  .image-item { position: relative; width: 100px; height: 100px }
+  .image { width: 100%; height: 100%; border-radius: 8px; border: 1px solid #e0e0e0 }
+  .delete { position: absolute; top: -6px; right: -6px; width: 22px; height: 22px; background: #ff4757; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 600 }
+  .add { width: 100px; height: 100px; border: 2px dashed #ccc; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #fafafa }
+  .add-icon { font-size: 22px; color: #999 }
+  .add-text { font-size: 12px; color: #999 }
+  .no-image { font-size: 12px; color: #999 }
+  .footer { background: #fff; padding: 15px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.06) }
+  .submit { width: 100%; padding: 12px; background: #007AFF; color: #fff; border: none; border-radius: 8px; font-size: 16px }
+</style>

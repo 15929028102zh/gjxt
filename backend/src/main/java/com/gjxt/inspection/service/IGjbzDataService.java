@@ -56,6 +56,11 @@ public interface IGjbzDataService extends IService<GjbzData> {
     List<String> getModuleOptions();
 
     /**
+     * 根据类型获取模块选项
+     */
+    List<String> getModulesByType(String type);
+
+    /**
      * 获取责任单位选项
      *
      * @return 责任单位列表
@@ -63,11 +68,34 @@ public interface IGjbzDataService extends IService<GjbzData> {
     List<String> getResponsibilityOptions();
 
     /**
+     * 根据模块筛选责任单位选项
+     *
+     * @param module 模块名称
+     * @return 责任单位列表
+     */
+    List<String> getResponsibilitiesByModule(String module);
+
+    /**
      * 获取问题类型选项
      *
      * @return 问题类型列表
      */
     List<String> getIssueOptions();
+
+    /**
+     * 根据责任单位筛选问题类型选项
+     *
+     * @param responsibility 责任单位名称
+     * @return 问题类型列表
+     */
+    List<String> getIssuesByResponsibility(String responsibility);
+
+    /**
+     * 获取问题类型选项（包含质量等级）
+     *
+     * @return 问题类型数据列表
+     */
+    List<GjbzData> getIssueOptionsWithQuality();
 
     /**
      * 获取质量等级选项

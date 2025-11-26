@@ -82,7 +82,7 @@ export const gjbzDataApi = {
   // 获取模块选项
   getModules() {
     return request({
-      url: '/gjbz-data/modules',
+      url: '/gjbz-data/options/modules',
       method: 'get'
     })
   },
@@ -90,7 +90,7 @@ export const gjbzDataApi = {
   // 获取责任单位选项
   getResponsibilities() {
     return request({
-      url: '/gjbz-data/responsibilities',
+      url: '/gjbz-data/options/responsibilities',
       method: 'get'
     })
   },
@@ -98,7 +98,7 @@ export const gjbzDataApi = {
   // 获取问题类型选项
   getProblemTypes() {
     return request({
-      url: '/gjbz-data/problem-types',
+      url: '/gjbz-data/options/issues',
       method: 'get'
     })
   },
@@ -107,6 +107,30 @@ export const gjbzDataApi = {
   getQualityLevels() {
     return request({
       url: '/gjbz-data/quality-levels',
+      method: 'get'
+    })
+  },
+
+  // 根据专业类型获取模块
+  getModulesByType(type) {
+    return request({
+      url: `/gjbz-data/modules/by-type/${type}`,
+      method: 'get'
+    })
+  },
+
+  // 根据模块获取责任
+  getResponsibilitiesByModule(module) {
+    return request({
+      url: `/gjbz-data/options/responsibilities/by-module/${module}`,
+      method: 'get'
+    })
+  },
+
+  // 根据责任获取问题
+  getIssuesByResponsibility(responsibility) {
+    return request({
+      url: `/gjbz-data/options/issues/by-responsibility/${responsibility}`,
       method: 'get'
     })
   }

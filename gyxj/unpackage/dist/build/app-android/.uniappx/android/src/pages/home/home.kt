@@ -32,25 +32,8 @@ open class GenPagesHomeHome : BasePage {
             var monthlyChartInstance: TuiCharts? = null
             val weeklyChartOption = ref(UTSJSONObject())
             val monthlyChartOption = ref(UTSJSONObject())
-            val trendChartOption = ref(UTSJSONObject())
             val weeklyChart = ref(null)
             val monthlyChart = ref(null)
-            val trendChart = ref(null)
-            val trendData = ref(TrendData(months = _uA(
-                "1月",
-                "2月",
-                "3月",
-                "4月",
-                "5月",
-                "6月"
-            ), values = _uA(
-                120,
-                132,
-                101,
-                134,
-                90,
-                230
-            )))
             val scrollTop = ref(0)
             val containerHeight = ref(0)
             val isRefreshing = ref(false)
@@ -129,6 +112,7 @@ open class GenPagesHomeHome : BasePage {
                         try {
                             val token = uni_getStorageSync("token")
                             var departmentId = ""
+                            var isAdmin = false
                             val userInfoData = uni_getStorageSync("userInfo")
                             val userInfoStr = if (userInfoData != null) {
                                 userInfoData as String
@@ -139,6 +123,7 @@ open class GenPagesHomeHome : BasePage {
                                 try {
                                     val parsedUserInfo = JSON.parse(userInfoStr) as UTSJSONObject
                                     departmentId = parsedUserInfo.getString("deptId") ?: ""
+                                    isAdmin = (parsedUserInfo.getNumber("isAdmin") ?: 0) === 1
                                 }
                                  catch (error: Throwable) {
                                     console.error("用户信息JSON解析失败:", error)
@@ -159,12 +144,12 @@ open class GenPagesHomeHome : BasePage {
                                 updateWeeklyChart()
                                 return@w
                             }
-                            val deptParam = if (departmentId != null && departmentId != "") {
+                            val deptParam = if ((!isAdmin && departmentId != null && departmentId != "")) {
                                 "&departmentId=" + departmentId
                             } else {
                                 ""
                             }
-                            val pendingUrl = getApiUrl("/inspection-record/page?current=1&size=1&status=0" + (if (departmentId != null && departmentId != "") {
+                            val pendingUrl = getApiUrl("/inspection-record/page?current=1&size=1&status=0" + (if ((!isAdmin && departmentId != null && departmentId != "")) {
                                 "&departmentId=" + departmentId
                             } else {
                                 ""
@@ -193,7 +178,7 @@ open class GenPagesHomeHome : BasePage {
                                 }
                             }
                             ))
-                            val completedUrl = getApiUrl("/inspection-record/page?current=1&size=1&status=1" + (if (departmentId != null && departmentId != "") {
+                            val completedUrl = getApiUrl("/inspection-record/page?current=1&size=1&status=1" + (if ((!isAdmin && departmentId != null && departmentId != "")) {
                                 "&departmentId=" + departmentId
                             } else {
                                 ""
@@ -222,7 +207,7 @@ open class GenPagesHomeHome : BasePage {
                                 }
                             }
                             ))
-                            val reviewedUrl = getApiUrl("/inspection-record/page?current=1&size=1&status=2" + (if (departmentId != null && departmentId != "") {
+                            val reviewedUrl = getApiUrl("/inspection-record/page?current=1&size=1&status=2" + (if ((!isAdmin && departmentId != null && departmentId != "")) {
                                 "&departmentId=" + departmentId
                             } else {
                                 ""
@@ -251,7 +236,7 @@ open class GenPagesHomeHome : BasePage {
                                 }
                             }
                             ))
-                            val totalUrl = getApiUrl("/inspection-record/page?current=1&size=1" + (if (departmentId != null && departmentId != "") {
+                            val totalUrl = getApiUrl("/inspection-record/page?current=1&size=1" + (if ((!isAdmin && departmentId != null && departmentId != "")) {
                                 "&departmentId=" + departmentId
                             } else {
                                 ""
@@ -288,47 +273,83 @@ open class GenPagesHomeHome : BasePage {
                         }
                 })
             }
-            val loadMonthlyStats = fun(): Unit {
-                val token = uni_getStorageSync("token")
-                var departmentId = ""
-                val userInfoData = uni_getStorageSync("userInfo")
-                val userInfoStr = if (userInfoData != null) {
-                    userInfoData as String
-                } else {
-                    ""
-                }
-                if (userInfoStr != null && userInfoStr != "" && userInfoStr != "null" && userInfoStr != "undefined") {
-                    try {
-                        val parsedUserInfo = JSON.parse(userInfoStr) as UTSJSONObject
-                        departmentId = parsedUserInfo.getString("deptId") ?: ""
-                    }
-                     catch (error: Throwable) {
-                        console.error("用户信息JSON解析失败:", error)
-                    }
-                }
-                val deptParam = if (departmentId != null && departmentId != "") {
-                    "&departmentId=" + departmentId
-                } else {
-                    ""
-                }
-                uni_request<Any>(RequestOptions(url = getApiUrl("/statistics/monthly?1=1" + deptParam), method = "GET", header = object : UTSJSONObject() {
-                    var `Content-Type` = "application/json"
-                    var Authorization = "Bearer " + token
-                }, success = fun(res){
-                    if (res.statusCode === 200 && res.data != null) {
-                        val data = res.data as StatsData
-                        monthlyStats.value = data
-                    } else {
-                        monthlyStats.value = StatsData(total = 156, pending = 23, completed = 108, reviewed = 25)
-                    }
-                    updateMonthlyChart()
-                }
-                , fail = fun(error){
-                    console.error("加载月检统计数据失败:", error)
-                    monthlyStats.value = StatsData(total = 156, pending = 23, completed = 108, reviewed = 25)
-                    updateMonthlyChart()
-                }
-                ))
+            val loadMonthlyStats = fun(): UTSPromise<Unit> {
+                return wrapUTSPromise(suspend {
+                        try {
+                            val token = uni_getStorageSync("token")
+                            var departmentId = ""
+                            var isAdmin = false
+                            val userInfoData = uni_getStorageSync("userInfo")
+                            val userInfoStr = if (userInfoData != null) {
+                                userInfoData as String
+                            } else {
+                                ""
+                            }
+                            if (userInfoStr != null && userInfoStr != "" && userInfoStr != "null" && userInfoStr != "undefined") {
+                                try {
+                                    val parsedUserInfo = JSON.parse(userInfoStr) as UTSJSONObject
+                                    departmentId = parsedUserInfo.getString("deptId") ?: ""
+                                    isAdmin = (parsedUserInfo.getNumber("isAdmin") ?: 0) === 1
+                                }
+                                 catch (error: Throwable) {
+                                    console.error("用户信息JSON解析失败:", error)
+                                }
+                            }
+                            val deptParam = if ((!isAdmin && departmentId != null && departmentId != "")) {
+                                "&responsibilityId=" + departmentId
+                            } else {
+                                ""
+                            }
+                            var pending: Number = 0
+                            var completed: Number = 0
+                            var reviewed: Number = 0
+                            var finished: Number = 0
+                            val totalReq: Number = 3
+                            val updateMonthly = fun(){
+                                monthlyStats.value = StatsData(total = pending + completed + reviewed, pending = pending, completed = completed, reviewed = reviewed)
+                                updateMonthlyChart()
+                            }
+                            val req = fun(status: Number, assign: (n: Number) -> Unit){
+                                uni_request<Any>(RequestOptions(url = getApiUrl("/monthly-inspection-record/page?current=1&size=1&recordStatus=" + status + deptParam), method = "GET", header = object : UTSJSONObject() {
+                                    var Authorization = "Bearer " + token
+                                }, success = fun(res){
+                                    val resp = res.data as UTSJSONObject
+                                    if (res.statusCode === 200 && (resp.getNumber("code") ?: 0) === 200) {
+                                        val d = resp.getJSON("data") as UTSJSONObject
+                                        assign(d.getNumber("total") ?: 0)
+                                    }
+                                    finished++
+                                    if (finished === totalReq) {
+                                        updateMonthly()
+                                    }
+                                }
+                                , fail = fun(_){
+                                    finished++
+                                    if (finished === totalReq) {
+                                        updateMonthly()
+                                    }
+                                }
+                                ))
+                            }
+                            req(0, fun(n: Number){
+                                pending = n
+                            }
+                            )
+                            req(1, fun(n: Number){
+                                completed = n
+                            }
+                            )
+                            req(2, fun(n: Number){
+                                reviewed = n
+                            }
+                            )
+                        }
+                         catch (error: Throwable) {
+                            console.error("加载月检统计数据失败:", error)
+                            monthlyStats.value = StatsData(total = 0, pending = 0, completed = 0, reviewed = 0)
+                            updateMonthlyChart()
+                        }
+                })
             }
             val checkLogin = fun(): Boolean {
                 val token = uni_getStorageSync("token")
@@ -631,75 +652,6 @@ open class GenPagesHomeHome : BasePage {
                 })
                 monthlyPieChart.draw()
             }
-            val onTrendChartInit = fun(chartInstance: TuiCharts): Unit {
-                chartInstance
-                val columnOption: UTSJSONObject = object : UTSJSONObject() {
-                    var type = "column"
-                    var animation = true
-                    var dataLabel = true
-                    var fontSize: Number = 11
-                    var padding: UTSArray<Number> = _uA(
-                        20,
-                        20,
-                        25,
-                        20
-                    )
-                    var categories = trendData.value.months
-                    var title = object : UTSJSONObject() {
-                        var name = "月度巡检趋势"
-                        var fontSize: Number = 14
-                        var color = "#2c3e50"
-                        var offsetY: Number = 5
-                    }
-                    var extra = object : UTSJSONObject() {
-                        var column = object : UTSJSONObject() {
-                            var type = "group"
-                            var width: Number = 25
-                            var activeBgColor = "#000000"
-                            var activeBgOpacity: Number = 0.08
-                            var barBorderRadius: UTSArray<Number> = _uA(
-                                4,
-                                4,
-                                0,
-                                0
-                            )
-                            var seriesGap: Number = 5
-                        }
-                        var tooltip = object : UTSJSONObject() {
-                            var show = true
-                        }
-                    }
-                    var series = _uA(
-                        object : UTSJSONObject() {
-                            var name = "巡检记录数"
-                            var data = trendData.value.values.map(fun(item: Number): UTSJSONObject {
-                                return object : UTSJSONObject() {
-                                    var value = item
-                                }
-                            }
-                            )
-                        }
-                    )
-                    var xAxis = object : UTSJSONObject() {
-                        var disableGrid = true
-                    }
-                    var yAxis = object : UTSJSONObject() {
-                        var data = _uA(
-                            object : UTSJSONObject() {
-                                var min: Number = 0
-                            }
-                        )
-                    }
-                }
-                val trendColumnChart = chartInstance.add(0, columnOption)
-                trendColumnChart.setCoordinates(object : UTSJSONObject() {
-                    var height: Number = 280
-                    var width: Number = 260
-                    var xOffset: Number = 15
-                    var yOffset: Number = 35
-                })
-                trendColumnChart.draw()
-            }
             val goToWeeklyPending = fun(): Unit {
                 uni_navigateTo(NavigateToOptions(url = "/pages/weekly/weekly?status=pending"))
             }
@@ -791,32 +743,6 @@ open class GenPagesHomeHome : BasePage {
                                     "style"
                                 ))
                             ))
-                        ))
-                    )),
-                    _cE("view", _uM("class" to "section"), _uA(
-                        _cE("view", _uM("class" to "section-title"), _uA(
-                            _cE("text", _uM("class" to "title-text"), "月度巡检趋势")
-                        )),
-                        _cE("view", _uM("class" to "chart-container"), _uA(
-                            _cE("view", _uM("class" to "chart-wrapper"), _uA(
-                                _cV(_component_tui_xechars, _uM("ref_key" to "trendChart", "ref" to trendChart, "style" to _nS(_uM("height" to "350px", "width" to "100%", "min-width" to "280px")), "class" to "chart-canvas", "onInitFinished" to onTrendChartInit), null, 8, _uA(
-                                    "style"
-                                ))
-                            ))
-                        ))
-                    )),
-                    _cE("view", _uM("class" to "extra-content"), _uA(
-                        _cE("view", _uM("class" to "info-card"), _uA(
-                            _cE("text", _uM("class" to "info-title"), "系统提示"),
-                            _cE("text", _uM("class" to "info-text"), "定期进行巡检工作，确保设备正常运行")
-                        )),
-                        _cE("view", _uM("class" to "info-card"), _uA(
-                            _cE("text", _uM("class" to "info-title"), "操作指南"),
-                            _cE("text", _uM("class" to "info-text"), "点击上方统计卡片可查看详细记录")
-                        )),
-                        _cE("view", _uM("class" to "info-card"), _uA(
-                            _cE("text", _uM("class" to "info-title"), "数据更新"),
-                            _cE("text", _uM("class" to "info-text"), "数据每小时自动更新一次")
                         ))
                     ))
                 ), 44, _uA(

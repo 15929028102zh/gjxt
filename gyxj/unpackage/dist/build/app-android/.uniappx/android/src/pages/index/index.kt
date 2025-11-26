@@ -47,14 +47,14 @@ open class GenPagesIndexIndex : BasePage {
                 )),
                 _cE("view", _uM("class" to "stats-card", "onClick" to _ctx.goToCompletedIssues), _uA(
                     _cE("text", _uM("class" to "stats-number"), _tD(_ctx.statistics.completedIssues), 1),
-                    _cE("text", _uM("class" to "stats-label"), "已整改问题记录数"),
+                    _cE("text", _uM("class" to "stats-label"), "已整改"),
                     _cE("text", _uM("class" to "stats-icon"), "✅")
                 ), 8, _uA(
                     "onClick"
                 )),
-                _cE("view", _uM("class" to "stats-card", "onClick" to _ctx.goToStatistics), _uA(
+                _cE("view", _uM("class" to "stats-card", "onClick" to _ctx.goToReviewedRecords), _uA(
                     _cE("text", _uM("class" to "stats-number"), _tD(_ctx.statistics.monthRecords), 1),
-                    _cE("text", _uM("class" to "stats-label"), "本月记录"),
+                    _cE("text", _uM("class" to "stats-label"), "已复查"),
                     _cE("text", _uM("class" to "stats-icon"), "📊")
                 ), 8, _uA(
                     "onClick"
@@ -182,17 +182,98 @@ open class GenPagesIndexIndex : BasePage {
     open var loadStatistics = ::gen_loadStatistics_fn
     open fun gen_loadStatistics_fn() {
         val token = uni_getStorageSync("token")
-        uni_request<Any>(RequestOptions(url = getApiUrl("/statistics/overview"), method = "GET", header = object : UTSJSONObject() {
+        var departmentId = ""
+        var isAdmin = false
+        val userInfoData = uni_getStorageSync("userInfo")
+        val userInfoStr = if (userInfoData != null) {
+            userInfoData as String
+        } else {
+            ""
+        }
+        if (userInfoStr != null && userInfoStr != "" && userInfoStr != "null" && userInfoStr != "undefined") {
+            try {
+                val parsedUserInfo = JSON.parse(userInfoStr) as UTSJSONObject
+                departmentId = parsedUserInfo.getString("deptId") ?: ""
+                isAdmin = (parsedUserInfo.getNumber("isAdmin") ?: 0) === 1
+            }
+             catch (error: Throwable) {
+                console.error("用户信息JSON解析失败:", error)
+            }
+        }
+        val deptParam = if ((!isAdmin && departmentId != null && departmentId != "")) {
+            "&departmentId=" + departmentId
+        } else {
+            ""
+        }
+        var pendingCount: Number = 0
+        var completedCount: Number = 0
+        var reviewedCount: Number = 0
+        var completedRequests: Number = 0
+        val totalRequests: Number = 3
+        val updateStatistics = fun(){
+            this.statistics = StatisticsData1(pendingIssues = pendingCount, completedIssues = completedCount, monthRecords = reviewedCount)
+        }
+        uni_request<Any>(RequestOptions(url = getApiUrl("/monthly-inspection-record/page?current=1&size=1&status=0" + deptParam), method = "GET", header = object : UTSJSONObject() {
             var Authorization = "Bearer " + token
         }, success = fun(res){
             val response = res.data as UTSJSONObject
             if (res.statusCode == 200 && (response.getNumber("code") ?: 0) == 200) {
                 val data = response.getJSON("data") as UTSJSONObject
-                this.statistics = StatisticsData1(pendingIssues = data.getNumber("totalTasks") ?: 0, completedIssues = data.getNumber("todayRecords") ?: 0, monthRecords = data.getNumber("monthRecords") ?: 0)
+                pendingCount = data.getNumber("total") ?: 0
+            }
+            completedRequests++
+            if (completedRequests === totalRequests) {
+                updateStatistics()
             }
         }
         , fail = fun(error){
-            console.log("加载统计数据失败:", error)
+            console.log("加载待整改数据失败:", error)
+            completedRequests++
+            if (completedRequests === totalRequests) {
+                updateStatistics()
+            }
+        }
+        ))
+        uni_request<Any>(RequestOptions(url = getApiUrl("/monthly-inspection-record/page?current=1&size=1&status=1" + deptParam), method = "GET", header = object : UTSJSONObject() {
+            var Authorization = "Bearer " + token
+        }, success = fun(res){
+            val response = res.data as UTSJSONObject
+            if (res.statusCode == 200 && (response.getNumber("code") ?: 0) == 200) {
+                val data = response.getJSON("data") as UTSJSONObject
+                completedCount = data.getNumber("total") ?: 0
+            }
+            completedRequests++
+            if (completedRequests === totalRequests) {
+                updateStatistics()
+            }
+        }
+        , fail = fun(error){
+            console.log("加载已整改数据失败:", error)
+            completedRequests++
+            if (completedRequests === totalRequests) {
+                updateStatistics()
+            }
+        }
+        ))
+        uni_request<Any>(RequestOptions(url = getApiUrl("/monthly-inspection-record/page?current=1&size=1&status=2" + deptParam), method = "GET", header = object : UTSJSONObject() {
+            var Authorization = "Bearer " + token
+        }, success = fun(res){
+            val response = res.data as UTSJSONObject
+            if (res.statusCode == 200 && (response.getNumber("code") ?: 0) == 200) {
+                val data = response.getJSON("data") as UTSJSONObject
+                reviewedCount = data.getNumber("total") ?: 0
+            }
+            completedRequests++
+            if (completedRequests === totalRequests) {
+                updateStatistics()
+            }
+        }
+        , fail = fun(error){
+            console.log("加载已复查数据失败:", error)
+            completedRequests++
+            if (completedRequests === totalRequests) {
+                updateStatistics()
+            }
         }
         ))
     }
@@ -251,11 +332,15 @@ open class GenPagesIndexIndex : BasePage {
     }
     open var goToPendingIssues = ::gen_goToPendingIssues_fn
     open fun gen_goToPendingIssues_fn() {
-        uni_navigateTo(NavigateToOptions(url = "/pages/record/record?status=0"))
+        uni_navigateTo(NavigateToOptions(url = "/pages/record/record?status=0&monthly=true"))
     }
     open var goToCompletedIssues = ::gen_goToCompletedIssues_fn
     open fun gen_goToCompletedIssues_fn() {
-        uni_navigateTo(NavigateToOptions(url = "/pages/record/record?status=1"))
+        uni_navigateTo(NavigateToOptions(url = "/pages/record/record?status=1&monthly=true"))
+    }
+    open var goToReviewedRecords = ::gen_goToReviewedRecords_fn
+    open fun gen_goToReviewedRecords_fn() {
+        uni_navigateTo(NavigateToOptions(url = "/pages/record/record?status=2&monthly=true"))
     }
     open var goToRecords = ::gen_goToRecords_fn
     open fun gen_goToRecords_fn() {

@@ -98,10 +98,34 @@ export const inspectionApi = {
       method: 'get',
       params
     })
+  },
+
+  // 部门×专业矩阵统计
+  getDepartmentProfessionMatrix(params) {
+    return request({
+      url: '/inspection-record/statistics/matrix',
+      method: 'get',
+      params
+    })
+  },
+
+  // 部门×问题属性矩阵统计
+  getDepartmentNatureMatrix(params) {
+    return request({
+      url: '/inspection-record/statistics/nature',
+      method: 'get',
+      params
+    })
+  },
+  
+  // 拒绝审核（将状态从待审核(3)改回已提交(1)）
+  rejectAudit(id) {
+    return request({
+      url: `/inspection-record/${id}/reject-audit`,
+      method: 'put'
+    })
   }
 }
-
-// 图片上传API
 export const uploadApi = {
   // 上传图片
   uploadImage(formData) {
@@ -175,5 +199,39 @@ export const updateRecord = (data) => {
     url: '/inspection-record',
     method: 'put',
     data
+  })
+}
+
+// 回退记录（发送审核通知）
+export const rejectRecord = (id) => {
+  return request({
+    url: `/inspection-record/${id}/reject`,
+    method: 'post'
+  })
+}
+
+// 查询待审核记录
+export const getAuditRecords = (params) => {
+  return request({
+    url: '/inspection-record/audit-list',
+    method: 'get',
+    params
+  })
+}
+
+// 审核确认
+export const confirmAudit = (id, data) => {
+  return request({
+    url: `/inspection-record/${id}/audit`,
+    method: 'put',
+    data
+  })
+}
+
+// 拒绝审核（将状态从待审核(3)改回已提交(1)）
+export const rejectAudit = (id) => {
+  return request({
+    url: `/inspection-record/${id}/reject-audit`,
+    method: 'put'
   })
 }

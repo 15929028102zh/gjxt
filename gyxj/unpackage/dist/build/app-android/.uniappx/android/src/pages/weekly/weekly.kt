@@ -175,6 +175,7 @@ open class GenPagesWeeklyWeekly : BasePage {
         console.log("开始加载统计数据")
         val token = uni_getStorageSync("token")
         var departmentId = ""
+        var isAdmin = false
         val userInfoData = uni_getStorageSync("userInfo")
         val userInfoStr = if (userInfoData != null) {
             userInfoData as String
@@ -185,18 +186,20 @@ open class GenPagesWeeklyWeekly : BasePage {
             try {
                 val parsedUserInfo = JSON.parse(userInfoStr) as UTSJSONObject
                 departmentId = parsedUserInfo.getString("deptId") ?: ""
+                isAdmin = (parsedUserInfo.getNumber("isAdmin") ?: 0) === 1
                 console.log("获取到的部门id", departmentId)
+                console.log("是否为管理员", isAdmin)
             }
              catch (error: Throwable) {
                 console.error("用户信息JSON解析失败:", error)
             }
         }
-        val pendingUrl = getApiUrl("/inspection-record/page?current=1&size=1&status=0" + (if (departmentId != null && departmentId != "") {
+        val deptParam = if ((!isAdmin && departmentId != null && departmentId != "")) {
             "&departmentId=" + departmentId
         } else {
             ""
         }
-        ))
+        val pendingUrl = getApiUrl("/inspection-record/page?current=1&size=1&status=0" + deptParam)
         console.log("待整改数量请求URL:", pendingUrl)
         uni_request<Any>(RequestOptions(url = pendingUrl, method = "GET", header = object : UTSJSONObject() {
             var Authorization = "Bearer " + token
@@ -215,12 +218,7 @@ open class GenPagesWeeklyWeekly : BasePage {
             console.log("待整改数量请求错误:", error)
         }
         ))
-        val completedUrl = getApiUrl("/inspection-record/page?current=1&size=1&status=1" + (if (departmentId != null && departmentId != "") {
-            "&departmentId=" + departmentId
-        } else {
-            ""
-        }
-        ))
+        val completedUrl = getApiUrl("/inspection-record/page?current=1&size=1&status=1" + deptParam)
         console.log("已整改数量请求URL:", completedUrl)
         uni_request<Any>(RequestOptions(url = completedUrl, method = "GET", header = object : UTSJSONObject() {
             var Authorization = "Bearer " + token
@@ -239,12 +237,7 @@ open class GenPagesWeeklyWeekly : BasePage {
             console.log("已整改数量请求错误:", error)
         }
         ))
-        val reviewedUrl = getApiUrl("/inspection-record/page?current=1&size=1&status=2" + (if (departmentId != null && departmentId != "") {
-            "&departmentId=" + departmentId
-        } else {
-            ""
-        }
-        ))
+        val reviewedUrl = getApiUrl("/inspection-record/page?current=1&size=1&status=2" + deptParam)
         console.log("已复查数量请求URL:", reviewedUrl)
         uni_request<Any>(RequestOptions(url = reviewedUrl, method = "GET", header = object : UTSJSONObject() {
             var Authorization = "Bearer " + token
@@ -268,6 +261,7 @@ open class GenPagesWeeklyWeekly : BasePage {
     open fun gen_loadRecentRecords_fn() {
         val token = uni_getStorageSync("token")
         var departmentId = ""
+        var isAdmin = false
         val userInfoData = uni_getStorageSync("userInfo")
         val userInfoStr = if (userInfoData != null) {
             userInfoData as String
@@ -278,17 +272,18 @@ open class GenPagesWeeklyWeekly : BasePage {
             try {
                 val parsedUserInfo = JSON.parse(userInfoStr) as UTSJSONObject
                 departmentId = parsedUserInfo.getString("deptId") ?: ""
+                isAdmin = (parsedUserInfo.getNumber("isAdmin") ?: 0) === 1
             }
              catch (error: Throwable) {
                 console.error("用户信息JSON解析失败:", error)
             }
         }
-        val apiUrl = getApiUrl("/inspection-record/page?current=1&size=5&status=0" + (if (departmentId != null && departmentId != "") {
+        val deptParam = if ((!isAdmin && departmentId != null && departmentId != "")) {
             "&departmentId=" + departmentId
         } else {
             ""
         }
-        ))
+        val apiUrl = getApiUrl("/inspection-record/page?current=1&size=5&status=0" + deptParam)
         console.log("请求URL:", apiUrl)
         uni_request<Any>(RequestOptions(url = apiUrl, method = "GET", header = object : UTSJSONObject() {
             var Authorization = "Bearer " + token

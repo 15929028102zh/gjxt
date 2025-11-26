@@ -10,23 +10,61 @@
     <div class="problem-info">
       <h4>问题信息</h4>
       <el-descriptions :column="2" border>
-        <el-descriptions-item label="问题描述">
-          {{ formData.problemDescription }}
+        <el-descriptions-item label="任务编号">
+          {{ detailData.taskNo || '暂无' }}
+        </el-descriptions-item>
+        <el-descriptions-item label="月检时间">
+          {{ formatDate(detailData.inspectionTime) }}
+        </el-descriptions-item>
+        <el-descriptions-item label="检查部门">
+          {{ detailData.departmentName || '暂无' }}
+        </el-descriptions-item>
+        <el-descriptions-item label="检查专业">
+          {{ detailData.professionalTypeName || '暂无' }}
+        </el-descriptions-item>
+        <el-descriptions-item label="检查组长">
+          {{ detailData.groupLeaderName || '暂无' }}
+        </el-descriptions-item>
+        <el-descriptions-item label="检查副组长">
+          {{ detailData.deputyLeaderName || '暂无' }}
         </el-descriptions-item>
         <el-descriptions-item label="责任人">
-          {{ formData.responsiblePerson }}
+          {{ detailData.responsiblePerson || '暂无' }}
         </el-descriptions-item>
         <el-descriptions-item label="责任单位">
-          {{ formData.responsibleUnit }}
+          {{ detailData.responsibleUnit || '暂无' }}
         </el-descriptions-item>
-        <el-descriptions-item label="发生部位">
-          {{ formData.location }}
+        <el-descriptions-item label="责任要素">
+          {{ detailData.responsibilityName || '暂无' }}
+        </el-descriptions-item>
+        <el-descriptions-item label="检查内容">
+          {{ detailData.issueName || '暂无' }}
+        </el-descriptions-item>
+        <el-descriptions-item label="性质界定">
+          {{ detailData.qualityName || '暂无' }}
+        </el-descriptions-item>
+        <el-descriptions-item label="安全记分">
+          {{ detailData.safetyScore || 0 }}
+        </el-descriptions-item>
+        <el-descriptions-item label="问题描述">
+          {{ detailData.problemDescription || '暂无' }}
+        </el-descriptions-item>
+        <el-descriptions-item label="发现位置">
+          {{ detailData.location || '暂无' }}
         </el-descriptions-item>
         <el-descriptions-item label="检查人">
-          {{ formData.inspector }}
+          {{ detailData.inspector || '暂无' }}
         </el-descriptions-item>
-        <el-descriptions-item label="整改时间">
-          {{ formatDate(formData.rectificationTime) }}
+        <el-descriptions-item label="整改期限">
+          {{ formatDate(getRectificationDeadline()) }}
+        </el-descriptions-item>
+        <el-descriptions-item label="状态">
+          <el-tag :type="getStatusType(detailData.recordStatus)">
+            {{ getStatusText(detailData.recordStatus) }}
+          </el-tag>
+        </el-descriptions-item>
+        <el-descriptions-item label="创建时间">
+          {{ formatDate(detailData.createTime) }}
         </el-descriptions-item>
       </el-descriptions>
       
@@ -49,45 +87,13 @@
     <!-- 整改效果展示 -->
     <div class="rectification-info">
       <h4>整改情况</h4>
+      <!-- 仅显示整改效果描述 -->
       <el-form
         :model="form"
         label-width="120px"
         disabled
       >
         <el-row :gutter="20">
-          <!-- 性质界定 -->
-          <el-col :span="12">
-            <el-form-item label="性质界定">
-              <el-input v-model="form.natureDefinition" readonly />
-            </el-form-item>
-          </el-col>
-
-          <!-- 专业 -->
-          <el-col :span="12">
-            <el-form-item label="专业">
-              <el-input v-model="form.professionName" readonly />
-            </el-form-item>
-          </el-col>
-
-          <!-- 所属部门 -->
-          <el-col :span="12">
-            <el-form-item label="所属部门">
-              <el-input v-model="form.departmentName" readonly />
-            </el-form-item>
-          </el-col>
-
-          <!-- 整改建议 -->
-          <el-col :span="24">
-            <el-form-item label="整改建议">
-              <el-input
-                v-model="form.rectificationSuggestion"
-                type="textarea"
-                :rows="3"
-                readonly
-              />
-            </el-form-item>
-          </el-col>
-
           <!-- 整改效果描述 -->
           <el-col :span="24">
             <el-form-item label="整改效果描述">
@@ -103,14 +109,14 @@
       </el-form>
       
       <!-- 整改图片展示 -->
-      <div v-if="form.rectificationImages && form.rectificationImages.length > 0" style="margin-top: 16px;">
+      <div v-if="rectificationImages.length > 0" style="margin-top: 16px;">
         <h5>整改图片：</h5>
         <div class="image-preview">
           <el-image
-            v-for="(image, index) in form.rectificationImages"
+            v-for="(image, index) in rectificationImages"
             :key="index"
             :src="image"
-            :preview-src-list="form.rectificationImages"
+            :preview-src-list="rectificationImages"
             style="width: 100px; height: 100px; margin-right: 8px; border-radius: 4px;"
             fit="cover"
           />
@@ -129,35 +135,19 @@
         v-loading="loading"
       >
         <el-row :gutter="20">
-          <!-- 复查建议 -->
+          <!-- 复查效果 -->
           <el-col :span="24">
-            <el-form-item label="复查建议" prop="reviewSuggestion">
+            <el-form-item label="复查效果" prop="reviewSuggestion">
               <el-input
                 v-model="form.reviewSuggestion"
                 type="textarea"
-                :rows="3"
-                placeholder="请输入复查建议..."
-                maxlength="500"
-                show-word-limit
-              />
-            </el-form-item>
-          </el-col>
-
-          <!-- 复查效果描述 -->
-          <el-col :span="24">
-            <el-form-item label="复查效果描述" prop="reviewEffect">
-              <el-input
-                v-model="form.reviewEffect"
-                type="textarea"
                 :rows="4"
-                placeholder="请描述复查效果..."
+                placeholder="请描述复查情况..."
                 maxlength="500"
                 show-word-limit
               />
             </el-form-item>
           </el-col>
-
-          <!-- 复查图片 -->
           <el-col :span="24">
             <el-form-item label="复查图片">
               <DragUpload
@@ -192,7 +182,8 @@
 import { ref, reactive, computed, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import DragUpload from '@/components/DragUpload.vue'
-import * as monthlyRecordApi from '@/api/monthlyRecord'
+import { monthlyRecordApi } from '@/api/monthlyRecord'
+import { parseImageUrls, convertToHttpUrl } from '@/config/api'
 
 const props = defineProps({
   visible: {
@@ -212,6 +203,8 @@ const formRef = ref()
 const loading = ref(false)
 const submitLoading = ref(false)
 const imageFileList = ref([])
+const detailData = reactive({})
+const rectificationImages = ref([])
 
 // 弹窗显示状态
 const dialogVisible = computed({
@@ -238,22 +231,17 @@ const form = reactive({
 // 表单验证规则
 const rules = {
   reviewSuggestion: [
-    { required: true, message: '请输入复查建议', trigger: 'blur' }
-  ],
-  reviewEffect: [
-    { required: true, message: '请填写复查效果描述', trigger: 'blur' }
+    { required: true, message: '请填写复查效果', trigger: 'blur' }
   ]
 }
 
 // 计算属性
 const problemImages = computed(() => {
-  if (props.formData && props.formData.problemImageUrls) {
-    if (typeof props.formData.problemImageUrls === 'string') {
-      return props.formData.problemImageUrls.split(',').filter(url => url.trim())
-    }
-    return props.formData.problemImageUrls
-  }
-  return []
+  return parseImageUrls(detailData.photos)
+})
+
+const rectImagesComputed = computed(() => {
+  return parseImageUrls(detailData.rectificationImages)
 })
 
 // 监听弹窗显示状态
@@ -271,30 +259,25 @@ watch(() => props.visible, async (newVal) => {
 const loadRecordDetail = async (id) => {
   try {
     const response = await monthlyRecordApi.getById(id)
-    if (response.code === 200 && response.data) {
-      const data = response.data
-      // 回写数据到表单
-      form.id = data.id
-      form.natureDefinition = data.natureDefinition || ''
-      form.professionId = data.professionId
-      form.departmentId = data.departmentId
-      form.rectificationSuggestion = data.rectificationSuggestion || ''
-      form.rectificationEffect = data.rectificationEffect || ''
-      form.reviewSuggestion = data.reviewSuggestion || ''
-      form.reviewEffect = data.reviewEffect || ''
+  if (response.code === 200 && response.data) {
+    const data = response.data
+    // 回写数据到表单
+    Object.assign(detailData, data)
+    form.id = data.id
+    form.natureDefinition = data.natureDefinition || ''
+    form.professionId = data.professionId
+    form.departmentId = data.departmentId
+    form.rectificationSuggestion = data.rectificationSuggestion || data.suggestion || ''
+    form.rectificationEffect = data.rectificationEffect || data.rectificationSuggestion || data.suggestion || data.rectifyEffect || data.rectification_result || ''
+    form.reviewEffect = data.reviewEffect || ''
       
       // 设置专业和部门的显示名称
       form.professionName = data.professionName || ''
       form.departmentName = data.departmentName || ''
       
-      // 处理整改图片
-      if (data.rectificationImages) {
-        if (typeof data.rectificationImages === 'string') {
-          form.rectificationImages = data.rectificationImages.split(',').filter(url => url.trim())
-        } else if (Array.isArray(data.rectificationImages)) {
-          form.rectificationImages = [...data.rectificationImages]
-        }
-      }
+    // 处理整改图片（统一解析，兼容别名）
+    const rectImgs = data.rectificationImages || data.rectifyImages || data.rectificationImageUrls || ''
+    rectificationImages.value = parseImageUrls(rectImgs)
       
       // 处理复查图片
       if (data.reviewImages) {
@@ -326,11 +309,11 @@ const resetForm = () => {
     rectificationSuggestion: '',
     rectificationEffect: '',
     reviewSuggestion: '',
-    reviewEffect: '',
     rectificationImages: [],
     reviewImages: []
   })
-  imageFileList.value = []
+  Object.keys(detailData).forEach(k => delete detailData[k])
+  rectificationImages.value = []
 }
 
 // 格式化日期
@@ -340,26 +323,22 @@ const formatDate = (dateStr) => {
   return date.toLocaleString('zh-CN')
 }
 
+const getStatusType = (status) => {
+  const map = { 0: 'warning', 1: 'success', 2: 'info' }
+  return map[status] || 'info'
+}
+
+const getStatusText = (status) => {
+  const map = { 0: '待整改', 1: '已整改', 2: '已复查' }
+  return map[status] || '未知'
+}
+
+const getRectificationDeadline = () => {
+  const d = detailData || {}
+  return d.rectificationDeadline || d.rectificationDate || ''
+}
+
 // 图片上传成功
-const handleImageSuccess = (response, file) => {
-  if (response && response.url) {
-    form.reviewImages.push(response.url)
-  }
-}
-
-// 图片上传失败
-const handleImageError = (error) => {
-  console.error('图片上传失败:', error)
-  ElMessage.error('图片上传失败')
-}
-
-// 移除图片
-const handleImageRemove = (file) => {
-  const index = form.reviewImages.findIndex(url => url === file.url)
-  if (index > -1) {
-    form.reviewImages.splice(index, 1)
-  }
-}
 
 // 关闭弹窗
 const handleClose = () => {
@@ -374,13 +353,12 @@ const handleSubmit = async () => {
     await formRef.value.validate()
     submitLoading.value = true
 
-    const submitData = {
-      ...form,
-      reviewImages: form.reviewImages.join(','),
-      status: 2 // 复查后状态为已复查
-    }
+  const submitData = {
+    reviewSuggestion: form.reviewSuggestion,
+    reviewImages: (form.reviewImages || []).join(',')
+  }
 
-    const response = await monthlyRecordApi.confirmReview(submitData.id, submitData)
+    const response = await monthlyRecordApi.confirmReview(form.id, submitData)
     
     if (response.code === 200) {
       ElMessage.success('复查确认成功')
@@ -394,6 +372,25 @@ const handleSubmit = async () => {
   } finally {
     submitLoading.value = false
   }
+}
+
+const handleImageSuccess = (response, file) => {
+  try {
+    const url = response?.url || response?.data?.url || file?.url
+    if (url) {
+      form.reviewImages.push(url)
+    }
+  } catch (_) {}
+}
+
+const handleImageError = (error) => {
+  console.error('图片上传失败:', error)
+  ElMessage.error('图片上传失败')
+}
+
+const handleImageRemove = (file) => {
+  const idx = form.reviewImages.findIndex(u => u === file?.url)
+  if (idx > -1) form.reviewImages.splice(idx, 1)
 }
 </script>
 

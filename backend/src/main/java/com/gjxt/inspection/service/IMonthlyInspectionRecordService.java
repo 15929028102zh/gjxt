@@ -201,10 +201,62 @@ public interface IMonthlyInspectionRecordService extends IService<MonthlyInspect
     List<Map<String, Object>> getStatusStatistics();
 
     /**
-     * 获取部门统计数据
+     * 获取部门统计
      *
-     * @param recordStatus 记录状态
+     * @param recordStatus 记录状态（可选）
      * @return 部门统计数据
      */
     List<Map<String, Object>> getDepartmentStatistics(Integer recordStatus);
+
+    /**
+     * 获取月检记录数量统计
+     *
+     * @param userId 用户ID（可选）
+     * @param recordStatus 记录状态（可选）
+     * @param departmentId 部门ID（可选）
+     * @param startDate 开始日期（可选）
+     * @param endDate 结束日期（可选）
+     * @return 记录数量
+     */
+    Long getMonthlyRecordCount(String userId, Integer recordStatus, String departmentId, String startDate, String endDate);
+
+    /**
+     * 回退记录（发送审核通知到部门管理员）
+     *
+     * @param id 记录ID
+     * @return 是否成功
+     */
+    boolean rejectRecord(String id);
+
+    /**
+     * 查询待审核记录
+     *
+     * @param current 当前页
+     * @param size 每页大小
+     * @param departmentId 部门ID（可选）
+     * @param recordStatus 记录状态（可选）
+     * @param startDate 开始日期（可选）
+     * @param endDate 结束日期（可选）
+     * @return 分页结果
+     */
+    IPage<MonthlyInspectionRecord> getAuditRecords(long current, long size, String departmentId, Integer recordStatus, 
+                                                   String startDate, String endDate);
+
+    /**
+     * 审核确认（审核成功，记录回退到待整改状态）
+     *
+     * @param id 记录ID
+     * @param auditorId 审核人 ID
+     * @param auditReason 审核意见
+     * @return 是否成功
+     */
+    boolean confirmAudit(String id, String auditorId, String auditReason);
+    
+    /**
+     * 拒绝审核（将记录状态从待审核(3)改回已提交(1)）
+     *
+     * @param id 记录ID
+     * @return 是否成功
+     */
+    boolean rejectAudit(String id);
 }

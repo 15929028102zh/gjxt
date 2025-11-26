@@ -1,5 +1,6 @@
 server:
   port: 8081
+  address: 0.0.0.0
   servlet:
     context-path: /api
 
@@ -7,11 +8,11 @@ spring:
   application:
     name: inspection-system
   
-  # 数据源配置 (MySQL 5.1版本配置)
+  # 数据源配置 (MySQL 8.0版本配置)
   datasource:
     type: com.alibaba.druid.pool.DruidDataSource
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/gjxt_inspection?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+    url: jdbc:mysql://localhost:3306/gjxt_inspection?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=GMT%2B8
     username: root
     password: root
     druid:
@@ -119,7 +120,7 @@ file:
     # 访问路径前缀
     access-path: /files/**
     # 实际存储路径
-    real-path: F:/gjxt/backend/uploads/
+    real-path: D:/gjxt/backend/uploads/
 
 # 系统配置
 system:

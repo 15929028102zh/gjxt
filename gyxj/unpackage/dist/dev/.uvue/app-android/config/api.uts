@@ -6,10 +6,10 @@ export type ApiConfig = {
 const getBaseUrl = (): string => {
     // 开发环境
     if (process.env.NODE_ENV === 'development') {
-        return 'http://192.168.76.128:8081'; // 开发服务器
+        return 'http://10.116.40.104:8081'; // 开发服务器
     }
     // 生产环境
-    return 'http://192.168.0.18:8081'; // 生产服务器（修改为可访问的IP）
+    return 'http://10.116.40.104:8081'; // 生产服务器（修改为可访问的IP）
 };
 // 实例化配置
 export const apiConfig = reactive({

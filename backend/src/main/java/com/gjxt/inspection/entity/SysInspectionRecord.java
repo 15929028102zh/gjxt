@@ -159,10 +159,35 @@ public class SysInspectionRecord extends BaseEntity {
 
 
     /**
-     * 问题状态（0:待整改, 1:待复查, 2:已完成）
+     * 问题状态（0:待整改, 1:待复查, 2:已完成, 3:待审核）
      */
     @TableField("status")
     private Integer status;
+
+    /**
+     * 审核状态（0:未审核, 1:已审核）
+     */
+    @TableField("audit_status")
+    private Integer auditStatus;
+
+    /**
+     * 审核意见
+     */
+    @TableField("audit_reason")
+    private String auditReason;
+
+    /**
+     * 审核人ID
+     */
+    @TableField("auditor_id")
+    private String auditorId;
+
+    /**
+     * 审核时间
+     */
+    @TableField("audit_time")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private LocalDateTime auditTime;
 
     // 关联查询字段
     /**
@@ -225,7 +250,11 @@ public class SysInspectionRecord extends BaseEntity {
     @TableField(exist = false)
     private String reviewerName;
 
-    
+    /**
+     * 审核人姓名
+     */
+    @TableField(exist = false)
+    private String auditorName;
 
     // Getter and Setter methods
     public String getRecordNo() {
@@ -498,6 +527,46 @@ public class SysInspectionRecord extends BaseEntity {
 
     public void setReviewerName(String reviewerName) {
         this.reviewerName = reviewerName;
+    }
+
+    public Integer getAuditStatus() {
+        return auditStatus;
+    }
+
+    public void setAuditStatus(Integer auditStatus) {
+        this.auditStatus = auditStatus;
+    }
+
+    public String getAuditReason() {
+        return auditReason;
+    }
+
+    public void setAuditReason(String auditReason) {
+        this.auditReason = auditReason;
+    }
+
+    public String getAuditorId() {
+        return auditorId;
+    }
+
+    public void setAuditorId(String auditorId) {
+        this.auditorId = auditorId;
+    }
+
+    public LocalDateTime getAuditTime() {
+        return auditTime;
+    }
+
+    public void setAuditTime(LocalDateTime auditTime) {
+        this.auditTime = auditTime;
+    }
+
+    public String getAuditorName() {
+        return auditorName;
+    }
+
+    public void setAuditorName(String auditorName) {
+        this.auditorName = auditorName;
     }
 
 

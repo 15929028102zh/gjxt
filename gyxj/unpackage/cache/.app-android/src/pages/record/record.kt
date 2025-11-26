@@ -37,6 +37,15 @@ open class GenPagesRecordRecord : BasePage {
                 this.isReviewed = true
                 this.status = "2"
             }
+            if (options["monthly"] != null && options["monthly"] == "true") {
+                this.isMonthly = true
+            }
+            if (options["deadlineBefore"] != null) {
+                this.deadlineBefore = options["deadlineBefore"] as String
+            }
+            if (options["deadlineFrom"] != null) {
+                this.deadlineFrom = options["deadlineFrom"] as String
+            }
             this.initContainerHeight()
             this.loadRecords()
             uni__on("recordUpdated", this.handleRecordUpdated)
@@ -148,11 +157,14 @@ open class GenPagesRecordRecord : BasePage {
     open var status: String by `$data`
     open var isDelayed: Boolean by `$data`
     open var isReviewed: Boolean by `$data`
+    open var isMonthly: Boolean by `$data`
+    open var deadlineBefore: String by `$data`
+    open var deadlineFrom: String by `$data`
     open var isRefreshing: Boolean by `$data`
     open var containerHeight: Number by `$data`
     @Suppress("USELESS_CAST")
     override fun data(): Map<String, Any?> {
-        return _uM("recordList" to _uA<InspectionRecord>(), "loading" to false, "loadingMore" to false, "hasMore" to true, "totalCount" to 0, "pageNum" to 1, "pageSize" to 20, "status" to "0", "isDelayed" to false, "isReviewed" to false, "isRefreshing" to false, "containerHeight" to 0)
+        return _uM("recordList" to _uA<InspectionRecord>(), "loading" to false, "loadingMore" to false, "hasMore" to true, "totalCount" to 0, "pageNum" to 1, "pageSize" to 20, "status" to "0", "isDelayed" to false, "isReviewed" to false, "isMonthly" to false, "deadlineBefore" to "", "deadlineFrom" to "", "isRefreshing" to false, "containerHeight" to 0)
     }
     open var checkLogin = ::gen_checkLogin_fn
     open fun gen_checkLogin_fn() {
@@ -168,7 +180,7 @@ open class GenPagesRecordRecord : BasePage {
     }
     open var handleRecordUpdated = ::gen_handleRecordUpdated_fn
     open fun gen_handleRecordUpdated_fn() {
-        console.log("接收到记录更新事件，开始刷新数据", " at pages/record/record.uvue:146")
+        console.log("接收到记录更新事件，开始刷新数据", " at pages/record/record.uvue:160")
         this.refreshRecords()
     }
     open var initContainerHeight = ::gen_initContainerHeight_fn
@@ -188,6 +200,7 @@ open class GenPagesRecordRecord : BasePage {
                 }
                 val token = uni_getStorageSync("token")
                 var departmentId = ""
+                var isAdmin = false
                 val userInfoData = uni_getStorageSync("userInfo")
                 val userInfoStr = if (userInfoData != null) {
                     userInfoData as String
@@ -196,22 +209,40 @@ open class GenPagesRecordRecord : BasePage {
                 }
                 if (userInfoStr != null && userInfoStr != "" && userInfoStr != "null" && userInfoStr != "undefined") {
                     try {
-                        val parsedUserInfo = UTSAndroid.consoleDebugError(JSON.parse(userInfoStr), " at pages/record/record.uvue:175") as UTSJSONObject
+                        val parsedUserInfo = UTSAndroid.consoleDebugError(JSON.parse(userInfoStr), " at pages/record/record.uvue:190") as UTSJSONObject
                         departmentId = parsedUserInfo.getString("deptId") ?: ""
+                        isAdmin = (parsedUserInfo.getNumber("isAdmin") ?: 0) === 1
                     }
                      catch (error: Throwable) {
-                        console.error("用户信息JSON解析失败:", error, " at pages/record/record.uvue:178")
+                        console.error("用户信息JSON解析失败:", error, " at pages/record/record.uvue:194")
                     }
                 }
                 var apiUrl = ""
-                if (this.isDelayed) {
-                    apiUrl = getApiUrl("/inspection-record/delayed?current=" + this.pageNum + "&size=" + this.pageSize + (if (departmentId != null && departmentId != "") {
+                if (this.isMonthly && this.isDelayed) {
+                    val dl = if ((this.deadlineBefore != null && this.deadlineBefore != "")) {
+                        this.deadlineBefore
+                    } else {
+                        this.formatToday()
+                    }
+                    apiUrl = getApiUrl("/monthly-inspection-record/page?current=" + this.pageNum + "&size=" + this.pageSize + "&recordStatus=0&rectificationDeadlineBefore=" + dl + (if ((!isAdmin && departmentId != null && departmentId != "")) {
+                        "&responsibilityId=" + departmentId
+                    } else {
+                        ""
+                    }))
+                } else if (this.isDelayed) {
+                    apiUrl = getApiUrl("/inspection-record/delayed?current=" + this.pageNum + "&size=" + this.pageSize + (if ((!isAdmin && departmentId != null && departmentId != "")) {
                         "&departmentId=" + departmentId
                     } else {
                         ""
                     }))
+                } else if (this.isMonthly) {
+                    apiUrl = getApiUrl("/monthly-inspection-record/page?current=" + this.pageNum + "&size=" + this.pageSize + "&recordStatus=" + this.status + (if ((!isAdmin && departmentId != null && departmentId != "")) {
+                        "&responsibilityId=" + departmentId
+                    } else {
+                        ""
+                    }))
                 } else {
-                    apiUrl = getApiUrl("/inspection-record/page?current=" + this.pageNum + "&size=" + this.pageSize + "&status=" + this.status + (if (departmentId != null && departmentId != "") {
+                    apiUrl = getApiUrl("/inspection-record/page?current=" + this.pageNum + "&size=" + this.pageSize + "&status=" + this.status + (if ((!isAdmin && departmentId != null && departmentId != "")) {
                         "&departmentId=" + departmentId
                     } else {
                         ""
@@ -231,23 +262,104 @@ open class GenPagesRecordRecord : BasePage {
                                 var i: Number = 0
                                 while(i < records.length){
                                     val item = records[i]
-                                    console.log("原始数据对象:", item, " at pages/record/record.uvue:207")
-                                    console.log("problemDescription字段:", item.getString("problemDescription"), " at pages/record/record.uvue:208")
+                                    console.log("原始数据对象:", item, " at pages/record/record.uvue:229")
+                                    console.log("problemDescription字段:", item.getString("problemDescription"), " at pages/record/record.uvue:230")
                                     val createTime = item.getString("createTime") ?: ""
-                                    val record = InspectionRecord(id = item.getString("id") ?: "", problemDescription = item.getString("problemDescription") ?: "", responsiblePerson = item.getString("responsiblePerson") ?: "", inspectorName = item.getString("inspector") ?: "", createDate = this.formatDate(createTime), status = item.getNumber("status") ?: 0)
-                                    console.log("处理后的记录对象:", record, " at pages/record/record.uvue:220")
+                                    val rd0 = item.getString("rectificationDate") ?: ""
+                                    val rd1 = if (rd0 != "") {
+                                        rd0
+                                    } else {
+                                        (item.getString("rectification_date") ?: "")
+                                    }
+                                    val rd2 = if (rd1 != "") {
+                                        rd1
+                                    } else {
+                                        (item.getString("rectificationDeadline") ?: "")
+                                    }
+                                    val rd3 = if (rd2 != "") {
+                                        rd2
+                                    } else {
+                                        (item.getString("rectificationTime") ?: "")
+                                    }
+                                    val rd4 = if (rd3 != "") {
+                                        rd3
+                                    } else {
+                                        (item.getString("deadline") ?: "")
+                                    }
+                                    val rd5 = if (rd4 != "") {
+                                        rd4
+                                    } else {
+                                        (item.getString("rectifyDeadline") ?: "")
+                                    }
+                                    val record = InspectionRecord(id = (item.getString("id") ?: item.getString("recordId") ?: ""), problemDescription = item.getString("problemDescription") ?: "", responsiblePerson = item.getString("responsiblePerson") ?: "", inspectorName = item.getString("inspector") ?: "", createDate = this.formatDate(createTime), status = if (this.isMonthly) {
+                                        (item.getNumber("recordStatus") ?: 0)
+                                    } else {
+                                        (item.getNumber("status") ?: 0)
+                                    }
+                                    , rectificationDate = this.normalizeDate(rd5))
+                                    console.log("处理后的记录对象:", record, " at pages/record/record.uvue:249")
                                     newRecords.push(record)
                                     i++
                                 }
                             }
                         }
-                        if (this.pageNum === 1) {
-                            this.recordList = newRecords
-                        } else {
-                            this.recordList = this.recordList.concat(newRecords)
+                        var filtered = newRecords
+                        if (this.isMonthly && !this.isDelayed && this.status === "0") {
+                            val start = if ((this.deadlineFrom != null && this.deadlineFrom != "")) {
+                                this.deadlineFrom
+                            } else {
+                                this.formatToday()
+                            }
+                            val todayInt = this.dateToInt(start)
+                            filtered = newRecords.filter(fun(r): Boolean {
+                                val d = if ((r.rectificationDate == null)) {
+                                    ""
+                                } else {
+                                    r.rectificationDate
+                                }
+                                if (d === "") {
+                                    return false
+                                }
+                                val di = this.dateToInt(d)
+                                if (di < 0) {
+                                    return false
+                                }
+                                return di >= todayInt
+                            }
+                            )
                         }
-                        this.totalCount = dataObj?.getNumber("total") ?: newRecords.length
-                        this.hasMore = newRecords.length >= this.pageSize
+                        if (this.isMonthly && this.isDelayed) {
+                            val today = this.formatToday()
+                            val todayInt = this.dateToInt(today)
+                            filtered = newRecords.filter(fun(r): Boolean {
+                                val d = if ((r.rectificationDate == null)) {
+                                    ""
+                                } else {
+                                    r.rectificationDate
+                                }
+                                if (d === "") {
+                                    return false
+                                }
+                                val di = this.dateToInt(d)
+                                if (di < 0) {
+                                    return false
+                                }
+                                return (r.status === 0) && (di < todayInt)
+                            }
+                            )
+                        }
+                        if (this.pageNum === 1) {
+                            this.recordList = filtered
+                        } else {
+                            this.recordList = this.recordList.concat(filtered)
+                        }
+                        val serverTotal = dataObj?.getNumber("total") ?: newRecords.length
+                        if (this.isMonthly && !this.isDelayed && this.status === "0" && this.pageNum === 1) {
+                            this.totalCount = filtered.length
+                        } else {
+                            this.totalCount = filtered.length
+                        }
+                        this.hasMore = filtered.length >= this.pageSize
                     } else {
                         val errorMessage = responseData.getString("message") ?: ""
                         uni_showToast(ShowToastOptions(title = if (errorMessage != "") {
@@ -261,7 +373,7 @@ open class GenPagesRecordRecord : BasePage {
                     this.loadingMore = false
                 }
                 , fail = fun(error){
-                    console.error("加载记录失败:", error, " at pages/record/record.uvue:244")
+                    console.error("加载记录失败:", error, " at pages/record/record.uvue:305")
                     uni_showToast(ShowToastOptions(title = "网络错误", icon = "none"))
                     this.loading = false
                     this.loadingMore = false
@@ -274,7 +386,7 @@ open class GenPagesRecordRecord : BasePage {
         if (status == null) {
             return "未知"
         }
-        val statusMap: UTSJSONObject = object : UTSJSONObject(UTSSourceMapPosition("statusMap", "pages/record/record.uvue", 257, 10)) {
+        val statusMap: UTSJSONObject = object : UTSJSONObject(UTSSourceMapPosition("statusMap", "pages/record/record.uvue", 318, 10)) {
             var `0` = "待整改"
             var `1` = "已整改"
             var `2` = "已复查"
@@ -296,12 +408,75 @@ open class GenPagesRecordRecord : BasePage {
         }
         return dateTimeStr
     }
+    open var formatToday = ::gen_formatToday_fn
+    open fun gen_formatToday_fn(): String {
+        val now = Date()
+        val y = now.getFullYear()
+        val m = now.getMonth() + 1
+        val d = now.getDate()
+        val mm = if (m < 10) {
+            ("0" + m)
+        } else {
+            ("" + m)
+        }
+        val dd = if (d < 10) {
+            ("0" + d)
+        } else {
+            ("" + d)
+        }
+        return "" + y + "-" + mm + "-" + dd
+    }
+    open var normalizeDate = ::gen_normalizeDate_fn
+    open fun gen_normalizeDate_fn(s: String): String {
+        if (s == null || s === "") {
+            return ""
+        }
+        val t = s.replace("T", " ")
+        val core = if (t.length >= 10) {
+            t.substring(0, 10)
+        } else {
+            t
+        }
+        val parts = core.split("-")
+        if (parts.length < 3) {
+            return ""
+        }
+        val y = parts[0]
+        val m = if (parts[1].length === 1) {
+            ("0" + parts[1])
+        } else {
+            parts[1]
+        }
+        val d = if (parts[2].length === 1) {
+            ("0" + parts[2])
+        } else {
+            parts[2]
+        }
+        return "" + y + "-" + m + "-" + d
+    }
+    open var dateToInt = ::gen_dateToInt_fn
+    open fun gen_dateToInt_fn(s: String): Number {
+        if (s == null || s === "") {
+            return -1
+        }
+        val parts = s.split("-")
+        if (parts.length < 3) {
+            return -1
+        }
+        val y = parseInt(parts[0])
+        val m = parseInt(parts[1])
+        val d = parseInt(parts[2])
+        if (isNaN(y) || isNaN(m) || isNaN(d)) {
+            return -1
+        }
+        return (y * 10000) + (m * 100) + d
+    }
     open var getStatusClass = ::gen_getStatusClass_fn
     open fun gen_getStatusClass_fn(status: Number?): String {
         if (status == null) {
             return "status-unknown"
         }
-        val classMap: UTSJSONObject = object : UTSJSONObject(UTSSourceMapPosition("classMap", "pages/record/record.uvue", 277, 11)) {
+        val classMap: UTSJSONObject = object : UTSJSONObject(UTSSourceMapPosition("classMap", "pages/record/record.uvue", 370, 11)) {
             var `0` = "status-pending"
             var `1` = "status-completed"
             var `2` = "status-accepted"
@@ -318,6 +493,18 @@ open class GenPagesRecordRecord : BasePage {
         if (this.isDelayed) {
             return "延迟整改"
         }
+        if (this.isMonthly) {
+            if (this.status == "0") {
+                return "月检待整改"
+            }
+            if (this.status == "1") {
+                return "月检已整改"
+            }
+            if (this.status == "2") {
+                return "月检已复查"
+            }
+            return "月检"
+        }
         if (this.status == "0") {
             return "待整改"
         }
@@ -331,10 +518,22 @@ open class GenPagesRecordRecord : BasePage {
     }
     open var goToDetail = ::gen_goToDetail_fn
     open fun gen_goToDetail_fn(record: InspectionRecord) {
+        if (this.isMonthly && this.isDelayed) {
+            uni_navigateTo(NavigateToOptions(url = "/pages/monthly/rectify?id=" + record.id))
+            return
+        }
         if (this.isDelayed) {
             uni_navigateTo(NavigateToOptions(url = "/pages/record/detail?id=" + record.id + "&delayed=true"))
         } else if (this.isReviewed) {
             uni_navigateTo(NavigateToOptions(url = "/pages/record/review?id=" + record.id + "&reviewed=true"))
+        } else if (this.isMonthly) {
+            if (record.status === 0) {
+                uni_navigateTo(NavigateToOptions(url = "/pages/monthly/rectify?id=" + record.id))
+            } else if (record.status === 1) {
+                uni_navigateTo(NavigateToOptions(url = "/pages/monthly/review?id=" + record.id))
+            } else {
+                uni_navigateTo(NavigateToOptions(url = "/pages/monthly/view?id=" + record.id))
+            }
         } else if (record.status === 0) {
             uni_navigateTo(NavigateToOptions(url = "/pages/record/detail?id=" + record.id))
         } else if (record.status === 1) {
@@ -412,7 +611,7 @@ open class GenPagesRecordRecord : BasePage {
         }
         , fail = fun(error){
             uni_hideLoading()
-            console.error("删除记录失败:", error, " at pages/record/record.uvue:415")
+            console.error("删除记录失败:", error, " at pages/record/record.uvue:523")
             uni_showToast(ShowToastOptions(title = "网络错误", icon = "none"))
         }
         ))

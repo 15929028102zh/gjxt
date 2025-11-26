@@ -23,12 +23,30 @@
 				"navigationBarTitleText": "周检"
 			}
 		},
-		{
-			"path": "pages/monthly/monthly",
-			"style": {
-				"navigationBarTitleText": "月检"
-			}
-		},
+      {
+        "path": "pages/monthly/monthly",
+        "style": {
+          "navigationBarTitleText": "月检"
+        }
+      },
+      {
+        "path": "pages/monthly/rectify",
+        "style": {
+          "navigationBarTitleText": "确认整改"
+        }
+      },
+      {
+        "path": "pages/monthly/review",
+        "style": {
+          "navigationBarTitleText": "确认复查"
+        }
+      },
+      {
+        "path": "pages/monthly/view",
+        "style": {
+          "navigationBarTitleText": "记录查看"
+        }
+      },
 		{
 			"path": "pages/monthly/task-record",
 			"style": {
@@ -91,11 +109,12 @@
 				}
 			},
 			{
-				"path": "pages/test/test",
-				"style": {
-					"navigationBarTitleText": "延迟整改测试"
-				}
+			"path": "pages/test/test",
+			"style": {
+				"navigationBarTitleText": "延迟整改测试"
 			}
+		}
+
 
 	],
 	"globalStyle": {

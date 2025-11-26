@@ -8,42 +8,42 @@
       <!-- 统计卡片 -->
       <el-row :gutter="20" class="stats-row">
         <el-col :span="6">
-          <el-card class="stat-card">
+          <el-card class="stat-card" @click="goToPendingIssues">
             <div class="stat-content">
-              <div class="stat-icon user">
-                <el-icon><User /></el-icon>
+              <div class="stat-icon pending">
+                <el-icon><Warning /></el-icon>
               </div>
               <div class="stat-info">
-                <div class="stat-number">{{ stats.userCount }}</div>
-                <div class="stat-label">用户总数</div>
+                <div class="stat-number">{{ stats.pendingCount }}</div>
+                <div class="stat-label">待整改</div>
               </div>
             </div>
           </el-card>
         </el-col>
         
         <el-col :span="6">
-          <el-card class="stat-card">
+          <el-card class="stat-card" @click="goToCompletedIssues">
             <div class="stat-content">
-              <div class="stat-icon dept">
-                <el-icon><OfficeBuilding /></el-icon>
+              <div class="stat-icon completed">
+                <el-icon><Check /></el-icon>
               </div>
               <div class="stat-info">
-                <div class="stat-number">{{ stats.deptCount }}</div>
-                <div class="stat-label">部门总数</div>
+                <div class="stat-number">{{ stats.completedCount }}</div>
+                <div class="stat-label">已整改</div>
               </div>
             </div>
           </el-card>
         </el-col>
         
         <el-col :span="6">
-          <el-card class="stat-card">
+          <el-card class="stat-card" @click="goToReviewedRecords">
             <div class="stat-content">
-              <div class="stat-icon dict">
-                <el-icon><Collection /></el-icon>
+              <div class="stat-icon reviewed">
+                <el-icon><CircleCheck /></el-icon>
               </div>
               <div class="stat-info">
-                <div class="stat-number">{{ stats.dictCount }}</div>
-                <div class="stat-label">字典总数</div>
+                <div class="stat-number">{{ stats.reviewedCount }}</div>
+                <div class="stat-label">已复查</div>
               </div>
             </div>
           </el-card>
@@ -124,31 +124,45 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { userApi, deptApi, dictApi } from '@/api/system'
+import { useRouter } from 'vue-router'
+import { monthlyInspectionRecordApi } from '@/api/monthly'
 import { ElMessage } from 'element-plus'
+import { useUserStore } from '@/stores/user'
+
+const router = useRouter()
+const userStore = useUserStore()
 
 // 统计数据
 const stats = ref({
-  userCount: 0,
-  deptCount: 0,
-  dictCount: 0,
+  pendingCount: 0,
+  completedCount: 0,
+  reviewedCount: 0,
   onlineCount: 0
 })
 
 // 加载统计数据
 const loadStats = async () => {
   try {
+    // 获取用户信息，判断是否为管理员
+    const userInfo = userStore.userInfo
+    const isAdmin = userInfo?.isAdmin === 1
+    const departmentId = userInfo?.deptId
+    
+    // 构建查询参数 - 管理员可以看所有数据，非管理员只能看本部门数据
+    const baseParams = { current: 1, size: 1 }
+    const deptParams = (!isAdmin && departmentId) ? { ...baseParams, departmentId } : baseParams
+    
     // 并行加载各项统计数据
-    const [userResponse, deptResponse, dictResponse] = await Promise.all([
-      userApi.getPage({ current: 1, size: 1 }).catch(() => ({ data: { total: 0 } })),
-      deptApi.getPage({ current: 1, size: 1 }).catch(() => ({ data: { total: 0 } })),
-      dictApi.getPage({ current: 1, size: 1 }).catch(() => ({ data: { total: 0 } }))
+    const [pendingResponse, completedResponse, reviewedResponse] = await Promise.all([
+      monthlyInspectionRecordApi.getPage({ ...deptParams, status: 0 }).catch(() => ({ data: { total: 0 } })),
+      monthlyInspectionRecordApi.getPage({ ...deptParams, status: 1 }).catch(() => ({ data: { total: 0 } })),
+      monthlyInspectionRecordApi.getPage({ ...deptParams, status: 2 }).catch(() => ({ data: { total: 0 } }))
     ])
     
     stats.value = {
-      userCount: userResponse.data?.total || 0,
-      deptCount: deptResponse.data?.total || 0,
-      dictCount: dictResponse.data?.total || 0,
+      pendingCount: pendingResponse.data?.total || 0,
+      completedCount: completedResponse.data?.total || 0,
+      reviewedCount: reviewedResponse.data?.total || 0,
       onlineCount: Math.floor(Math.random() * 50) + 10 // 模拟在线用户数
     }
   } catch (error) {
@@ -156,12 +170,27 @@ const loadStats = async () => {
     ElMessage.error('加载统计数据失败')
     // 使用默认值
     stats.value = {
-      userCount: 0,
-      deptCount: 0,
-      dictCount: 0,
+      pendingCount: 0,
+      completedCount: 0,
+      reviewedCount: 0,
       onlineCount: 0
     }
   }
+}
+
+// 跳转到待整改记录
+const goToPendingIssues = () => {
+  router.push('/monthly/record?status=0')
+}
+
+// 跳转到已整改记录
+const goToCompletedIssues = () => {
+  router.push('/monthly/record?status=1')
+}
+
+// 跳转到已复查记录
+const goToReviewedRecords = () => {
+  router.push('/monthly/record?status=2')
 }
 
 onMounted(() => {
@@ -206,16 +235,16 @@ onMounted(() => {
   color: white;
 }
 
-.stat-icon.user {
+.stat-icon.pending {
+  background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
+}
+
+.stat-icon.completed {
+  background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+}
+
+.stat-icon.reviewed {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-}
-
-.stat-icon.dept {
-  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-}
-
-.stat-icon.dict {
-  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
 }
 
 .stat-icon.online {

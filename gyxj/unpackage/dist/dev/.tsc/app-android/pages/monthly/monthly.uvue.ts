@@ -1,6 +1,6 @@
 
 	import { getApiUrl } from '@/config/api.uts'
-	type MonthlyRecord = { __$originalPosition?: UTSSourceMapPosition<"MonthlyRecord", "pages/monthly/monthly.uvue", 111, 7>;
+	type MonthlyRecord = { __$originalPosition?: UTSSourceMapPosition<"MonthlyRecord", "pages/monthly/monthly.uvue", 188, 7>;
 		id: string,
 		problemDescription: string,
 		locationName: string,
@@ -8,13 +8,13 @@
 		status: string
 	}
 
-	type MonthlyStatistics = { __$originalPosition?: UTSSourceMapPosition<"MonthlyStatistics", "pages/monthly/monthly.uvue", 119, 7>;
+	type MonthlyStatistics = { __$originalPosition?: UTSSourceMapPosition<"MonthlyStatistics", "pages/monthly/monthly.uvue", 196, 7>;
 		monthlyPending: number,
 		monthlyCompleted: number,
 		reviewedCount: number
 	}
 
-	type Notification = { __$originalPosition?: UTSSourceMapPosition<"Notification", "pages/monthly/monthly.uvue", 125, 7>;
+	type Notification = { __$originalPosition?: UTSSourceMapPosition<"Notification", "pages/monthly/monthly.uvue", 202, 7>;
 		id: string,
 		taskId: string,
 		taskNo: string,
@@ -24,9 +24,20 @@
 		isRead: boolean
 	}
 
+	type TaskNotification = { __$originalPosition?: UTSSourceMapPosition<"TaskNotification", "pages/monthly/monthly.uvue", 212, 7>;
+		id: string,
+		taskId: string,
+		taskNo: string,
+		title: string,
+		content: string,
+		createTime: string,
+		status: string,
+		inspectionMonth: string
+	}
+
 	const __sfc__ = defineComponent({
 		data() {
-				return {
+			return {
 					userInfo: {} as UTSJSONObject,
 					userName: '用户', // 简化的用户姓名变量
 					currentDate: '',
@@ -37,8 +48,19 @@
 					} as MonthlyStatistics,
 					monthlyRecords: [] as MonthlyRecord[],
 					notifications: [] as Notification[],
+					taskNotifications: [] as TaskNotification[],
 					notificationCount: 0,
-					showNotificationModal: false,
+				showNotificationModal: false,
+				activeNotificationTab: 'system', // 默认显示系统通知
+				showTaskPickerModal: false,
+				taskPickerLoading: false,
+				taskPickerList: [] as Array<UTSJSONObject>,
+					// WebSocket相关
+      socketTask: null as any | null,
+					isSocketConnected: false,
+					reconnectAttempts: 0,
+					maxReconnectAttempts: 5,
+					reconnectInterval: 3000, // 3秒重连间隔
 					// 滚动相关
 					scrollTop: 0,
 					containerHeight: 0,
@@ -54,6 +76,24 @@
 			this.loadMonthlyRecords()
 			this.loadNotifications()
 		},
+		
+		// 页面显示时连接WebSocket
+		onShow() {
+			console.log('页面显示，连接WebSocket', " at pages/monthly/monthly.uvue:267")
+			this.connectWebSocket()
+		},
+		
+		// 页面隐藏时断开WebSocket
+		onHide() {
+			console.log('页面隐藏，断开WebSocket', " at pages/monthly/monthly.uvue:273")
+			this.disconnectWebSocket()
+		},
+		
+		// 页面卸载时断开WebSocket
+		onUnload() {
+			console.log('页面卸载，断开WebSocket', " at pages/monthly/monthly.uvue:279")
+			this.disconnectWebSocket()
+		},
 		methods: {
 			checkLogin() {
 				const token = uni.getStorageSync('token')
@@ -65,7 +105,7 @@
 				}
 				const userInfoStr = uni.getStorageSync('userInfo') as string
 				if (userInfoStr != null && userInfoStr != '') {
-					this.userInfo = UTSAndroid.consoleDebugError(JSON.parse(userInfoStr), " at pages/monthly/monthly.uvue:176") as UTSJSONObject
+					this.userInfo = UTSAndroid.consoleDebugError(JSON.parse(userInfoStr), " at pages/monthly/monthly.uvue:293") as UTSJSONObject
 					// 设置用户名
 					const realName = this.userInfo.getString('realName') ?? ''
 					this.userName = realName != '' ? realName : '用户'
@@ -90,25 +130,68 @@
 			loadStatistics() {
 				const token = uni.getStorageSync('token')
 				
-				// 获取用户部门信息
+				// 获取用户信息，包括部门和管理员权限
 				let departmentId = ''
+				let isAdmin = false
 				const userInfoData = uni.getStorageSync('userInfo')
 				const userInfoStr = userInfoData != null ? userInfoData as string : ''
 				if (userInfoStr != null && userInfoStr != '' && userInfoStr != 'null' && userInfoStr != 'undefined') {
 					try {
-						const parsedUserInfo = UTSAndroid.consoleDebugError(JSON.parse(userInfoStr), " at pages/monthly/monthly.uvue:207") as UTSJSONObject
+						const parsedUserInfo = UTSAndroid.consoleDebugError(JSON.parse(userInfoStr), " at pages/monthly/monthly.uvue:325") as UTSJSONObject
 						departmentId = parsedUserInfo.getString('deptId') ?? ''
+						isAdmin = (parsedUserInfo.getNumber('isAdmin') ?? 0) === 1
 					} catch (error) {
-						console.error('用户信息JSON解析失败:', error, " at pages/monthly/monthly.uvue:210")
+						console.error('用户信息JSON解析失败:', error, " at pages/monthly/monthly.uvue:329")
 					}
 				}
 				
-				// 构建部门过滤参数
-				const deptParam = departmentId != null && departmentId != '' ? `?departmentId=${departmentId}` : ''
+                // 构建部门过滤参数 - 管理员用户不需要部门过滤
+                const deptParam = (!isAdmin && departmentId != null && departmentId != '') ? `&responsibilityId=${departmentId}` : ''
 				
-				uni.request({
-					url: getApiUrl(`/statistics/overview${deptParam}`),
-					method: 'GET',
+				// 分别获取待整改、已整改、已复查的数量
+				let pendingCount = 0, completedCount = 0, reviewedCount = 0
+				let completedRequests = 0
+				const totalRequests = 3
+				
+				const updateStatistics = () => {
+					this.statistics = {
+						monthlyPending: pendingCount,
+						monthlyCompleted: completedCount,
+						reviewedCount: reviewedCount
+					}
+				}
+				
+                // 获取待整改数量（状态为0）
+                uni.request({
+                    url: getApiUrl(`/monthly-inspection-record/page?current=1&size=1&recordStatus=0${deptParam}`),
+                    method: 'GET',
+                    header: {
+                        'Authorization': `Bearer ${token}`
+                    },
+                    success: (res) => {
+                        const response = res.data as UTSJSONObject
+                        if (res.statusCode == 200 && (response.getNumber('code') ?? 0) == 200) {
+                            const data = response.getJSON('data') as UTSJSONObject
+                            pendingCount = data.getNumber('total') ?? 0
+                        }
+                        completedRequests++
+                        if (completedRequests === totalRequests) {
+                            updateStatistics()
+                        }
+                    },
+					fail: (error) => {
+						console.log('加载待整改数据失败:', error, " at pages/monthly/monthly.uvue:368")
+						completedRequests++
+						if (completedRequests === totalRequests) {
+							updateStatistics()
+						}
+					}
+				})
+				
+                // 获取已整改数量（状态为1）
+                uni.request({
+                    url: getApiUrl(`/monthly-inspection-record/page?current=1&size=1&recordStatus=1${deptParam}`),
+                    method: 'GET',
 					header: {
 						'Authorization': `Bearer ${token}`
 					},
@@ -116,42 +199,102 @@
 						const response = res.data as UTSJSONObject
 						if (res.statusCode == 200 && (response.getNumber('code') ?? 0) == 200) {
 							const data = response.getJSON('data') as UTSJSONObject
-							// 暂时使用原有接口数据，后续可调整
-							this.statistics = {
-								monthlyPending: data.getNumber('totalTasks') ?? 0,
-								monthlyCompleted: data.getNumber('todayRecords') ?? 0,
-								reviewedCount: data.getNumber('monthRecords') ?? 0
-							}
+							completedCount = data.getNumber('total') ?? 0
+						}
+						completedRequests++
+						if (completedRequests === totalRequests) {
+							updateStatistics()
 						}
 					},
 					fail: (error) => {
-						console.log('加载统计数据失败:', error, " at pages/monthly/monthly.uvue:236")
+						console.log('加载已整改数据失败:', error, " at pages/monthly/monthly.uvue:395")
+						completedRequests++
+						if (completedRequests === totalRequests) {
+							updateStatistics()
+						}
 					}
 				})
+				
+                // 获取已复查数量（状态为2）
+                uni.request({
+                    url: getApiUrl(`/monthly-inspection-record/page?current=1&size=1&recordStatus=2${deptParam}`),
+                    method: 'GET',
+                    header: {
+                        'Authorization': `Bearer ${token}`
+                    },
+                    success: (res) => {
+                        const response = res.data as UTSJSONObject
+                        if (res.statusCode == 200 && (response.getNumber('code') ?? 0) == 200) {
+                            const data = response.getJSON('data') as UTSJSONObject
+                            reviewedCount = data.getNumber('total') ?? 0
+                        }
+                        // 额外获取延迟整改数量（状态为0且整改期限 < 今天），用于从待整改数量中排除
+                        const now = new Date()
+                        const y = now.getFullYear()
+                        const m = now.getMonth() + 1
+                        const d = now.getDate()
+                        const mm = m < 10 ? ('0' + m) : ('' + m)
+                        const dd = d < 10 ? ('0' + d) : ('' + d)
+                        const today = `${y}-${mm}-${dd}`
+                        uni.request({
+                            url: getApiUrl(`/monthly-inspection-record/page?current=1&size=1&recordStatus=0&rectificationDeadlineBefore=${today}${deptParam}`),
+                            method: 'GET',
+                            header: { 'Authorization': `Bearer ${token}` },
+                            success: (res2) => {
+                                const resp2 = res2.data as UTSJSONObject
+                                if (res2.statusCode == 200 && (resp2.getNumber('code') ?? 0) == 200) {
+                                    const data2 = resp2.getJSON('data') as UTSJSONObject
+                                    const delayedCount = data2.getNumber('total') ?? 0
+                                    // 排除延迟整改数量
+                                    //pendingCount = Math.max(0, pendingCount - delayedCount)
+                                }
+                                completedRequests++
+                                if (completedRequests === totalRequests) {
+                                    updateStatistics()
+                                }
+                            },
+                            fail: (_) => {
+                                completedRequests++
+                                if (completedRequests === totalRequests) {
+                                    updateStatistics()
+                                }
+                            }
+                        })
+                    },
+                    fail: (error) => {
+                        console.log('加载已复查数据失败:', error, " at pages/monthly/monthly.uvue:450")
+                        completedRequests++
+                        if (completedRequests === totalRequests) {
+                            updateStatistics()
+                        }
+                    }
+                })
 			},
 			
 			loadMonthlyRecords() {
 				const token = uni.getStorageSync('token')
 				
-				// 获取用户部门信息
+				// 获取用户信息，包括部门和管理员权限
 				let departmentId = ''
+				let isAdmin = false
 				const userInfoData = uni.getStorageSync('userInfo')
 				const userInfoStr = userInfoData != null ? userInfoData as string : ''
 				if (userInfoStr != null && userInfoStr != '' && userInfoStr != 'null' && userInfoStr != 'undefined') {
 					try {
-						const parsedUserInfo = UTSAndroid.consoleDebugError(JSON.parse(userInfoStr), " at pages/monthly/monthly.uvue:250") as UTSJSONObject
+						const parsedUserInfo = UTSAndroid.consoleDebugError(JSON.parse(userInfoStr), " at pages/monthly/monthly.uvue:469") as UTSJSONObject
 						departmentId = parsedUserInfo.getString('deptId') ?? ''
+						isAdmin = (parsedUserInfo.getNumber('isAdmin') ?? 0) === 1
 					} catch (error) {
-						console.error('用户信息JSON解析失败:', error, " at pages/monthly/monthly.uvue:253")
+						console.error('用户信息JSON解析失败:', error, " at pages/monthly/monthly.uvue:473")
 					}
 				}
 				
-				// 构建部门过滤参数
-				const deptParam = departmentId != null && departmentId != '' ? `&departmentId=${departmentId}` : ''
+                // 构建部门过滤参数 - 管理员用户不需要部门过滤
+                const deptParam = (!isAdmin && departmentId != null && departmentId != '') ? `&responsibilityId=${departmentId}` : ''
 				
-				uni.request({
-					url: getApiUrl(`/inspection-record/page?pageNum=1&pageSize=10${deptParam}`),
-					method: 'GET',
+                uni.request({
+                    url: getApiUrl(`/monthly-inspection-record/page?current=1&size=10${deptParam}`),
+                    method: 'GET',
 					header: {
 						'Authorization': `Bearer ${token}`
 					},
@@ -175,13 +318,14 @@
 						}
 					},
 					fail: (error) => {
-						console.log('加载月度记录失败:', error, " at pages/monthly/monthly.uvue:286")
+						console.log('加载月度记录失败:', error, " at pages/monthly/monthly.uvue:506")
 					}
 				})
 			},
 			
+			// 获取月检记录的状态文本
 			getStatusText(status: string): string {
-				if (status == "0") return '待整改'
+				if (status == "0") return '待执行'
 				if (status == "1") return '已整改'
 				if (status == "2") return '已复查'
 				return '未知'
@@ -194,21 +338,38 @@
 				return 'status-unknown'
 			},
 			
+			// 获取月检任务的状态文本 - 与Web端保持一致
+			// 任务状态：0-未开始，1-进行中，2-已完成
+			getTaskStatusText(status: string): string {
+				if (status == "0") return '未开始'
+				if (status == "1") return '进行中'
+				if (status == "2") return '已完成'
+				return '未知'
+			},
+			
+			getTaskStatusClass(status: string): string {
+				if (status == "0") return 'status-pending'
+				if (status == "1") return 'status-processing'
+				if (status == "2") return 'status-completed'
+				return 'status-unknown'
+			},
+			
 			goToPendingIssues() {
+				const now = new Date()
+				const y = now.getFullYear()
+				const m = now.getMonth() + 1
+				const d = now.getDate()
+				const mm = m < 10 ? ('0' + m) : ('' + m)
+				const dd = d < 10 ? ('0' + d) : ('' + d)
+				const today = `${y}-${mm}-${dd}`
 				uni.navigateTo({
-					url: '/pages/record/record?status=0'
+					url: `/pages/record/record?status=0&monthly=true&deadlineFrom=${today}`
 				})
 			},
 			
 			goToCompletedIssues() {
 				uni.navigateTo({
-					url: '/pages/record/record?status=1'
-				})
-			},
-			
-			goToReviewedRecords() {
-				uni.navigateTo({
-					url: '/pages/record/record?status=2'
+					url: '/pages/record/record?status=1&monthly=true'
 				})
 			},
 			
@@ -219,45 +380,141 @@
 			},
 			
 			goToDelayedRecord() {
+				const now = new Date()
+				const y = now.getFullYear()
+				const m = now.getMonth() + 1
+				const d = now.getDate()
+				const mm = m < 10 ? ('0' + m) : ('' + m)
+				const dd = d < 10 ? ('0' + d) : ('' + d)
+				const today = `${y}-${mm}-${dd}`
 				uni.navigateTo({
-					url: '/pages/record/delayed'
+					url: `/pages/record/record?status=0&monthly=true&delayed=true&deadlineBefore=${today}`
 				})
 			},
 			
 			goToRecords() {
-				uni.switchTab({
-					url: '/pages/record/record'
+				uni.showToast({
+					title: '记录查看功能开发中',
+					icon: 'none'
 				})
 			},
 			
 			goToAddRecord() {
+				this.openTaskPicker()
+			},
+			openTaskPicker() {
+				const token = uni.getStorageSync('token')
+				
+				// 获取用户信息，包括部门和管理员权限 - 与loadTaskNotifications()保持一致
+				let departmentId = ''
+				let isAdmin = false
+				const userInfoData = uni.getStorageSync('userInfo')
+				const userInfoStr = userInfoData != null ? userInfoData as string : ''
+				if (userInfoStr != null && userInfoStr != '' && userInfoStr != 'null' && userInfoStr != 'undefined') {
+					try {
+						const parsedUserInfo = UTSAndroid.consoleDebugError(JSON.parse(userInfoStr), " at pages/monthly/monthly.uvue:600") as UTSJSONObject
+						departmentId = parsedUserInfo.getString('deptId') ?? ''
+						isAdmin = (parsedUserInfo.getNumber('isAdmin') ?? 0) === 1
+					} catch (error) {
+						console.error('用户信息JSON解析失败:', error, " at pages/monthly/monthly.uvue:604")
+					}
+				}
+				
+				console.log('openTaskPicker: 部门ID=', departmentId, '是否管理员=', isAdmin, " at pages/monthly/monthly.uvue:608")
+				
+				// 使用部门ID获取月检任务，非管理员用户需要部门过滤
+				if (!isAdmin && (departmentId == null || departmentId == '')) {
+					console.log('非管理员用户部门ID为空，无法加载月检任务', " at pages/monthly/monthly.uvue:612")
+					this.taskPickerLoading = false
+					this.taskPickerList = []
+					this.showTaskPickerModal = true
+					uni.showToast({
+						title: '未设置所属部门',
+						icon: 'none'
+					})
+					return
+				}
+				
+				// 构建请求URL - 使用部门ID而非用户ID，与loadTaskNotifications()保持一致
+				const url = isAdmin ? 
+					getApiUrl(`/notifications/department/tasks`) : 
+					getApiUrl(`/notifications/department/${departmentId}/tasks`)
+				
+				this.taskPickerLoading = true
+				console.log('请求月检任务URL:', url, " at pages/monthly/monthly.uvue:629")
+				
+				uni.request({
+					url: url,
+					method: 'GET',
+					header: { 'Authorization': `Bearer ${token}` },
+					success: (res) => {
+						console.log('月检任务选择器请求响应:', res, " at pages/monthly/monthly.uvue:636")
+						const list = [] as Array<UTSJSONObject>
+						if (res.statusCode === 200) {
+							const arr = res.data as Array<UTSJSONObject>
+							console.log('获取到的月检任务数据:', arr.length, '条', " at pages/monthly/monthly.uvue:640")
+							// 与loadTaskNotifications()保持一致：返回所有任务，不过滤状态
+							// 通知栏能获取到任务，说明任务可能包含所有状态，所以这里也应该返回所有任务
+							for (let i = 0; i < arr.length; i++) {
+								const item = arr[i]
+								console.log('处理任务:', item.getString('taskNo'), '状态:', item.getString('status'), " at pages/monthly/monthly.uvue:645")
+								list.push(item)
+							}
+							console.log('月检任务总数:', list.length, " at pages/monthly/monthly.uvue:648")
+						} else {
+							console.log('月检任务选择器请求失败，响应码:', res.statusCode, " at pages/monthly/monthly.uvue:650")
+						}
+						this.taskPickerList = list
+						this.showTaskPickerModal = true
+						this.taskPickerLoading = false
+					},
+					fail: (error) => {
+						console.log('加载月检任务选择器失败:', error, " at pages/monthly/monthly.uvue:657")
+						this.taskPickerLoading = false
+						this.taskPickerList = []
+						this.showTaskPickerModal = true
+					}
+				})
+			},
+			closeTaskPicker() {
+				this.showTaskPickerModal = false
+			},
+			pickTaskAndGo(item: UTSJSONObject) {
+				const taskNo = item.getString('taskNo') ?? ''
+				if (taskNo != null && taskNo != '') {
+					uni.navigateTo({ url: `/pages/monthly/task-record?taskId=${taskNo}` })
+					this.showTaskPickerModal = false
+				}
+			},
+			
+			goToReviewedRecords() {
 				uni.navigateTo({
-					url: '/pages/record/add'
+					url: '/pages/record/record?status=2&monthly=true'
 				})
 			},
 			
 			loadNotifications() {
 				const token = uni.getStorageSync('token')
 				const userId = this.userInfo.getString('id') ?? ''
-				console.log('开始加载通知，用户ID:', userId, " at pages/monthly/monthly.uvue:350")
+				console.log('开始加载通知，用户ID:', userId, " at pages/monthly/monthly.uvue:684")
 				
-      if (userId == null || userId == '') {
-       console.log('用户ID为空，无法加载通知', " at pages/monthly/monthly.uvue:353")
-       return
+				if (userId == null || userId == '') {
+					console.log('用户ID为空，无法加载通知', " at pages/monthly/monthly.uvue:687")
+					return
 				}
 				
+				// 使用与web端一致的通知API接口
 				uni.request({
-					url: getApiUrl(`/monthly-inspection-task/user/${userId}`),
+					url: getApiUrl(`/notifications/user/${userId}`),
 					method: 'GET',
 					header: {
 						'Authorization': `Bearer ${token}`
 					},
 					success: (res) => {
-						console.log('通知请求响应:', res, " at pages/monthly/monthly.uvue:364")
-						const response = res.data as UTSJSONObject
-						if (res.statusCode == 200 && (response.getNumber('code') ?? 0) == 200) {
-							const data = response.getArray('data') as Array<UTSJSONObject>
-							console.log('获取到的通知数据:', data.length, '条', " at pages/monthly/monthly.uvue:368")
+						console.log('通知请求响应:', res, " at pages/monthly/monthly.uvue:699")
+						if (res.statusCode == 200) {
+							const data = res.data as Array<UTSJSONObject>
+							console.log('获取到的通知数据:', data.length, '条', " at pages/monthly/monthly.uvue:702")
 							this.notifications = []
 							let unreadCount = 0
 							for (let i = 0; i < data.length; i++) {
@@ -266,10 +523,10 @@
 									id: item.getString('id') ?? '',
 									taskId: item.getString('taskId') ?? '',
 									taskNo: item.getString('taskNo') ?? '',
-									title: `月检任务通知 - ${item.getString('taskNo')}`,
-									content: `您有新的月检任务需要处理，任务编号：${item.getString('taskNo')}`,
+									title: item.getString('title') ?? '',
+									content: item.getString('content') ?? '',
 									createTime: item.getString('createTime') ?? '',
-									isRead: false
+									isRead: item.getBoolean('isRead') ?? false
 								}
 								this.notifications.push(notification)
 								if (!notification.isRead) {
@@ -277,17 +534,117 @@
 								}
 							}
 							this.notificationCount = unreadCount
-							console.log('设置通知条数:', this.notificationCount, " at pages/monthly/monthly.uvue:388")
+							console.log('设置通知条数:', this.notificationCount, " at pages/monthly/monthly.uvue:722")
 						} else {
-							console.log('通知请求失败，响应码:', res.statusCode, '业务码:', response.getNumber('code'), " at pages/monthly/monthly.uvue:390")
+							console.log('通知请求失败，响应码:', res.statusCode, " at pages/monthly/monthly.uvue:724")
 						}
 					},
 					fail: (error) => {
-						console.log('加载通知失败:', error, " at pages/monthly/monthly.uvue:394")
+						console.log('加载通知失败:', error, " at pages/monthly/monthly.uvue:728")
+					}
+				})
+				
+				// 加载月检任务通知
+				this.loadTaskNotifications()
+			},
+			
+			// 加载月检任务通知
+			loadTaskNotifications() {
+				const token = uni.getStorageSync('token')
+				
+				// 获取用户信息，包括部门和管理员权限
+				let departmentId = ''
+				let isAdmin = false
+				const userInfoData = uni.getStorageSync('userInfo')
+				const userInfoStr = userInfoData != null ? userInfoData as string : ''
+				if (userInfoStr != null && userInfoStr != '' && userInfoStr != 'null' && userInfoStr != 'undefined') {
+					try {
+						const parsedUserInfo = UTSAndroid.consoleDebugError(JSON.parse(userInfoStr), " at pages/monthly/monthly.uvue:747") as UTSJSONObject
+						departmentId = parsedUserInfo.getString('deptId') ?? ''
+						isAdmin = (parsedUserInfo.getNumber('isAdmin') ?? 0) === 1
+					} catch (error) {
+						console.error('用户信息JSON解析失败:', error, " at pages/monthly/monthly.uvue:751")
+					}
+				}
+				
+				// 使用部门ID获取月检任务通知，管理员用户不需要部门过滤
+				if (!isAdmin && (departmentId == null || departmentId == '')) {
+					console.log('非管理员用户部门ID为空，无法加载月检任务通知', " at pages/monthly/monthly.uvue:757")
+					return
+				}
+				
+				// 构建请求URL - 使用部门ID而非用户ID
+				const url = isAdmin ? 
+					getApiUrl(`/notifications/department/tasks`) : 
+					getApiUrl(`/notifications/department/${departmentId}/tasks`)
+				
+				uni.request({
+					url: url,
+					method: 'GET',
+					header: {
+						'Authorization': `Bearer ${token}`
+					},
+					success: (res) => {
+						console.log('月检任务通知请求响应:', res, " at pages/monthly/monthly.uvue:773")
+						if (res.statusCode == 200) {
+							// 后端返回的是ResponseEntity<List<Notification>>，直接是数组
+							const data = res.data as Array<UTSJSONObject>
+							console.log('获取到的月检任务通知数据:', data.length, '条', " at pages/monthly/monthly.uvue:777")
+							this.taskNotifications = []
+							for (let i = 0; i < data.length; i++) {
+								const item = data[i]
+								const taskNotification: TaskNotification = {
+									id: item.getString('id') ?? '',
+									taskId: item.getString('taskId') ?? '',
+									taskNo: item.getString('taskNo') ?? '',
+									title: item.getString('title') ?? '',
+									content: item.getString('content') ?? '',
+									createTime: item.getString('createTime') ?? '',
+									status: item.getString('status') ?? '',
+									inspectionMonth: item.getString('inspectionMonth') ?? ''
+								}
+								this.taskNotifications.push(taskNotification)
+								console.log('处理月检任务通知:', taskNotification, " at pages/monthly/monthly.uvue:792")
+							}
+						} else {
+							console.log('月检任务通知请求失败，响应码:', res.statusCode, " at pages/monthly/monthly.uvue:795")
+						}
+					},
+					fail: (error) => {
+						console.log('加载月检任务通知失败:', error, " at pages/monthly/monthly.uvue:799")
 					}
 				})
 			},
 			
+			// 切换通知标签页
+			switchNotificationTab(tab: string) {
+				this.activeNotificationTab = tab
+				if (tab === 'tasks') {
+					// 切换到月检任务时，刷新数据
+					this.loadTaskNotifications()
+				}
+			},
+			
+			// 刷新月检任务通知
+			refreshTaskNotifications() {
+				this.loadTaskNotifications()
+				uni.showToast({
+					title: '刷新成功',
+					icon: 'success',
+					duration: 1500
+				})
+			},
+			
+			// 处理月检任务通知点击
+			handleTaskNotificationClick(taskNotification: TaskNotification) {
+				// 跳转到月检任务录入页面，传递任务信息
+				uni.navigateTo({
+					url: `/pages/monthly/task-record?taskId=${taskNotification.taskNo}`
+				})
+				
+				this.hideNotifications()
+			},
+
 			showNotifications() {
 				this.showNotificationModal = true
 			},
@@ -297,6 +654,11 @@
 			},
 			
 			handleNotificationClick(notification: Notification) {
+				// 如果未读，则调用API标记为已读
+				if (!notification.isRead) {
+					this.markNotificationAsRead(notification.id)
+				}
+				
 				// 标记为已读
 				notification.isRead = true
 				this.updateNotificationCount()
@@ -307,6 +669,30 @@
 				})
 				
 				this.hideNotifications()
+			},
+			
+			// 标记通知为已读
+			markNotificationAsRead(notificationId: string) {
+				const token = uni.getStorageSync('token')
+				const userId = this.userInfo.getString('id') ?? ''
+				
+				if (userId == null || userId == '' || notificationId == null || notificationId == '') {
+					return
+				}
+				
+				uni.request({
+					url: getApiUrl(`/notifications/user/${userId}/read/${notificationId}`),
+					method: 'PUT',
+					header: {
+						'Authorization': `Bearer ${token}`
+					},
+					success: (res) => {
+						console.log('标记通知已读成功:', res, " at pages/monthly/monthly.uvue:875")
+					},
+					fail: (error) => {
+						console.log('标记通知已读失败:', error, " at pages/monthly/monthly.uvue:878")
+					}
+				})
 			},
 			
 			updateNotificationCount() {
@@ -326,10 +712,32 @@
 			},
 			
 			markAllAsRead() {
-				for (let i = 0; i < this.notifications.length; i++) {
-					this.notifications[i].isRead = true
+				const token = uni.getStorageSync('token')
+				const userId = this.userInfo.getString('id') ?? ''
+				
+				if (userId == null || userId == '') {
+					return
 				}
-				this.notificationCount = 0
+				
+				// 调用API标记所有通知为已读
+				uni.request({
+					url: getApiUrl(`/notifications/user/${userId}/read-all`),
+					method: 'PUT',
+					header: {
+						'Authorization': `Bearer ${token}`
+					},
+					success: (res) => {
+						console.log('标记所有通知已读成功:', res, " at pages/monthly/monthly.uvue:915")
+						// 更新本地状态
+						for (let i = 0; i < this.notifications.length; i++) {
+							this.notifications[i].isRead = true
+						}
+						this.notificationCount = 0
+					},
+					fail: (error) => {
+						console.log('标记所有通知已读失败:', error, " at pages/monthly/monthly.uvue:923")
+					}
+				})
 			},
 			
 			// 初始化容器高度
@@ -354,6 +762,223 @@
 			// 刷新恢复
 			onRefreshRestore() {
 				this.isRefreshing = false
+			},
+			
+			// WebSocket连接方法
+			connectWebSocket() {
+				const token = uni.getStorageSync('token')
+				const userId = this.userInfo.getString('id') ?? ''
+				
+      if (token == null || token == '' || userId == null || userId == '') {
+					console.log('缺少token或用户ID，无法连接WebSocket', " at pages/monthly/monthly.uvue:958")
+					return
+				}
+				
+      // 如果已经连接，先断开
+      if (this.socketTask != null) {
+       this.disconnectWebSocket()
+      }
+				
+				// 构建WebSocket URL (使用SockJS端点)
+				const wsUrl = `ws://localhost:8081/ws/websocket`
+				console.log('正在连接WebSocket:', wsUrl, " at pages/monthly/monthly.uvue:969")
+				
+				this.socketTask = uni.connectSocket({
+					url: wsUrl,
+					protocols: ['v10.stomp', 'v11.stomp', 'v12.stomp'],
+					success: () => {
+						console.log('WebSocket连接请求发送成功', " at pages/monthly/monthly.uvue:975")
+					},
+					fail: (error) => {
+						console.error('WebSocket连接失败:', error, " at pages/monthly/monthly.uvue:978")
+						this.handleWebSocketError()
+					}
+				})
+				
+				// 监听WebSocket连接打开
+				uni.onSocketOpen((res) => {
+					console.log('WebSocket连接已打开', res, " at pages/monthly/monthly.uvue:985")
+					this.isSocketConnected = true
+					this.reconnectAttempts = 0
+					
+					// 发送STOMP连接帧
+					const token = uni.getStorageSync('token')
+					const userId = this.userInfo.getString('id') ?? ''
+					this.sendStompConnect(token as string, userId as string)
+				})
+				
+				// 监听WebSocket消息
+				uni.onSocketMessage((message) => {
+					const messageData = message.data as string
+					console.log('收到WebSocket消息:', messageData, " at pages/monthly/monthly.uvue:998")
+					this.handleWebSocketMessage(messageData)
+				})
+				
+				// 监听WebSocket连接关闭
+				uni.onSocketClose((event) => {
+					console.log('WebSocket连接已关闭:', event, " at pages/monthly/monthly.uvue:1004")
+					this.isSocketConnected = false
+					this.socketTask = null
+					
+					// 如果不是主动断开，尝试重连
+					if (event.code != 1000) {
+						this.attemptReconnect()
+					}
+				})
+				
+				// 监听WebSocket错误
+				uni.onSocketError((error) => {
+					console.error('WebSocket错误:', error, " at pages/monthly/monthly.uvue:1016")
+					this.handleWebSocketError()
+				})
+			},
+			
+			// 发送STOMP连接帧
+			sendStompConnect(token: string, userId: string) {
+        const connectFrame = `CONNECT
+Accept-version:1.0,1.1,1.2
+host:localhost
+Authorization:Bearer ${token}
+
+` + String.fromCharCode(0)
+				
+				if (this.isSocketConnected) {
+					uni.sendSocketMessage({
+						data: connectFrame,
+						success: () => {
+							console.log('STOMP连接帧发送成功', " at pages/monthly/monthly.uvue:1034")
+							// 连接成功后订阅用户通知
+							setTimeout(() => {
+								this.subscribeToNotifications(userId)
+							}, 1000)
+						},
+						fail: (error) => {
+							console.error('STOMP连接帧发送失败:', error, " at pages/monthly/monthly.uvue:1041")
+						}
+					})
+				}
+			},
+			
+			// 订阅用户通知
+			subscribeToNotifications(userId: string) {
+        const subscribeFrame = `SUBSCRIBE
+id:sub-0
+destination:/user/${userId}/queue/notifications
+
+` + String.fromCharCode(0)
+				
+				if (this.isSocketConnected) {
+					uni.sendSocketMessage({
+						data: subscribeFrame,
+						success: () => {
+							console.log('订阅通知成功', " at pages/monthly/monthly.uvue:1059")
+						},
+						fail: (error) => {
+							console.error('订阅通知失败:', error, " at pages/monthly/monthly.uvue:1062")
+						}
+					})
+				}
+			},
+			
+			// 处理WebSocket消息
+			handleWebSocketMessage(data: string) {
+				try {
+					// 解析STOMP消息
+					if (data.startsWith('CONNECTED')) {
+						console.log('STOMP连接成功', " at pages/monthly/monthly.uvue:1073")
+						return
+					}
+					
+					if (data.startsWith('MESSAGE')) {
+						// 提取消息体
+						const lines = data.split('\n')
+						let messageBody = ''
+						let isBody = false
+						
+						for (let i = 0; i < lines.length; i++) {
+							if (isBody) {
+								messageBody += lines[i]
+							} else if (lines[i] === '') {
+								isBody = true
+							}
+						}
+						
+						// 移除结尾的空字符
+						messageBody = messageBody.replace(/\x00$/, '')
+						
+        if (messageBody != null && messageBody != '') {
+							console.log('收到通知消息:', messageBody, " at pages/monthly/monthly.uvue:1095")
+							const notification = UTSAndroid.consoleDebugError(JSON.parse(messageBody), " at pages/monthly/monthly.uvue:1096") as UTSJSONObject
+							this.handleNewNotification(notification)
+						}
+					}
+				} catch (error) {
+					console.error('处理WebSocket消息失败:', error, " at pages/monthly/monthly.uvue:1101")
+				}
+			},
+			
+			// 处理新通知
+			handleNewNotification(notificationData: UTSJSONObject) {
+				const newNotification: Notification = {
+					id: notificationData.getString('id') ?? '',
+					taskId: notificationData.getString('taskId') ?? '',
+					taskNo: notificationData.getString('taskNo') ?? '',
+					title: notificationData.getString('title') ?? '',
+					content: notificationData.getString('content') ?? '',
+					createTime: notificationData.getString('createTime') ?? '',
+					isRead: false
+				}
+				
+				// 添加到通知列表顶部
+				this.notifications.unshift(newNotification)
+				
+				// 更新未读计数
+				this.notificationCount++
+				
+				// 显示系统通知
+				uni.showToast({
+					title: `新通知: ${newNotification.title}`,
+					icon: 'none',
+					duration: 3000
+				})
+				
+				console.log('新通知已添加，当前未读数量:', this.notificationCount, " at pages/monthly/monthly.uvue:1130")
+			},
+			
+			// 断开WebSocket连接
+			disconnectWebSocket() {
+				if (this.isSocketConnected) {
+					console.log('正在断开WebSocket连接', " at pages/monthly/monthly.uvue:1136")
+					uni.closeSocket({
+						code: 1000,
+						reason: '主动断开'
+					})
+					this.socketTask = null
+					this.isSocketConnected = false
+				}
+			},
+			
+			// 处理WebSocket错误
+			handleWebSocketError() {
+				this.isSocketConnected = false
+				this.attemptReconnect()
+			},
+			
+			// 尝试重连
+			attemptReconnect() {
+				if (this.reconnectAttempts >= this.maxReconnectAttempts) {
+					console.log('达到最大重连次数，停止重连', " at pages/monthly/monthly.uvue:1155")
+					return
+				}
+				
+				this.reconnectAttempts++
+				console.log(`第${this.reconnectAttempts}次重连尝试，${this.reconnectInterval}ms后重连`, " at pages/monthly/monthly.uvue:1160")
+				
+				setTimeout(() => {
+					if (!this.isSocketConnected) {
+						this.connectWebSocket()
+					}
+				}, this.reconnectInterval)
 			}
 		}
 	})
@@ -478,44 +1103,167 @@ const _cache = this.$.renderCache
               _cE("text", _uM({ class: "notification-title" }), "通知消息"),
               _cE("view", _uM({ class: "notification-actions" }), [
                 _cE("text", _uM({
-                  class: "mark-all-read",
-                  onClick: _ctx.markAllAsRead
-                }), "全部已读", 8 /* PROPS */, ["onClick"])
+                  class: "close-btn",
+                  onClick: _ctx.hideNotifications
+                }), "×", 8 /* PROPS */, ["onClick"])
               ])
             ]),
-            _cE("view", _uM({ class: "notification-list" }), [
-              _ctx.notifications.length === 0
+            _cE("view", _uM({ class: "notification-tabs" }), [
+              _cE("view", _uM({
+                class: _nC(["tab-item", _uM({active: _ctx.activeNotificationTab === 'system'})]),
+                onClick: () => {_ctx.switchNotificationTab('system')}
+              }), [
+                _cE("text", _uM({ class: "tab-text" }), "系统通知")
+              ], 10 /* CLASS, PROPS */, ["onClick"]),
+              _cE("view", _uM({
+                class: _nC(["tab-item", _uM({active: _ctx.activeNotificationTab === 'tasks'})]),
+                onClick: () => {_ctx.switchNotificationTab('tasks')}
+              }), [
+                _cE("text", _uM({ class: "tab-text" }), "月检任务")
+              ], 10 /* CLASS, PROPS */, ["onClick"])
+            ]),
+            _ctx.activeNotificationTab === 'system'
+              ? _cE("view", _uM({
+                  key: 0,
+                  class: "tab-content"
+                }), [
+                  _cE("view", _uM({ class: "tab-header" }), [
+                    _cE("text", _uM({
+                      class: "mark-all-read",
+                      onClick: _ctx.markAllAsRead
+                    }), "全部已读", 8 /* PROPS */, ["onClick"])
+                  ]),
+                  _cE("scroll-view", _uM({
+                    class: "notification-list",
+                    "scroll-y": "true",
+                    "show-scrollbar": true,
+                    "enable-back-to-top": false
+                  }), [
+                    _ctx.notifications.length === 0
+                      ? _cE("view", _uM({
+                          key: 0,
+                          class: "empty-notifications"
+                        }), [
+                          _cE("text", _uM({ class: "empty-text" }), "暂无通知")
+                        ])
+                      : _cC("v-if", true),
+                    _cE(Fragment, null, RenderHelpers.renderList(_ctx.notifications, (notification, __key, __index, _cached): any => {
+                      return _cE("view", _uM({
+                        key: notification.id,
+                        class: _nC(["notification-item", _uM({unread: !notification.isRead})]),
+                        onClick: () => {_ctx.handleNotificationClick(notification)}
+                      }), [
+                        isTrue(!notification.isRead)
+                          ? _cE("view", _uM({
+                              key: 0,
+                              class: "notification-dot"
+                            }))
+                          : _cC("v-if", true),
+                        _cE("view", _uM({ class: "notification-info" }), [
+                          _cE("text", _uM({ class: "notification-item-title" }), _tD(notification.title), 1 /* TEXT */),
+                          _cE("text", _uM({ class: "notification-item-content" }), _tD(notification.content), 1 /* TEXT */),
+                          _cE("text", _uM({ class: "notification-time" }), _tD(notification.createTime), 1 /* TEXT */)
+                        ]),
+                        _cE("text", _uM({ class: "notification-arrow" }), "›")
+                      ], 10 /* CLASS, PROPS */, ["onClick"])
+                    }), 128 /* KEYED_FRAGMENT */)
+                  ])
+                ])
+              : _cC("v-if", true),
+            _ctx.activeNotificationTab === 'tasks'
+              ? _cE("view", _uM({
+                  key: 1,
+                  class: "tab-content"
+                }), [
+                  _cE("view", _uM({ class: "tab-header" }), [
+                    _cE("text", _uM({
+                      class: "refresh-btn",
+                      onClick: _ctx.refreshTaskNotifications
+                    }), "刷新", 8 /* PROPS */, ["onClick"])
+                  ]),
+                  _cE("scroll-view", _uM({
+                    class: "notification-list",
+                    "scroll-y": "true",
+                    "show-scrollbar": true,
+                    "enable-back-to-top": false
+                  }), [
+                    _ctx.taskNotifications.length === 0
+                      ? _cE("view", _uM({
+                          key: 0,
+                          class: "empty-notifications"
+                        }), [
+                          _cE("text", _uM({ class: "empty-text" }), "暂无已通知的月检任务")
+                        ])
+                      : _cC("v-if", true),
+                    _cE(Fragment, null, RenderHelpers.renderList(_ctx.taskNotifications, (taskNotification, __key, __index, _cached): any => {
+                      return _cE("view", _uM({
+                        key: taskNotification.id,
+                        class: "notification-item task-notification",
+                        onClick: () => {_ctx.handleTaskNotificationClick(taskNotification)}
+                      }), [
+                        _cE("view", _uM({
+                          class: _nC(["task-status-badge", _ctx.getTaskStatusClass(taskNotification.status)])
+                        }), [
+                          _cE("text", _uM({ class: "status-text" }), _tD(_ctx.getTaskStatusText(taskNotification.status)), 1 /* TEXT */)
+                        ], 2 /* CLASS */),
+                        _cE("view", _uM({ class: "notification-info" }), [
+                          _cE("text", _uM({ class: "notification-item-title" }), _tD(taskNotification.title), 1 /* TEXT */),
+                          _cE("text", _uM({ class: "notification-item-content" }), " 任务编号：" + _tD(taskNotification.taskNo) + " 月检时间：" + _tD(taskNotification.inspectionMonth) + " 任务状态：" + _tD(_ctx.getTaskStatusText(taskNotification.status)) + " " + _tD(taskNotification.content), 1 /* TEXT */),
+                          _cE("text", _uM({ class: "notification-time" }), _tD(taskNotification.createTime), 1 /* TEXT */)
+                        ]),
+                        _cE("text", _uM({ class: "notification-arrow" }), "›")
+                      ], 8 /* PROPS */, ["onClick"])
+                    }), 128 /* KEYED_FRAGMENT */)
+                  ])
+                ])
+              : _cC("v-if", true)
+          ], 8 /* PROPS */, ["onClick"])
+        ], 8 /* PROPS */, ["onClick"])
+      : _cC("v-if", true),
+    isTrue(_ctx.showTaskPickerModal)
+      ? _cE("view", _uM({
+          key: 1,
+          class: "task-picker-overlay",
+          onClick: _ctx.closeTaskPicker
+        }), [
+          _cE("view", _uM({
+            class: "task-picker",
+            onClick: withModifiers(() => {}, ["stop"])
+          }), [
+            _cE("view", _uM({ class: "task-picker-header" }), [
+              _cE("text", null, "选择月检任务"),
+              _cE("text", _uM({
+                class: "task-picker-close",
+                onClick: _ctx.closeTaskPicker
+              }), "×", 8 /* PROPS */, ["onClick"])
+            ]),
+            _cE("view", _uM({ class: "task-picker-body" }), [
+              isTrue(_ctx.taskPickerLoading)
                 ? _cE("view", _uM({
                     key: 0,
-                    class: "empty-notifications"
-                  }), [
-                    _cE("text", _uM({ class: "empty-text" }), "暂无通知")
-                  ])
-                : _cC("v-if", true),
-              _cE(Fragment, null, RenderHelpers.renderList(_ctx.notifications, (notification, __key, __index, _cached): any => {
-                return _cE("view", _uM({
-                  key: notification.id,
-                  class: _nC(["notification-item", _uM({unread: !notification.isRead})]),
-                  onClick: () => {_ctx.handleNotificationClick(notification)}
-                }), [
-                  isTrue(!notification.isRead)
-                    ? _cE("view", _uM({
-                        key: 0,
-                        class: "notification-dot"
-                      }))
-                    : _cC("v-if", true),
-                  _cE("view", _uM({ class: "notification-info" }), [
-                    _cE("text", _uM({ class: "notification-item-title" }), _tD(notification.title), 1 /* TEXT */),
-                    _cE("text", _uM({ class: "notification-item-content" }), _tD(notification.content), 1 /* TEXT */),
-                    _cE("text", _uM({ class: "notification-time" }), _tD(notification.createTime), 1 /* TEXT */)
-                  ]),
-                  _cE("text", _uM({ class: "notification-arrow" }), "›")
-                ], 10 /* CLASS, PROPS */, ["onClick"])
-              }), 128 /* KEYED_FRAGMENT */)
+                    class: "empty-tasks"
+                  }), "加载中...")
+                : _ctx.taskPickerList.length === 0
+                  ? _cE("view", _uM({
+                      key: 1,
+                      class: "empty-tasks"
+                    }), "当前无待执行或进行中的任务")
+                  : _cE("view", _uM({ key: 2 }), [
+                      _cE(Fragment, null, RenderHelpers.renderList(_ctx.taskPickerList, (t, __key, __index, _cached): any => {
+                        return _cE("view", _uM({
+                          class: "task-item",
+                          key: t.getString('id'),
+                          onClick: () => {_ctx.pickTaskAndGo(t)}
+                        }), [
+                          _cE("text", _uM({ class: "task-title" }), "任务编号：" + _tD(t.getString('taskNo') ?? ''), 1 /* TEXT */),
+                          _cE("text", _uM({ class: "task-sub" }), "月检时间：" + _tD(t.getString('inspectionMonth') ?? '') + " 状态：" + _tD(_ctx.getTaskStatusText(t.getString('status') ?? '')), 1 /* TEXT */)
+                        ], 8 /* PROPS */, ["onClick"])
+                      }), 128 /* KEYED_FRAGMENT */)
+                    ])
             ])
           ], 8 /* PROPS */, ["onClick"])
         ], 8 /* PROPS */, ["onClick"])
       : _cC("v-if", true)
   ], 44 /* STYLE, PROPS, NEED_HYDRATION */, ["scroll-top", "refresher-triggered", "onRefresherrefresh", "onRefresherrestore"])
 }
-const GenPagesMonthlyMonthlyStyles = [_uM([["container", _pS(_uM([["paddingTop", "30rpx"], ["paddingRight", "30rpx"], ["paddingBottom", "150rpx"], ["paddingLeft", "30rpx"], ["backgroundImage", "linear-gradient(180deg, #f8fafc 0%, #e2e8f0 100%)"], ["backgroundColor", "rgba(0,0,0,0)"], ["boxSizing", "border-box"]]))], ["header", _pS(_uM([["display", "flex"], ["justifyContent", "space-between"], ["alignItems", "center"], ["paddingTop", "30rpx"], ["paddingRight", "25rpx"], ["paddingBottom", "30rpx"], ["paddingLeft", "25rpx"], ["backgroundImage", "linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)"], ["backgroundColor", "rgba(0,0,0,0)"], ["borderTopLeftRadius", "24rpx"], ["borderTopRightRadius", "24rpx"], ["borderBottomRightRadius", "24rpx"], ["borderBottomLeftRadius", "24rpx"], ["marginBottom", "30rpx"], ["boxShadow", "0 8rpx 32rpx rgba(102, 126, 234, 0.3)"], ["position", "relative"], ["overflow", "hidden"], ["content::before", "''"], ["position::before", "absolute"], ["top::before", 0], ["left::before", 0], ["right::before", 0], ["bottom::before", 0], ["pointerEvents::before", "none"]]))], ["header-right", _pS(_uM([["display", "flex"], ["alignItems", "flex-start"], ["gap", "15rpx"], ["zIndex", 2], ["position", "relative"], ["marginTop", "30rpx"]]))], ["welcome", _pS(_uM([["display", "flex"], ["flexDirection", "column"], ["flex", 1], ["zIndex", 2], ["position", "relative"], ["paddingRight", "140rpx"]]))], ["greeting", _pS(_uM([["color", "rgba(105,72,72,0.95)"], ["fontSize", "32rpx"], ["marginBottom", "8rpx"], ["letterSpacing", "0.5rpx"], ["textShadow", "0 2rpx 4rpx rgba(0, 0, 0, 0.1)"]]))], ["app-name", _pS(_uM([["color", "rgba(105,72,72,0.95)"], ["fontSize", "26rpx"], ["fontWeight", "400"], ["letterSpacing", "0.3rpx"]]))], ["notification-icon-wrapper", _pS(_uM([["position", "absolute"], ["top", "15rpx"], ["right", "15rpx"], ["width", "70rpx"], ["height", "70rpx"], ["display", "flex"], ["alignItems", "center"], ["justifyContent", "center"], ["backgroundImage", "none"], ["backgroundColor", "rgba(255,255,255,0.2)"], ["backdropFilter", "blur(10rpx)"], ["borderTopWidth", "2rpx"], ["borderRightWidth", "2rpx"], ["borderBottomWidth", "2rpx"], ["borderLeftWidth", "2rpx"], ["borderTopStyle", "solid"], ["borderRightStyle", "solid"], ["borderBottomStyle", "solid"], ["borderLeftStyle", "solid"], ["borderTopColor", "rgba(255,255,255,0.3)"], ["borderRightColor", "rgba(255,255,255,0.3)"], ["borderBottomColor", "rgba(255,255,255,0.3)"], ["borderLeftColor", "rgba(255,255,255,0.3)"], ["transitionProperty", "all"], ["transitionDuration", "0.3s"], ["transitionTimingFunction", "ease"], ["zIndex", 3], ["transform:active", "scale(0.95)"], ["backgroundImage:active", "none"], ["backgroundColor:active", "rgba(255,255,255,0.3)"]]))], ["icon-bell", _pS(_uM([["fontSize", "32rpx"], ["color", "rgba(255,255,255,0.9)"], ["display", "flex"], ["alignItems", "center"], ["justifyContent", "center"], ["width", "100%"], ["height", "100%"]]))], ["notification-badge", _pS(_uM([["position", "absolute"], ["top", "-6rpx"], ["right", "-6rpx"], ["minWidth", "32rpx"], ["height", "32rpx"], ["backgroundImage", "none"], ["backgroundColor", "#ff4757"], ["borderTopLeftRadius", "16rpx"], ["borderTopRightRadius", "16rpx"], ["borderBottomRightRadius", "16rpx"], ["borderBottomLeftRadius", "16rpx"], ["display", "flex"], ["alignItems", "center"], ["justifyContent", "center"], ["borderTopWidth", "3rpx"], ["borderRightWidth", "3rpx"], ["borderBottomWidth", "3rpx"], ["borderLeftWidth", "3rpx"], ["borderTopStyle", "solid"], ["borderRightStyle", "solid"], ["borderBottomStyle", "solid"], ["borderLeftStyle", "solid"], ["borderTopColor", "#ffffff"], ["borderRightColor", "#ffffff"], ["borderBottomColor", "#ffffff"], ["borderLeftColor", "#ffffff"], ["boxShadow", "0 2rpx 8rpx rgba(255, 71, 87, 0.3)"], ["zIndex", 4], ["paddingTop", 0], ["paddingRight", "6rpx"], ["paddingBottom", 0], ["paddingLeft", "6rpx"]]))], ["badge-text", _pS(_uM([["fontSize", "18rpx"], ["color", "#ffffff"], ["fontWeight", "700"], ["lineHeight", 1], ["textAlign", "center"], ["whiteSpace", "nowrap"]]))], ["user-avatar", _pS(_uM([["width", "100rpx"], ["height", "100rpx"], ["borderTopLeftRadius", "50rpx"], ["borderTopRightRadius", "50rpx"], ["borderBottomRightRadius", "50rpx"], ["borderBottomLeftRadius", "50rpx"], ["backgroundColor", "rgba(255,255,255,0.2)"], ["overflow", "hidden"], ["borderTopWidth", "3rpx"], ["borderRightWidth", "3rpx"], ["borderBottomWidth", "3rpx"], ["borderLeftWidth", "3rpx"], ["borderTopStyle", "solid"], ["borderRightStyle", "solid"], ["borderBottomStyle", "solid"], ["borderLeftStyle", "solid"], ["borderTopColor", "rgba(255,255,255,0.4)"], ["borderRightColor", "rgba(255,255,255,0.4)"], ["borderBottomColor", "rgba(255,255,255,0.4)"], ["borderLeftColor", "rgba(255,255,255,0.4)"], ["boxShadow", "0 6rpx 20rpx rgba(0, 0, 0, 0.15), 0 0 0 1rpx rgba(255, 255, 255, 0.1)"], ["zIndex", 2], ["position", "relative"], ["transitionProperty", "all"], ["transitionDuration", "0.3s"], ["transitionTimingFunction", "ease"], ["transform:active", "scale(0.95)"]]))], ["avatar-image", _pS(_uM([["width", "100rpx"], ["height", "100rpx"], ["borderTopLeftRadius", "50rpx"], ["borderTopRightRadius", "50rpx"], ["borderBottomRightRadius", "50rpx"], ["borderBottomLeftRadius", "50rpx"]]))], ["avatar-placeholder", _pS(_uM([["color", "rgba(255,255,255,0.9)"], ["fontSize", "28rpx"], ["textTransform", "uppercase"]]))], ["avatar", _pS(_uM([["width", 50], ["height", 50], ["borderTopLeftRadius", 25], ["borderTopRightRadius", 25], ["borderBottomRightRadius", 25], ["borderBottomLeftRadius", 25], ["backgroundColor", "#dddddd"]]))], ["stats-container", _pS(_uM([["display", "flex"], ["justifyContent", "space-between"], ["marginBottom", 30], ["gap", "10px"]]))], ["stats-card", _pS(_uM([["flex", 1], ["backgroundImage", "none"], ["backgroundColor", "#ffffff"], ["borderTopLeftRadius", 12], ["borderTopRightRadius", 12], ["borderBottomRightRadius", 12], ["borderBottomLeftRadius", 12], ["paddingTop", 20], ["paddingRight", 15], ["paddingBottom", 20], ["paddingLeft", 15], ["textAlign", "center"], ["position", "relative"], ["boxShadow", "0 2px 8px rgba(0,0,0,0.1)"], ["overflow", "hidden"]]))], ["stats-number", _pS(_uM([["fontSize", 24], ["fontWeight", "bold"], ["color", "#333333"], ["marginBottom", 8]]))], ["stats-label", _pS(_uM([["fontSize", 14], ["color", "#666666"], ["marginBottom", 8]]))], ["stats-icon", _pS(_uM([["fontSize", 20], ["position", "absolute"], ["top", 15], ["right", 15], ["opacity", 0.3]]))], ["action-buttons", _pS(_uM([["marginBottom", 30], ["display", "flex"], ["flexDirection", "row"], ["justifyContent", "space-between"], ["gap", "10px"]]))], ["action-button", _pS(_uM([["flex", 1], ["backgroundImage", "none"], ["backgroundColor", "#d1ecf1"], ["borderTopLeftRadius", 12], ["borderTopRightRadius", 12], ["borderBottomRightRadius", 12], ["borderBottomLeftRadius", 12], ["paddingTop", 15], ["paddingRight", 10], ["paddingBottom", 15], ["paddingLeft", 10], ["display", "flex"], ["alignItems", "center"], ["justifyContent", "center"], ["boxShadow", "0 2px 8px rgba(0,0,0,0.1)"], ["minWidth", 0]]))], ["delayed-button", _pS(_uM([["!backgroundImage", "none"], ["!backgroundColor", "#ff4757"]]))], ["button-icon", _pS(_uM([["fontSize", 20], ["marginRight", 8], ["color", "#007AFF"], ["flexShrink", 0]]))], ["button-text", _pS(_uM([["fontSize", 14], ["color", "#333333"], ["whiteSpace", "nowrap"], ["overflow", "hidden"], ["textOverflow", "ellipsis"]]))], ["trend-section", _pS(_uM([["marginBottom", 30]]))], ["trend-chart", _pS(_uM([["backgroundImage", "none"], ["backgroundColor", "#ffffff"], ["borderTopLeftRadius", 12], ["borderTopRightRadius", 12], ["borderBottomRightRadius", 12], ["borderBottomLeftRadius", 12], ["paddingTop", 20], ["paddingRight", 20], ["paddingBottom", 20], ["paddingLeft", 20], ["boxShadow", "0 2px 8px rgba(0,0,0,0.1)"]]))], ["chart-placeholder", _pS(_uM([["height", 200], ["display", "flex"], ["flexDirection", "column"], ["justifyContent", "center"], ["alignItems", "center"], ["backgroundColor", "#f8f9fa"], ["borderTopLeftRadius", 8], ["borderTopRightRadius", 8], ["borderBottomRightRadius", 8], ["borderBottomLeftRadius", 8], ["borderTopWidth", 2], ["borderRightWidth", 2], ["borderBottomWidth", 2], ["borderLeftWidth", 2], ["borderTopStyle", "dashed"], ["borderRightStyle", "dashed"], ["borderBottomStyle", "dashed"], ["borderLeftStyle", "dashed"], ["borderTopColor", "#dee2e6"], ["borderRightColor", "#dee2e6"], ["borderBottomColor", "#dee2e6"], ["borderLeftColor", "#dee2e6"]]))], ["placeholder-text", _pS(_uM([["fontSize", 18], ["color", "#6c757d"], ["marginBottom", 8]]))], ["placeholder-desc", _pS(_uM([["fontSize", 14], ["color", "#adb5bd"]]))], ["quick-actions", _pS(_uM([["marginBottom", 30]]))], ["section-title", _pS(_uM([["fontSize", 18], ["fontWeight", "bold"], ["color", "#333333"], ["marginBottom", 15]]))], ["actions-grid", _pS(_uM([["display", "flex"], ["flexWrap", "wrap"], ["justifyContent", "space-between"]]))], ["action-item", _pS(_uM([["width", "48%"], ["backgroundImage", "none"], ["backgroundColor", "#ffffff"], ["borderTopLeftRadius", 12], ["borderTopRightRadius", 12], ["borderBottomRightRadius", 12], ["borderBottomLeftRadius", 12], ["paddingTop", 20], ["paddingRight", 20], ["paddingBottom", 20], ["paddingLeft", 20], ["marginBottom", 15], ["textAlign", "center"], ["boxShadow", "0 2px 8px rgba(0,0,0,0.1)"]]))], ["action-icon", _pS(_uM([["fontSize", 24], ["marginBottom", 8]]))], ["action-text", _pS(_uM([["fontSize", 14], ["color", "#333333"]]))], ["recent-records", _pS(_uM([["marginBottom", 20]]))], ["section-header", _pS(_uM([["display", "flex"], ["justifyContent", "space-between"], ["alignItems", "center"], ["marginBottom", 15]]))], ["more-text", _pS(_uM([["fontSize", 14], ["color", "#007AFF"]]))], ["records-list", _pS(_uM([["backgroundImage", "none"], ["backgroundColor", "#ffffff"], ["borderTopLeftRadius", 12], ["borderTopRightRadius", 12], ["borderBottomRightRadius", 12], ["borderBottomLeftRadius", 12], ["paddingTop", 15], ["paddingRight", 15], ["paddingBottom", 15], ["paddingLeft", 15], ["boxShadow", "0 2px 8px rgba(0,0,0,0.1)"]]))], ["record-item", _pS(_uM([["display", "flex"], ["justifyContent", "space-between"], ["alignItems", "center"], ["paddingTop", 15], ["paddingRight", 0], ["paddingBottom", 15], ["paddingLeft", 0], ["borderBottomWidth", 1], ["borderBottomStyle", "solid"], ["borderBottomColor", "#f0f0f0"], ["borderBottomWidth:last-child", "medium"], ["borderBottomStyle:last-child", "none"], ["borderBottomColor:last-child", "#000000"]]))], ["record-info", _pS(_uM([["flex", 1]]))], ["record-title", _pS(_uM([["fontSize", 16], ["color", "#333333"], ["marginBottom", 4]]))], ["record-meta", _pS(_uM([["fontSize", 12], ["color", "#999999"]]))], ["record-status", _pS(_uM([["paddingTop", 4], ["paddingRight", 8], ["paddingBottom", 4], ["paddingLeft", 8], ["borderTopLeftRadius", 4], ["borderTopRightRadius", 4], ["borderBottomRightRadius", 4], ["borderBottomLeftRadius", 4], ["fontSize", 12]]))], ["status-pending", _pS(_uM([["backgroundColor", "#fff3cd"], ["color", "#856404"]]))], ["status-processing", _pS(_uM([["backgroundColor", "#d1ecf1"], ["color", "#0c5460"]]))], ["status-completed", _pS(_uM([["backgroundColor", "#d4edda"], ["color", "#155724"]]))], ["status-accepted", _pS(_uM([["backgroundColor", "#e2e3e5"], ["color", "#383d41"]]))], ["status-unknown", _pS(_uM([["backgroundColor", "#f8f9fa"], ["color", "#6c757d"]]))], ["empty-state", _pS(_uM([["textAlign", "center"], ["paddingTop", 40], ["paddingRight", 20], ["paddingBottom", 40], ["paddingLeft", 20]]))], ["empty-text", _pS(_uM([["fontSize", 14], ["color", "#999999"]]))], ["notification-modal", _pS(_uM([["position", "fixed"], ["top", 0], ["left", 0], ["right", 0], ["bottom", 0], ["backgroundColor", "rgba(0,0,0,0.5)"], ["display", "flex"], ["alignItems", "center"], ["justifyContent", "center"], ["zIndex", 1000]]))], ["notification-content", _pS(_uM([["width", "90%"], ["maxWidth", 400], ["backgroundColor", "#ffffff"], ["borderTopLeftRadius", 12], ["borderTopRightRadius", 12], ["borderBottomRightRadius", 12], ["borderBottomLeftRadius", 12], ["overflow", "hidden"]]))], ["notification-header", _pS(_uM([["display", "flex"], ["justifyContent", "space-between"], ["alignItems", "center"], ["paddingTop", 20], ["paddingRight", 20], ["paddingBottom", 20], ["paddingLeft", 20], ["borderBottomWidth", 1], ["borderBottomStyle", "solid"], ["borderBottomColor", "#f0f0f0"]]))], ["notification-title", _pS(_uM([["fontSize", 18], ["fontWeight", "bold"], ["color", "#333333"]]))], ["notification-actions", _pS(_uM([["display", "flex"], ["alignItems", "center"], ["gap", "15px"]]))], ["mark-all-read", _pS(_uM([["fontSize", 14], ["color", "#007AFF"]]))], ["close-btn", _pS(_uM([["fontSize", 20], ["color", "#999999"], ["width", 30], ["height", 30], ["display", "flex"], ["alignItems", "center"], ["justifyContent", "center"]]))], ["notification-list", _pS(_uM([["maxHeight", 400], ["overflowY", "auto"]]))], ["empty-notifications", _pS(_uM([["paddingTop", 40], ["paddingRight", 20], ["paddingBottom", 40], ["paddingLeft", 20], ["textAlign", "center"]]))], ["notification-item", _uM([["", _uM([["display", "flex"], ["alignItems", "center"], ["paddingTop", 15], ["paddingRight", 20], ["paddingBottom", 15], ["paddingLeft", 20], ["borderBottomWidth", 1], ["borderBottomStyle", "solid"], ["borderBottomColor", "#f0f0f0"], ["position", "relative"], ["borderBottomWidth:last-child", "medium"], ["borderBottomStyle:last-child", "none"], ["borderBottomColor:last-child", "#000000"]])], [".unread", _uM([["backgroundColor", "#f8f9ff"]])]])], ["notification-dot", _pS(_uM([["width", 8], ["height", 8], ["backgroundColor", "#007AFF"], ["borderTopLeftRadius", 4], ["borderTopRightRadius", 4], ["borderBottomRightRadius", 4], ["borderBottomLeftRadius", 4], ["marginRight", 12], ["flexShrink", 0]]))], ["notification-info", _pS(_uM([["flex", 1], ["marginRight", 10]]))], ["notification-item-title", _pS(_uM([["fontSize", 16], ["color", "#333333"], ["marginBottom", 4]]))], ["notification-item-content", _pS(_uM([["fontSize", 14], ["color", "#666666"], ["marginBottom", 4], ["lineHeight", 1.4]]))], ["notification-time", _pS(_uM([["fontSize", 12], ["color", "#999999"]]))], ["notification-arrow", _pS(_uM([["fontSize", 18], ["color", "#cccccc"], ["flexShrink", 0]]))], ["@TRANSITION", _uM([["notification-icon-wrapper", _uM([["property", "all"], ["duration", "0.3s"], ["timingFunction", "ease"]])], ["user-avatar", _uM([["property", "all"], ["duration", "0.3s"], ["timingFunction", "ease"]])]])]])]
+const GenPagesMonthlyMonthlyStyles = [_uM([["container", _pS(_uM([["paddingTop", "30rpx"], ["paddingRight", "30rpx"], ["paddingBottom", "150rpx"], ["paddingLeft", "30rpx"], ["backgroundImage", "linear-gradient(180deg, #f8fafc 0%, #e2e8f0 100%)"], ["backgroundColor", "rgba(0,0,0,0)"], ["boxSizing", "border-box"]]))], ["header", _pS(_uM([["display", "flex"], ["justifyContent", "space-between"], ["alignItems", "center"], ["paddingTop", "30rpx"], ["paddingRight", "25rpx"], ["paddingBottom", "30rpx"], ["paddingLeft", "25rpx"], ["backgroundImage", "linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)"], ["backgroundColor", "rgba(0,0,0,0)"], ["borderTopLeftRadius", "24rpx"], ["borderTopRightRadius", "24rpx"], ["borderBottomRightRadius", "24rpx"], ["borderBottomLeftRadius", "24rpx"], ["marginBottom", "30rpx"], ["boxShadow", "0 8rpx 32rpx rgba(102, 126, 234, 0.3)"], ["position", "relative"], ["overflow", "hidden"], ["content::before", "''"], ["position::before", "absolute"], ["top::before", 0], ["left::before", 0], ["right::before", 0], ["bottom::before", 0], ["pointerEvents::before", "none"]]))], ["header-right", _pS(_uM([["display", "flex"], ["alignItems", "flex-start"], ["gap", "15rpx"], ["zIndex", 2], ["position", "relative"], ["marginTop", "30rpx"]]))], ["welcome", _pS(_uM([["display", "flex"], ["flexDirection", "column"], ["flex", 1], ["zIndex", 2], ["position", "relative"], ["paddingRight", "140rpx"]]))], ["greeting", _pS(_uM([["color", "rgba(105,72,72,0.95)"], ["fontSize", "32rpx"], ["marginBottom", "8rpx"], ["letterSpacing", "0.5rpx"], ["textShadow", "0 2rpx 4rpx rgba(0, 0, 0, 0.1)"]]))], ["app-name", _pS(_uM([["color", "rgba(105,72,72,0.95)"], ["fontSize", "26rpx"], ["fontWeight", "400"], ["letterSpacing", "0.3rpx"]]))], ["notification-icon-wrapper", _pS(_uM([["position", "absolute"], ["top", "15rpx"], ["right", "15rpx"], ["width", "70rpx"], ["height", "70rpx"], ["display", "flex"], ["alignItems", "center"], ["justifyContent", "center"], ["backgroundImage", "none"], ["backgroundColor", "rgba(255,255,255,0.2)"], ["backdropFilter", "blur(10rpx)"], ["borderTopWidth", "2rpx"], ["borderRightWidth", "2rpx"], ["borderBottomWidth", "2rpx"], ["borderLeftWidth", "2rpx"], ["borderTopStyle", "solid"], ["borderRightStyle", "solid"], ["borderBottomStyle", "solid"], ["borderLeftStyle", "solid"], ["borderTopColor", "rgba(255,255,255,0.3)"], ["borderRightColor", "rgba(255,255,255,0.3)"], ["borderBottomColor", "rgba(255,255,255,0.3)"], ["borderLeftColor", "rgba(255,255,255,0.3)"], ["transitionProperty", "all"], ["transitionDuration", "0.3s"], ["transitionTimingFunction", "ease"], ["zIndex", 3], ["transform:active", "scale(0.95)"], ["backgroundImage:active", "none"], ["backgroundColor:active", "rgba(255,255,255,0.3)"]]))], ["icon-bell", _pS(_uM([["fontSize", "32rpx"], ["color", "rgba(255,255,255,0.9)"], ["display", "flex"], ["alignItems", "center"], ["justifyContent", "center"], ["width", "100%"], ["height", "100%"]]))], ["notification-badge", _pS(_uM([["position", "absolute"], ["top", "-6rpx"], ["right", "-6rpx"], ["minWidth", "32rpx"], ["height", "32rpx"], ["backgroundImage", "none"], ["backgroundColor", "#ff4757"], ["borderTopLeftRadius", "16rpx"], ["borderTopRightRadius", "16rpx"], ["borderBottomRightRadius", "16rpx"], ["borderBottomLeftRadius", "16rpx"], ["display", "flex"], ["alignItems", "center"], ["justifyContent", "center"], ["borderTopWidth", "3rpx"], ["borderRightWidth", "3rpx"], ["borderBottomWidth", "3rpx"], ["borderLeftWidth", "3rpx"], ["borderTopStyle", "solid"], ["borderRightStyle", "solid"], ["borderBottomStyle", "solid"], ["borderLeftStyle", "solid"], ["borderTopColor", "#ffffff"], ["borderRightColor", "#ffffff"], ["borderBottomColor", "#ffffff"], ["borderLeftColor", "#ffffff"], ["boxShadow", "0 2rpx 8rpx rgba(255, 71, 87, 0.3)"], ["zIndex", 4], ["paddingTop", 0], ["paddingRight", "6rpx"], ["paddingBottom", 0], ["paddingLeft", "6rpx"]]))], ["badge-text", _pS(_uM([["fontSize", "18rpx"], ["color", "#ffffff"], ["fontWeight", "700"], ["lineHeight", 1], ["textAlign", "center"], ["whiteSpace", "nowrap"]]))], ["user-avatar", _pS(_uM([["width", "100rpx"], ["height", "100rpx"], ["borderTopLeftRadius", "50rpx"], ["borderTopRightRadius", "50rpx"], ["borderBottomRightRadius", "50rpx"], ["borderBottomLeftRadius", "50rpx"], ["backgroundColor", "rgba(255,255,255,0.2)"], ["overflow", "hidden"], ["borderTopWidth", "3rpx"], ["borderRightWidth", "3rpx"], ["borderBottomWidth", "3rpx"], ["borderLeftWidth", "3rpx"], ["borderTopStyle", "solid"], ["borderRightStyle", "solid"], ["borderBottomStyle", "solid"], ["borderLeftStyle", "solid"], ["borderTopColor", "rgba(255,255,255,0.4)"], ["borderRightColor", "rgba(255,255,255,0.4)"], ["borderBottomColor", "rgba(255,255,255,0.4)"], ["borderLeftColor", "rgba(255,255,255,0.4)"], ["boxShadow", "0 6rpx 20rpx rgba(0, 0, 0, 0.15), 0 0 0 1rpx rgba(255, 255, 255, 0.1)"], ["zIndex", 2], ["position", "relative"], ["transitionProperty", "all"], ["transitionDuration", "0.3s"], ["transitionTimingFunction", "ease"], ["transform:active", "scale(0.95)"]]))], ["avatar-image", _pS(_uM([["width", "100rpx"], ["height", "100rpx"], ["borderTopLeftRadius", "50rpx"], ["borderTopRightRadius", "50rpx"], ["borderBottomRightRadius", "50rpx"], ["borderBottomLeftRadius", "50rpx"]]))], ["avatar-placeholder", _pS(_uM([["color", "rgba(255,255,255,0.9)"], ["fontSize", "28rpx"], ["textTransform", "uppercase"]]))], ["avatar", _pS(_uM([["width", 50], ["height", 50], ["borderTopLeftRadius", 25], ["borderTopRightRadius", 25], ["borderBottomRightRadius", 25], ["borderBottomLeftRadius", 25], ["backgroundColor", "#dddddd"]]))], ["stats-container", _pS(_uM([["display", "flex"], ["justifyContent", "space-between"], ["marginBottom", 30], ["gap", "10px"]]))], ["stats-card", _pS(_uM([["flex", 1], ["backgroundImage", "none"], ["backgroundColor", "#ffffff"], ["borderTopLeftRadius", 12], ["borderTopRightRadius", 12], ["borderBottomRightRadius", 12], ["borderBottomLeftRadius", 12], ["paddingTop", 20], ["paddingRight", 15], ["paddingBottom", 20], ["paddingLeft", 15], ["textAlign", "center"], ["position", "relative"], ["boxShadow", "0 2px 8px rgba(0,0,0,0.1)"], ["overflow", "hidden"]]))], ["stats-number", _pS(_uM([["fontSize", 24], ["fontWeight", "bold"], ["color", "#333333"], ["marginBottom", 8]]))], ["stats-label", _pS(_uM([["fontSize", 14], ["color", "#666666"], ["marginBottom", 8]]))], ["stats-icon", _pS(_uM([["fontSize", 20], ["position", "absolute"], ["top", 15], ["right", 15], ["opacity", 0.3]]))], ["action-buttons", _pS(_uM([["marginBottom", 30], ["display", "flex"], ["flexDirection", "row"], ["justifyContent", "space-between"], ["gap", "10px"]]))], ["action-button", _pS(_uM([["flex", 1], ["backgroundImage", "none"], ["backgroundColor", "#d1ecf1"], ["borderTopLeftRadius", 12], ["borderTopRightRadius", 12], ["borderBottomRightRadius", 12], ["borderBottomLeftRadius", 12], ["paddingTop", 15], ["paddingRight", 10], ["paddingBottom", 15], ["paddingLeft", 10], ["display", "flex"], ["alignItems", "center"], ["justifyContent", "center"], ["boxShadow", "0 2px 8px rgba(0,0,0,0.1)"], ["minWidth", 0]]))], ["delayed-button", _pS(_uM([["!backgroundImage", "none"], ["!backgroundColor", "#ff4757"]]))], ["button-icon", _pS(_uM([["fontSize", 20], ["marginRight", 8], ["color", "#007AFF"], ["flexShrink", 0]]))], ["button-text", _pS(_uM([["fontSize", 14], ["color", "#333333"], ["whiteSpace", "nowrap"], ["overflow", "hidden"], ["textOverflow", "ellipsis"]]))], ["trend-section", _pS(_uM([["marginBottom", 30]]))], ["trend-chart", _pS(_uM([["backgroundImage", "none"], ["backgroundColor", "#ffffff"], ["borderTopLeftRadius", 12], ["borderTopRightRadius", 12], ["borderBottomRightRadius", 12], ["borderBottomLeftRadius", 12], ["paddingTop", 20], ["paddingRight", 20], ["paddingBottom", 20], ["paddingLeft", 20], ["boxShadow", "0 2px 8px rgba(0,0,0,0.1)"]]))], ["chart-placeholder", _pS(_uM([["height", 200], ["display", "flex"], ["flexDirection", "column"], ["justifyContent", "center"], ["alignItems", "center"], ["backgroundColor", "#f8f9fa"], ["borderTopLeftRadius", 8], ["borderTopRightRadius", 8], ["borderBottomRightRadius", 8], ["borderBottomLeftRadius", 8], ["borderTopWidth", 2], ["borderRightWidth", 2], ["borderBottomWidth", 2], ["borderLeftWidth", 2], ["borderTopStyle", "dashed"], ["borderRightStyle", "dashed"], ["borderBottomStyle", "dashed"], ["borderLeftStyle", "dashed"], ["borderTopColor", "#dee2e6"], ["borderRightColor", "#dee2e6"], ["borderBottomColor", "#dee2e6"], ["borderLeftColor", "#dee2e6"]]))], ["placeholder-text", _pS(_uM([["fontSize", 18], ["color", "#6c757d"], ["marginBottom", 8]]))], ["placeholder-desc", _pS(_uM([["fontSize", 14], ["color", "#adb5bd"]]))], ["quick-actions", _pS(_uM([["marginBottom", 30]]))], ["section-title", _pS(_uM([["fontSize", 18], ["fontWeight", "bold"], ["color", "#333333"], ["marginBottom", 15]]))], ["actions-grid", _pS(_uM([["display", "flex"], ["flexWrap", "wrap"], ["justifyContent", "space-between"]]))], ["action-item", _pS(_uM([["width", "48%"], ["backgroundImage", "none"], ["backgroundColor", "#ffffff"], ["borderTopLeftRadius", 12], ["borderTopRightRadius", 12], ["borderBottomRightRadius", 12], ["borderBottomLeftRadius", 12], ["paddingTop", 20], ["paddingRight", 20], ["paddingBottom", 20], ["paddingLeft", 20], ["marginBottom", 15], ["textAlign", "center"], ["boxShadow", "0 2px 8px rgba(0,0,0,0.1)"]]))], ["action-icon", _pS(_uM([["fontSize", 24], ["marginBottom", 8]]))], ["action-text", _pS(_uM([["fontSize", 14], ["color", "#333333"]]))], ["recent-records", _pS(_uM([["marginBottom", 20]]))], ["section-header", _pS(_uM([["display", "flex"], ["justifyContent", "space-between"], ["alignItems", "center"], ["marginBottom", 15]]))], ["more-text", _pS(_uM([["fontSize", 14], ["color", "#007AFF"]]))], ["records-list", _pS(_uM([["backgroundImage", "none"], ["backgroundColor", "#ffffff"], ["borderTopLeftRadius", 12], ["borderTopRightRadius", 12], ["borderBottomRightRadius", 12], ["borderBottomLeftRadius", 12], ["paddingTop", 15], ["paddingRight", 15], ["paddingBottom", 15], ["paddingLeft", 15], ["boxShadow", "0 2px 8px rgba(0,0,0,0.1)"]]))], ["record-item", _pS(_uM([["display", "flex"], ["justifyContent", "space-between"], ["alignItems", "center"], ["paddingTop", 15], ["paddingRight", 0], ["paddingBottom", 15], ["paddingLeft", 0], ["borderBottomWidth", 1], ["borderBottomStyle", "solid"], ["borderBottomColor", "#f0f0f0"], ["borderBottomWidth:last-child", "medium"], ["borderBottomStyle:last-child", "none"], ["borderBottomColor:last-child", "#000000"]]))], ["record-info", _pS(_uM([["flex", 1]]))], ["record-title", _pS(_uM([["fontSize", 16], ["color", "#333333"], ["marginBottom", 4]]))], ["record-meta", _pS(_uM([["fontSize", 12], ["color", "#999999"]]))], ["record-status", _pS(_uM([["paddingTop", 4], ["paddingRight", 8], ["paddingBottom", 4], ["paddingLeft", 8], ["borderTopLeftRadius", 4], ["borderTopRightRadius", 4], ["borderBottomRightRadius", 4], ["borderBottomLeftRadius", 4], ["fontSize", 12]]))], ["status-pending", _pS(_uM([["backgroundColor", "#fff3cd"], ["color", "#856404"]]))], ["status-processing", _pS(_uM([["backgroundColor", "#d1ecf1"], ["color", "#0c5460"]]))], ["status-completed", _pS(_uM([["backgroundColor", "#d4edda"], ["color", "#155724"]]))], ["status-accepted", _pS(_uM([["backgroundColor", "#e2e3e5"], ["color", "#383d41"]]))], ["status-unknown", _pS(_uM([["backgroundColor", "#f8f9fa"], ["color", "#6c757d"]]))], ["empty-state", _pS(_uM([["textAlign", "center"], ["paddingTop", 40], ["paddingRight", 20], ["paddingBottom", 40], ["paddingLeft", 20]]))], ["empty-text", _pS(_uM([["fontSize", 14], ["color", "#999999"]]))], ["notification-modal", _pS(_uM([["position", "fixed"], ["top", 0], ["left", 0], ["right", 0], ["bottom", 0], ["backgroundColor", "rgba(0,0,0,0.5)"], ["display", "flex"], ["alignItems", "center"], ["justifyContent", "center"], ["zIndex", 1000]]))], ["notification-content", _pS(_uM([["width", "90%"], ["maxWidth", 400], ["height", 500], ["backgroundColor", "#ffffff"], ["borderTopLeftRadius", 12], ["borderTopRightRadius", 12], ["borderBottomRightRadius", 12], ["borderBottomLeftRadius", 12], ["overflow", "hidden"], ["display", "flex"], ["flexDirection", "column"]]))], ["notification-header", _pS(_uM([["display", "flex"], ["justifyContent", "space-between"], ["alignItems", "center"], ["paddingTop", 20], ["paddingRight", 20], ["paddingBottom", 20], ["paddingLeft", 20], ["borderBottomWidth", 1], ["borderBottomStyle", "solid"], ["borderBottomColor", "#f0f0f0"], ["flexShrink", 0], ["backgroundColor", "#ffffff"]]))], ["notification-title", _pS(_uM([["fontSize", 18], ["fontWeight", "bold"], ["color", "#333333"]]))], ["notification-actions", _pS(_uM([["display", "flex"], ["alignItems", "center"], ["gap", "15px"]]))], ["mark-all-read", _pS(_uM([["fontSize", 14], ["color", "#007AFF"]]))], ["close-btn", _pS(_uM([["fontSize", 20], ["color", "#999999"], ["width", 30], ["height", 30], ["display", "flex"], ["alignItems", "center"], ["justifyContent", "center"]]))], ["notification-list", _pS(_uM([["height", 400], ["width", "100%"]]))], ["empty-notifications", _pS(_uM([["paddingTop", 40], ["paddingRight", 20], ["paddingBottom", 40], ["paddingLeft", 20], ["textAlign", "center"]]))], ["notification-item", _uM([["", _uM([["display", "flex"], ["alignItems", "center"], ["paddingTop", 15], ["paddingRight", 20], ["paddingBottom", 15], ["paddingLeft", 20], ["borderBottomWidth", 1], ["borderBottomStyle", "solid"], ["borderBottomColor", "#f0f0f0"], ["position", "relative"], ["borderBottomWidth:last-child", "medium"], ["borderBottomStyle:last-child", "none"], ["borderBottomColor:last-child", "#000000"]])], [".unread", _uM([["backgroundColor", "#f8f9ff"]])]])], ["notification-dot", _pS(_uM([["width", 8], ["height", 8], ["backgroundColor", "#007AFF"], ["borderTopLeftRadius", 4], ["borderTopRightRadius", 4], ["borderBottomRightRadius", 4], ["borderBottomLeftRadius", 4], ["marginRight", 12], ["flexShrink", 0]]))], ["notification-info", _pS(_uM([["flex", 1], ["marginRight", 10]]))], ["notification-item-title", _uM([["", _uM([["fontSize", 16], ["color", "#333333"], ["marginBottom", 4]])], [".task-notification ", _uM([["fontSize", 17], ["color", "#007AFF"], ["marginBottom", 8]])]])], ["notification-item-content", _uM([["", _uM([["fontSize", 14], ["color", "#666666"], ["marginBottom", 4], ["lineHeight", 1.4]])], [".task-notification ", _uM([["lineHeight", 1.6], ["marginBottom", 8]])]])], ["notification-time", _pS(_uM([["fontSize", 12], ["color", "#999999"]]))], ["notification-arrow", _pS(_uM([["fontSize", 18], ["color", "#cccccc"], ["flexShrink", 0]]))], ["notification-tabs", _pS(_uM([["display", "flex"], ["borderBottomWidth", 1], ["borderBottomStyle", "solid"], ["borderBottomColor", "#f0f0f0"], ["backgroundColor", "#ffffff"], ["flexShrink", 0]]))], ["tab-item", _uM([["", _uM([["flex", 1], ["paddingTop", 15], ["paddingRight", 20], ["paddingBottom", 15], ["paddingLeft", 20], ["textAlign", "center"], ["backgroundColor", "#f8f9fa"], ["borderBottomWidth", 2], ["borderBottomStyle", "solid"], ["borderBottomColor", "rgba(0,0,0,0)"], ["transitionProperty", "all"], ["transitionDuration", "0.3s"], ["transitionTimingFunction", "ease"]])], [".active", _uM([["backgroundColor", "#ffffff"], ["borderBottomColor", "#007AFF"]])]])], ["tab-text", _uM([["", _uM([["fontSize", 16], ["color", "#666666"]])], [".tab-item.active ", _uM([["color", "#007AFF"]])]])], ["tab-content", _pS(_uM([["flex", 1], ["display", "flex"], ["flexDirection", "column"], ["overflow", "hidden"]]))], ["tab-header", _pS(_uM([["display", "flex"], ["justifyContent", "flex-end"], ["alignItems", "center"], ["paddingTop", 15], ["paddingRight", 20], ["paddingBottom", 15], ["paddingLeft", 20], ["borderBottomWidth", 1], ["borderBottomStyle", "solid"], ["borderBottomColor", "#f0f0f0"], ["backgroundColor", "#ffffff"], ["flexShrink", 0]]))], ["refresh-btn", _pS(_uM([["fontSize", 14], ["color", "#007AFF"], ["paddingTop", 5], ["paddingRight", 10], ["paddingBottom", 5], ["paddingLeft", 10], ["borderTopWidth", 1], ["borderRightWidth", 1], ["borderBottomWidth", 1], ["borderLeftWidth", 1], ["borderTopStyle", "solid"], ["borderRightStyle", "solid"], ["borderBottomStyle", "solid"], ["borderLeftStyle", "solid"], ["borderTopColor", "#007AFF"], ["borderRightColor", "#007AFF"], ["borderBottomColor", "#007AFF"], ["borderLeftColor", "#007AFF"], ["borderTopLeftRadius", 4], ["borderTopRightRadius", 4], ["borderBottomRightRadius", 4], ["borderBottomLeftRadius", 4], ["backgroundColor", "rgba(0,0,0,0)"], ["backgroundColor:active", "#f0f8ff"]]))], ["task-notification", _pS(_uM([["paddingTop", 20], ["paddingRight", 20], ["paddingBottom", 20], ["paddingLeft", 20], ["borderLeftWidth", 4], ["borderLeftStyle", "solid"], ["borderLeftColor", "#007AFF"], ["backgroundColor", "#f8fafe"], ["backgroundColor:hover", "#f0f8ff"], ["backgroundColor:active", "#e6f3ff"]]))], ["task-status-badge", _uM([["", _uM([["position", "absolute"], ["top", 15], ["right", 15], ["paddingTop", 4], ["paddingRight", 8], ["paddingBottom", 4], ["paddingLeft", 8], ["borderTopLeftRadius", 12], ["borderTopRightRadius", 12], ["borderBottomRightRadius", 12], ["borderBottomLeftRadius", 12], ["fontSize", 12]])], [".status-pending", _uM([["backgroundColor", "#fff3cd"], ["color", "#856404"], ["borderTopWidth", 1], ["borderRightWidth", 1], ["borderBottomWidth", 1], ["borderLeftWidth", 1], ["borderTopStyle", "solid"], ["borderRightStyle", "solid"], ["borderBottomStyle", "solid"], ["borderLeftStyle", "solid"], ["borderTopColor", "#ffeaa7"], ["borderRightColor", "#ffeaa7"], ["borderBottomColor", "#ffeaa7"], ["borderLeftColor", "#ffeaa7"]])], [".status-completed", _uM([["backgroundColor", "#d4edda"], ["color", "#155724"], ["borderTopWidth", 1], ["borderRightWidth", 1], ["borderBottomWidth", 1], ["borderLeftWidth", 1], ["borderTopStyle", "solid"], ["borderRightStyle", "solid"], ["borderBottomStyle", "solid"], ["borderLeftStyle", "solid"], ["borderTopColor", "#c3e6cb"], ["borderRightColor", "#c3e6cb"], ["borderBottomColor", "#c3e6cb"], ["borderLeftColor", "#c3e6cb"]])], [".status-accepted", _uM([["backgroundColor", "#e2e3e5"], ["color", "#383d41"], ["borderTopWidth", 1], ["borderRightWidth", 1], ["borderBottomWidth", 1], ["borderLeftWidth", 1], ["borderTopStyle", "solid"], ["borderRightStyle", "solid"], ["borderBottomStyle", "solid"], ["borderLeftStyle", "solid"], ["borderTopColor", "#d6d8db"], ["borderRightColor", "#d6d8db"], ["borderBottomColor", "#d6d8db"], ["borderLeftColor", "#d6d8db"]])], [".status-unknown", _uM([["backgroundColor", "#f8f9fa"], ["color", "#6c757d"], ["borderTopWidth", 1], ["borderRightWidth", 1], ["borderBottomWidth", 1], ["borderLeftWidth", 1], ["borderTopStyle", "solid"], ["borderRightStyle", "solid"], ["borderBottomStyle", "solid"], ["borderLeftStyle", "solid"], ["borderTopColor", "#dee2e6"], ["borderRightColor", "#dee2e6"], ["borderBottomColor", "#dee2e6"], ["borderLeftColor", "#dee2e6"]])]])], ["task-picker-overlay", _pS(_uM([["position", "fixed"], ["top", 0], ["left", 0], ["right", 0], ["bottom", 0], ["backgroundColor", "rgba(0,0,0,0.5)"], ["display", "flex"], ["alignItems", "center"], ["justifyContent", "center"], ["zIndex", 1000]]))], ["task-picker", _pS(_uM([["width", "90%"], ["maxWidth", 400], ["backgroundColor", "#ffffff"], ["borderTopLeftRadius", 12], ["borderTopRightRadius", 12], ["borderBottomRightRadius", 12], ["borderBottomLeftRadius", 12], ["overflow", "hidden"], ["display", "flex"], ["flexDirection", "column"]]))], ["task-picker-header", _pS(_uM([["display", "flex"], ["justifyContent", "space-between"], ["alignItems", "center"], ["paddingTop", 16], ["paddingRight", 20], ["paddingBottom", 16], ["paddingLeft", 20], ["borderBottomWidth", 1], ["borderBottomStyle", "solid"], ["borderBottomColor", "#f0f0f0"]]))], ["task-picker-close", _pS(_uM([["fontSize", 20], ["color", "#999999"], ["width", 30], ["height", 30], ["display", "flex"], ["alignItems", "center"], ["justifyContent", "center"]]))], ["task-picker-body", _pS(_uM([["paddingTop", 12], ["paddingRight", 16], ["paddingBottom", 12], ["paddingLeft", 16], ["overflowY", "auto"]]))], ["empty-tasks", _pS(_uM([["paddingTop", 40], ["paddingRight", 20], ["paddingBottom", 40], ["paddingLeft", 20], ["textAlign", "center"], ["color", "#999999"]]))], ["task-item", _pS(_uM([["paddingTop", 12], ["paddingRight", 10], ["paddingBottom", 12], ["paddingLeft", 10], ["borderBottomWidth", 1], ["borderBottomStyle", "solid"], ["borderBottomColor", "#f0f0f0"], ["borderBottomWidth:last-child", "medium"], ["borderBottomStyle:last-child", "none"], ["borderBottomColor:last-child", "#000000"]]))], ["task-title", _pS(_uM([["fontSize", 14], ["color", "#333333"], ["marginBottom", 6]]))], ["task-sub", _pS(_uM([["fontSize", 12], ["color", "#666666"]]))], ["@TRANSITION", _uM([["notification-icon-wrapper", _uM([["property", "all"], ["duration", "0.3s"], ["timingFunction", "ease"]])], ["user-avatar", _uM([["property", "all"], ["duration", "0.3s"], ["timingFunction", "ease"]])], ["tab-item", _uM([["property", "all"], ["duration", "0.3s"], ["timingFunction", "ease"]])]])]])]

@@ -360,6 +360,40 @@ public class SysInspectionRecordController {
     }
 
     /**
+     * 部门×专业矩阵统计
+     */
+    @GetMapping("/statistics/matrix")
+    public Result<List<Map<String, Object>>> getDepartmentProfessionMatrix(
+            @RequestParam(required = false) String departmentId,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate) {
+        try {
+            List<Map<String, Object>> statistics = inspectionRecordService.getDepartmentProfessionMatrix(departmentId, status, startDate, endDate);
+            return Result.success(statistics);
+        } catch (Exception e) {
+            return Result.error(e.getMessage());
+        }
+    }
+
+    /**
+     * 部门×问题属性矩阵统计
+     */
+    @GetMapping("/statistics/nature")
+    public Result<List<Map<String, Object>>> getDepartmentNatureMatrix(
+            @RequestParam(required = false) String departmentId,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate) {
+        try {
+            List<Map<String, Object>> statistics = inspectionRecordService.getDepartmentNatureMatrix(departmentId, status, startDate, endDate);
+            return Result.success(statistics);
+        } catch (Exception e) {
+            return Result.error(e.getMessage());
+        }
+    }
+
+    /**
      * 统计各部位问题数量
      */
     @GetMapping("/statistics/location")
@@ -430,6 +464,7 @@ public class SysInspectionRecordController {
             HttpServletResponse response,
             @RequestParam(required = false) String problemDescription,
             @RequestParam(required = false) String responsiblePerson,
+            @RequestParam(required = false) String inspectorId,
             @RequestParam(required = false) String professionId,
             @RequestParam(required = false) String natureId,
             @RequestParam(required = false) String departmentId,
@@ -456,7 +491,7 @@ public class SysInspectionRecordController {
             }
             
             inspectionRecordService.exportRecordsToExcel(response, problemDescription, responsiblePerson, 
-                    professionId, natureId, departmentId, status, startDateTime, endDateTime);
+                    inspectorId, professionId, natureId, departmentId, status, startDateTime, endDateTime);
         } catch (Exception e) {
             throw new RuntimeException("导出失败: " + e.getMessage());
         }
@@ -503,6 +538,90 @@ public class SysInspectionRecordController {
         try {
             Long count = inspectionRecordService.getWeeklyRecordCount(userId, status, departmentId, startDate, endDate);
             return Result.success(count);
+        } catch (Exception e) {
+            return Result.error(e.getMessage());
+        }
+    }
+
+    /**
+     * 回退记录（发送审核通知）
+     */
+    @PostMapping("/{id}/reject")
+    public Result<Void> rejectRecord(@PathVariable String id) {
+        try {
+            boolean success = inspectionRecordService.rejectRecord(id);
+            return success ? Result.success("回退记录成功") : Result.error("回退记录失败");
+        } catch (Exception e) {
+            return Result.error(e.getMessage());
+        }
+    }
+
+    /**
+     * 查询待审核记录
+     */
+    @GetMapping("/audit-list")
+    public Result<PageResult<SysInspectionRecord>> getAuditRecords(
+            @RequestParam(defaultValue = "1") Long current,
+            @RequestParam(defaultValue = "10") Long size,
+            @RequestParam(required = false) String departmentId,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String startTime,
+            @RequestParam(required = false) String endTime) {
+        try {
+            // 转换时间字符串为LocalDateTime
+            java.time.LocalDateTime startDateTime = null;
+            java.time.LocalDateTime endDateTime = null;
+            if (startTime != null && !startTime.isEmpty()) {
+                if (startTime.contains("T")) {
+                    startDateTime = java.time.LocalDateTime.parse(startTime);
+                } else {
+                    startDateTime = java.time.LocalDateTime.parse(startTime + "T00:00:00");
+                }
+            }
+            if (endTime != null && !endTime.isEmpty()) {
+                if (endTime.contains("T")) {
+                    endDateTime = java.time.LocalDateTime.parse(endTime);
+                } else {
+                    endDateTime = java.time.LocalDateTime.parse(endTime + "T23:59:59");
+                }
+            }
+            
+            PageResult<SysInspectionRecord> result = inspectionRecordService.getAuditRecords(
+                    current, size, departmentId, status, startDateTime, endDateTime);
+            return Result.success(result);
+        } catch (Exception e) {
+            return Result.error(e.getMessage());
+        }
+    }
+
+    /**
+     * 审核确认
+     */
+    @PutMapping("/{id}/audit")
+    public Result<Void> confirmAudit(@PathVariable String id, @RequestBody Map<String, Object> params) {
+        try {
+            String auditorId = (String) params.get("auditorId");
+            String auditReason = (String) params.get("auditReason");
+            
+            if (auditorId == null || auditorId.isEmpty()) {
+                return Result.error("审核人ID不能为空");
+            }
+            
+            boolean success = inspectionRecordService.confirmAudit(id, auditorId, auditReason);
+            return success ? Result.success("审核成功") : Result.error("审核失败");
+        } catch (Exception e) {
+            return Result.error(e.getMessage());
+        }
+    }
+    
+    /**
+     * 拒绝审核（将记录状态从待审核(3)改回已提交(1)）
+     */
+    @PutMapping("/{id}/reject-audit")
+    public Result<Void> rejectAudit(@PathVariable String id) {
+        try {
+            boolean success = inspectionRecordService.rejectAudit(id);
+            return success ? Result.success("拒绝成功") : Result.error("拒绝失败");
         } catch (Exception e) {
             return Result.error(e.getMessage());
         }

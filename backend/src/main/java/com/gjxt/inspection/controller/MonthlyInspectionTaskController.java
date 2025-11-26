@@ -283,7 +283,7 @@ public class MonthlyInspectionTaskController {
      * 发送任务通知
      */
     @Operation(summary = "发送任务通知")
-    @PostMapping("/{id}/notification")
+    @PostMapping("/{id}/notify")
     public Result<String> sendTaskNotification(
             @Parameter(description = "任务ID") @PathVariable String id
     ) {
@@ -304,7 +304,7 @@ public class MonthlyInspectionTaskController {
      * 批量发送任务通知
      */
     @Operation(summary = "批量发送任务通知")
-    @PostMapping("/notifications/batch")
+    @PostMapping("/batch/notify")
     public Result<String> batchSendTaskNotifications() {
         try {
             boolean result = monthlyInspectionTaskService.batchSendTaskNotifications();

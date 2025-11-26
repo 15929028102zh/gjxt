@@ -66,7 +66,7 @@ export const monthlyTaskApi = {
   // 根据任务编号获取任务
   getByTaskNo(taskNo) {
     return request({
-      url: `/monthly-inspection-task/taskNo/${taskNo}`,
+      url: `/monthly-inspection-task/task-no/${taskNo}`,
       method: 'get'
     })
   },
@@ -136,6 +136,124 @@ export const monthlyTaskApi = {
   getProfessionStatistics(params) {
     return request({
       url: '/monthly-inspection-task/statistics/profession',
+      method: 'get',
+      params
+    })
+  }
+}
+
+// 月检记录管理API
+export const monthlyInspectionRecordApi = {
+  // 分页查询月检记录列表
+  getPage(params) {
+    return request({
+      url: '/monthly-inspection-record/page',
+      method: 'get',
+      params
+    })
+  },
+  
+  // 根据ID查询月检记录详情
+  getById(id) {
+    return request({
+      url: `/monthly-inspection-record/${id}`,
+      method: 'get'
+    })
+  },
+  
+  // 新增月检记录
+  create(data) {
+    return request({
+      url: '/monthly-inspection-record',
+      method: 'post',
+      data
+    })
+  },
+  
+  // 更新月检记录
+  update(data) {
+    return request({
+      url: '/monthly-inspection-record',
+      method: 'put',
+      data
+    })
+  },
+  
+  // 删除月检记录
+  delete(id) {
+    return request({
+      url: `/monthly-inspection-record/${id}`,
+      method: 'delete'
+    })
+  },
+  
+  // 批量删除月检记录
+  batchDelete(ids) {
+    return request({
+      url: '/monthly-inspection-record/batch',
+      method: 'delete',
+      data: ids
+    })
+  },
+  
+  // 更新记录状态
+  updateStatus(id, status) {
+    return request({
+      url: `/monthly-inspection-record/${id}/status`,
+      method: 'put',
+      data: { status }
+    })
+  },
+  
+  // 批量更新记录状态
+  batchUpdateStatus(ids, status) {
+    return request({
+      url: '/monthly-inspection-record/batch/status',
+      method: 'put',
+      data: { ids, status }
+    })
+  },
+  
+  // 确认整改
+  confirmRectification(id, data) {
+    return request({
+      url: `/monthly-inspection-record/${id}/rectify`,
+      method: 'put',
+      data
+    })
+  },
+  
+  // 确认复查
+  confirmReview(id, data) {
+    return request({
+      url: `/monthly-inspection-record/${id}/review`,
+      method: 'put',
+      data
+    })
+  },
+  
+  // 获取延迟记录
+  getDelayedRecords(params) {
+    return request({
+      url: '/monthly-inspection-record/delayed',
+      method: 'get',
+      params
+    })
+  },
+  
+  // 获取月检统计数据
+  getMonthlyStatistics(params) {
+    return request({
+      url: '/monthly-inspection-record/statistics',
+      method: 'get',
+      params
+    })
+  },
+  
+  // 获取月度趋势数据
+  getMonthlyTrend(params) {
+    return request({
+      url: '/monthly-inspection-record/trend',
       method: 'get',
       params
     })

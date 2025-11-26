@@ -103,7 +103,6 @@
                type="primary" 
                size="small" 
                @click="handleEdit(row)"
-               v-if="hasSubmitPermission()"
              >
                编辑
              </el-button>
@@ -361,6 +360,7 @@ const handleSubmit = async (row) => {
   }
 }
 
+
 // 编辑成功回调
 const handleEditSuccess = () => {
   editDialog.visible = false
@@ -384,7 +384,7 @@ const getCurrentUserDepartment = () => {
   try {
     const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}')
     // 判断是否为管理员
-    isAdminUser.value = userInfo.username === 'admin'
+    isAdminUser.value = userInfo.isAdmin === 1
     
     // 非管理员用户自动设置部门
     if (!isAdminUser.value && userInfo.deptId) {

@@ -19,16 +19,17 @@ import io.dcloud.uniapp.extapi.previewImage as uni_previewImage
 import io.dcloud.uniapp.extapi.request as uni_request
 import io.dcloud.uniapp.extapi.showLoading as uni_showLoading
 import io.dcloud.uniapp.extapi.showToast as uni_showToast
+import io.dcloud.uniapp.extapi.uploadFile as uni_uploadFile
 open class GenPagesMonthlyTaskRecord : BasePage {
     constructor(__ins: ComponentInternalInstance, __renderer: String?) : super(__ins, __renderer) {
         onLoad(fun(options: UTSJSONObject) {
-            val taskId = options.getString("taskNo")
+            val taskId = options.getString("taskId") ?: ""
             console.log(taskId)
             if (taskId != null && taskId != "") {
                 this.loadTaskInfo(taskId)
             }
             this.loadTypeOptions()
-            this.formData.rectificationDate = this.getDefaultRectificationDate()
+            this.initDateArrays()
         }
         , __ins)
         onReady(fun() {
@@ -40,6 +41,8 @@ open class GenPagesMonthlyTaskRecord : BasePage {
     override fun `$render`(): Any? {
         val _ctx = this
         val _cache = this.`$`.renderCache
+        val _component_picker_view_column = resolveComponent("picker-view-column")
+        val _component_picker_view = resolveComponent("picker-view")
         return _cE("scroll-view", _uM("class" to "container", "scroll-y" to "true", "scroll-top" to _ctx.scrollTop, "style" to _nS(_uM("height" to (_ctx.containerHeight + "px"))), "enable-back-to-top" to "true"), _uA(
             _cE("view", _uM("class" to "header"), _uA(
                 _cE("view", _uM("class" to "header-left", "onClick" to _ctx.goBack), null, 8, _uA(
@@ -251,25 +254,103 @@ open class GenPagesMonthlyTaskRecord : BasePage {
                     ))
                 )),
                 _cE("view", _uM("class" to "form-item"), _uA(
-                    _cE("text", _uM("class" to "form-label"), "整改建议"),
-                    _cE("textarea", _uM("class" to "textarea-input", "modelValue" to _ctx.formData.suggestion, "onInput" to fun(`$event`: UniInputEvent){
-                        _ctx.formData.suggestion = `$event`.detail.value
+                    _cE("text", _uM("class" to "form-label-left"), "责任单位"),
+                    _cE("input", _uM("class" to "form-input", "modelValue" to _ctx.formData.responsibleUnit, "onInput" to fun(`$event`: UniInputEvent){
+                        _ctx.formData.responsibleUnit = `$event`.detail.value
                     }
-                    , "placeholder" to "请提出整改建议", "maxlength" to "300"), null, 40, _uA(
-                        "modelValue",
-                        "onInput"
-                    )),
-                    _cE("text", _uM("class" to "char-count"), _tD(_ctx.formData.suggestion.length) + "/300", 1)
-                )),
-                _cE("view", _uM("class" to "form-item"), _uA(
-                    _cE("text", _uM("class" to "form-label-left"), "整改期限"),
-                    _cE("input", _uM("class" to "form-input", "type" to "date", "modelValue" to _ctx.formData.rectificationDate, "onInput" to fun(`$event`: UniInputEvent){
-                        _ctx.formData.rectificationDate = `$event`.detail.value
-                    }
-                    , "placeholder" to "请选择整改期限"), null, 40, _uA(
+                    , "placeholder" to "请输入责任单位"), null, 40, _uA(
                         "modelValue",
                         "onInput"
                     ))
+                )),
+                _cE("view", _uM("class" to "form-item"), _uA(
+                    _cE("text", _uM("class" to "form-label-left"), "责任人"),
+                    _cE("input", _uM("class" to "form-input", "modelValue" to _ctx.formData.responsiblePerson, "onInput" to fun(`$event`: UniInputEvent){
+                        _ctx.formData.responsiblePerson = `$event`.detail.value
+                    }
+                    , "placeholder" to "请输入责任人"), null, 40, _uA(
+                        "modelValue",
+                        "onInput"
+                    ))
+                )),
+                _cE("view", _uM("class" to "form-item"), _uA(
+                    _cE("text", _uM("class" to "form-label-left"), "整改期限"),
+                    _cE("view", _uM("class" to "picker-container", "onClick" to _ctx.showDatePicker), _uA(
+                        _cE("text", _uM("class" to _nC(_uA(
+                            "picker-text-full",
+                            _uM("placeholder" to (_ctx.formData.rectificationDate === ""))
+                        ))), _tD(if (_ctx.formData.rectificationDate !== "") {
+                            _ctx.formData.rectificationDate
+                        } else {
+                            "请选择整改期限"
+                        }
+                        ), 3)
+                    ), 8, _uA(
+                        "onClick"
+                    )),
+                    if (isTrue(_ctx.datePickerVisible)) {
+                        _cE("view", _uM("key" to 0, "class" to "date-picker-modal", "onClick" to _ctx.hideDatePicker), _uA(
+                            _cE("view", _uM("class" to "date-picker-content", "onClick" to withModifiers(fun(){}, _uA(
+                                "stop"
+                            ))), _uA(
+                                _cE("view", _uM("class" to "date-picker-header"), _uA(
+                                    _cE("text", _uM("class" to "date-picker-cancel", "onClick" to _ctx.hideDatePicker), "取消", 8, _uA(
+                                        "onClick"
+                                    )),
+                                    _cE("text", _uM("class" to "date-picker-title"), "选择日期"),
+                                    _cE("text", _uM("class" to "date-picker-confirm", "onClick" to _ctx.confirmDatePicker), "确定", 8, _uA(
+                                        "onClick"
+                                    ))
+                                )),
+                                _cV(_component_picker_view, _uM("class" to "date-picker-view", "value" to _ctx.pickerValue, "onChange" to _ctx.onPickerChange, "indicator-style" to "height: 70px; top: 20%; margin-top: -20px;"), _uM("default" to withSlotCtx(fun(): UTSArray<Any> {
+                                    return _uA(
+                                        _cV(_component_picker_view_column, null, _uM("default" to withSlotCtx(fun(): UTSArray<Any> {
+                                            return _uA(
+                                                _cE(Fragment, null, RenderHelpers.renderList(_ctx.years, fun(year, index, __index, _cached): Any {
+                                                    return _cE("view", _uM("key" to index, "class" to _nC(_uA(
+                                                        "picker-item",
+                                                        _uM("selected" to (index === _ctx.pickerValue[0]))
+                                                    ))), _tD(year) + "年 ", 3)
+                                                }), 128)
+                                            )
+                                        }), "_" to 1)),
+                                        _cV(_component_picker_view_column, null, _uM("default" to withSlotCtx(fun(): UTSArray<Any> {
+                                            return _uA(
+                                                _cE(Fragment, null, RenderHelpers.renderList(_ctx.months, fun(month, index, __index, _cached): Any {
+                                                    return _cE("view", _uM("key" to index, "class" to _nC(_uA(
+                                                        "picker-item",
+                                                        _uM("selected" to (index === _ctx.pickerValue[1]))
+                                                    ))), _tD(month) + "月 ", 3)
+                                                }), 128)
+                                            )
+                                        }), "_" to 1)),
+                                        _cV(_component_picker_view_column, null, _uM("default" to withSlotCtx(fun(): UTSArray<Any> {
+                                            return _uA(
+                                                _cE(Fragment, null, RenderHelpers.renderList(_ctx.days, fun(day, index, __index, _cached): Any {
+                                                    return _cE("view", _uM("key" to index, "class" to _nC(_uA(
+                                                        "picker-item",
+                                                        _uM("selected" to (index === _ctx.pickerValue[2]))
+                                                    ))), _tD(day) + "日 ", 3)
+                                                }), 128),
+                                                _cE(Fragment, null, RenderHelpers.renderList(2, fun(i, __key, __index, _cached): Any {
+                                                    return _cE("view", _uM("key" to ("empty-day-" + i), "class" to "picker-item picker-item-spacer"))
+                                                }), 64)
+                                            )
+                                        }), "_" to 1))
+                                    )
+                                }), "_" to 1), 8, _uA(
+                                    "value",
+                                    "onChange"
+                                ))
+                            ), 8, _uA(
+                                "onClick"
+                            ))
+                        ), 8, _uA(
+                            "onClick"
+                        ))
+                    } else {
+                        _cC("v-if", true)
+                    }
                 )),
                 _cE("view", _uM("class" to "form-item"), _uA(
                     _cE("text", _uM("class" to "form-label-left"), "检查人"),
@@ -286,7 +367,7 @@ open class GenPagesMonthlyTaskRecord : BasePage {
                     _cE("view", _uM("class" to "photo-upload"), _uA(
                         _cE(Fragment, null, RenderHelpers.renderList(_ctx.formData.photos, fun(photo, index, __index, _cached): Any {
                             return _cE("view", _uM("key" to index, "class" to "photo-item"), _uA(
-                                _cE("image", _uM("src" to photo, "class" to "photo-preview", "onClick" to fun(){
+                                _cE("image", _uM("src" to _ctx.convertToHttpUrl(photo), "class" to "photo-preview", "onClick" to fun(){
                                     _ctx.previewPhoto(photo)
                                 }
                                 ), null, 8, _uA(
@@ -712,6 +793,15 @@ open class GenPagesMonthlyTaskRecord : BasePage {
     open var responsibilitySearchKeyword: String by `$data`
     open var issueSearchKeyword: String by `$data`
     open var qualitySearchKeyword: String by `$data`
+    open var datePickerVisible: Boolean by `$data`
+    open var pickerValue: UTSArray<Number> by `$data`
+    open var years: UTSArray<Number> by `$data`
+    open var months: UTSArray<Number> by `$data`
+    open var days: UTSArray<Number> by `$data`
+    open var selectedYear: Number by `$data`
+    open var selectedMonth: Number by `$data`
+    open var selectedDay: Number by `$data`
+    open var pickerDebounceTimer: Number? by `$data`
     open var filteredTypeOptions: UTSArray<OptionItem> by `$data`
     open var filteredModuleOptions: UTSArray<OptionItem> by `$data`
     open var filteredResponsibilityOptions: UTSArray<OptionItem> by `$data`
@@ -719,14 +809,36 @@ open class GenPagesMonthlyTaskRecord : BasePage {
     open var filteredQualityOptions: UTSArray<OptionItem> by `$data`
     @Suppress("USELESS_CAST")
     override fun data(): Map<String, Any?> {
-        return _uM("taskInfo" to TaskInfo(taskNumber = "", inspectionDate = "", department = "", profession = "", groupLeader = "", deputyLeader = ""), "formData" to FormData(problemType = "", problemDescription = "", location = "", suggestion = "", photos = _uA(), safetyScore = "", rectificationDate = "", module = "", responsibility = "", issue = "", quality = "", inspector = ""), "containerHeight" to 0, "scrollTop" to 0, "showProblemTypeModal" to false, "selectedProblemType" to "", "problemTypes" to _uA(
+        val defaultDate = Date()
+        defaultDate.setDate(defaultDate.getDate() + 7)
+        val defaultDateStr = "" + defaultDate.getFullYear() + "-" + (defaultDate.getMonth() + 1).toString(10).padStart(2, "0") + "-" + defaultDate.getDate().toString(10).padStart(2, "0")
+        return _uM("taskInfo" to TaskInfo(taskId = "", taskNumber = "", inspectionDate = "", department = "", profession = "", groupLeader = "", deputyLeader = ""), "formData" to FormData(problemType = "", problemDescription = "", location = "", photos = _uA(), safetyScore = "", rectificationDate = defaultDateStr, module = "", responsibility = "", issue = "", quality = "", inspector = "", responsibleUnit = "", responsiblePerson = ""), "containerHeight" to 0, "scrollTop" to 0, "showProblemTypeModal" to false, "selectedProblemType" to "", "problemTypes" to _uA(
             "安全隐患",
             "设备故障",
             "环境问题",
             "操作违规",
             "制度缺失",
             "其他问题"
-        ), "showTypePopup" to false, "showModulePopup" to false, "showResponsibilityPopup" to false, "showIssuePopup" to false, "showQualityPopup" to false, "typeOptions" to _uA<OptionItem>(), "moduleOptions" to _uA<OptionItem>(), "responsibilityOptions" to _uA<OptionItem>(), "issueOptions" to _uA<OptionItem>(), "qualityOptions" to _uA<OptionItem>(), "selectedTypeIndex" to -1, "selectedModuleIndex" to -1, "selectedResponsibilityIndex" to -1, "selectedIssueIndex" to -1, "selectedQualityIndex" to -1, "typeSearchKeyword" to "", "moduleSearchKeyword" to "", "responsibilitySearchKeyword" to "", "issueSearchKeyword" to "", "qualitySearchKeyword" to "", "filteredTypeOptions" to computed<UTSArray<OptionItem>>(fun(): UTSArray<OptionItem> {
+        ), "showTypePopup" to false, "showModulePopup" to false, "showResponsibilityPopup" to false, "showIssuePopup" to false, "showQualityPopup" to false, "typeOptions" to _uA<OptionItem>(), "moduleOptions" to _uA<OptionItem>(), "responsibilityOptions" to _uA<OptionItem>(), "issueOptions" to _uA<OptionItem>(), "qualityOptions" to _uA<OptionItem>(), "selectedTypeIndex" to -1, "selectedModuleIndex" to -1, "selectedResponsibilityIndex" to -1, "selectedIssueIndex" to -1, "selectedQualityIndex" to -1, "typeSearchKeyword" to "", "moduleSearchKeyword" to "", "responsibilitySearchKeyword" to "", "issueSearchKeyword" to "", "qualitySearchKeyword" to "", "datePickerVisible" to false, "pickerValue" to _uA(
+            0,
+            0,
+            0
+        ), "years" to _uA<Number>(), "months" to _uA<Number>(), "days" to _uA<Number>(), "selectedYear" to (fun(): Number {
+            val tempDate = Date()
+            tempDate.setDate(tempDate.getDate() + 7)
+            return tempDate.getFullYear()
+        }
+        )() as Number, "selectedMonth" to (fun(): Number {
+            val tempDate = Date()
+            tempDate.setDate(tempDate.getDate() + 7)
+            return tempDate.getMonth() + 1
+        }
+        )() as Number, "selectedDay" to (fun(): Number {
+            val tempDate = Date()
+            tempDate.setDate(tempDate.getDate() + 7)
+            return tempDate.getDate()
+        }
+        )() as Number, "pickerDebounceTimer" to null as Number?, "filteredTypeOptions" to computed<UTSArray<OptionItem>>(fun(): UTSArray<OptionItem> {
             if (this.typeSearchKeyword == "") {
                 return this.typeOptions
             }
@@ -776,7 +888,6 @@ open class GenPagesMonthlyTaskRecord : BasePage {
     open var getDefaultRectificationDate = ::gen_getDefaultRectificationDate_fn
     open fun gen_getDefaultRectificationDate_fn(): String {
         val now = Date()
-        now.setMonth(now.getMonth() + 3)
         val year = now.getFullYear()
         val month = (now.getMonth() + 1).toString(10)
         val day = now.getDate().toString(10)
@@ -789,6 +900,16 @@ open class GenPagesMonthlyTaskRecord : BasePage {
         }
         return "" + year + "-" + padZero(month) + "-" + padZero(day)
     }
+    open var convertToHttpUrl = ::gen_convertToHttpUrl_fn
+    open fun gen_convertToHttpUrl_fn(relativePath: String): String {
+        console.log("相对路径:", relativePath)
+        if (relativePath.startsWith("http://") || relativePath.startsWith("https://")) {
+            return relativePath
+        }
+        val httpUrl = "" + apiConfig.baseUrl + "/api" + relativePath
+        console.log("转换后的HTTP URL:", httpUrl)
+        return httpUrl
+    }
     open var initContainerHeight = ::gen_initContainerHeight_fn
     open fun gen_initContainerHeight_fn() {
         val systemInfo = uni_getSystemInfoSync()
@@ -798,30 +919,30 @@ open class GenPagesMonthlyTaskRecord : BasePage {
     open fun gen_loadTaskInfo_fn(taskId: String) {
         try {
             val token = uni_getStorageSync("token")
-            console.log(taskId)
-            uni_request<Any>(RequestOptions(url = getApiUrl("/monthly-inspection-task/" + taskId), method = "GET", header = object : UTSJSONObject() {
+            console.log("接收到的taskId参数:", taskId)
+            uni_request<Any>(RequestOptions(url = getApiUrl("/monthly-inspection-task/task-no/" + taskId), method = "GET", header = object : UTSJSONObject() {
                 var Authorization = "Bearer " + token
             }, success = fun(res){
                 val respdata = res.data as UTSJSONObject
                 if (respdata.getNumber("code") === 200) {
                     val taskInfo = respdata.getJSON("data")
-                    console.log("获取到的数据:", taskInfo)
+                    console.log("获取到的任务数据:", taskInfo)
                     if (taskInfo != null) {
-                        this.taskInfo = TaskInfo(taskNumber = taskInfo.getString("taskNo") ?: "", inspectionDate = taskInfo.getString("inspectionTime") ?: "", department = taskInfo.getString("departmentName") ?: "", profession = taskInfo.getString("professionId") ?: "", groupLeader = taskInfo.getString("groupLeaderName") ?: "", deputyLeader = taskInfo.getString("deputyLeaderName") ?: "")
+                        this.taskInfo = TaskInfo(taskId = taskInfo.getString("id") ?: "", taskNumber = taskInfo.getString("taskNo") ?: "", inspectionDate = taskInfo.getString("inspectionTime") ?: "", department = taskInfo.getString("departmentName") ?: "", profession = taskInfo.getString("professionId") ?: "", groupLeader = taskInfo.getString("groupLeaderName") ?: "", deputyLeader = taskInfo.getString("deputyLeaderName") ?: "")
                         this.autoFillProfession()
                     }
                 }
             }
             , fail = fun(error){
                 console.error("加载任务信息失败:", error)
-                this.taskInfo = TaskInfo(taskNumber = "YJ202401001", inspectionDate = "2024年1月", department = "生产部", profession = "违法违规", groupLeader = "张三", deputyLeader = "李四")
+                this.taskInfo = TaskInfo(taskId = "", taskNumber = "YJ202401001", inspectionDate = "2024年1月", department = "生产部", profession = "违法违规", groupLeader = "张三", deputyLeader = "李四")
                 this.autoFillProfession()
             }
             ))
         }
          catch (error: Throwable) {
             console.error("加载任务信息失败:", error)
-            this.taskInfo = TaskInfo(taskNumber = "YJ202401001", inspectionDate = "2024年1月", department = "生产部", profession = "违法违规", groupLeader = "张三", deputyLeader = "李四")
+            this.taskInfo = TaskInfo(taskId = "", taskNumber = "YJ202401001", inspectionDate = "2024年1月", department = "生产部", profession = "违法违规", groupLeader = "张三", deputyLeader = "李四")
             this.autoFillProfession()
         }
     }
@@ -856,7 +977,7 @@ open class GenPagesMonthlyTaskRecord : BasePage {
             if (index !== -1) {
                 this.selectedTypeIndex = index
                 console.log("已设置性质界定索引:", this.selectedTypeIndex)
-                this.loadModuleOptions((this.typeOptions[index] as OptionItem).id)
+                this.loadModuleOptions((this.typeOptions[index] as OptionItem).name)
             } else {
                 console.warn("未找到匹配的性质界定:", this.taskInfo.profession)
                 val fuzzyIndex = this.typeOptions.findIndex(fun(item: OptionItem): Boolean {
@@ -865,7 +986,7 @@ open class GenPagesMonthlyTaskRecord : BasePage {
                 if (fuzzyIndex !== -1) {
                     this.selectedTypeIndex = fuzzyIndex
                     console.log("模糊匹配到性质界定索引:", this.selectedTypeIndex)
-                    this.loadModuleOptions((this.typeOptions[fuzzyIndex] as OptionItem).id)
+                    this.loadModuleOptions((this.typeOptions[fuzzyIndex] as OptionItem).name)
                 }
             }
         } else {
@@ -976,7 +1097,7 @@ open class GenPagesMonthlyTaskRecord : BasePage {
         this.moduleOptions = _uA()
         this.responsibilityOptions = _uA()
         this.issueOptions = _uA()
-        this.loadModuleOptions((this.typeOptions[index] as OptionItem).id)
+        this.loadModuleOptions((this.typeOptions[index] as OptionItem).name)
     }
     open var selectTypeFromFiltered = ::gen_selectTypeFromFiltered_fn
     open fun gen_selectTypeFromFiltered_fn(item: OptionItem) {
@@ -1013,6 +1134,7 @@ open class GenPagesMonthlyTaskRecord : BasePage {
         this.responsibilityOptions = _uA()
         this.issueOptions = _uA()
         this.loadResponsibilityOptions((this.moduleOptions[index] as OptionItem).id)
+        this.loadResponsibilityOptions((this.moduleOptions[index] as OptionItem).name)
     }
     open var selectModuleFromFiltered = ::gen_selectModuleFromFiltered_fn
     open fun gen_selectModuleFromFiltered_fn(item: OptionItem) {
@@ -1046,6 +1168,7 @@ open class GenPagesMonthlyTaskRecord : BasePage {
         this.formData.issue = ""
         this.issueOptions = _uA()
         this.loadIssueOptions((this.responsibilityOptions[index] as OptionItem).id)
+        this.loadIssueOptions((this.responsibilityOptions[index] as OptionItem).name)
     }
     open var selectResponsibilityFromFiltered = ::gen_selectResponsibilityFromFiltered_fn
     open fun gen_selectResponsibilityFromFiltered_fn(item: OptionItem) {
@@ -1102,7 +1225,7 @@ open class GenPagesMonthlyTaskRecord : BasePage {
         this.selectedQualityIndex = index
         this.formData.quality = (this.qualityOptions[index] as OptionItem).name
         this.hideQualityPicker()
-        this.loadQualityDetails((this.qualityOptions[index] as OptionItem).id)
+        this.formData.safetyScore = this.getScoreByQualityName((this.qualityOptions[index] as OptionItem).name)
     }
     open var selectQualityFromFiltered = ::gen_selectQualityFromFiltered_fn
     open fun gen_selectQualityFromFiltered_fn(item: OptionItem) {
@@ -1115,38 +1238,43 @@ open class GenPagesMonthlyTaskRecord : BasePage {
         }
     }
     open var loadModuleOptions = ::gen_loadModuleOptions_fn
-    open fun gen_loadModuleOptions_fn(typeId: String) {
+    open fun gen_loadModuleOptions_fn(typeName: String) {
         val token = uni_getStorageSync("token")
-        uni_request<Any>(RequestOptions(url = getApiUrl("/gjbz-data/options/modules"), method = "GET", header = object : UTSJSONObject() {
+        uni_request<Any>(RequestOptions(url = getApiUrl("/gjbz-data/modules/by-type/" + encodeURIComponent(typeName)), method = "GET", header = object : UTSJSONObject() {
             var Authorization = "Bearer " + token
         }, success = fun(res){
             val respdata = res.data as UTSJSONObject
             if (respdata.getNumber("code") === 200) {
-                val data = respdata.getArray("data")
-                if (data != null) {
-                    val options: UTSArray<OptionItem> = _uA()
+                val modules = respdata.getArray("data") as UTSArray<String>
+                val unique = _uA<String>()
+                if (modules != null) {
                     run {
                         var i: Number = 0
-                        while(i < data.length){
-                            val item = data[i] as String
-                            options.push(OptionItem(id = (i + 1).toString(10), name = item))
+                        while(i < modules.length){
+                            val m = modules[i]
+                            if (m != null && m != "" && unique.indexOf(m) === -1) {
+                                unique.push(m)
+                            }
                             i++
                         }
                     }
-                    this.moduleOptions = options
                 }
+                this.moduleOptions = unique.map(fun(m, idx): OptionItem {
+                    return (OptionItem(id = (idx + 1).toString(10), name = m))
+                }
+                )
             }
         }
         , fail = fun(error){
-            console.error("加载模块选项失败:", error)
-            this.moduleOptions = _uA<OptionItem>(OptionItem(id = "module1", name = "模块1"), OptionItem(id = "module2", name = "模块2"), OptionItem(id = "module3", name = "模块3"))
+            console.error("按专业加载模块失败:", error)
+            this.moduleOptions = _uA<OptionItem>()
         }
         ))
     }
     open var loadResponsibilityOptions = ::gen_loadResponsibilityOptions_fn
     open fun gen_loadResponsibilityOptions_fn(moduleId: String) {
         val token = uni_getStorageSync("token")
-        uni_request<Any>(RequestOptions(url = getApiUrl("/gjbz-data/options/responsibilities"), method = "GET", header = object : UTSJSONObject() {
+        uni_request<Any>(RequestOptions(url = getApiUrl("/gjbz-data/options/responsibilities/by-module/" + encodeURIComponent(moduleId)), method = "GET", header = object : UTSJSONObject() {
             var Authorization = "Bearer " + token
         }, success = fun(res){
             val respdata = res.data as UTSJSONObject
@@ -1175,7 +1303,7 @@ open class GenPagesMonthlyTaskRecord : BasePage {
     open var loadIssueOptions = ::gen_loadIssueOptions_fn
     open fun gen_loadIssueOptions_fn(responsibilityId: String) {
         val token = uni_getStorageSync("token")
-        uni_request<Any>(RequestOptions(url = getApiUrl("/gjbz-data/options/issues"), method = "GET", header = object : UTSJSONObject() {
+        uni_request<Any>(RequestOptions(url = getApiUrl("/gjbz-data/options/issues/by-responsibility/" + encodeURIComponent(responsibilityId)), method = "GET", header = object : UTSJSONObject() {
             var Authorization = "Bearer " + token
         }, success = fun(res){
             val respdata = res.data as UTSJSONObject
@@ -1246,19 +1374,13 @@ open class GenPagesMonthlyTaskRecord : BasePage {
     }
     open var loadQualityDetails = ::gen_loadQualityDetails_fn
     open fun gen_loadQualityDetails_fn(qualityId: String) {
-        setTimeout(fun(){
-            when (qualityId) {
-                "quality1" -> 
-                    this.formData.safetyScore = "5分 - 一般安全记分"
-                "quality2" -> 
-                    this.formData.safetyScore = "10分 - 严重安全记分"
-                "quality3" -> 
-                    this.formData.safetyScore = "20分 - 重大安全记分"
-                else -> 
-                    this.formData.safetyScore = ""
-            }
+        val opt = this.qualityOptions.find(fun(o: OptionItem): Boolean {
+            return o.id === qualityId
         }
-        , 100)
+        )
+        if (opt != null) {
+            this.formData.safetyScore = this.getScoreByQualityName(opt.name)
+        }
     }
     open var autoFillIssueDetails = ::gen_autoFillIssueDetails_fn
     open fun gen_autoFillIssueDetails_fn(issueId: String, issueName: String) {
@@ -1352,12 +1474,7 @@ open class GenPagesMonthlyTaskRecord : BasePage {
                     this.formData.quality = matchedQualityName
                 }
             }
-            val scoreMatch = safetyScoreText.match(UTSRegExp("(\\d+)分", ""))
-            if (scoreMatch != null && scoreMatch.length > 1 && scoreMatch[1] != null) {
-                this.formData.safetyScore = scoreMatch[1] as String
-            } else {
-                this.formData.safetyScore = "5"
-            }
+            this.formData.safetyScore = this.getScoreByQualityName(matchedQualityName)
             console.log("自动填充完成:", _uO("originalQuality" to qualityName, "matchedQuality" to matchedQualityName, "safetyScore" to this.formData.safetyScore, "selectedQualityIndex" to this.selectedQualityIndex))
             uni_showToast(ShowToastOptions(title = "\u5DF2\u81EA\u52A8\u586B\u5145\uFF1A" + matchedQualityName + "\uFF0C" + this.formData.safetyScore + "\u5206", icon = "success", duration = 2000))
         } else {
@@ -1453,6 +1570,24 @@ open class GenPagesMonthlyTaskRecord : BasePage {
             var safetyScore = "5分 - 一般安全记分"
         }
     }
+    open var getScoreByQualityName = ::gen_getScoreByQualityName_fn
+    open fun gen_getScoreByQualityName_fn(qualityName: String): String {
+        val s: String = if ((qualityName == null)) {
+            ""
+        } else {
+            qualityName
+        }
+        if (s.indexOf("重要") >= 0) {
+            return "5"
+        }
+        if (s.indexOf("一般") >= 0) {
+            return "3"
+        }
+        if (s.indexOf("观察") >= 0) {
+            return "1"
+        }
+        return "0"
+    }
     open var addPhoto = ::gen_addPhoto_fn
     open fun gen_addPhoto_fn() {
         uni_chooseImage(ChooseImageOptions(count = 3 - this.formData.photos.length, sizeType = _uA(
@@ -1461,7 +1596,58 @@ open class GenPagesMonthlyTaskRecord : BasePage {
             "camera",
             "album"
         ), success = fun(res){
-            this.formData.photos.push(*res.tempFilePaths.toTypedArray())
+            res.tempFilePaths.forEach(fun(tempPath){
+                this.uploadImage(tempPath)
+            }
+            )
+        }
+        ))
+    }
+    open var uploadImage = ::gen_uploadImage_fn
+    open fun gen_uploadImage_fn(imagePath: String) {
+        console.log("=== 移动端图片上传调试信息 ===")
+        console.log("选择的图片路径:", imagePath)
+        uni_showLoading(ShowLoadingOptions(title = "上传中..."))
+        uni_uploadFile(UploadFileOptions(url = getApiUrl("/upload/image"), filePath = imagePath, name = "file", header = object : UTSJSONObject() {
+            var Authorization = uni_getStorageSync("token")
+        }, success = fun(uploadRes){
+            uni_hideLoading()
+            console.log("上传响应状态码:", uploadRes.statusCode)
+            console.log("上传响应数据:", uploadRes.data)
+            try {
+                val result = JSON.parse(uploadRes.data) as UTSJSONObject
+                console.log("解析后的响应数据:", result)
+                val code = result.getNumber("code")
+                if (code === 200) {
+                    val data = result.getJSON("data")
+                    if (data != null) {
+                        val url = data.getString("url")
+                        console.log("服务器返回的图片URL:", url)
+                        if (url != null) {
+                            this.formData.photos.push(url)
+                            console.log("当前photos数组:", this.formData.photos)
+                        }
+                    }
+                } else {
+                    var message = result.getString("message")
+                    if (message == null) {
+                        message = "上传失败"
+                    }
+                    console.error("上传失败，服务器响应:", result)
+                    uni_showToast(ShowToastOptions(title = message, icon = "none"))
+                }
+            }
+             catch (e: Throwable) {
+                console.error("解析响应数据失败:", e)
+                console.error("原始响应数据:", uploadRes.data)
+                uni_showToast(ShowToastOptions(title = "上传失败", icon = "none"))
+            }
+            console.log("=== 移动端图片上传调试信息结束 ===")
+        }
+        , fail = fun(error){
+            uni_hideLoading()
+            console.error("图片上传失败:", error)
+            uni_showToast(ShowToastOptions(title = "上传失败", icon = "none"))
         }
         ))
     }
@@ -1471,7 +1657,10 @@ open class GenPagesMonthlyTaskRecord : BasePage {
     }
     open var previewPhoto = ::gen_previewPhoto_fn
     open fun gen_previewPhoto_fn(photo: String) {
-        uni_previewImage(PreviewImageOptions(current = photo, urls = this.formData.photos))
+        uni_previewImage(PreviewImageOptions(current = this.convertToHttpUrl(photo), urls = this.formData.photos.map(fun(p: String): String {
+            return this.convertToHttpUrl(p)
+        }
+        ) as UTSArray<String>))
     }
     open var saveRecord = ::gen_saveRecord_fn
     open fun gen_saveRecord_fn() {
@@ -1503,12 +1692,16 @@ open class GenPagesMonthlyTaskRecord : BasePage {
             uni_showToast(ShowToastOptions(title = "请输入发现位置", icon = "none"))
             return
         }
-        if (this.formData.suggestion.trim() == "") {
-            uni_showToast(ShowToastOptions(title = "请输入整改建议", icon = "none"))
-            return
-        }
         if (this.formData.rectificationDate == "") {
             uni_showToast(ShowToastOptions(title = "请选择整改期限", icon = "none"))
+            return
+        }
+        if (this.formData.responsibleUnit.trim() == "") {
+            uni_showToast(ShowToastOptions(title = "请输入责任单位", icon = "none"))
+            return
+        }
+        if (this.formData.responsiblePerson.trim() == "") {
+            uni_showToast(ShowToastOptions(title = "请输入责任人", icon = "none"))
             return
         }
         if (this.formData.inspector.trim() == "") {
@@ -1533,7 +1726,7 @@ open class GenPagesMonthlyTaskRecord : BasePage {
                 uni_showToast(ShowToastOptions(title = "获取用户信息失败，请重新登录", icon = "none"))
                 return
             }
-            val saveData: UTSJSONObject = _uO("taskId" to this.taskInfo.taskNumber, "professionalCategory" to if (this.selectedTypeIndex !== -1 && this.typeOptions[this.selectedTypeIndex] != null) {
+            val saveData: UTSJSONObject = _uO("taskId" to this.taskInfo.taskId, "professionalCategory" to if (this.selectedTypeIndex !== -1 && this.typeOptions[this.selectedTypeIndex] != null) {
                 this.typeOptions[this.selectedTypeIndex].name
             } else {
                 ""
@@ -1558,7 +1751,7 @@ open class GenPagesMonthlyTaskRecord : BasePage {
             } else {
                 ""
             }
-            , "problemDescription" to this.formData.problemDescription, "location" to this.formData.location, "suggestion" to this.formData.suggestion, "rectificationDate" to this.formData.rectificationDate, "inspector" to this.formData.inspector, "safetyScore" to this.formData.safetyScore, "photos" to this.formData.photos)
+            , "problemDescription" to this.formData.problemDescription, "location" to this.formData.location, "rectificationDate" to this.formData.rectificationDate, "inspector" to this.formData.inspector, "safetyScore" to this.formData.safetyScore, "photos" to this.formData.photos, "responsibleUnit" to this.formData.responsibleUnit, "responsiblePerson" to this.formData.responsiblePerson)
             uni_request<Any>(RequestOptions(url = getApiUrl("/monthly-inspection-record"), method = "POST", header = object : UTSJSONObject() {
                 var `Content-Type` = "application/json"
                 var Authorization = if (uni_getStorageSync("token") != null) {
@@ -1567,7 +1760,7 @@ open class GenPagesMonthlyTaskRecord : BasePage {
                     ""
                 }
                 var userId = userId
-            }, data = saveData, success = fun(res){
+            }, data = UTSJSONObject.assign(UTSJSONObject(), saveData, _uO("photos" to this.formData.photos.join(","))), success = fun(res){
                 uni_hideLoading()
                 val respdate = res.data as UTSJSONObject
                 if (respdate.getNumber("code") == 200) {
@@ -1598,6 +1791,154 @@ open class GenPagesMonthlyTaskRecord : BasePage {
             uni_showToast(ShowToastOptions(title = "保存失败", icon = "none"))
         }
     }
+    open var initDateArrays = ::gen_initDateArrays_fn
+    open fun gen_initDateArrays_fn() {
+        val currentYear = Date().getFullYear()
+        this.years = _uA()
+        run {
+            var i = currentYear
+            while(i <= currentYear + 2){
+                this.years.push(i)
+                i++
+            }
+        }
+        this.months = _uA()
+        run {
+            var i: Number = 1
+            while(i <= 12){
+                this.months.push(i)
+                i++
+            }
+        }
+        this.updateDays()
+        val yearIndex = this.years.findIndex(fun(year): Boolean {
+            return year === this.selectedYear
+        }
+        )
+        val monthIndex = (this.selectedMonth as Number) - 1
+        val dayIndex = this.days.findIndex(fun(day): Boolean {
+            return day === this.selectedDay
+        }
+        )
+        this.pickerValue = _uA(
+            if (yearIndex >= 0) {
+                yearIndex
+            } else {
+                0
+            }
+            ,
+            monthIndex,
+            if (dayIndex >= 0) {
+                dayIndex
+            } else {
+                0
+            }
+        )
+        console.log("初始化日期数组:", _uO("selectedYear" to this.selectedYear, "selectedMonth" to this.selectedMonth, "selectedDay" to this.selectedDay, "yearIndex" to yearIndex, "monthIndex" to monthIndex, "dayIndex" to dayIndex, "pickerValue" to this.pickerValue, "daysArray" to this.days))
+    }
+    open var updateDays = ::gen_updateDays_fn
+    open fun gen_updateDays_fn() {
+        val daysInMonth = Date(this.selectedYear, this.selectedMonth, 0).getDate()
+        this.days = _uA()
+        run {
+            var i: Number = 1
+            while(i <= daysInMonth){
+                this.days.push(i)
+                i++
+            }
+        }
+    }
+    open var showDatePicker = ::gen_showDatePicker_fn
+    open fun gen_showDatePicker_fn() {
+        if (this.formData.rectificationDate !== "") {
+            val dateParts = this.formData.rectificationDate.split("-")
+            if (dateParts.length === 3) {
+                this.selectedYear = parseInt(dateParts[0])
+                this.selectedMonth = parseInt(dateParts[1])
+                this.selectedDay = parseInt(dateParts[2])
+            }
+        }
+        this.updateDays()
+        val yearIndex = this.years.findIndex(fun(year): Boolean {
+            return year === this.selectedYear
+        }
+        )
+        val monthIndex = this.selectedMonth - 1
+        var dayIndex = this.days.findIndex(fun(day): Boolean {
+            return day === this.selectedDay
+        }
+        )
+        if (dayIndex < 0) {
+            dayIndex = (this.days.length - 1) as Int
+            this.selectedDay = this.days[dayIndex]
+            console.log("日期不存在，调整为月末:", this.selectedDay)
+        }
+        this.pickerValue = _uA(
+            if (yearIndex >= 0) {
+                yearIndex
+            } else {
+                0
+            }
+            ,
+            monthIndex,
+            dayIndex
+        )
+        console.log("显示日期选择器:", _uO("selectedDate" to this.formData.rectificationDate, "selectedYear" to this.selectedYear, "selectedMonth" to this.selectedMonth, "selectedDay" to this.selectedDay, "yearIndex" to yearIndex, "monthIndex" to monthIndex, "dayIndex" to dayIndex, "pickerValue" to this.pickerValue))
+        this.datePickerVisible = true
+    }
+    open var hideDatePicker = ::gen_hideDatePicker_fn
+    open fun gen_hideDatePicker_fn() {
+        this.datePickerVisible = false
+    }
+    open var onPickerChange = ::gen_onPickerChange_fn
+    open fun gen_onPickerChange_fn(e: UniPickerViewChangeEvent) {
+        val value = e.detail.value as UTSArray<Number>
+        val oldDaysLength = this.days.length
+        console.log("picker原始变化事件:", _uO("value" to value, "oldSelectedYear" to this.selectedYear, "oldSelectedMonth" to this.selectedMonth, "oldSelectedDay" to this.selectedDay, "oldDaysLength" to oldDaysLength))
+        this.selectedYear = this.years[value[0]]
+        this.selectedMonth = value[1] + 1
+        this.updateDays()
+        var newDayIndex = value[2]
+        if (newDayIndex >= this.days.length) {
+            newDayIndex = this.days.length - 1
+            console.log("日期超出范围，调整为月末:", this.days[newDayIndex])
+        }
+        this.selectedDay = this.days[newDayIndex]
+        if (oldDaysLength !== this.days.length) {
+            val timer = this.pickerDebounceTimer
+            if (timer != null) {
+                clearTimeout(timer)
+            }
+            this.pickerDebounceTimer = setTimeout(fun(){
+                this.pickerValue = _uA(
+                    value[0],
+                    value[1],
+                    newDayIndex
+                )
+                console.log("延迟更新pickerValue:", _uO("newPickerValue" to this.pickerValue, "selectedYear" to this.selectedYear, "selectedMonth" to this.selectedMonth, "selectedDay" to this.selectedDay))
+            }, 50)
+        } else {
+            this.pickerValue = _uA(
+                value[0],
+                value[1],
+                newDayIndex
+            )
+            console.log("直接更新pickerValue:", _uO("newPickerValue" to this.pickerValue, "selectedYear" to this.selectedYear, "selectedMonth" to this.selectedMonth, "selectedDay" to this.selectedDay))
+        }
+    }
+    open var confirmDatePicker = ::gen_confirmDatePicker_fn
+    open fun gen_confirmDatePicker_fn() {
+        val selectedYear = this.years[this.pickerValue[0]]
+        val selectedMonth = this.pickerValue[1] + 1
+        val selectedDay = this.days[this.pickerValue[2]]
+        val year = selectedYear.toString(10).padStart(4, "0")
+        val month = selectedMonth.toString(10).padStart(2, "0")
+        val day = selectedDay.toString(10).padStart(2, "0")
+        val newDate = "" + year + "-" + month + "-" + day
+        console.log("确认日期选择:", _uO("pickerValue" to this.pickerValue, "yearsArray" to this.years, "monthsArray" to this.months, "daysArray" to this.days, "selectedYear" to selectedYear, "selectedMonth" to selectedMonth, "selectedDay" to selectedDay, "formattedDate" to newDate))
+        this.formData.rectificationDate = newDate
+        this.hideDatePicker()
+    }
     companion object {
         val styles: Map<String, Map<String, Map<String, Any>>> by lazy {
             _nCS(_uA(
@@ -1608,7 +1949,7 @@ open class GenPagesMonthlyTaskRecord : BasePage {
         }
         val styles0: Map<String, Map<String, Map<String, Any>>>
             get() {
-                return _uM("container" to _pS(_uM("backgroundColor" to "#f5f5f5", "position" to "relative", "zIndex" to 1, "paddingBottom" to "180rpx")), "header" to _pS(_uM("display" to "flex", "justifyContent" to "space-between", "alignItems" to "center", "paddingTop" to 20, "paddingRight" to 20, "paddingBottom" to 20, "paddingLeft" to 20, "backgroundColor" to "#ffffff", "borderBottomWidth" to 1, "borderBottomStyle" to "solid", "borderBottomColor" to "#f0f0f0")), "header-left" to _pS(_uM("display" to "flex", "alignItems" to "center", "gap" to "5px")), "back-icon" to _pS(_uM("fontSize" to 24, "color" to "#007AFF")), "back-text" to _pS(_uM("fontSize" to 16, "color" to "#007AFF")), "header-title" to _pS(_uM("fontSize" to 18, "fontWeight" to "bold", "color" to "#333333")), "header-right" to _pS(_uM("display" to "flex", "alignItems" to "center")), "save-btn" to _pS(_uM("fontSize" to 16, "color" to "#007AFF")), "task-info" to _pS(_uM("backgroundColor" to "#ffffff", "marginTop" to 10, "marginRight" to 20, "marginBottom" to 10, "marginLeft" to 20, "borderTopLeftRadius" to 8, "borderTopRightRadius" to 8, "borderBottomRightRadius" to 8, "borderBottomLeftRadius" to 8, "paddingTop" to 20, "paddingRight" to 20, "paddingBottom" to 20, "paddingLeft" to 20)), "info-item" to _pS(_uM("display" to "flex", "paddingTop" to 12, "paddingRight" to 0, "paddingBottom" to 12, "paddingLeft" to 0, "borderBottomWidth" to 1, "borderBottomStyle" to "solid", "borderBottomColor" to "#f0f0f0", "borderBottomWidth:last-child" to "medium", "borderBottomStyle:last-child" to "none", "borderBottomColor:last-child" to "#000000")), "info-label" to _pS(_uM("fontSize" to 14, "color" to "#666666", "width" to 100, "flexShrink" to 0, "textAlign" to "left", "marginRight" to 12)), "info-value" to _pS(_uM("fontSize" to 14, "color" to "#333333", "flex" to 1, "textAlign" to "left")), "form-section" to _pS(_uM("backgroundColor" to "#ffffff", "marginTop" to 10, "marginRight" to 20, "marginBottom" to 10, "marginLeft" to 20, "borderTopLeftRadius" to 8, "borderTopRightRadius" to 8, "borderBottomRightRadius" to 8, "borderBottomLeftRadius" to 8, "paddingTop" to 20, "paddingRight" to 20, "paddingBottom" to 20, "paddingLeft" to 20)), "section-title" to _pS(_uM("display" to "flex", "alignItems" to "center", "marginBottom" to 20)), "title-text" to _pS(_uM("fontSize" to 16, "fontWeight" to "bold", "color" to "#333333")), "required-mark" to _pS(_uM("fontSize" to 16, "color" to "#ff4757", "marginLeft" to 4)), "form-item" to _pS(_uM("marginBottom" to 20, "marginBottom:last-child" to 0)), "form-item-inline" to _pS(_uM("marginBottom" to 20, "display" to "flex", "flexDirection" to "column", "gap" to "8px", "paddingTop" to 0, "paddingRight" to 20, "paddingBottom" to 0, "paddingLeft" to 20)), "form-label" to _pS(_uM("fontSize" to 14, "color" to "#333333", "marginBottom" to 8)), "form-label-inline" to _pS(_uM("fontSize" to 14, "color" to "#333333", "marginBottom" to 0)), "picker-wrapper" to _pS(_uM("display" to "flex", "justifyContent" to "space-between", "alignItems" to "center", "paddingTop" to 12, "paddingRight" to 15, "paddingBottom" to 12, "paddingLeft" to 15, "borderTopWidth" to 1, "borderRightWidth" to 1, "borderBottomWidth" to 1, "borderLeftWidth" to 1, "borderTopStyle" to "solid", "borderRightStyle" to "solid", "borderBottomStyle" to "solid", "borderLeftStyle" to "solid", "borderTopColor" to "#e9ecef", "borderRightColor" to "#e9ecef", "borderBottomColor" to "#e9ecef", "borderLeftColor" to "#e9ecef", "borderTopLeftRadius" to 6, "borderTopRightRadius" to 6, "borderBottomRightRadius" to 6, "borderBottomLeftRadius" to 6, "backgroundColor" to "#ffffff")), "picker-wrapper-inline" to _uM("" to _uM("display" to "flex", "justifyContent" to "space-between", "alignItems" to "center", "paddingTop" to 12, "paddingRight" to 15, "paddingBottom" to 12, "paddingLeft" to 15, "borderTopWidth" to 1, "borderRightWidth" to 1, "borderBottomWidth" to 1, "borderLeftWidth" to 1, "borderTopStyle" to "solid", "borderRightStyle" to "solid", "borderBottomStyle" to "solid", "borderLeftStyle" to "solid", "borderTopColor" to "#e9ecef", "borderRightColor" to "#e9ecef", "borderBottomColor" to "#e9ecef", "borderLeftColor" to "#e9ecef", "borderTopLeftRadius" to 6, "borderTopRightRadius" to 6, "borderBottomRightRadius" to 6, "borderBottomLeftRadius" to 6, "backgroundColor" to "#ffffff", "width" to "100%", "transitionProperty" to "all", "transitionDuration" to "0.3s", "transitionTimingFunction" to "ease", "cursor" to "pointer", "borderTopColor:hover" to "#667eea", "borderRightColor:hover" to "#667eea", "borderBottomColor:hover" to "#667eea", "borderLeftColor:hover" to "#667eea", "boxShadow:hover" to "0 0 0 2px rgba(102, 126, 234, 0.1)", "transform:active" to "scale(0.98)"), ".disabled" to _uM("backgroundColor" to "#f5f5f5", "color" to "#999999", "cursor" to "not-allowed", "opacity" to 0.6), ".disabled:hover" to _uM("borderTopColor" to "#e9ecef", "borderRightColor" to "#e9ecef", "borderBottomColor" to "#e9ecef", "borderLeftColor" to "#e9ecef", "boxShadow" to "none")), "text-input-inline" to _pS(_uM("paddingTop" to 12, "paddingRight" to 15, "paddingBottom" to 12, "paddingLeft" to 15, "borderTopWidth" to 1, "borderRightWidth" to 1, "borderBottomWidth" to 1, "borderLeftWidth" to 1, "borderTopStyle" to "solid", "borderRightStyle" to "solid", "borderBottomStyle" to "solid", "borderLeftStyle" to "solid", "borderTopColor" to "#e9ecef", "borderRightColor" to "#e9ecef", "borderBottomColor" to "#e9ecef", "borderLeftColor" to "#e9ecef", "borderTopLeftRadius" to 6, "borderTopRightRadius" to 6, "borderBottomRightRadius" to 6, "borderBottomLeftRadius" to 6, "fontSize" to 14, "color" to "#333333", "backgroundColor" to "#ffffff", "flex" to 1)), "bottom-save-container" to _pS(_uM("position" to "fixed", "bottom" to 0, "left" to 0, "right" to 0, "paddingTop" to "20rpx", "paddingRight" to "30rpx", "paddingBottom" to "40rpx", "paddingLeft" to "30rpx", "backgroundImage" to "linear-gradient(to top, rgba(85, 170, 255, 1.0) 0%, rgba(85, 170, 255, 0.9) 100%)", "backgroundColor" to "rgba(0,0,0,0)", "backdropFilter" to "blur(10rpx)", "borderTopWidth" to "1rpx", "borderTopStyle" to "solid", "borderTopColor" to "rgba(240,240,240,0.8)", "zIndex" to 999)), "bottom-save-btn" to _pS(_uM("width" to "100%", "height" to "96rpx", "backgroundImage" to "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)", "backgroundColor" to "rgba(0,0,0,0)", "borderTopLeftRadius" to "48rpx", "borderTopRightRadius" to "48rpx", "borderBottomRightRadius" to "48rpx", "borderBottomLeftRadius" to "48rpx", "display" to "flex", "alignItems" to "center", "justifyContent" to "center", "boxShadow" to "0 12rpx 32rpx rgba(79, 172, 254, 0.4)", "transitionProperty" to "all", "transitionDuration" to "0.3s", "transitionTimingFunction" to "cubic-bezier(0.4,0,0.2,1)", "position" to "relative", "overflow" to "hidden", "content::before" to "''", "position::before" to "absolute", "top::before" to 0, "left::before" to "-100%", "width::before" to "100%", "height::before" to "100%", "backgroundImage::before" to "linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent)", "backgroundColor::before" to "rgba(0,0,0,0)", "transitionProperty::before" to "left", "transitionDuration::before" to "0.6s", "transform:active" to "translateY(2rpx) scale(0.98)", "boxShadow:active" to "0 8rpx 24rpx rgba(79, 172, 254, 0.3)", "left:active::before" to "100%")), "bottom-save-text" to _pS(_uM("color" to "#000000", "fontSize" to "34rpx", "fontWeight" to "700", "letterSpacing" to "3rpx", "position" to "relative", "zIndex" to 1)), "picker-text" to _uM("" to _uM("fontSize" to 14, "color" to "#333333"), ".placeholder" to _uM("color" to "#999999")), "picker-arrow" to _pS(_uM("fontSize" to 16, "color" to "#cccccc")), "text-input" to _pS(_uM("paddingTop" to 12, "paddingRight" to 15, "paddingBottom" to 12, "paddingLeft" to 15, "borderTopWidth" to 1, "borderRightWidth" to 1, "borderBottomWidth" to 1, "borderLeftWidth" to 1, "borderTopStyle" to "solid", "borderRightStyle" to "solid", "borderBottomStyle" to "solid", "borderLeftStyle" to "solid", "borderTopColor" to "#e9ecef", "borderRightColor" to "#e9ecef", "borderBottomColor" to "#e9ecef", "borderLeftColor" to "#e9ecef", "borderTopLeftRadius" to 6, "borderTopRightRadius" to 6, "borderBottomRightRadius" to 6, "borderBottomLeftRadius" to 6, "fontSize" to 14, "color" to "#333333", "backgroundColor" to "#ffffff")), "textarea-input" to _pS(_uM("paddingTop" to 12, "paddingRight" to 15, "paddingBottom" to 12, "paddingLeft" to 15, "borderTopWidth" to 1, "borderRightWidth" to 1, "borderBottomWidth" to 1, "borderLeftWidth" to 1, "borderTopStyle" to "solid", "borderRightStyle" to "solid", "borderBottomStyle" to "solid", "borderLeftStyle" to "solid", "borderTopColor" to "#e9ecef", "borderRightColor" to "#e9ecef", "borderBottomColor" to "#e9ecef", "borderLeftColor" to "#e9ecef", "borderTopLeftRadius" to 6, "borderTopRightRadius" to 6, "borderBottomRightRadius" to 6, "borderBottomLeftRadius" to 6, "fontSize" to 14, "color" to "#333333", "backgroundColor" to "#ffffff", "minHeight" to 80, "resize" to "none")), "char-count" to _pS(_uM("fontSize" to 12, "color" to "#999999", "textAlign" to "right", "marginTop" to 5)), "photo-upload" to _pS(_uM("display" to "flex", "flexWrap" to "wrap", "gap" to "10px", "marginBottom" to 5)), "photo-item" to _pS(_uM("position" to "relative", "width" to 80, "height" to 80)), "photo-preview" to _pS(_uM("width" to "100%", "height" to "100%", "borderTopLeftRadius" to 6, "borderTopRightRadius" to 6, "borderBottomRightRadius" to 6, "borderBottomLeftRadius" to 6, "objectFit" to "cover")), "photo-delete" to _pS(_uM("position" to "absolute", "top" to -5, "right" to -5, "width" to 20, "height" to 20, "backgroundColor" to "#ff4757", "borderTopLeftRadius" to 10, "borderTopRightRadius" to 10, "borderBottomRightRadius" to 10, "borderBottomLeftRadius" to 10, "display" to "flex", "alignItems" to "center", "justifyContent" to "center")), "delete-icon" to _pS(_uM("fontSize" to 12, "color" to "#ffffff", "fontWeight" to "bold")), "photo-add" to _pS(_uM("width" to 80, "height" to 80, "borderTopWidth" to 1, "borderRightWidth" to 1, "borderBottomWidth" to 1, "borderLeftWidth" to 1, "borderTopStyle" to "dashed", "borderRightStyle" to "dashed", "borderBottomStyle" to "dashed", "borderLeftStyle" to "dashed", "borderTopColor" to "#cccccc", "borderRightColor" to "#cccccc", "borderBottomColor" to "#cccccc", "borderLeftColor" to "#cccccc", "borderTopLeftRadius" to 6, "borderTopRightRadius" to 6, "borderBottomRightRadius" to 6, "borderBottomLeftRadius" to 6, "display" to "flex", "flexDirection" to "column", "alignItems" to "center", "justifyContent" to "center", "backgroundColor" to "#f8f9fa")), "add-icon" to _pS(_uM("fontSize" to 24, "color" to "#999999", "marginBottom" to 4)), "add-text" to _pS(_uM("fontSize" to 12, "color" to "#999999")), "photo-tip" to _pS(_uM("fontSize" to 12, "color" to "#999999")), "popup-overlay" to _pS(_uM("!position" to "fixed", "!top" to 0, "!left" to 0, "!width" to "100%", "!height" to "100%", "backgroundColor" to "rgba(0,0,0,0.5)", "display" to "flex", "alignItems" to "center", "justifyContent" to "center", "!zIndex" to 9999, "animation" to "fadeIn 0.3s ease", "pointerEvents" to "auto")), "picker-modal" to _pS(_uM("!position" to "fixed", "!top" to 0, "!left" to 0, "!width" to "100%", "!height" to "100%", "backgroundColor" to "rgba(0,0,0,0.5)", "display" to "flex", "alignItems" to "center", "justifyContent" to "center", "!zIndex" to 9999, "animation" to "fadeIn 0.3s ease", "pointerEvents" to "auto")), "popup-content" to _pS(_uM("!width" to "90%", "maxWidth" to 500, "backgroundColor" to "#ffffff", "borderTopLeftRadius" to 12, "borderTopRightRadius" to 12, "borderBottomRightRadius" to 12, "borderBottomLeftRadius" to 12, "overflow" to "hidden", "animation" to "scaleIn 0.3s ease", "boxShadow" to "0 8px 32px rgba(0, 0, 0, 0.2)", "position" to "relative", "zIndex" to 10000)), "picker-content" to _pS(_uM("!width" to "90%", "maxWidth" to 500, "backgroundColor" to "#ffffff", "borderTopLeftRadius" to 12, "borderTopRightRadius" to 12, "borderBottomRightRadius" to 12, "borderBottomLeftRadius" to 12, "overflow" to "hidden", "animation" to "scaleIn 0.3s ease", "boxShadow" to "0 8px 32px rgba(0, 0, 0, 0.2)", "position" to "relative", "zIndex" to 10000)), "popup-header" to _pS(_uM("display" to "flex", "justifyContent" to "space-between", "alignItems" to "center", "paddingTop" to 15, "paddingRight" to 20, "paddingBottom" to 15, "paddingLeft" to 20, "borderBottomWidth" to 1, "borderBottomStyle" to "solid", "borderBottomColor" to "#e9ecef", "backgroundImage" to "linear-gradient(135deg, #667eea 0%, #764ba2 100%)", "backgroundColor" to "rgba(0,0,0,0)", "position" to "relative")), "picker-header" to _pS(_uM("display" to "flex", "justifyContent" to "space-between", "alignItems" to "center", "paddingTop" to 15, "paddingRight" to 20, "paddingBottom" to 15, "paddingLeft" to 20, "borderBottomWidth" to 1, "borderBottomStyle" to "solid", "borderBottomColor" to "#e9ecef", "backgroundImage" to "linear-gradient(135deg, #667eea 0%, #764ba2 100%)", "backgroundColor" to "rgba(0,0,0,0)", "position" to "relative", "content::after" to "''", "position::after" to "absolute", "bottom::after" to 0, "left::after" to "50%", "transform::after" to "translateX(-50%)", "width::after" to 30, "height::after" to 3, "backgroundColor::after" to "rgba(255,255,255,0.3)", "borderTopLeftRadius::after" to 2, "borderTopRightRadius::after" to 2, "borderBottomRightRadius::after" to 2, "borderBottomLeftRadius::after" to 2)), "picker-cancel" to _pS(_uM("fontSize" to 16, "color" to "rgba(255,255,255,0.8)")), "picker-title" to _pS(_uM("fontSize" to 16, "color" to "#ffffff", "letterSpacing" to 1)), "picker-confirm" to _pS(_uM("fontSize" to 16, "color" to "#ffffff", "backgroundColor" to "rgba(255,255,255,0.2)", "paddingTop" to 6, "paddingRight" to 12, "paddingBottom" to 6, "paddingLeft" to 12, "borderTopLeftRadius" to 15, "borderTopRightRadius" to 15, "borderBottomRightRadius" to 15, "borderBottomLeftRadius" to 15, "transitionProperty" to "all", "transitionDuration" to "0.2s", "transitionTimingFunction" to "ease", "backgroundColor:active" to "rgba(255,255,255,0.3)", "transform:active" to "scale(0.95)")), "popup-title" to _pS(_uM("fontSize" to 16, "color" to "#ffffff", "letterSpacing" to 1)), "popup-close" to _pS(_uM("fontSize" to 24, "color" to "rgba(255,255,255,0.8)", "width" to 30, "height" to 30, "display" to "flex", "alignItems" to "center", "justifyContent" to "center", "borderTopLeftRadius" to 15, "borderTopRightRadius" to 15, "borderBottomRightRadius" to 15, "borderBottomLeftRadius" to 15, "transitionProperty" to "all", "transitionDuration" to "0.2s", "transitionTimingFunction" to "ease", "backgroundColor:active" to "rgba(255,255,255,0.2)", "transform:active" to "scale(0.9)")), "popup-search" to _pS(_uM("paddingTop" to 15, "paddingRight" to 20, "paddingBottom" to 15, "paddingLeft" to 20, "borderBottomWidth" to 1, "borderBottomStyle" to "solid", "borderBottomColor" to "#e9ecef", "backgroundColor" to "#f8f9fa")), "search-input" to _pS(_uM("width" to "100%", "height" to 40, "paddingTop" to 0, "paddingRight" to 15, "paddingBottom" to 0, "paddingLeft" to 15, "borderTopWidth" to 1, "borderRightWidth" to 1, "borderBottomWidth" to 1, "borderLeftWidth" to 1, "borderTopStyle" to "solid", "borderRightStyle" to "solid", "borderBottomStyle" to "solid", "borderLeftStyle" to "solid", "borderTopColor" to "#dddddd", "borderRightColor" to "#dddddd", "borderBottomColor" to "#dddddd", "borderLeftColor" to "#dddddd", "borderTopLeftRadius" to 20, "borderTopRightRadius" to 20, "borderBottomRightRadius" to 20, "borderBottomLeftRadius" to 20, "fontSize" to 14, "backgroundColor" to "#ffffff", "outline" to "none", "transitionProperty" to "all", "transitionDuration" to "0.2s", "transitionTimingFunction" to "ease", "borderTopColor:focus" to "#667eea", "borderRightColor:focus" to "#667eea", "borderBottomColor:focus" to "#667eea", "borderLeftColor:focus" to "#667eea", "boxShadow:focus" to "0 0 0 2px rgba(102, 126, 234, 0.2)")), "popup-list" to _pS(_uM("maxHeight" to 350, "overflowY" to "auto")), "popup-empty" to _pS(_uM("paddingTop" to 40, "paddingRight" to 20, "paddingBottom" to 40, "paddingLeft" to 20, "textAlign" to "center")), "empty-text" to _pS(_uM("fontSize" to 14, "color" to "#999999")), "picker-list" to _pS(_uM("maxHeight" to 300, "overflowY" to "auto")), "picker-item" to _uM("" to _uM("display" to "flex", "justifyContent" to "space-between", "alignItems" to "center", "paddingTop" to 15, "paddingRight" to 20, "paddingBottom" to 15, "paddingLeft" to 20, "borderBottomWidth" to 1, "borderBottomStyle" to "solid", "borderBottomColor" to "#f0f0f0", "transitionProperty" to "all", "transitionDuration" to "0.2s", "transitionTimingFunction" to "ease", "cursor" to "pointer", "position" to "relative", "backgroundColor:hover" to "#f8f9fa", "color:hover" to "#667eea", "backgroundColor:active" to "#e9ecef", "transform:active" to "scale(0.98)", "borderBottomWidth:last-child" to "medium", "borderBottomStyle:last-child" to "none", "borderBottomColor:last-child" to "#000000"), ".selected" to _uM("backgroundColor" to "#f8f9ff")), "popup-item" to _pS(_uM("display" to "flex", "justifyContent" to "space-between", "alignItems" to "center", "paddingTop" to 15, "paddingRight" to 20, "paddingBottom" to 15, "paddingLeft" to 20, "borderBottomWidth" to 1, "borderBottomStyle" to "solid", "borderBottomColor" to "#f0f0f0", "transitionProperty" to "all", "transitionDuration" to "0.2s", "transitionTimingFunction" to "ease", "cursor" to "pointer", "backgroundColor:hover" to "#f8f9fa")), "popup-item-selected" to _pS(_uM("backgroundColor" to "#e8f2ff", "borderLeftWidth" to 4, "borderLeftStyle" to "solid", "borderLeftColor" to "#667eea", "paddingLeft" to 16, "backgroundColor:hover" to "#ddeeff")), "popup-item-text" to _pS(_uM("fontSize" to 16, "color" to "#333333", "fontWeight" to "400")), "picker-item-text" to _pS(_uM("fontSize" to 16, "color" to "#333333")), "level-item" to _pS(_uM("flex" to 1)), "level-name" to _pS(_uM("fontSize" to 16, "color" to "#333333", "marginBottom" to 4)), "level-desc" to _pS(_uM("fontSize" to 12, "color" to "#999999")), "popup-item-check" to _pS(_uM("fontSize" to 18, "color" to "#667eea", "fontWeight" to "bold", "animation" to "checkIn 0.3s ease")), "popup-loading" to _pS(_uM("display" to "flex", "justifyContent" to "center", "alignItems" to "center", "paddingTop" to 40, "paddingRight" to 20, "paddingBottom" to 40, "paddingLeft" to 20)), "loading-text" to _pS(_uM("fontSize" to 14, "color" to "#999999")), "form-label-left" to _pS(_uM("fontSize" to 16, "color" to "#333333", "marginBottom" to 10, "fontWeight" to "400", "textAlign" to "left")), "custom-picker-full" to _uM("" to _uM("width" to "100%", "paddingTop" to "20rpx", "paddingRight" to "20rpx", "paddingBottom" to "20rpx", "paddingLeft" to "20rpx", "borderTopWidth" to 1, "borderRightWidth" to 1, "borderBottomWidth" to 1, "borderLeftWidth" to 1, "borderTopStyle" to "solid", "borderRightStyle" to "solid", "borderBottomStyle" to "solid", "borderLeftStyle" to "solid", "borderTopColor" to "#dddddd", "borderRightColor" to "#dddddd", "borderBottomColor" to "#dddddd", "borderLeftColor" to "#dddddd", "borderTopLeftRadius" to "8rpx", "borderTopRightRadius" to "8rpx", "borderBottomRightRadius" to "8rpx", "borderBottomLeftRadius" to "8rpx", "backgroundColor" to "#ffffff", "minHeight" to "80rpx", "display" to "flex", "alignItems" to "center"), ".disabled" to _uM("backgroundImage" to "none", "backgroundColor" to "#f5f5f5", "borderTopColor" to "#dddddd", "borderRightColor" to "#dddddd", "borderBottomColor" to "#dddddd", "borderLeftColor" to "#dddddd", "opacity" to 0.6)), "picker-text-full" to _uM("" to _uM("fontSize" to "32rpx", "color" to "#333333", "width" to "100%", "textAlign" to "left"), ".placeholder" to _uM("color" to "#999999")), "form-input" to _pS(_uM("flex" to 1, "paddingTop" to 12, "paddingRight" to 15, "paddingBottom" to 12, "paddingLeft" to 15, "backgroundImage" to "none", "backgroundColor" to "#f8f9fa", "borderTopLeftRadius" to 8, "borderTopRightRadius" to 8, "borderBottomRightRadius" to 8, "borderBottomLeftRadius" to 8, "borderTopWidth" to 1, "borderRightWidth" to 1, "borderBottomWidth" to 1, "borderLeftWidth" to 1, "borderTopStyle" to "solid", "borderRightStyle" to "solid", "borderBottomStyle" to "solid", "borderLeftStyle" to "solid", "borderTopColor" to "#e9ecef", "borderRightColor" to "#e9ecef", "borderBottomColor" to "#e9ecef", "borderLeftColor" to "#e9ecef", "fontSize" to 16, "color" to "#333333", "boxSizing" to "border-box", "width" to "100%")), "@FONT-FACE" to _uM("0" to _uM(), "1" to _uM(), "2" to _uM(), "3" to _uM()), "@TRANSITION" to _uM("picker-wrapper-inline" to _uM("property" to "all", "duration" to "0.3s", "timingFunction" to "ease"), "bottom-save-btn" to _uM("property" to "all", "duration" to "0.3s", "timingFunction" to "cubic-bezier(0.4,0,0.2,1)", "property::before" to "left", "duration::before" to "0.6s"), "picker-confirm" to _uM("property" to "all", "duration" to "0.2s", "timingFunction" to "ease"), "popup-close" to _uM("property" to "all", "duration" to "0.2s", "timingFunction" to "ease"), "search-input" to _uM("property" to "all", "duration" to "0.2s", "timingFunction" to "ease"), "picker-item" to _uM("property" to "all", "duration" to "0.2s", "timingFunction" to "ease"), "popup-item" to _uM("property" to "all", "duration" to "0.2s", "timingFunction" to "ease")))
+                return _uM("container" to _pS(_uM("backgroundColor" to "#f5f5f5", "position" to "relative", "zIndex" to 1, "paddingBottom" to "180rpx")), "header" to _pS(_uM("display" to "flex", "justifyContent" to "space-between", "alignItems" to "center", "paddingTop" to 20, "paddingRight" to 20, "paddingBottom" to 20, "paddingLeft" to 20, "backgroundColor" to "#ffffff", "borderBottomWidth" to 1, "borderBottomStyle" to "solid", "borderBottomColor" to "#f0f0f0")), "header-left" to _pS(_uM("display" to "flex", "alignItems" to "center", "gap" to "5px")), "back-icon" to _pS(_uM("fontSize" to 24, "color" to "#007AFF")), "back-text" to _pS(_uM("fontSize" to 16, "color" to "#007AFF")), "header-title" to _pS(_uM("fontSize" to 18, "fontWeight" to "bold", "color" to "#333333")), "header-right" to _pS(_uM("display" to "flex", "alignItems" to "center")), "save-btn" to _pS(_uM("fontSize" to 16, "color" to "#007AFF")), "task-info" to _pS(_uM("backgroundColor" to "#ffffff", "marginTop" to 10, "marginRight" to 20, "marginBottom" to 10, "marginLeft" to 20, "borderTopLeftRadius" to 8, "borderTopRightRadius" to 8, "borderBottomRightRadius" to 8, "borderBottomLeftRadius" to 8, "paddingTop" to 20, "paddingRight" to 20, "paddingBottom" to 20, "paddingLeft" to 20)), "info-item" to _pS(_uM("display" to "flex", "paddingTop" to 12, "paddingRight" to 0, "paddingBottom" to 12, "paddingLeft" to 0, "borderBottomWidth" to 1, "borderBottomStyle" to "solid", "borderBottomColor" to "#f0f0f0", "borderBottomWidth:last-child" to "medium", "borderBottomStyle:last-child" to "none", "borderBottomColor:last-child" to "#000000")), "info-label" to _pS(_uM("fontSize" to 14, "color" to "#666666", "width" to 100, "flexShrink" to 0, "textAlign" to "left", "marginRight" to 12)), "info-value" to _pS(_uM("fontSize" to 14, "color" to "#333333", "flex" to 1, "textAlign" to "left")), "form-section" to _pS(_uM("backgroundColor" to "#ffffff", "marginTop" to 10, "marginRight" to 20, "marginBottom" to 10, "marginLeft" to 20, "borderTopLeftRadius" to 8, "borderTopRightRadius" to 8, "borderBottomRightRadius" to 8, "borderBottomLeftRadius" to 8, "paddingTop" to 20, "paddingRight" to 20, "paddingBottom" to 20, "paddingLeft" to 20)), "section-title" to _pS(_uM("display" to "flex", "alignItems" to "center", "marginBottom" to 20)), "title-text" to _pS(_uM("fontSize" to 16, "fontWeight" to "bold", "color" to "#333333")), "required-mark" to _pS(_uM("fontSize" to 16, "color" to "#ff4757", "marginLeft" to 4)), "form-item" to _pS(_uM("marginBottom" to 20, "marginBottom:last-child" to 0)), "form-item-inline" to _pS(_uM("marginBottom" to 20, "display" to "flex", "flexDirection" to "column", "gap" to "8px", "paddingTop" to 0, "paddingRight" to 20, "paddingBottom" to 0, "paddingLeft" to 20)), "form-label" to _pS(_uM("fontSize" to 14, "color" to "#333333", "marginBottom" to 8)), "form-label-inline" to _pS(_uM("fontSize" to 14, "color" to "#333333", "marginBottom" to 0)), "picker-wrapper" to _pS(_uM("display" to "flex", "justifyContent" to "space-between", "alignItems" to "center", "paddingTop" to 12, "paddingRight" to 15, "paddingBottom" to 12, "paddingLeft" to 15, "borderTopWidth" to 1, "borderRightWidth" to 1, "borderBottomWidth" to 1, "borderLeftWidth" to 1, "borderTopStyle" to "solid", "borderRightStyle" to "solid", "borderBottomStyle" to "solid", "borderLeftStyle" to "solid", "borderTopColor" to "#e9ecef", "borderRightColor" to "#e9ecef", "borderBottomColor" to "#e9ecef", "borderLeftColor" to "#e9ecef", "borderTopLeftRadius" to 6, "borderTopRightRadius" to 6, "borderBottomRightRadius" to 6, "borderBottomLeftRadius" to 6, "backgroundColor" to "#ffffff")), "picker-wrapper-inline" to _uM("" to _uM("display" to "flex", "justifyContent" to "space-between", "alignItems" to "center", "paddingTop" to 12, "paddingRight" to 15, "paddingBottom" to 12, "paddingLeft" to 15, "borderTopWidth" to 1, "borderRightWidth" to 1, "borderBottomWidth" to 1, "borderLeftWidth" to 1, "borderTopStyle" to "solid", "borderRightStyle" to "solid", "borderBottomStyle" to "solid", "borderLeftStyle" to "solid", "borderTopColor" to "#e9ecef", "borderRightColor" to "#e9ecef", "borderBottomColor" to "#e9ecef", "borderLeftColor" to "#e9ecef", "borderTopLeftRadius" to 6, "borderTopRightRadius" to 6, "borderBottomRightRadius" to 6, "borderBottomLeftRadius" to 6, "backgroundColor" to "#ffffff", "width" to "100%", "transitionProperty" to "all", "transitionDuration" to "0.3s", "transitionTimingFunction" to "ease", "cursor" to "pointer", "borderTopColor:hover" to "#667eea", "borderRightColor:hover" to "#667eea", "borderBottomColor:hover" to "#667eea", "borderLeftColor:hover" to "#667eea", "boxShadow:hover" to "0 0 0 2px rgba(102, 126, 234, 0.1)", "transform:active" to "scale(0.98)"), ".disabled" to _uM("backgroundColor" to "#f5f5f5", "color" to "#999999", "cursor" to "not-allowed", "opacity" to 0.6), ".disabled:hover" to _uM("borderTopColor" to "#e9ecef", "borderRightColor" to "#e9ecef", "borderBottomColor" to "#e9ecef", "borderLeftColor" to "#e9ecef", "boxShadow" to "none")), "text-input-inline" to _pS(_uM("paddingTop" to 12, "paddingRight" to 15, "paddingBottom" to 12, "paddingLeft" to 15, "borderTopWidth" to 1, "borderRightWidth" to 1, "borderBottomWidth" to 1, "borderLeftWidth" to 1, "borderTopStyle" to "solid", "borderRightStyle" to "solid", "borderBottomStyle" to "solid", "borderLeftStyle" to "solid", "borderTopColor" to "#e9ecef", "borderRightColor" to "#e9ecef", "borderBottomColor" to "#e9ecef", "borderLeftColor" to "#e9ecef", "borderTopLeftRadius" to 6, "borderTopRightRadius" to 6, "borderBottomRightRadius" to 6, "borderBottomLeftRadius" to 6, "fontSize" to 14, "color" to "#333333", "backgroundColor" to "#ffffff", "flex" to 1)), "bottom-save-container" to _pS(_uM("position" to "fixed", "bottom" to 0, "left" to 0, "right" to 0, "paddingTop" to "20rpx", "paddingRight" to "30rpx", "paddingBottom" to "40rpx", "paddingLeft" to "30rpx", "backgroundImage" to "linear-gradient(to top, rgba(85, 170, 255, 1.0) 0%, rgba(85, 170, 255, 0.9) 100%)", "backgroundColor" to "rgba(0,0,0,0)", "backdropFilter" to "blur(10rpx)", "borderTopWidth" to "1rpx", "borderTopStyle" to "solid", "borderTopColor" to "rgba(240,240,240,0.8)", "zIndex" to 999)), "bottom-save-btn" to _pS(_uM("width" to "100%", "height" to "96rpx", "backgroundImage" to "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)", "backgroundColor" to "rgba(0,0,0,0)", "borderTopLeftRadius" to "48rpx", "borderTopRightRadius" to "48rpx", "borderBottomRightRadius" to "48rpx", "borderBottomLeftRadius" to "48rpx", "display" to "flex", "alignItems" to "center", "justifyContent" to "center", "boxShadow" to "0 12rpx 32rpx rgba(79, 172, 254, 0.4)", "transitionProperty" to "all", "transitionDuration" to "0.3s", "transitionTimingFunction" to "cubic-bezier(0.4,0,0.2,1)", "position" to "relative", "overflow" to "hidden", "content::before" to "''", "position::before" to "absolute", "top::before" to 0, "left::before" to "-100%", "width::before" to "100%", "height::before" to "100%", "backgroundImage::before" to "linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent)", "backgroundColor::before" to "rgba(0,0,0,0)", "transitionProperty::before" to "left", "transitionDuration::before" to "0.6s", "transform:active" to "translateY(2rpx) scale(0.98)", "boxShadow:active" to "0 8rpx 24rpx rgba(79, 172, 254, 0.3)", "left:active::before" to "100%")), "bottom-save-text" to _pS(_uM("color" to "#000000", "fontSize" to "34rpx", "fontWeight" to "700", "letterSpacing" to "3rpx", "position" to "relative", "zIndex" to 1)), "picker-text" to _uM("" to _uM("fontSize" to 14, "color" to "#333333"), ".placeholder" to _uM("color" to "#999999")), "picker-arrow" to _pS(_uM("fontSize" to 16, "color" to "#cccccc")), "text-input" to _pS(_uM("paddingTop" to 12, "paddingRight" to 15, "paddingBottom" to 12, "paddingLeft" to 15, "borderTopWidth" to 1, "borderRightWidth" to 1, "borderBottomWidth" to 1, "borderLeftWidth" to 1, "borderTopStyle" to "solid", "borderRightStyle" to "solid", "borderBottomStyle" to "solid", "borderLeftStyle" to "solid", "borderTopColor" to "#e9ecef", "borderRightColor" to "#e9ecef", "borderBottomColor" to "#e9ecef", "borderLeftColor" to "#e9ecef", "borderTopLeftRadius" to 6, "borderTopRightRadius" to 6, "borderBottomRightRadius" to 6, "borderBottomLeftRadius" to 6, "fontSize" to 14, "color" to "#333333", "backgroundColor" to "#ffffff")), "textarea-input" to _pS(_uM("paddingTop" to 12, "paddingRight" to 15, "paddingBottom" to 12, "paddingLeft" to 15, "borderTopWidth" to 1, "borderRightWidth" to 1, "borderBottomWidth" to 1, "borderLeftWidth" to 1, "borderTopStyle" to "solid", "borderRightStyle" to "solid", "borderBottomStyle" to "solid", "borderLeftStyle" to "solid", "borderTopColor" to "#e9ecef", "borderRightColor" to "#e9ecef", "borderBottomColor" to "#e9ecef", "borderLeftColor" to "#e9ecef", "borderTopLeftRadius" to 6, "borderTopRightRadius" to 6, "borderBottomRightRadius" to 6, "borderBottomLeftRadius" to 6, "fontSize" to 14, "color" to "#333333", "backgroundColor" to "#ffffff", "minHeight" to 80, "resize" to "none")), "char-count" to _pS(_uM("fontSize" to 12, "color" to "#999999", "textAlign" to "right", "marginTop" to 5)), "photo-upload" to _pS(_uM("display" to "flex", "flexWrap" to "wrap", "gap" to "10px", "marginBottom" to 5)), "photo-item" to _pS(_uM("position" to "relative", "width" to 80, "height" to 80)), "photo-preview" to _pS(_uM("width" to "100%", "height" to "100%", "borderTopLeftRadius" to 6, "borderTopRightRadius" to 6, "borderBottomRightRadius" to 6, "borderBottomLeftRadius" to 6, "objectFit" to "cover")), "photo-delete" to _pS(_uM("position" to "absolute", "top" to -5, "right" to -5, "width" to 20, "height" to 20, "backgroundColor" to "#ff4757", "borderTopLeftRadius" to 10, "borderTopRightRadius" to 10, "borderBottomRightRadius" to 10, "borderBottomLeftRadius" to 10, "display" to "flex", "alignItems" to "center", "justifyContent" to "center")), "delete-icon" to _pS(_uM("fontSize" to 12, "color" to "#ffffff", "fontWeight" to "bold")), "photo-add" to _pS(_uM("width" to 80, "height" to 80, "borderTopWidth" to 1, "borderRightWidth" to 1, "borderBottomWidth" to 1, "borderLeftWidth" to 1, "borderTopStyle" to "dashed", "borderRightStyle" to "dashed", "borderBottomStyle" to "dashed", "borderLeftStyle" to "dashed", "borderTopColor" to "#cccccc", "borderRightColor" to "#cccccc", "borderBottomColor" to "#cccccc", "borderLeftColor" to "#cccccc", "borderTopLeftRadius" to 6, "borderTopRightRadius" to 6, "borderBottomRightRadius" to 6, "borderBottomLeftRadius" to 6, "display" to "flex", "flexDirection" to "column", "alignItems" to "center", "justifyContent" to "center", "backgroundColor" to "#f8f9fa")), "add-icon" to _pS(_uM("fontSize" to 24, "color" to "#999999", "marginBottom" to 4)), "add-text" to _pS(_uM("fontSize" to 12, "color" to "#999999")), "photo-tip" to _pS(_uM("fontSize" to 12, "color" to "#999999")), "popup-overlay" to _pS(_uM("!position" to "fixed", "!top" to 0, "!left" to 0, "!width" to "100%", "!height" to "100%", "backgroundColor" to "rgba(0,0,0,0.5)", "display" to "flex", "alignItems" to "center", "justifyContent" to "center", "!zIndex" to 9999, "animation" to "fadeIn 0.3s ease", "pointerEvents" to "auto")), "picker-modal" to _pS(_uM("!position" to "fixed", "!top" to 0, "!left" to 0, "!width" to "100%", "!height" to "100%", "backgroundColor" to "rgba(0,0,0,0.5)", "display" to "flex", "alignItems" to "center", "justifyContent" to "center", "!zIndex" to 9999, "animation" to "fadeIn 0.3s ease", "pointerEvents" to "auto")), "popup-content" to _pS(_uM("!width" to "90%", "maxWidth" to 500, "backgroundColor" to "#ffffff", "borderTopLeftRadius" to 12, "borderTopRightRadius" to 12, "borderBottomRightRadius" to 12, "borderBottomLeftRadius" to 12, "overflow" to "hidden", "animation" to "scaleIn 0.3s ease", "boxShadow" to "0 8px 32px rgba(0, 0, 0, 0.2)", "position" to "relative", "zIndex" to 10000)), "picker-content" to _pS(_uM("!width" to "90%", "maxWidth" to 500, "backgroundColor" to "#ffffff", "borderTopLeftRadius" to 12, "borderTopRightRadius" to 12, "borderBottomRightRadius" to 12, "borderBottomLeftRadius" to 12, "overflow" to "hidden", "animation" to "scaleIn 0.3s ease", "boxShadow" to "0 8px 32px rgba(0, 0, 0, 0.2)", "position" to "relative", "zIndex" to 10000)), "popup-header" to _pS(_uM("display" to "flex", "justifyContent" to "space-between", "alignItems" to "center", "paddingTop" to 15, "paddingRight" to 20, "paddingBottom" to 15, "paddingLeft" to 20, "borderBottomWidth" to 1, "borderBottomStyle" to "solid", "borderBottomColor" to "#e9ecef", "backgroundImage" to "linear-gradient(135deg, #667eea 0%, #764ba2 100%)", "backgroundColor" to "rgba(0,0,0,0)", "position" to "relative")), "picker-header" to _pS(_uM("display" to "flex", "justifyContent" to "space-between", "alignItems" to "center", "paddingTop" to 15, "paddingRight" to 20, "paddingBottom" to 15, "paddingLeft" to 20, "borderBottomWidth" to 1, "borderBottomStyle" to "solid", "borderBottomColor" to "#e9ecef", "backgroundImage" to "linear-gradient(135deg, #667eea 0%, #764ba2 100%)", "backgroundColor" to "rgba(0,0,0,0)", "position" to "relative", "content::after" to "''", "position::after" to "absolute", "bottom::after" to 0, "left::after" to "50%", "transform::after" to "translateX(-50%)", "width::after" to 30, "height::after" to 3, "backgroundColor::after" to "rgba(255,255,255,0.3)", "borderTopLeftRadius::after" to 2, "borderTopRightRadius::after" to 2, "borderBottomRightRadius::after" to 2, "borderBottomLeftRadius::after" to 2)), "picker-cancel" to _pS(_uM("fontSize" to 16, "color" to "rgba(255,255,255,0.8)")), "picker-title" to _pS(_uM("fontSize" to 16, "color" to "#ffffff", "letterSpacing" to 1)), "picker-confirm" to _pS(_uM("fontSize" to 16, "color" to "#ffffff", "backgroundColor" to "rgba(255,255,255,0.2)", "paddingTop" to 6, "paddingRight" to 12, "paddingBottom" to 6, "paddingLeft" to 12, "borderTopLeftRadius" to 15, "borderTopRightRadius" to 15, "borderBottomRightRadius" to 15, "borderBottomLeftRadius" to 15, "transitionProperty" to "all", "transitionDuration" to "0.2s", "transitionTimingFunction" to "ease", "backgroundColor:active" to "rgba(255,255,255,0.3)", "transform:active" to "scale(0.95)")), "popup-title" to _pS(_uM("fontSize" to 16, "color" to "#ffffff", "letterSpacing" to 1)), "popup-close" to _pS(_uM("fontSize" to 24, "color" to "rgba(255,255,255,0.8)", "width" to 30, "height" to 30, "display" to "flex", "alignItems" to "center", "justifyContent" to "center", "borderTopLeftRadius" to 15, "borderTopRightRadius" to 15, "borderBottomRightRadius" to 15, "borderBottomLeftRadius" to 15, "transitionProperty" to "all", "transitionDuration" to "0.2s", "transitionTimingFunction" to "ease", "backgroundColor:active" to "rgba(255,255,255,0.2)", "transform:active" to "scale(0.9)")), "popup-search" to _pS(_uM("paddingTop" to 15, "paddingRight" to 20, "paddingBottom" to 15, "paddingLeft" to 20, "borderBottomWidth" to 1, "borderBottomStyle" to "solid", "borderBottomColor" to "#e9ecef", "backgroundColor" to "#f8f9fa")), "search-input" to _pS(_uM("width" to "100%", "height" to 40, "paddingTop" to 0, "paddingRight" to 15, "paddingBottom" to 0, "paddingLeft" to 15, "borderTopWidth" to 1, "borderRightWidth" to 1, "borderBottomWidth" to 1, "borderLeftWidth" to 1, "borderTopStyle" to "solid", "borderRightStyle" to "solid", "borderBottomStyle" to "solid", "borderLeftStyle" to "solid", "borderTopColor" to "#dddddd", "borderRightColor" to "#dddddd", "borderBottomColor" to "#dddddd", "borderLeftColor" to "#dddddd", "borderTopLeftRadius" to 20, "borderTopRightRadius" to 20, "borderBottomRightRadius" to 20, "borderBottomLeftRadius" to 20, "fontSize" to 14, "backgroundColor" to "#ffffff", "outline" to "none", "transitionProperty" to "all", "transitionDuration" to "0.2s", "transitionTimingFunction" to "ease", "borderTopColor:focus" to "#667eea", "borderRightColor:focus" to "#667eea", "borderBottomColor:focus" to "#667eea", "borderLeftColor:focus" to "#667eea", "boxShadow:focus" to "0 0 0 2px rgba(102, 126, 234, 0.2)")), "popup-list" to _pS(_uM("maxHeight" to 350, "overflowY" to "auto")), "popup-empty" to _pS(_uM("paddingTop" to 40, "paddingRight" to 20, "paddingBottom" to 40, "paddingLeft" to 20, "textAlign" to "center")), "empty-text" to _pS(_uM("fontSize" to 14, "color" to "#999999")), "picker-list" to _pS(_uM("maxHeight" to 300, "overflowY" to "auto")), "picker-item" to _uM("" to _uM("display" to "flex", "justifyContent" to "center", "alignItems" to "center", "paddingTop" to 15, "paddingRight" to 20, "paddingBottom" to 15, "paddingLeft" to 20, "borderBottomWidth" to 1, "borderBottomStyle" to "solid", "borderBottomColor" to "#f0f0f0", "transitionProperty" to "all", "transitionDuration" to "0.3s", "transitionTimingFunction" to "cubic-bezier(0.4,0,0.2,1)", "cursor" to "pointer", "position" to "relative", "backgroundColor:hover" to "#f0f8ff", "color:hover" to "#007AFF", "backgroundColor:active" to "#e9ecef", "transform:active" to "scale(0.98)", "borderBottomWidth:last-child" to "medium", "borderBottomStyle:last-child" to "none", "borderBottomColor:last-child" to "#000000", "height" to 60, "fontSize" to 16, "color" to "#666666", "borderTopLeftRadius" to 8, "borderTopRightRadius" to 8, "borderBottomRightRadius" to 8, "borderBottomLeftRadius" to 8, "marginTop" to 4, "marginRight" to 8, "marginBottom" to 4, "marginLeft" to 8, "zIndex" to 2, "opacity" to 0.6, "backgroundColor" to "rgba(0,0,0,0.02)"), ".selected" to _uM("backgroundColor" to "rgba(0,0,0,0)", "backgroundImage" to "linear-gradient(135deg, #007AFF 0%, #0056CC 100%)", "color" to "#ffffff", "fontWeight" to "700", "boxShadow" to "0 4px 12px rgba(0, 122, 255, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2)", "transform" to "scale(1.05)", "zIndex" to 3, "opacity" to 1, "fontSize" to 18, "borderTopWidth" to 2, "borderRightWidth" to 2, "borderBottomWidth" to 2, "borderLeftWidth" to 2, "borderTopStyle" to "solid", "borderRightStyle" to "solid", "borderBottomStyle" to "solid", "borderLeftStyle" to "solid", "borderTopColor" to "#ffffff", "borderRightColor" to "#ffffff", "borderBottomColor" to "#ffffff", "borderLeftColor" to "#ffffff", "textShadow" to "0 1px 2px rgba(0, 0, 0, 0.3)")), "popup-item" to _pS(_uM("display" to "flex", "justifyContent" to "space-between", "alignItems" to "center", "paddingTop" to 15, "paddingRight" to 20, "paddingBottom" to 15, "paddingLeft" to 20, "borderBottomWidth" to 1, "borderBottomStyle" to "solid", "borderBottomColor" to "#f0f0f0", "transitionProperty" to "all", "transitionDuration" to "0.2s", "transitionTimingFunction" to "ease", "cursor" to "pointer", "backgroundColor:hover" to "#f8f9fa")), "popup-item-selected" to _pS(_uM("backgroundColor" to "#e8f2ff", "borderLeftWidth" to 4, "borderLeftStyle" to "solid", "borderLeftColor" to "#667eea", "paddingLeft" to 16, "backgroundColor:hover" to "#ddeeff")), "popup-item-text" to _pS(_uM("fontSize" to 16, "color" to "#333333", "fontWeight" to "400")), "picker-item-text" to _pS(_uM("fontSize" to 16, "color" to "#333333")), "level-item" to _pS(_uM("flex" to 1)), "level-name" to _pS(_uM("fontSize" to 16, "color" to "#333333", "marginBottom" to 4)), "level-desc" to _pS(_uM("fontSize" to 12, "color" to "#999999")), "popup-item-check" to _pS(_uM("fontSize" to 18, "color" to "#667eea", "fontWeight" to "bold", "animation" to "checkIn 0.3s ease")), "popup-loading" to _pS(_uM("display" to "flex", "justifyContent" to "center", "alignItems" to "center", "paddingTop" to 40, "paddingRight" to 20, "paddingBottom" to 40, "paddingLeft" to 20)), "loading-text" to _pS(_uM("fontSize" to 14, "color" to "#999999")), "form-label-left" to _pS(_uM("fontSize" to 16, "color" to "#333333", "marginBottom" to 10, "fontWeight" to "400", "textAlign" to "left")), "custom-picker-full" to _uM("" to _uM("width" to "100%", "paddingTop" to "20rpx", "paddingRight" to "20rpx", "paddingBottom" to "20rpx", "paddingLeft" to "20rpx", "borderTopWidth" to 1, "borderRightWidth" to 1, "borderBottomWidth" to 1, "borderLeftWidth" to 1, "borderTopStyle" to "solid", "borderRightStyle" to "solid", "borderBottomStyle" to "solid", "borderLeftStyle" to "solid", "borderTopColor" to "#dddddd", "borderRightColor" to "#dddddd", "borderBottomColor" to "#dddddd", "borderLeftColor" to "#dddddd", "borderTopLeftRadius" to "8rpx", "borderTopRightRadius" to "8rpx", "borderBottomRightRadius" to "8rpx", "borderBottomLeftRadius" to "8rpx", "backgroundColor" to "#ffffff", "minHeight" to "80rpx", "display" to "flex", "alignItems" to "center"), ".disabled" to _uM("backgroundImage" to "none", "backgroundColor" to "#f5f5f5", "borderTopColor" to "#dddddd", "borderRightColor" to "#dddddd", "borderBottomColor" to "#dddddd", "borderLeftColor" to "#dddddd", "opacity" to 0.6)), "picker-container" to _pS(_uM("width" to "100%", "paddingTop" to "20rpx", "paddingRight" to "20rpx", "paddingBottom" to "20rpx", "paddingLeft" to "20rpx", "borderTopWidth" to 1, "borderRightWidth" to 1, "borderBottomWidth" to 1, "borderLeftWidth" to 1, "borderTopStyle" to "solid", "borderRightStyle" to "solid", "borderBottomStyle" to "solid", "borderLeftStyle" to "solid", "borderTopColor" to "#dddddd", "borderRightColor" to "#dddddd", "borderBottomColor" to "#dddddd", "borderLeftColor" to "#dddddd", "borderTopLeftRadius" to "8rpx", "borderTopRightRadius" to "8rpx", "borderBottomRightRadius" to "8rpx", "borderBottomLeftRadius" to "8rpx", "backgroundColor" to "#ffffff", "minHeight" to "80rpx", "display" to "flex", "alignItems" to "center")), "picker-text-full" to _uM("" to _uM("fontSize" to "32rpx", "color" to "#333333", "width" to "100%", "textAlign" to "left"), ".placeholder" to _uM("color" to "#999999")), "date-picker-modal" to _pS(_uM("position" to "fixed", "top" to 0, "left" to 0, "right" to 0, "bottom" to 0, "backgroundColor" to "rgba(0,0,0,0.5)", "display" to "flex", "alignItems" to "flex-end", "zIndex" to 1000)), "date-picker-content" to _pS(_uM("width" to "100%", "backgroundColor" to "#ffffff", "borderTopLeftRadius" to 16, "borderTopRightRadius" to 16, "borderBottomRightRadius" to 0, "borderBottomLeftRadius" to 0, "paddingBottom" to "env(safe-area-inset-bottom)")), "date-picker-header" to _pS(_uM("display" to "flex", "justifyContent" to "space-between", "alignItems" to "center", "paddingTop" to 16, "paddingRight" to 20, "paddingBottom" to 16, "paddingLeft" to 20, "borderBottomWidth" to 1, "borderBottomStyle" to "solid", "borderBottomColor" to "#f0f0f0")), "date-picker-cancel" to _pS(_uM("fontSize" to 16, "color" to "#999999")), "date-picker-title" to _pS(_uM("fontSize" to 18, "color" to "#333333")), "date-picker-confirm" to _pS(_uM("fontSize" to 16, "color" to "#007AFF")), "date-picker-view" to _pS(_uM("height" to 320, "paddingTop" to 0, "paddingRight" to 20, "paddingBottom" to 20, "paddingLeft" to 20, "position" to "relative")), "picker-item-spacer" to _pS(_uM("pointerEvents" to "none", "opacity" to 0, "!backgroundImage" to "none", "!backgroundColor" to "rgba(0,0,0,0)")), "form-input" to _pS(_uM("flex" to 1, "paddingTop" to 12, "paddingRight" to 15, "paddingBottom" to 12, "paddingLeft" to 15, "backgroundImage" to "none", "backgroundColor" to "#f8f9fa", "borderTopLeftRadius" to 8, "borderTopRightRadius" to 8, "borderBottomRightRadius" to 8, "borderBottomLeftRadius" to 8, "borderTopWidth" to 1, "borderRightWidth" to 1, "borderBottomWidth" to 1, "borderLeftWidth" to 1, "borderTopStyle" to "solid", "borderRightStyle" to "solid", "borderBottomStyle" to "solid", "borderLeftStyle" to "solid", "borderTopColor" to "#e9ecef", "borderRightColor" to "#e9ecef", "borderBottomColor" to "#e9ecef", "borderLeftColor" to "#e9ecef", "fontSize" to 16, "color" to "#333333", "boxSizing" to "border-box", "width" to "100%")), "@FONT-FACE" to _uM("0" to _uM(), "1" to _uM(), "2" to _uM(), "3" to _uM()), "@TRANSITION" to _uM("picker-wrapper-inline" to _uM("property" to "all", "duration" to "0.3s", "timingFunction" to "ease"), "bottom-save-btn" to _uM("property" to "all", "duration" to "0.3s", "timingFunction" to "cubic-bezier(0.4,0,0.2,1)", "property::before" to "left", "duration::before" to "0.6s"), "picker-confirm" to _uM("property" to "all", "duration" to "0.2s", "timingFunction" to "ease"), "popup-close" to _uM("property" to "all", "duration" to "0.2s", "timingFunction" to "ease"), "search-input" to _uM("property" to "all", "duration" to "0.2s", "timingFunction" to "ease"), "picker-item" to _uM("property" to "all", "duration" to "0.3s", "timingFunction" to "cubic-bezier(0.4,0,0.2,1)"), "popup-item" to _uM("property" to "all", "duration" to "0.2s", "timingFunction" to "ease")))
             }
         var inheritAttrs = true
         var inject: Map<String, Map<String, Any?>> = _uM()

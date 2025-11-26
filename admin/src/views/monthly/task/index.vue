@@ -87,7 +87,11 @@
           border
         >
           <el-table-column type="selection" width="55" />
-          <el-table-column prop="taskNo" label="任务编号" width="150" />
+          <el-table-column prop="taskNo" label="任务编号" width="150">
+            <template #default="{ row }">
+              {{ formatTaskNo(row.taskNo) }}
+            </template>
+          </el-table-column>
           <el-table-column prop="inspectionTime" label="月检时间" width="160" />
           <el-table-column prop="groupLeaderName" label="组长" width="100" />
           <el-table-column prop="deputyLeaderName" label="副组长" width="100" />
@@ -370,17 +374,8 @@ const formRules = {
   inspectionTime: [
     { required: true, message: '请选择月检时间', trigger: 'change' }
   ],
-  groupLeaderId: [
-    { required: true, message: '请选择组长', trigger: 'change' }
-  ],
-  deputyLeaderId: [
-    { required: true, message: '请选择副组长', trigger: 'change' }
-  ],
   departmentId: [
     { required: true, message: '请选择部门', trigger: 'change' }
-  ],
-  professionId: [
-    { required: true, message: '请选择专业', trigger: 'change' }
   ]
 }
 
@@ -665,6 +660,21 @@ const loadOptions = async () => {
   } catch (error) {
     console.error('加载选项数据失败:', error)
   }
+}
+
+// 格式化任务编号，将日期部分转换为月份显示
+const formatTaskNo = (taskNo) => {
+  if (!taskNo) return taskNo
+  
+  // 匹配任务编号中的日期部分 (YJ + 8位日期 + 其他)
+  const match = taskNo.match(/^(YJ)(\d{4})(\d{2})(\d{2})(.*)$/)
+  if (match) {
+    const [, prefix, year, month, day, suffix] = match
+    const monthNum = parseInt(month, 10)
+    return `${prefix}${year}年${monthNum}月${day}日${suffix}`
+  }
+  
+  return taskNo
 }
 
 // 组件挂载时加载数据

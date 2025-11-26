@@ -77,13 +77,33 @@ public class GjbzDataServiceImpl extends ServiceImpl<GjbzDataMapper, GjbzData> i
     }
 
     @Override
+    public List<String> getModulesByType(String type) {
+        return gjbzDataMapper.selectModulesByType(type);
+    }
+
+    @Override
     public List<String> getResponsibilityOptions() {
         return gjbzDataMapper.selectAllResponsibilities();
     }
 
     @Override
+    public List<String> getResponsibilitiesByModule(String module) {
+        return gjbzDataMapper.selectResponsibilitiesByModule(module);
+    }
+
+    @Override
     public List<String> getIssueOptions() {
         return gjbzDataMapper.selectAllIssues();
+    }
+
+    @Override
+    public List<String> getIssuesByResponsibility(String responsibility) {
+        return gjbzDataMapper.selectIssuesByResponsibility(responsibility);
+    }
+
+    @Override
+    public List<GjbzData> getIssueOptionsWithQuality() {
+        return gjbzDataMapper.selectAllIssuesWithQuality();
     }
 
     @Override

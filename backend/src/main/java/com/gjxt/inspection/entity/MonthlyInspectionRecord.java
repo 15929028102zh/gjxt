@@ -123,6 +123,18 @@ public class MonthlyInspectionRecord {
     private String location;
 
     /**
+     * 责任单位
+     */
+    @Schema(description = "责任单位")
+    private String responsibleUnit;
+
+    /**
+     * 责任人
+     */
+    @Schema(description = "责任人")
+    private String responsiblePerson;
+
+    /**
      * 整改建议
      */
     @Schema(description = "整改建议")
@@ -204,10 +216,35 @@ public class MonthlyInspectionRecord {
     private Integer safetyScore;
 
     /**
-     * 记录状态（0-草稿，1-已提交，2-已审核）
+     * 记录状态（0-草稿，1-已提交，2-已审核，3-待审核）
      */
     @Schema(description = "记录状态")
     private Integer recordStatus;
+
+    /**
+     * 审核状态（0:未审核, 1:已审核）
+     */
+    @Schema(description = "审核状态")
+    private Integer auditStatus;
+
+    /**
+     * 审核意见
+     */
+    @Schema(description = "审核意见")
+    private String auditReason;
+
+    /**
+     * 审核人ID
+     */
+    @Schema(description = "审核人ID")
+    private String auditorId;
+
+    /**
+     * 审核时间
+     */
+    @Schema(description = "审核时间")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private LocalDateTime auditTime;
 
     /**
      * 创建用户ID
@@ -338,6 +375,13 @@ public class MonthlyInspectionRecord {
     @Schema(description = "性质界定")
     private String qualityDetermination;
 
+    /**
+     * 审核人姓名
+     */
+    @TableField(exist = false)
+    @Schema(description = "审核人姓名")
+    private String auditorName;
+
     // Getter and Setter methods for fields that Lombok might not generate properly
     public String getCreateUserId() {
         return createUserId;
@@ -361,5 +405,45 @@ public class MonthlyInspectionRecord {
 
     public void setDeleted(Integer deleted) {
         this.deleted = deleted;
+    }
+
+    public Integer getAuditStatus() {
+        return auditStatus;
+    }
+
+    public void setAuditStatus(Integer auditStatus) {
+        this.auditStatus = auditStatus;
+    }
+
+    public String getAuditReason() {
+        return auditReason;
+    }
+
+    public void setAuditReason(String auditReason) {
+        this.auditReason = auditReason;
+    }
+
+    public String getAuditorId() {
+        return auditorId;
+    }
+
+    public void setAuditorId(String auditorId) {
+        this.auditorId = auditorId;
+    }
+
+    public LocalDateTime getAuditTime() {
+        return auditTime;
+    }
+
+    public void setAuditTime(LocalDateTime auditTime) {
+        this.auditTime = auditTime;
+    }
+
+    public String getAuditorName() {
+        return auditorName;
+    }
+
+    public void setAuditorName(String auditorName) {
+        this.auditorName = auditorName;
     }
 }

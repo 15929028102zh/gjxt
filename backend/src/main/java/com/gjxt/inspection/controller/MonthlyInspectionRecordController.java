@@ -43,7 +43,8 @@ public class MonthlyInspectionRecordController {
             @Parameter(description = "专业类别ID") @RequestParam(required = false) String professionalTypeId,
             @Parameter(description = "责任部门ID") @RequestParam(required = false) String responsibilityId,
             @Parameter(description = "记录状态") @RequestParam(required = false) Integer recordStatus,
-            @Parameter(description = "创建用户ID") @RequestParam(required = false) String createUserId
+            @Parameter(description = "创建用户ID") @RequestParam(required = false) String createUserId,
+            @Parameter(description = "整改期限（筛选小于该日期）yyyy-MM-dd") @RequestParam(required = false) String rectificationDeadlineBefore
     ) {
         try {
             Map<String, Object> params = new HashMap<>();
@@ -53,6 +54,7 @@ public class MonthlyInspectionRecordController {
             params.put("responsibilityId", responsibilityId);
             params.put("recordStatus", recordStatus);
             params.put("createUserId", createUserId);
+            params.put("rectificationDeadlineBefore", rectificationDeadlineBefore);
             
             IPage<MonthlyInspectionRecord> result = monthlyInspectionRecordService.getRecordPage(current, size, params);
             return Result.success(result);
@@ -282,27 +284,6 @@ public class MonthlyInspectionRecordController {
     }
 
     /**
-     * 审核记录
-     */
-    @Operation(summary = "审核记录")
-    @PutMapping("/{id}/audit")
-    public Result<String> auditRecord(
-            @Parameter(description = "记录ID") @PathVariable String id
-    ) {
-        try {
-            boolean result = monthlyInspectionRecordService.auditRecord(id);
-            if (result) {
-                return Result.success("审核记录成功");
-            } else {
-                return Result.error("审核记录失败");
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            return Result.error("审核记录失败：" + e.getMessage());
-        }
-    }
-
-    /**
      * 确认整改
      */
     @Operation(summary = "确认整改")
@@ -314,11 +295,42 @@ public class MonthlyInspectionRecordController {
         try {
             String rectificationSuggestion = (String) params.get("rectificationSuggestion");
             String rectificationEffect = (String) params.get("rectificationEffect");
-            String rectificationImages = (String) params.get("rectificationImages");
+            // 支持字符串或数组形式的图片参数
+            String rectificationImages;
+            Object imagesObj = params.get("rectificationImages");
+            if (imagesObj instanceof String) {
+                rectificationImages = (String) imagesObj;
+            } else if (imagesObj instanceof java.util.List) {
+                @SuppressWarnings("unchecked")
+                java.util.List<Object> list = (java.util.List<Object>) imagesObj;
+                rectificationImages = list.stream()
+                        .filter(java.util.Objects::nonNull)
+                        .map(Object::toString)
+                        .filter(s -> !s.isEmpty())
+                        .collect(java.util.stream.Collectors.joining(","));
+            } else {
+                rectificationImages = null;
+            }
+
             String natureDefinition = (String) params.get("natureDefinition");
-            String professionId = (String) params.get("professionId");
-            String departmentId = (String) params.get("departmentId");
-            Integer status = (Integer) params.get("status");
+            // 允许ID为字符串或数字
+            String professionId = params.get("professionId") == null ? null : params.get("professionId").toString();
+            String departmentId = params.get("departmentId") == null ? null : params.get("departmentId").toString();
+
+            // 允许status为数字或字符串
+            Integer status;
+            Object statusObj = params.get("status");
+            if (statusObj instanceof Number) {
+                status = ((Number) statusObj).intValue();
+            } else if (statusObj instanceof String) {
+                try {
+                    status = Integer.parseInt((String) statusObj);
+                } catch (NumberFormatException e) {
+                    status = null;
+                }
+            } else {
+                status = null;
+            }
             
             boolean result = monthlyInspectionRecordService.confirmRectification(
                 id, rectificationSuggestion, rectificationEffect, rectificationImages,
@@ -394,6 +406,107 @@ public class MonthlyInspectionRecordController {
         } catch (Exception e) {
             e.printStackTrace();
             return Result.error("获取部门统计失败：" + e.getMessage());
+        }
+    }
+
+    /**
+     * 获取月检记录数量统计
+     */
+    @Operation(summary = "获取月检记录数量统计")
+    @GetMapping("/monthly-count")
+    public Result<Long> getMonthlyRecordCount(
+            @Parameter(description = "用户ID") @RequestParam(required = false) String userId,
+            @Parameter(description = "记录状态") @RequestParam(required = false) Integer recordStatus,
+            @Parameter(description = "部门ID") @RequestParam(required = false) String departmentId,
+            @Parameter(description = "开始日期") @RequestParam(required = false) String startDate,
+            @Parameter(description = "结束日期") @RequestParam(required = false) String endDate
+    ) {
+        try {
+            Long count = monthlyInspectionRecordService.getMonthlyRecordCount(userId, recordStatus, departmentId, startDate, endDate);
+            return Result.success(count);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Result.error("获取月检记录数量失败：" + e.getMessage());
+        }
+    }
+
+    /**
+     * 回退记录（发送审核通知）
+     */
+    @Operation(summary = "回退记录")
+    @PostMapping("/{id}/reject")
+    public Result<String> rejectRecord(@Parameter(description = "记录ID") @PathVariable String id) {
+        try {
+            boolean success = monthlyInspectionRecordService.rejectRecord(id);
+            return success ? Result.success("回退记录成功") : Result.error("回退记录失败");
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Result.error("回退记录失败：" + e.getMessage());
+        }
+    }
+
+    /**
+     * 查询待审核记录
+     */
+    @Operation(summary = "查询待审核记录")
+    @GetMapping("/audit-list")
+    public Result<IPage<MonthlyInspectionRecord>> getAuditRecords(
+            @Parameter(description = "当前页") @RequestParam(defaultValue = "1") long current,
+            @Parameter(description = "每页大小") @RequestParam(defaultValue = "10") long size,
+            @Parameter(description = "部门ID") @RequestParam(required = false) String departmentId,
+            @Parameter(description = "记录状态") @RequestParam(required = false) Integer recordStatus,
+            @Parameter(description = "开始日期") @RequestParam(required = false) String startDate,
+            @Parameter(description = "结束日期") @RequestParam(required = false) String endDate
+    ) {
+        try {
+            IPage<MonthlyInspectionRecord> result = monthlyInspectionRecordService.getAuditRecords(
+                    current, size, departmentId, recordStatus, startDate, endDate);
+            return Result.success(result);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Result.error("查询待审核记录失败：" + e.getMessage());
+        }
+    }
+
+    /**
+     * 审核确认
+     */
+    @Operation(summary = "审核确认")
+    @PutMapping("/{id}/audit")
+    public Result<String> confirmAudit(
+            @Parameter(description = "记录ID") @PathVariable String id,
+            @Parameter(description = "审核信息") @RequestBody Map<String, Object> params
+    ) {
+        try {
+            String auditorId = (String) params.get("auditorId");
+            String auditReason = (String) params.get("auditReason");
+            
+            if (auditorId == null || auditorId.isEmpty()) {
+                return Result.error("审核人ID不能为空");
+            }
+            
+            boolean success = monthlyInspectionRecordService.confirmAudit(id, auditorId, auditReason);
+            return success ? Result.success("审核成功") : Result.error("审核失败");
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Result.error("审核失败：" + e.getMessage());
+        }
+    }
+    
+    /**
+     * 拒绝审核（将记录状态从待审核(3)改回已提交(1)）
+     */
+    @Operation(summary = "拒绝审核")
+    @PutMapping("/{id}/reject-audit")
+    public Result<String> rejectAudit(
+            @Parameter(description = "记录ID") @PathVariable String id
+    ) {
+        try {
+            boolean success = monthlyInspectionRecordService.rejectAudit(id);
+            return success ? Result.success("拒绝成功") : Result.error("拒绝失败");
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Result.error("拒绝失败：" + e.getMessage());
         }
     }
 }

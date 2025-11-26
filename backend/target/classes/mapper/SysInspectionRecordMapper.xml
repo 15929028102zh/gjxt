@@ -126,6 +126,71 @@
         ORDER BY p.sort_order ASC, r.create_time DESC
     </select>
 
+    <!-- 部门×专业矩阵统计（按用户SQL，并保留筛选条件） -->
+    <select id="selectDepartmentProfessionMatrix" resultType="map">
+        SELECT 
+           d.dept_name AS department_name, 
+           p.dict_value AS profession_name, 
+           COUNT(r.id) AS count 
+        FROM sys_inspection_record r 
+        LEFT JOIN sys_dept d 
+           ON r.department_id = d.id 
+           AND d.deleted = 0  -- 关联有效部门 
+        LEFT JOIN sys_dictionary p 
+           ON r.profession_id = p.id 
+           AND p.deleted = 0  -- 关联有效职业 
+        WHERE 
+           r.deleted = 0  -- 主表有效记录 
+           AND d.id IS NOT NULL  -- 过滤部门为空（未匹配到部门）的数据 
+           <if test="departmentId != null and departmentId != ''">
+             AND r.department_id = #{departmentId}
+           </if>
+           <if test="status != null and status != ''">
+             AND r.status = #{status}
+           </if>
+           <if test="startDate != null and startDate != ''">
+             AND DATE(r.create_time) &gt;= #{startDate}
+           </if>
+           <if test="endDate != null and endDate != ''">
+             AND DATE(r.create_time) &lt;= #{endDate}
+           </if>
+        GROUP BY 
+           d.id, d.dept_name, 
+           p.id, p.dict_label 
+        ORDER BY 
+           d.dept_name ASC, 
+           p.dict_value ASC
+    </select>
+
+    <!-- 部门×问题属性矩阵统计（按nature_definition分组） -->
+    <select id="selectDepartmentNatureMatrix" resultType="map">
+        SELECT 
+           d.dept_name AS department_name,
+           COALESCE(r.nature_definition, '未定义') AS nature_name,
+           COUNT(r.id) AS count
+        FROM sys_inspection_record r
+        LEFT JOIN sys_dept d 
+           ON r.department_id = d.id 
+           AND d.deleted = 0
+        WHERE 
+           r.deleted = 0
+           AND d.id IS NOT NULL
+           <if test="departmentId != null and departmentId != ''">
+             AND r.department_id = #{departmentId}
+           </if>
+           <if test="status != null and status != ''">
+             AND r.status = #{status}
+           </if>
+           <if test="startDate != null and startDate != ''">
+             AND DATE(r.create_time) &gt;= #{startDate}
+           </if>
+           <if test="endDate != null and endDate != ''">
+             AND DATE(r.create_time) &lt;= #{endDate}
+           </if>
+        GROUP BY d.id, d.dept_name, r.nature_definition
+        ORDER BY d.dept_name ASC, nature_name ASC
+    </select>
+
     <!-- 根据ID查询巡检记录详情（带关联信息） -->
     <select id="selectRecordDetail" parameterType="string" resultMap="RecordDetailResultMap">
         SELECT 
@@ -517,8 +582,8 @@
         <if test="locationId != null">
             AND r.location LIKE CONCAT('%', #{locationId}, '%')
         </if>
-        <if test="checkerId != null">
-            AND r.inspector = #{checkerId}
+        <if test="checkerName != null and checkerName != ''">
+            AND r.inspector LIKE CONCAT('%', #{checkerName}, '%')
         </if>
         <if test="responsiblePerson != null and responsiblePerson != ''">
             AND r.responsible_person LIKE CONCAT('%', #{responsiblePerson}, '%')

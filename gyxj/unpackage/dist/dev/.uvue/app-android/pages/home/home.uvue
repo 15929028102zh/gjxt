@@ -4,7 +4,7 @@ import { getApiUrl } from '@/config/api.uts';
 import { TuiCharts, TuiDrawCharts } from '@/uni_modules/tui-xechars';
 // 定义统计数据类型
 type StatsData = {
-    __$originalPosition?: UTSSourceMapPosition<"StatsData", "pages/home/home.uvue", 142, 7>;
+    __$originalPosition?: UTSSourceMapPosition<"StatsData", "pages/home/home.uvue", 110, 7>;
     total: number;
     pending: number;
     completed: number;
@@ -12,19 +12,13 @@ type StatsData = {
 };
 // 定义uni.request响应类型
 type UniRequestResponse = {
-    __$originalPosition?: UTSSourceMapPosition<"UniRequestResponse", "pages/home/home.uvue", 150, 7>;
+    __$originalPosition?: UTSSourceMapPosition<"UniRequestResponse", "pages/home/home.uvue", 118, 7>;
     statusCode: number;
     data: any;
     header: any;
     cookies?: string[];
 };
 // 用户信息
-type TrendData = {
-    __$originalPosition?: UTSSourceMapPosition<"TrendData", "pages/home/home.uvue", 195, 7>;
-    months: string[];
-    values: number[];
-};
-// 趋势图表数据
 const __sfc__ = defineComponent({
     __name: 'home',
     setup(__props) {
@@ -50,20 +44,13 @@ const __sfc__ = defineComponent({
         // 图表实例
         let weeklyChartInstance: TuiCharts | null = null;
         let monthlyChartInstance: TuiCharts | null = null;
-        let trendChartInstance: TuiCharts | null = null;
         // 图表配置选项
         const weeklyChartOption = ref({} as UTSJSONObject);
         const monthlyChartOption = ref({} as UTSJSONObject);
-        const trendChartOption = ref({} as UTSJSONObject);
         // 图表引用
         const weeklyChart = ref(null);
         const monthlyChart = ref(null);
-        const trendChart = ref(null);
         // 趋势图表数据类型
-        const trendData = ref({
-            months: ['1月', '2月', '3月', '4月', '5月', '6月'],
-            values: [120, 132, 101, 134, 90, 230]
-        } as TrendData);
         // 滚动相关
         const scrollTop = ref(0);
         const containerHeight = ref(0);
@@ -145,17 +132,19 @@ const __sfc__ = defineComponent({
         const loadWeeklyStats = async (): Promise<void> => {
             try {
                 const token = uni.getStorageSync('token');
-                // 获取用户部门信息
+                // 获取用户信息，包括部门和管理员权限
                 let departmentId = '';
+                let isAdmin = false;
                 const userInfoData = uni.getStorageSync('userInfo');
                 const userInfoStr = userInfoData != null ? userInfoData as string : '';
                 if (userInfoStr != null && userInfoStr != '' && userInfoStr != 'null' && userInfoStr != 'undefined') {
                     try {
-                        const parsedUserInfo = UTSAndroid.consoleDebugError(JSON.parse(userInfoStr), " at pages/home/home.uvue:301") as UTSJSONObject;
+                        const parsedUserInfo = UTSAndroid.consoleDebugError(JSON.parse(userInfoStr), " at pages/home/home.uvue:257") as UTSJSONObject;
                         departmentId = parsedUserInfo.getString('deptId') ?? '';
+                        isAdmin = (parsedUserInfo.getNumber('isAdmin') ?? 0) === 1;
                     }
                     catch (error: any) {
-                        console.error('用户信息JSON解析失败:', error, " at pages/home/home.uvue:304");
+                        console.error('用户信息JSON解析失败:', error, " at pages/home/home.uvue:261");
                     }
                 }
                 // 解析响应数据
@@ -184,10 +173,10 @@ const __sfc__ = defineComponent({
                     updateWeeklyChart();
                     return;
                 }
-                // 构建部门过滤参数
-                const deptParam = departmentId != null && departmentId != '' ? `&departmentId=${departmentId}` : '';
+                // 构建部门过滤参数 - 管理员用户不需要部门过滤
+                const deptParam = (!isAdmin && departmentId != null && departmentId != '') ? `&departmentId=${departmentId}` : '';
                 // 获取待整改数量（状态为0）- 使用分页查询API获取准确数量
-                const pendingUrl = getApiUrl(`/inspection-record/page?current=1&size=1&status=0${departmentId != null && departmentId != '' ? '&departmentId=' + departmentId : ''}`);
+                const pendingUrl = getApiUrl(`/inspection-record/page?current=1&size=1&status=0${(!isAdmin && departmentId != null && departmentId != '') ? '&departmentId=' + departmentId : ''}`);
                 uni.request({
                     url: pendingUrl,
                     method: 'GET',
@@ -208,7 +197,7 @@ const __sfc__ = defineComponent({
                         }
                     },
                     fail: (error) => {
-                        console.error('获取待整改数量失败:', error, " at pages/home/home.uvue:363");
+                        console.error('获取待整改数量失败:', error, " at pages/home/home.uvue:320");
                         completedRequests++;
                         if (completedRequests === totalRequests) {
                             updateWeeklyStats();
@@ -216,7 +205,7 @@ const __sfc__ = defineComponent({
                     }
                 });
                 // 获取已整改数量（状态为1）- 使用分页查询API获取准确数量
-                const completedUrl = getApiUrl(`/inspection-record/page?current=1&size=1&status=1${departmentId != null && departmentId != '' ? '&departmentId=' + departmentId : ''}`);
+                const completedUrl = getApiUrl(`/inspection-record/page?current=1&size=1&status=1${(!isAdmin && departmentId != null && departmentId != '') ? '&departmentId=' + departmentId : ''}`);
                 uni.request({
                     url: completedUrl,
                     method: 'GET',
@@ -237,7 +226,7 @@ const __sfc__ = defineComponent({
                         }
                     },
                     fail: (error) => {
-                        console.error('获取已整改数量失败:', error, " at pages/home/home.uvue:393");
+                        console.error('获取已整改数量失败:', error, " at pages/home/home.uvue:350");
                         completedRequests++;
                         if (completedRequests === totalRequests) {
                             updateWeeklyStats();
@@ -245,7 +234,7 @@ const __sfc__ = defineComponent({
                     }
                 });
                 // 获取已复查数量（状态为2）- 使用分页查询API获取准确数量
-                const reviewedUrl = getApiUrl(`/inspection-record/page?current=1&size=1&status=2${departmentId != null && departmentId != '' ? '&departmentId=' + departmentId : ''}`);
+                const reviewedUrl = getApiUrl(`/inspection-record/page?current=1&size=1&status=2${(!isAdmin && departmentId != null && departmentId != '') ? '&departmentId=' + departmentId : ''}`);
                 uni.request({
                     url: reviewedUrl,
                     method: 'GET',
@@ -266,7 +255,7 @@ const __sfc__ = defineComponent({
                         }
                     },
                     fail: (error) => {
-                        console.error('获取已复查数量失败:', error, " at pages/home/home.uvue:423");
+                        console.error('获取已复查数量失败:', error, " at pages/home/home.uvue:380");
                         completedRequests++;
                         if (completedRequests === totalRequests) {
                             updateWeeklyStats();
@@ -274,7 +263,7 @@ const __sfc__ = defineComponent({
                     }
                 });
                 // 获取总记录数量 - 使用分页查询API获取准确数量
-                const totalUrl = getApiUrl(`/inspection-record/page?current=1&size=1${departmentId != null && departmentId != '' ? '&departmentId=' + departmentId : ''}`);
+                const totalUrl = getApiUrl(`/inspection-record/page?current=1&size=1${(!isAdmin && departmentId != null && departmentId != '') ? '&departmentId=' + departmentId : ''}`);
                 uni.request({
                     url: totalUrl,
                     method: 'GET',
@@ -295,7 +284,7 @@ const __sfc__ = defineComponent({
                         }
                     },
                     fail: (error) => {
-                        console.error('获取总记录数量失败:', error, " at pages/home/home.uvue:453");
+                        console.error('获取总记录数量失败:', error, " at pages/home/home.uvue:410");
                         completedRequests++;
                         if (completedRequests === totalRequests) {
                             updateWeeklyStats();
@@ -304,7 +293,7 @@ const __sfc__ = defineComponent({
                 });
             }
             catch (error: any) {
-                console.error('加载周检统计数据失败:', error, " at pages/home/home.uvue:462");
+                console.error('加载周检统计数据失败:', error, " at pages/home/home.uvue:419");
                 // 使用模拟数据作为后备
                 weeklyStats.value = {
                     total: 45,
@@ -316,64 +305,70 @@ const __sfc__ = defineComponent({
             }
         };
         // 加载月检统计数据
-        const loadMonthlyStats = (): void => {
-            const token = uni.getStorageSync('token');
-            // 获取用户部门信息
-            let departmentId = '';
-            const userInfoData = uni.getStorageSync('userInfo');
-            const userInfoStr = userInfoData != null ? userInfoData as string : '';
-            if (userInfoStr != null && userInfoStr != '' && userInfoStr != 'null' && userInfoStr != 'undefined') {
-                try {
-                    const parsedUserInfo = UTSAndroid.consoleDebugError(JSON.parse(userInfoStr), " at pages/home/home.uvue:484") as UTSJSONObject;
-                    departmentId = parsedUserInfo.getString('deptId') ?? '';
-                }
-                catch (error: any) {
-                    console.error('用户信息JSON解析失败:', error, " at pages/home/home.uvue:487");
-                }
-            }
-            // 构建部门过滤参数
-            const deptParam = departmentId != null && departmentId != '' ? `&departmentId=${departmentId}` : '';
-            uni.request({
-                url: getApiUrl(`/statistics/monthly?1=1${deptParam}`),
-                method: 'GET',
-                header: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                success: (res) => {
-                    if (res.statusCode === 200 && res.data != null) {
-                        const data = res.data as StatsData;
-                        monthlyStats.value = data;
+        const loadMonthlyStats = async (): Promise<void> => {
+            try {
+                const token = uni.getStorageSync('token');
+                let departmentId = '';
+                let isAdmin = false;
+                const userInfoData = uni.getStorageSync('userInfo');
+                const userInfoStr = userInfoData != null ? userInfoData as string : '';
+                if (userInfoStr != null && userInfoStr != '' && userInfoStr != 'null' && userInfoStr != 'undefined') {
+                    try {
+                        const parsedUserInfo = UTSAndroid.consoleDebugError(JSON.parse(userInfoStr), " at pages/home/home.uvue:441") as UTSJSONObject;
+                        departmentId = parsedUserInfo.getString('deptId') ?? '';
+                        isAdmin = (parsedUserInfo.getNumber('isAdmin') ?? 0) === 1;
                     }
-                    else {
-                        // 如果API调用失败，使用模拟数据
-                        monthlyStats.value = {
-                            total: 156,
-                            pending: 23,
-                            completed: 108,
-                            reviewed: 25
-                        } as StatsData;
+                    catch (error: any) {
+                        console.error('用户信息JSON解析失败:', error, " at pages/home/home.uvue:444");
                     }
-                    updateMonthlyChart();
-                },
-                fail: (error) => {
-                    console.error('加载月检统计数据失败:', error, " at pages/home/home.uvue:517");
-                    // 使用模拟数据作为后备
+                }
+                const deptParam = (!isAdmin && departmentId != null && departmentId != '') ? `&responsibilityId=${departmentId}` : '';
+                let pending = 0, completed = 0, reviewed = 0;
+                let finished = 0;
+                const totalReq = 3;
+                const updateMonthly = () => {
                     monthlyStats.value = {
-                        total: 156,
-                        pending: 23,
-                        completed: 108,
-                        reviewed: 25
+                        total: pending + completed + reviewed,
+                        pending: pending,
+                        completed: completed,
+                        reviewed: reviewed
                     } as StatsData;
                     updateMonthlyChart();
-                }
-            });
+                };
+                const req = (status: number, assign: (n: number) => void) => {
+                    uni.request({
+                        url: getApiUrl(`/monthly-inspection-record/page?current=1&size=1&recordStatus=${status}${deptParam}`),
+                        method: 'GET',
+                        header: { 'Authorization': `Bearer ${token}` },
+                        success: (res) => {
+                            const resp = res.data as UTSJSONObject;
+                            if (res.statusCode === 200 && (resp.getNumber('code') ?? 0) === 200) {
+                                const d = resp.getJSON('data') as UTSJSONObject;
+                                assign(d.getNumber('total') ?? 0);
+                            }
+                            finished++;
+                            if (finished === totalReq)
+                                updateMonthly();
+                        },
+                        fail: (_) => { finished++; if (finished === totalReq)
+                            updateMonthly(); }
+                    });
+                };
+                req(0, (n: number) => { pending = n; });
+                req(1, (n: number) => { completed = n; });
+                req(2, (n: number) => { reviewed = n; });
+            }
+            catch (error: any) {
+                console.error('加载月检统计数据失败:', error, " at pages/home/home.uvue:480");
+                monthlyStats.value = { total: 0, pending: 0, completed: 0, reviewed: 0 } as StatsData;
+                updateMonthlyChart();
+            }
         };
         // 检查登录状态
         const checkLogin = (): boolean => {
             const token = uni.getStorageSync('token');
             if (token == null || token == '') {
-                console.log('未登录，跳转到登录页面', " at pages/home/home.uvue:536");
+                console.log('未登录，跳转到登录页面', " at pages/home/home.uvue:492");
                 uni.reLaunch({
                     url: '/pages/login/login'
                 });
@@ -383,44 +378,44 @@ const __sfc__ = defineComponent({
         };
         // 加载用户信息
         const loadUserInfo = (): void => {
-            console.log('=== 开始加载用户信息 ===', " at pages/home/home.uvue:547");
+            console.log('=== 开始加载用户信息 ===', " at pages/home/home.uvue:503");
             // 检查本地存储
             const userInfoStr = uni.getStorageSync('userInfo') as string;
-            console.log('本地存储原始数据:', userInfoStr, " at pages/home/home.uvue:551");
+            console.log('本地存储原始数据:', userInfoStr, " at pages/home/home.uvue:507");
             if (userInfoStr != null && userInfoStr != '' && userInfoStr != 'null' && userInfoStr != 'undefined') {
                 try {
-                    const parsedUserInfo = UTSAndroid.consoleDebugError(JSON.parse(userInfoStr), " at pages/home/home.uvue:555") as UTSJSONObject;
-                    console.log('解析后的对象:', parsedUserInfo, " at pages/home/home.uvue:556");
+                    const parsedUserInfo = UTSAndroid.consoleDebugError(JSON.parse(userInfoStr), " at pages/home/home.uvue:511") as UTSJSONObject;
+                    console.log('解析后的对象:', parsedUserInfo, " at pages/home/home.uvue:512");
                     // 检查realName字段
                     const realName = parsedUserInfo.getString('realName');
-                    console.log('realName字段值:', realName, " at pages/home/home.uvue:560");
-                    console.log('realName类型:', typeof realName, " at pages/home/home.uvue:561");
+                    console.log('realName字段值:', realName, " at pages/home/home.uvue:516");
+                    console.log('realName类型:', typeof realName, " at pages/home/home.uvue:517");
                     // 设置用户信息
                     userInfo.value = parsedUserInfo;
                     // 同时设置简化的用户姓名
                     const realNameValue = parsedUserInfo.getString('realName');
                     userName.value = realNameValue != null ? realNameValue : '用户';
-                    console.log('设置后的 userInfo.value:', userInfo.value, " at pages/home/home.uvue:568");
-                    console.log('设置后的 userName.value:', userName.value, " at pages/home/home.uvue:569");
+                    console.log('设置后的 userInfo.value:', userInfo.value, " at pages/home/home.uvue:524");
+                    console.log('设置后的 userName.value:', userName.value, " at pages/home/home.uvue:525");
                     // 验证设置结果
                     const testRealName = userInfo.value.getString('realName');
-                    console.log('验证: 设置后的realName:', testRealName, " at pages/home/home.uvue:573");
+                    console.log('验证: 设置后的realName:', testRealName, " at pages/home/home.uvue:529");
                     // 强制触发界面更新
                     nextTick(() => {
-                        console.log('界面更新后检查:', userInfo.value.getString('realName'), " at pages/home/home.uvue:577");
+                        console.log('界面更新后检查:', userInfo.value.getString('realName'), " at pages/home/home.uvue:533");
                         // 强制触发响应式更新
                         userInfo.value = { ...userInfo.value };
                     });
                 }
                 catch (error: any) {
-                    console.error('用户信息JSON解析失败:', error, " at pages/home/home.uvue:583");
+                    console.error('用户信息JSON解析失败:', error, " at pages/home/home.uvue:539");
                     userInfo.value = {
                         realName: '解析失败用户'
                     } as UTSJSONObject;
                 }
             }
             else {
-                console.log('本地存储中没有有效的用户信息', " at pages/home/home.uvue:589");
+                console.log('本地存储中没有有效的用户信息', " at pages/home/home.uvue:545");
                 // 设置默认用户信息
                 userInfo.value = {
                     realName: '默认用户',
@@ -428,7 +423,7 @@ const __sfc__ = defineComponent({
                 } as UTSJSONObject;
                 userName.value = '默认用户';
             }
-            console.log('=== 用户信息加载完成 ===', " at pages/home/home.uvue:598");
+            console.log('=== 用户信息加载完成 ===', " at pages/home/home.uvue:554");
         };
         // 初始化当前日期
         const initCurrentDate = (): void => {
@@ -467,7 +462,7 @@ const __sfc__ = defineComponent({
         };
         // 重新加载所有数据
         const reloadAllData = async (): Promise<void> => {
-            console.log('重新加载所有数据', " at pages/home/home.uvue:643");
+            console.log('重新加载所有数据', " at pages/home/home.uvue:599");
             try {
                 // 重新初始化时间
                 initCurrentDate();
@@ -484,29 +479,29 @@ const __sfc__ = defineComponent({
                         }, 800);
                     })
                 ]);
-                console.log('所有数据加载完成', " at pages/home/home.uvue:664");
+                console.log('所有数据加载完成', " at pages/home/home.uvue:620");
             }
             catch (error: any) {
-                console.error('数据加载失败:', error, " at pages/home/home.uvue:667");
+                console.error('数据加载失败:', error, " at pages/home/home.uvue:623");
             }
             finally {
                 // 无论成功还是失败，都要关闭刷新动画
                 setTimeout(() => {
-                    console.log('关闭刷新动画', " at pages/home/home.uvue:671");
+                    console.log('关闭刷新动画', " at pages/home/home.uvue:627");
                     isRefreshing.value = false;
                 }, 500); // 稍微延迟一下，让用户看到加载效果
             }
         };
         // 下拉刷新事件处理
         const onRefresh = (): void => {
-            console.log('开始下拉刷新', " at pages/home/home.uvue:679");
+            console.log('开始下拉刷新', " at pages/home/home.uvue:635");
             isRefreshing.value = true;
             // 重新加载数据
             reloadAllData();
         };
         // 刷新恢复事件处理
         const onRefreshRestore = (): void => {
-            console.log('刷新恢复', " at pages/home/home.uvue:688");
+            console.log('刷新恢复', " at pages/home/home.uvue:644");
             isRefreshing.value = false;
         };
         // 页面挂载时初始化
@@ -539,7 +534,7 @@ const __sfc__ = defineComponent({
         const onWeeklyChartInit = (chartInstance: TuiCharts): void => {
             weeklyChartInstance = chartInstance;
             // 创建饼图
-            const pieOption = { __$originalPosition: new UTSSourceMapPosition("pieOption", "pages/home/home.uvue", 734, 9),
+            const pieOption = { __$originalPosition: new UTSSourceMapPosition("pieOption", "pages/home/home.uvue", 690, 9),
                 type: 'pie',
                 animation: true,
                 dataLabel: true,
@@ -610,7 +605,7 @@ const __sfc__ = defineComponent({
         const onMonthlyChartInit = (chartInstance: TuiCharts): void => {
             monthlyChartInstance = chartInstance;
             // 创建饼图
-            const pieOption = { __$originalPosition: new UTSSourceMapPosition("pieOption", "pages/home/home.uvue", 808, 9),
+            const pieOption = { __$originalPosition: new UTSSourceMapPosition("pieOption", "pages/home/home.uvue", 764, 9),
                 type: 'pie',
                 animation: true,
                 dataLabel: true,
@@ -677,57 +672,6 @@ const __sfc__ = defineComponent({
             const monthlyPieChart = chartInstance.add(0, pieOption);
             monthlyPieChart.setCoordinates({ height: 280, width: 260, xOffset: 15, yOffset: 35 });
             monthlyPieChart.draw();
-        };
-        const onTrendChartInit = (chartInstance: TuiCharts): void => {
-            trendChartInstance = chartInstance;
-            // 创建柱状图
-            const columnOption = { __$originalPosition: new UTSSourceMapPosition("columnOption", "pages/home/home.uvue", 882, 9),
-                type: 'column',
-                animation: true,
-                dataLabel: true,
-                fontSize: 11,
-                padding: [20, 20, 25, 20],
-                categories: trendData.value.months,
-                title: {
-                    name: '月度巡检趋势',
-                    fontSize: 14,
-                    color: '#2c3e50',
-                    offsetY: 5
-                },
-                extra: {
-                    column: {
-                        type: 'group',
-                        width: 25,
-                        activeBgColor: '#000000',
-                        activeBgOpacity: 0.08,
-                        barBorderRadius: [4, 4, 0, 0],
-                        seriesGap: 5
-                    },
-                    tooltip: {
-                        show: true
-                    }
-                },
-                series: [
-                    {
-                        name: '巡检记录数',
-                        data: trendData.value.values.map((item: number): UTSJSONObject => {
-                            return { value: item };
-                        })
-                    }
-                ],
-                xAxis: {
-                    disableGrid: true
-                },
-                yAxis: {
-                    data: [
-                        {
-                            min: 0
-                        }
-                    ]
-                } } as UTSJSONObject;
-            const trendColumnChart = chartInstance.add(0, columnOption);
-            trendColumnChart.setCoordinates({ height: 280, width: 260, xOffset: 15, yOffset: 35 });
-            trendColumnChart.draw();
         };
         // 最终的跳转方法
         const goToWeeklyPending = (): void => {
@@ -868,36 +812,6 @@ const __sfc__ = defineComponent({
                                 onInitFinished: onMonthlyChartInit
                             }), null, 8 /* PROPS */, ["style"])
                         ])
-                    ])
-                ]),
-                _cE("view", _uM({ class: "section" }), [
-                    _cE("view", _uM({ class: "section-title" }), [
-                        _cE("text", _uM({ class: "title-text" }), "月度巡检趋势")
-                    ]),
-                    _cE("view", _uM({ class: "chart-container" }), [
-                        _cE("view", _uM({ class: "chart-wrapper" }), [
-                            _cV(_component_tui_xechars, _uM({
-                                ref_key: "trendChart",
-                                ref: trendChart,
-                                style: _nS(_uM({ "height": "350px", "width": "100%", "min-width": "280px" })),
-                                class: "chart-canvas",
-                                onInitFinished: onTrendChartInit
-                            }), null, 8 /* PROPS */, ["style"])
-                        ])
-                    ])
-                ]),
-                _cE("view", _uM({ class: "extra-content" }), [
-                    _cE("view", _uM({ class: "info-card" }), [
-                        _cE("text", _uM({ class: "info-title" }), "系统提示"),
-                        _cE("text", _uM({ class: "info-text" }), "定期进行巡检工作，确保设备正常运行")
-                    ]),
-                    _cE("view", _uM({ class: "info-card" }), [
-                        _cE("text", _uM({ class: "info-title" }), "操作指南"),
-                        _cE("text", _uM({ class: "info-text" }), "点击上方统计卡片可查看详细记录")
-                    ]),
-                    _cE("view", _uM({ class: "info-card" }), [
-                        _cE("text", _uM({ class: "info-title" }), "数据更新"),
-                        _cE("text", _uM({ class: "info-text" }), "数据每小时自动更新一次")
                     ])
                 ])
             ], 44 /* STYLE, PROPS, NEED_HYDRATION */, ["scroll-top", "refresher-triggered"]);

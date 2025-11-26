@@ -437,14 +437,20 @@ const __sfc__ = defineComponent({
                     title: '保存中...'
                 });
                 const token = uni.getStorageSync('token');
+                // 统一为Web端复查接口
+                const payload = {
+                    reviewSuggestion: this.reviewEffect,
+                    reviewEffect: this.reviewEffect,
+                    reviewImages: reviewImageUrls.join(',')
+                } as UTSJSONObject;
                 uni.request({
-                    url: getApiUrl('/inspection-record'),
+                    url: getApiUrl(`/monthly-inspection-record/${this.recordDetail?.id ?? ''}/review`),
                     method: 'PUT',
                     header: {
                         'Authorization': `Bearer ${token}`,
                         'Content-Type': 'application/json'
                     },
-                    data: updateData,
+                    data: payload,
                     success: (response) => {
                         uni.hideLoading();
                         const data = response.data as UTSJSONObject;

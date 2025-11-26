@@ -14,6 +14,11 @@
 		monthRecords: number
 	}
 
+	type RequestResponse = {
+		data: UTSJSONObject,
+		statusCode: number
+	}
+
 	const __sfc__ = defineComponent({
 		data() {
 			return {
@@ -64,8 +69,41 @@
 			
 			loadStatistics() {
 				const token = uni.getStorageSync('token')
+				
+				// 获取用户信息，包括部门和管理员权限
+				let departmentId = ''
+				let isAdmin = false
+				const userInfoData = uni.getStorageSync('userInfo')
+				const userInfoStr = userInfoData != null ? userInfoData as string : ''
+				if (userInfoStr != null && userInfoStr != '' && userInfoStr != 'null' && userInfoStr != 'undefined') {
+					try {
+						const parsedUserInfo = JSON.parse(userInfoStr) as UTSJSONObject
+						departmentId = parsedUserInfo.getString('deptId') ?? ''
+						isAdmin = (parsedUserInfo.getNumber('isAdmin') ?? 0) === 1
+					} catch (error) {
+						console.error('用户信息JSON解析失败:', error)
+					}
+				}
+				
+				// 构建部门过滤参数 - 管理员用户不需要部门过滤
+				const deptParam = (!isAdmin && departmentId != null && departmentId != '') ? `&departmentId=${departmentId}` : ''
+				
+				// 分别获取待整改、已整改、已复查的数量
+				let pendingCount = 0, completedCount = 0, reviewedCount = 0
+				let completedRequests = 0
+				const totalRequests = 3
+				
+				const updateStatistics = () => {
+					this.statistics = {
+						pendingIssues: pendingCount,
+						completedIssues: completedCount,
+						monthRecords: reviewedCount
+					}
+				}
+				
+				// 获取待整改数量（状态为0）
 				uni.request({
-					url: getApiUrl('/statistics/overview'),
+					url: getApiUrl(`/monthly-inspection-record/page?current=1&size=1&status=0${deptParam}`),
 					method: 'GET',
 					header: {
 						'Authorization': `Bearer ${token}`
@@ -74,16 +112,73 @@
 						const response = res.data as UTSJSONObject
 						if (res.statusCode == 200 && (response.getNumber('code') ?? 0) == 200) {
 							const data = response.getJSON('data') as UTSJSONObject
-					// 暂时使用原有接口数据，后续可调整
-					this.statistics = {
-						pendingIssues: data.getNumber('totalTasks') ?? 0,
-						completedIssues: data.getNumber('todayRecords') ?? 0,
-						monthRecords: data.getNumber('monthRecords') ?? 0
-					}
+							pendingCount = data.getNumber('total') ?? 0
+						}
+						completedRequests++
+						if (completedRequests === totalRequests) {
+							updateStatistics()
 						}
 					},
 					fail: (error) => {
-						console.log('加载统计数据失败:', error)
+						console.log('加载待整改数据失败:', error)
+						completedRequests++
+						if (completedRequests === totalRequests) {
+							updateStatistics()
+						}
+					}
+				})
+				
+				// 获取已整改数量（状态为1）
+				uni.request({
+					url: getApiUrl(`/monthly-inspection-record/page?current=1&size=1&status=1${deptParam}`),
+					method: 'GET',
+					header: {
+						'Authorization': `Bearer ${token}`
+					},
+					success: (res) => {
+						const response = res.data as UTSJSONObject
+						if (res.statusCode == 200 && (response.getNumber('code') ?? 0) == 200) {
+							const data = response.getJSON('data') as UTSJSONObject
+							completedCount = data.getNumber('total') ?? 0
+						}
+						completedRequests++
+						if (completedRequests === totalRequests) {
+							updateStatistics()
+						}
+					},
+					fail: (error) => {
+						console.log('加载已整改数据失败:', error)
+						completedRequests++
+						if (completedRequests === totalRequests) {
+							updateStatistics()
+						}
+					}
+				})
+				
+				// 获取已复查数量（状态为2）
+				uni.request({
+					url: getApiUrl(`/monthly-inspection-record/page?current=1&size=1&status=2${deptParam}`),
+					method: 'GET',
+					header: {
+						'Authorization': `Bearer ${token}`
+					},
+					success: (res) => {
+						const response = res.data as UTSJSONObject
+						if (res.statusCode == 200 && (response.getNumber('code') ?? 0) == 200) {
+							const data = response.getJSON('data') as UTSJSONObject
+							reviewedCount = data.getNumber('total') ?? 0
+						}
+						completedRequests++
+						if (completedRequests === totalRequests) {
+							updateStatistics()
+						}
+					},
+					fail: (error) => {
+						console.log('加载已复查数据失败:', error)
+						completedRequests++
+						if (completedRequests === totalRequests) {
+							updateStatistics()
+						}
 					}
 				})
 			},
@@ -136,13 +231,19 @@
 			
 			goToPendingIssues() {
 				uni.navigateTo({
-					url: '/pages/record/record?status=0'
+					url: '/pages/record/record?status=0&monthly=true'
 				})
 			},
 			
 			goToCompletedIssues() {
 				uni.navigateTo({
-					url: '/pages/record/record?status=1'
+					url: '/pages/record/record?status=1&monthly=true'
+				})
+			},
+			
+			goToReviewedRecords() {
+				uni.navigateTo({
+					url: '/pages/record/record?status=2&monthly=true'
 				})
 			},
 			
@@ -195,15 +296,15 @@ const _cache = this.$.renderCache
         onClick: _ctx.goToCompletedIssues
       }), [
         _cE("text", _uM({ class: "stats-number" }), _tD(_ctx.statistics.completedIssues), 1 /* TEXT */),
-        _cE("text", _uM({ class: "stats-label" }), "已整改问题记录数"),
+        _cE("text", _uM({ class: "stats-label" }), "已整改"),
         _cE("text", _uM({ class: "stats-icon" }), "✅")
       ], 8 /* PROPS */, ["onClick"]),
       _cE("view", _uM({
         class: "stats-card",
-        onClick: _ctx.goToStatistics
+        onClick: _ctx.goToReviewedRecords
       }), [
         _cE("text", _uM({ class: "stats-number" }), _tD(_ctx.statistics.monthRecords), 1 /* TEXT */),
-        _cE("text", _uM({ class: "stats-label" }), "本月记录"),
+        _cE("text", _uM({ class: "stats-label" }), "已复查"),
         _cE("text", _uM({ class: "stats-icon" }), "📊")
       ], 8 /* PROPS */, ["onClick"])
     ]),

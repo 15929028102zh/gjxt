@@ -770,34 +770,40 @@
 							title: '保存中...'
 						})
 						
-						const token = uni.getStorageSync('token')
-						uni.request({
-							url: getApiUrl('/inspection-record'),
-							method: 'PUT',
-							header: {
-								'Authorization': `Bearer ${token}`,
-								'Content-Type': 'application/json'
-							},
-							data: updateData,
-							success: (response) => {
-								uni.hideLoading()
-								const data = response.data as UTSJSONObject
-								if (response.statusCode === 200 && (data.getNumber('code') ?? 0) === 200) {
-									uni.showToast({
-										title: '复查成功',
-										icon: 'success'
-									})
-									setTimeout(() => {
-										uni.navigateBack()
-									}, 1500)
-								} else {
-									uni.showToast({
-										title: data.getString('message') ?? '复查失败',
-										icon: 'none'
-									})
-								}
-								this.saving = false
-							},
+                        const token = uni.getStorageSync('token')
+                        // 统一为Web端复查接口
+                        const payload = {
+                            reviewSuggestion: this.reviewEffect,
+                            reviewEffect: this.reviewEffect,
+                            reviewImages: reviewImageUrls.join(',')
+                        }
+                        uni.request({
+                            url: getApiUrl(`/monthly-inspection-record/${this.recordDetail?.id ?? ''}/review`),
+                            method: 'PUT',
+                            header: {
+                                'Authorization': `Bearer ${token}`,
+                                'Content-Type': 'application/json'
+                            },
+                            data: payload,
+                            success: (response) => {
+                                uni.hideLoading()
+                                const data = response.data as UTSJSONObject
+                                if (response.statusCode === 200 && (data.getNumber('code') ?? 0) === 200) {
+                                    uni.showToast({
+                                        title: '复查成功',
+                                        icon: 'success'
+                                    })
+                                    setTimeout(() => {
+                                        uni.navigateBack()
+                                    }, 1500)
+                                } else {
+                                    uni.showToast({
+                                        title: data.getString('message') ?? '复查失败',
+                                        icon: 'none'
+                                    })
+                                }
+                                this.saving = false
+                            },
 							fail: (error) => {
 								uni.hideLoading()
 								console.error('保存复查信息失败:', error)

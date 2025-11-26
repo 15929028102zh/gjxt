@@ -485,7 +485,7 @@ open class GenPagesRecordReview : BasePage {
         ))
     }
     open var recordId: String by `$data`
-    open var recordDetail: RecordDetail1? by `$data`
+    open var recordDetail: RecordDetail2? by `$data`
     open var imageList: UTSArray<String> by `$data`
     open var rectificationImages: UTSArray<String> by `$data`
     open var loading: Boolean by `$data`
@@ -509,7 +509,7 @@ open class GenPagesRecordReview : BasePage {
     open var isReviewed: Boolean by `$data`
     @Suppress("USELESS_CAST")
     override fun data(): Map<String, Any?> {
-        return _uM("recordId" to "", "recordDetail" to null as RecordDetail1?, "imageList" to _uA<String>(), "rectificationImages" to _uA<String>(), "loading" to true, "reviewEffect" to "", "reviewImages" to _uA<String>(), "saving" to false, "scrollTop" to 0, "containerHeight" to 0, "natureOptions" to _uA<NatureOption2>(), "professionOptions" to _uA<ProfessionOption2>(), "departmentOptions" to _uA<DepartmentOption2>(), "selectedNatureIndex" to -1, "selectedProfessionIndex" to -1, "selectedDepartmentIndex" to -1, "showNaturePopup" to false, "showProfessionPopup" to false, "showDepartmentPopup" to false, "loadedDataCount" to 0, "totalDataCount" to 4, "isDelayed" to false, "isReviewed" to false)
+        return _uM("recordId" to "", "recordDetail" to null as RecordDetail2?, "imageList" to _uA<String>(), "rectificationImages" to _uA<String>(), "loading" to true, "reviewEffect" to "", "reviewImages" to _uA<String>(), "saving" to false, "scrollTop" to 0, "containerHeight" to 0, "natureOptions" to _uA<NatureOption2>(), "professionOptions" to _uA<ProfessionOption2>(), "departmentOptions" to _uA<DepartmentOption2>(), "selectedNatureIndex" to -1, "selectedProfessionIndex" to -1, "selectedDepartmentIndex" to -1, "showNaturePopup" to false, "showProfessionPopup" to false, "showDepartmentPopup" to false, "loadedDataCount" to 0, "totalDataCount" to 4, "isDelayed" to false, "isReviewed" to false)
     }
     open var checkLogin = ::gen_checkLogin_fn
     open fun gen_checkLogin_fn() {
@@ -558,7 +558,7 @@ open class GenPagesRecordReview : BasePage {
                 console.log("nature:", recordData?.getString("nature"))
                 console.log("natureType:", recordData?.getString("natureType"))
                 if (recordData != null) {
-                    this.recordDetail = RecordDetail1(id = recordData.getString("id") ?: "", problemDescription = recordData.getString("problemDescription") ?: "", locationName = recordData.getString("locationName") ?: "", severity = recordData.getNumber("severity") ?: 1, taskName = recordData.getString("taskName") ?: "", reporterName = recordData.getString("reporterName") ?: "", createTime = recordData.getString("createTime") ?: "", updateTime = recordData.getString("updateTime") ?: "", status = recordData.getNumber("status") ?: 0, problemImageUrls = recordData.getString("problemImageUrls") ?: "", suggestions = recordData.getString("suggestions") ?: "", reporterId = recordData.getString("reporterId") ?: "", responsibleUnit = recordData.getString("responsibleUnit") ?: "", responsiblePerson = recordData.getString("responsiblePerson") ?: "", natureId = "", natureName = "", assessmentSituation = recordData.getString("assessmentSituation") ?: "", assessmentAmount = recordData.getNumber("assessmentAmount") ?: 0, safetyScore = recordData.getNumber("safetyScore") ?: 0, professionId = recordData.getString("professionId") ?: "", professionName = recordData.getString("professionName") ?: "", inspector = recordData.getString("inspectorName") ?: "", groupLeader = recordData.getString("groupLeaderName") ?: "", deputyLeader = recordData.getString("deputyLeaderName") ?: "", departmentId = recordData.getString("departmentId") ?: "", departmentName = recordData.getString("departmentName") ?: "", rectificationDate = recordData.getString("rectificationDeadline") ?: "", location = recordData.getString("location") ?: "", rectificationEffect = recordData.getString("rectificationEffect") ?: "", rectificationImageUrls = recordData.getString("rectificationImageUrls") ?: "", rectificationTime = recordData.getString("rectificationTime") ?: "", reviewEffect = recordData.getString("reviewEffect") ?: "", reviewImageUrls = recordData.getString("reviewImageUrls") ?: "")
+                    this.recordDetail = RecordDetail2(id = recordData.getString("id") ?: "", problemDescription = recordData.getString("problemDescription") ?: "", locationName = recordData.getString("locationName") ?: "", severity = recordData.getNumber("severity") ?: 1, taskName = recordData.getString("taskName") ?: "", reporterName = recordData.getString("reporterName") ?: "", createTime = recordData.getString("createTime") ?: "", updateTime = recordData.getString("updateTime") ?: "", status = recordData.getNumber("status") ?: 0, problemImageUrls = recordData.getString("problemImageUrls") ?: "", suggestions = recordData.getString("suggestions") ?: "", reporterId = recordData.getString("reporterId") ?: "", responsibleUnit = recordData.getString("responsibleUnit") ?: "", responsiblePerson = recordData.getString("responsiblePerson") ?: "", natureId = "", natureName = "", assessmentSituation = recordData.getString("assessmentSituation") ?: "", assessmentAmount = recordData.getNumber("assessmentAmount") ?: 0, safetyScore = recordData.getNumber("safetyScore") ?: 0, professionId = recordData.getString("professionId") ?: "", professionName = recordData.getString("professionName") ?: "", inspector = recordData.getString("inspectorName") ?: "", groupLeader = recordData.getString("groupLeaderName") ?: "", deputyLeader = recordData.getString("deputyLeaderName") ?: "", departmentId = recordData.getString("departmentId") ?: "", departmentName = recordData.getString("departmentName") ?: "", rectificationDate = recordData.getString("rectificationDeadline") ?: "", location = recordData.getString("location") ?: "", rectificationEffect = recordData.getString("rectificationEffect") ?: "", rectificationImageUrls = recordData.getString("rectificationImageUrls") ?: "", rectificationTime = recordData.getString("rectificationTime") ?: "", reviewEffect = recordData.getString("reviewEffect") ?: "", reviewImageUrls = recordData.getString("reviewImageUrls") ?: "")
                     val natureDefinitionValue = recordData.getString("natureDefinition") ?: ""
                     console.log("natureDefinition原始值:", natureDefinitionValue)
                     if (natureDefinitionValue.length === 32 && UTSRegExp("^[a-f0-9]+\$", "i").test(natureDefinitionValue)) {
@@ -744,10 +744,11 @@ open class GenPagesRecordReview : BasePage {
                     , "rectificationEffect" to (this.recordDetail?.rectificationEffect ?: ""), "rectificationImageUrls" to (this.recordDetail?.rectificationImageUrls ?: ""), "reviewEffect" to this.reviewEffect, "reviewImageUrls" to reviewImageUrls.join(","), "reviewerId" to currentUserId, "status" to 2, "reviewTime" to Date().toISOString().replace("T", " ").substring(0, 19))
                     uni_showLoading(ShowLoadingOptions(title = "保存中..."))
                     val token = uni_getStorageSync("token")
-                    uni_request<Any>(RequestOptions(url = getApiUrl("/inspection-record"), method = "PUT", header = object : UTSJSONObject() {
+                    val payload: UTSJSONObject = _uO("reviewSuggestion" to this.reviewEffect, "reviewEffect" to this.reviewEffect, "reviewImages" to reviewImageUrls.join(","))
+                    uni_request<Any>(RequestOptions(url = getApiUrl("/monthly-inspection-record/" + (this.recordDetail?.id ?: "") + "/review"), method = "PUT", header = object : UTSJSONObject() {
                         var Authorization = "Bearer " + token
                         var `Content-Type` = "application/json"
-                    }, data = updateData, success = fun(response){
+                    }, data = payload, success = fun(response){
                         uni_hideLoading()
                         val data = response.data as UTSJSONObject
                         if (response.statusCode === 200 && (data.getNumber("code") ?: 0) === 200) {

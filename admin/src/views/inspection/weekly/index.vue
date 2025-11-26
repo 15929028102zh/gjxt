@@ -25,6 +25,14 @@
             style="width: 150px;"
           />
         </el-form-item>
+        <el-form-item label="检查人">
+          <el-input 
+            v-model="searchForm.inspectorId" 
+            placeholder="请输入检查人" 
+            clearable 
+            style="width: 150px;"
+          />
+        </el-form-item>
         <el-form-item label="专业">
           <el-select 
             v-model="searchForm.professionId" 
@@ -151,7 +159,7 @@
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="操作" width="320" fixed="right">
+      <el-table-column label="操作" width="400" fixed="right">
         <template #default="{ row }">
           <div class="action-buttons">
             <el-button 
@@ -163,7 +171,6 @@
               查看
             </el-button>
             <el-button 
-              v-if="hasWeeklyPermission()"
               size="small" 
               type="warning" 
               @click="handleRectification(row)" 
@@ -174,7 +181,6 @@
               确认整改
             </el-button>
             <el-button 
-              v-if="hasWeeklyPermission()"
               size="small" 
               type="success" 
               @click="handleReview(row)" 
@@ -183,6 +189,15 @@
               class="action-btn review-btn"
             >
               确认复查
+            </el-button>
+            <el-button 
+              size="small" 
+              type="danger" 
+              @click="handleReject(row)" 
+              :icon="Delete"
+              class="action-btn reject-btn"
+            >
+              回退
             </el-button>
             <el-button 
               v-if="hasWeeklyPermission()"
@@ -253,7 +268,7 @@ import {
   CircleCheck,
   Download 
 } from '@element-plus/icons-vue'
-import { inspectionApi, getDictByType, getDeptList } from '@/api/inspection'
+import { inspectionApi, getDictByType, getDeptList, rejectRecord } from '@/api/inspection'
 import { hasWeeklyPermission } from '@/utils/permission'
 import AddDialog from './components/AddDialog.vue'
 import RectificationDialog from './components/RectificationDialog.vue'
@@ -276,6 +291,7 @@ const isAdminUser = ref(false)
 const searchForm = reactive({
   problemDescription: '',
   responsiblePerson: '',
+  inspectorId: '',
   professionId: '',
   natureId: '',
   departmentId: '',
@@ -343,10 +359,11 @@ const getTableData = async () => {
     }
     delete params.dateRange
     
-    // 添加状态过滤，仅显示待整改、已整改、已复查的记录
-      if (!params.status) {
-        params.status = '0,1,2' // 0-待整改，1-已整改，2-已复查
-      }
+    // 处理状态参数 - 只有当用户没有选择状态时才显示所有状态
+    if (params.status === '' || params.status === null || params.status === undefined) {
+      // 用户没有选择状态，显示所有状态的记录
+      delete params.status
+    }
     
     const response = await inspectionApi.getPage(params)
     if (response.code === 200) {
@@ -374,6 +391,7 @@ const handleReset = () => {
   Object.assign(searchForm, {
     problemDescription: '',
     responsiblePerson: '',
+    inspectorId: '',
     professionId: '',
     natureId: '',
     departmentId: '',
@@ -454,6 +472,34 @@ const handleDelete = async (row) => {
   }
 }
 
+// 回退记录
+const handleReject = async (row) => {
+  try {
+    await ElMessageBox.confirm(
+      `确定要回退问题"${row.problemDescription}"吗？回退后将发送审核通知到部门管理员。`,
+      '回退确认',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }
+    )
+    
+    const response = await rejectRecord(row.id)
+    if (response.code === 200) {
+      ElMessage.success('回退成功，已发送审核通知')
+      getTableData()
+    } else {
+      ElMessage.error(response.message || '回退失败')
+    }
+  } catch (error) {
+    if (error !== 'cancel') {
+      console.error('回退失败:', error)
+      ElMessage.error('回退失败')
+    }
+  }
+}
+
 // 批量删除
 const handleBatchDelete = async () => {
   if (selectedIds.value.length === 0) {
@@ -497,6 +543,7 @@ const handleExport = async () => {
     const params = {
       problemDescription: searchForm.problemDescription || undefined,
       responsiblePerson: searchForm.responsiblePerson || undefined,
+      inspectorId: searchForm.inspectorId || undefined,
       professionId: searchForm.professionId || undefined,
       natureId: searchForm.natureId || undefined,
       departmentId: searchForm.departmentId || undefined,
@@ -610,8 +657,8 @@ const setCurrentUserDepartment = () => {
     if (userInfoStr) {
       const userInfo = JSON.parse(userInfoStr)
       
-      // 判断是否为admin用户
-      isAdminUser.value = userInfo.username === 'admin'
+      // 判断是否为管理员用户
+      isAdminUser.value = userInfo.isAdmin === 1
       
       // 如果不是admin用户且有部门信息，自动设置到搜索表单
       if (!isAdminUser.value && userInfo.deptId) {

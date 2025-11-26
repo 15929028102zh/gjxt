@@ -5,8 +5,13 @@ import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.gjxt.inspection.entity.MonthlyInspectionTask;
+import com.gjxt.inspection.entity.Notification;
 import com.gjxt.inspection.mapper.MonthlyInspectionTaskMapper;
 import com.gjxt.inspection.service.IMonthlyInspectionTaskService;
+import com.gjxt.inspection.service.ISysUserService;
+import com.gjxt.inspection.service.WebSocketNotificationService;
+import com.gjxt.inspection.entity.SysUser;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,12 +29,19 @@ import java.util.UUID;
  * @author gjxt
  * @since 2024-01-01
  */
+@Slf4j
 @Service
 public class MonthlyInspectionTaskServiceImpl extends ServiceImpl<MonthlyInspectionTaskMapper, MonthlyInspectionTask>
         implements IMonthlyInspectionTaskService {
 
     @Autowired
     private MonthlyInspectionTaskMapper monthlyInspectionTaskMapper;
+
+    @Autowired
+    private WebSocketNotificationService webSocketNotificationService;
+    
+    @Autowired
+    private ISysUserService sysUserService;
 
     @Override
     public Page<MonthlyInspectionTask> getTaskPage(long current, long size,
@@ -78,10 +90,8 @@ public class MonthlyInspectionTaskServiceImpl extends ServiceImpl<MonthlyInspect
 
         boolean result = save(task);
 
-        // 创建成功后发送通知
-        if (result) {
-            sendTaskNotification(task.getId());
-        }
+        // 不再自动发送通知，需要手动点击通知按钮才发送
+        // 创建任务时 notificationSent 已设置为 0（未发送通知）
 
         return result;
     }
@@ -109,7 +119,20 @@ public class MonthlyInspectionTaskServiceImpl extends ServiceImpl<MonthlyInspect
                 .set(MonthlyInspectionTask::getDeleted, 1)
                 .set(MonthlyInspectionTask::getUpdateTime, LocalDateTime.now());
 
-        return update(updateWrapper);
+        boolean result = update(updateWrapper);
+        
+        // 删除任务时清理相关通知
+        if (result) {
+            try {
+                webSocketNotificationService.deleteNotificationsByTaskId(id);
+                log.info("已清理任务相关通知，任务ID: {}", id);
+            } catch (Exception e) {
+                log.error("清理任务通知失败，任务ID: {}", id, e);
+                // 不影响主要业务流程，只记录错误日志
+            }
+        }
+
+        return result;
     }
 
     @Override
@@ -124,7 +147,22 @@ public class MonthlyInspectionTaskServiceImpl extends ServiceImpl<MonthlyInspect
                 .set(MonthlyInspectionTask::getDeleted, 1)
                 .set(MonthlyInspectionTask::getUpdateTime, LocalDateTime.now());
 
-        return update(updateWrapper);
+        boolean result = update(updateWrapper);
+        
+        // 批量删除任务时清理相关通知
+        if (result) {
+            for (String id : ids) {
+                try {
+                    webSocketNotificationService.deleteNotificationsByTaskId(id);
+                    log.info("已清理任务相关通知，任务ID: {}", id);
+                } catch (Exception e) {
+                    log.error("清理任务通知失败，任务ID: {}", id, e);
+                    // 不影响主要业务流程，只记录错误日志
+                }
+            }
+        }
+
+        return result;
     }
 
     @Override
@@ -147,7 +185,20 @@ public class MonthlyInspectionTaskServiceImpl extends ServiceImpl<MonthlyInspect
                 .set(MonthlyInspectionTask::getStatus, status)
                 .set(MonthlyInspectionTask::getUpdateTime, LocalDateTime.now());
 
-        return update(updateWrapper);
+        boolean result = update(updateWrapper);
+        
+        // 当任务状态更新为已完成时，清理相关通知
+        if (result && status == 2) { // 状态2表示已完成
+            try {
+                webSocketNotificationService.deleteNotificationsByTaskId(id);
+                log.info("任务已完成，已清理相关通知，任务ID: {}", id);
+            } catch (Exception e) {
+                log.error("清理任务通知失败，任务ID: {}", id, e);
+                // 不影响主要业务流程，只记录错误日志
+            }
+        }
+
+        return result;
     }
 
     @Override
@@ -162,7 +213,22 @@ public class MonthlyInspectionTaskServiceImpl extends ServiceImpl<MonthlyInspect
                 .set(MonthlyInspectionTask::getStatus, status)
                 .set(MonthlyInspectionTask::getUpdateTime, LocalDateTime.now());
 
-        return update(updateWrapper);
+        boolean result = update(updateWrapper);
+        
+        // 当批量更新任务状态为已完成时，清理相关通知
+        if (result && status == 2) { // 状态2表示已完成
+            for (String id : ids) {
+                try {
+                    webSocketNotificationService.deleteNotificationsByTaskId(id);
+                    log.info("任务已完成，已清理相关通知，任务ID: {}", id);
+                } catch (Exception e) {
+                    log.error("清理任务通知失败，任务ID: {}", id, e);
+                    // 不影响主要业务流程，只记录错误日志
+                }
+            }
+        }
+
+        return result;
     }
 
     @Override
@@ -184,19 +250,33 @@ public class MonthlyInspectionTaskServiceImpl extends ServiceImpl<MonthlyInspect
     @Transactional(rollbackFor = Exception.class)
     public boolean sendTaskNotification(String taskId) {
         if (!StringUtils.hasText(taskId)) {
-            return false;
+            throw new RuntimeException("任务ID不能为空");
         }
 
         MonthlyInspectionTask task = getTaskDetail(taskId);
         if (task == null) {
-            return false;
+            throw new RuntimeException("任务不存在");
         }
 
         try {
-            // TODO: 实现具体的通知发送逻辑
+            // 实现具体的通知发送逻辑
+            log.info("开始发送任务通知，任务ID: {}, 任务编号: {}", taskId, task.getTaskNo());
+            
             // 1. 发送给组长
+            if (StringUtils.hasText(task.getGroupLeaderId())) {
+                sendNotificationToUser(task.getGroupLeaderId(), task, "组长");
+                log.info("已发送通知给组长，用户ID: {}", task.getGroupLeaderId());
+            }
+            
             // 2. 发送给副组长
-            // 3. 可以集成WebSocket、消息队列等方式实现实时通知
+            if (StringUtils.hasText(task.getDeputyLeaderId())) {
+                sendNotificationToUser(task.getDeputyLeaderId(), task, "副组长");
+                log.info("已发送通知给副组长，用户ID: {}", task.getDeputyLeaderId());
+            }
+            
+            // 3. 记录通知发送日志
+            log.info("任务通知发送完成，任务编号: {}, 组长: {}, 副组长: {}", 
+                    task.getTaskNo(), task.getGroupLeaderName(), task.getDeputyLeaderName());
 
             // 更新通知发送状态
             LambdaUpdateWrapper<MonthlyInspectionTask> updateWrapper = new LambdaUpdateWrapper<>();
@@ -204,10 +284,74 @@ public class MonthlyInspectionTaskServiceImpl extends ServiceImpl<MonthlyInspect
                     .set(MonthlyInspectionTask::getNotificationSent, 1)
                     .set(MonthlyInspectionTask::getUpdateTime, LocalDateTime.now());
 
-            return update(updateWrapper);
+            boolean updateResult = update(updateWrapper);
+            if (!updateResult) {
+                throw new RuntimeException("更新通知发送状态失败");
+            }
+            
+            return true;
         } catch (Exception e) {
-            e.printStackTrace();
-            return false;
+            log.error("发送任务通知失败，任务ID: {}, 错误信息: {}", taskId, e.getMessage(), e);
+            throw new RuntimeException("发送任务通知失败: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * 发送通知给指定用户
+     */
+    private void sendNotificationToUser(String userId, MonthlyInspectionTask task, String role) {
+        try {
+            // 获取用户信息以获取部门信息
+            SysUser user = sysUserService.getById(userId);
+            
+            // 创建通知对象
+            Notification notification = new Notification();
+            notification.setType("TASK_NOTIFICATION");
+            notification.setTitle("新的月检任务通知");
+            notification.setUserId(userId);
+            notification.setTaskId(task.getId());
+            notification.setTaskNo(task.getTaskNo());
+            notification.setPriority("high");
+            notification.setActionUrl("/monthly-tasks/" + task.getId());
+            
+            // 设置用户名称
+            if (user != null) {
+                notification.setUserName(user.getRealName() != null ? user.getRealName() : user.getUsername());
+            }
+            
+            // 设置部门信息（使用任务的部门信息，而非用户的部门信息）
+            notification.setDepartmentId(task.getDepartmentId());
+            notification.setDepartmentName(task.getDepartmentName());
+            
+            // 设置通知内容
+            String notificationContent = String.format(
+                "您有新的月检任务需要处理：\n" +
+                "任务编号：%s\n" +
+                "月检时间：%s\n" +
+                "您的角色：%s\n" +
+                "任务描述：%s\n\n" +
+                "请及时处理该任务。",
+                task.getTaskNo(),
+                task.getInspectionTime(),
+                role,
+                task.getTaskDescription() != null ? task.getTaskDescription() : "无"
+            );
+            notification.setContent(notificationContent);
+            
+            // 设置通知过期时间（任务完成或删除时自动清理）
+            notification.setExpireTime(null); // 不设置过期时间，直到任务完成或删除
+            
+            log.info("发送WebSocket通知给用户 {} ({}): {}, 任务部门: {}", userId, role, task.getTaskNo(), 
+                    task.getDepartmentName() != null ? task.getDepartmentName() : "未知");
+            
+            // 通过WebSocket发送通知
+            webSocketNotificationService.sendNotificationToUser(userId, notification);
+            
+            log.info("WebSocket通知发送成功，用户: {}, 任务: {}", userId, task.getTaskNo());
+            
+        } catch (Exception e) {
+            log.error("发送通知给用户失败，用户ID: {}, 角色: {}, 错误: {}", userId, role, e.getMessage());
+            // 这里不抛出异常，避免影响整个通知流程
         }
     }
 

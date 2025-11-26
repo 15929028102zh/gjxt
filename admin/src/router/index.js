@@ -46,6 +46,25 @@ const routes = [
         name: 'DelayedRectification',
         component: () => import('@/views/inspection/delayed/index.vue'),
         meta: { title: '延迟整改', icon: 'Warning' }
+      },
+      {
+        path: 'matrix',
+        name: 'DepartmentProfessionMatrix',
+        component: () => import('@/views/inspection/matrix/index.vue'),
+        meta: { title: '周检数据汇总', icon: 'Grid' }
+      }
+      ,
+      {
+        path: 'nature',
+        name: 'InspectionNature',
+        component: () => import('@/views/inspection/nature/index.vue'),
+        meta: { title: '周检问题属性统计', icon: 'DataAnalysis' }
+      },
+      {
+        path: 'audit',
+        name: 'InspectionAudit',
+        component: () => import('@/views/inspection/audit/index.vue'),
+        meta: { title: '待审核记录', icon: 'DocumentChecked' }
       }
     ]
   },
@@ -79,6 +98,19 @@ const routes = [
         component: () => import('@/views/monthly/gjbz/index.vue'),
         meta: { title: '岗检标准', icon: 'DataBoard' }
       }
+      ,
+      {
+        path: 'delayed',
+        name: 'MonthlyDelayed',
+        component: () => import('@/views/monthly/delayed/index.vue'),
+        meta: { title: '延迟整改', icon: 'Warning' }
+      },
+      {
+        path: 'audit',
+        name: 'MonthlyAudit',
+        component: () => import('@/views/monthly/audit/index.vue'),
+        meta: { title: '待审核记录', icon: 'DocumentChecked' }
+      }
     ]
   },
   {
@@ -104,6 +136,12 @@ const routes = [
         name: 'Dict',
         component: () => import('@/views/system/dict/index.vue'),
         meta: { title: '字典管理', icon: 'Collection', requiresAdmin: true }
+      },
+      {
+        path: 'notification',
+        name: 'NotificationManagement',
+        component: () => import('@/views/system/notification/index.vue'),
+        meta: { title: '通知管理', icon: 'Bell', requiresAdmin: true }
       }
     ]
   },
@@ -146,7 +184,7 @@ router.beforeEach((to, from, next) => {
         if (userInfoStr) {
           const userInfo = JSON.parse(userInfoStr)
           // 检查isAdmin字段：1=是管理员，0=不是管理员
-          if (userInfo.isAdmin !== 1 && userInfo.username !== 'admin') {
+          if (userInfo.isAdmin !== 1) {
             // 非管理员用户访问需要管理员权限的页面，重定向到首页
             next('/')
             return

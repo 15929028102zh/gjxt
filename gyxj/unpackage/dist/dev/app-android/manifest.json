@@ -3,8 +3,8 @@
   "name": "榆林公司岗检系统",
   "description": "",
   "version": {
-    "name": "1.0.1",
-    "code": "101"
+    "name": "1.0.2",
+    "code": "102"
   },
   "uni-app-x": {
     "compilerVersion": "4.76"

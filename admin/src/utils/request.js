@@ -25,6 +25,20 @@ request.interceptors.request.use(
         // 每次请求时刷新token过期时间
         refreshToken()
       }
+      
+      // 添加用户ID到请求头
+      try {
+        const userInfoStr = localStorage.getItem('userInfo')
+        if (userInfoStr) {
+          const userInfo = JSON.parse(userInfoStr)
+          if (userInfo.id) {
+            config.headers.userId = userInfo.id
+          }
+        }
+      } catch (error) {
+        console.error('获取用户ID失败:', error)
+      }
+      
       // 如果没有token，仍然发送请求，让后端返回401错误
     }
     return config

@@ -12,7 +12,7 @@ export function hasPermission(permission) {
     const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}')
     
     // 管理员拥有所有权限
-    if (userInfo.isAdmin === 1 || userInfo.username === 'admin') {
+    if (userInfo.isAdmin === 1 || userInfo.isAdmin === true || userInfo.isAdmin === '1') {
       return true
     }
     
@@ -33,12 +33,12 @@ export function hasWeeklyPermission() {
     const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}')
     
     // 管理员拥有所有权限
-    if (userInfo.isAdmin === 1 || userInfo.username === 'admin') {
+    if (userInfo.isAdmin === 1 || userInfo.isAdmin === true || userInfo.isAdmin === '1') {
       return true
     }
     
     // 检查周检权限字段：0=允许编辑删除，1=禁用编辑删除
-    return userInfo.weeklyPermission === 0
+    return userInfo.weeklyPermission === 0 || userInfo.weeklyPermission === '0'
   } catch (error) {
     console.error('检查周检权限失败:', error)
     return false
@@ -54,12 +54,12 @@ export function hasDelayedPermission() {
     const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}')
     
     // 管理员拥有所有权限
-    if (userInfo.isAdmin === 1 || userInfo.username === 'admin') {
+    if (userInfo.isAdmin === 1 || userInfo.isAdmin === true || userInfo.isAdmin === '1') {
       return true
     }
     
     // 检查周检权限字段：0=允许编辑删除，1=禁用编辑删除
-    return userInfo.weeklyPermission === 0
+    return userInfo.weeklyPermission === 0 || userInfo.weeklyPermission === '0'
   } catch (error) {
     console.error('检查延迟整改权限失败:', error)
     return false
@@ -75,12 +75,12 @@ export function hasMonthlyPermission() {
     const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}')
     
     // 管理员拥有所有权限
-    if (userInfo.isAdmin === 1 || userInfo.username === 'admin') {
+    if (userInfo.isAdmin === 1 || userInfo.isAdmin === true || userInfo.isAdmin === '1') {
       return true
     }
     
     // 检查月检权限字段：0=允许编辑删除，1=禁用编辑删除
-    return userInfo.monthlyPermission === 0
+    return userInfo.monthlyPermission === 0 || userInfo.monthlyPermission === '0'
   } catch (error) {
     console.error('检查月检权限失败:', error)
     return false
@@ -96,12 +96,12 @@ export function hasSubmitPermission() {
     const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}')
     
     // 管理员拥有所有权限
-    if (userInfo.isAdmin === 1 || userInfo.username === 'admin') {
+    if (userInfo.isAdmin === 1 || userInfo.isAdmin === true || userInfo.isAdmin === '1') {
       return true
     }
     
     // 检查周检权限字段：0=允许编辑删除，1=禁用编辑删除
-    return userInfo.weeklyPermission === 0
+    return userInfo.weeklyPermission === 0 || userInfo.weeklyPermission === '0'
   } catch (error) {
     console.error('检查周检提交权限失败:', error)
     return false
@@ -116,7 +116,7 @@ export function isAdmin() {
   try {
     const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}')
     // 检查isAdmin字段：1=是管理员，0=不是管理员
-    return userInfo.isAdmin === 1 || userInfo.username === 'admin'
+    return userInfo.isAdmin === 1 || userInfo.isAdmin === true || userInfo.isAdmin === '1'
   } catch (error) {
     console.error('检查管理员权限失败:', error)
     return false
