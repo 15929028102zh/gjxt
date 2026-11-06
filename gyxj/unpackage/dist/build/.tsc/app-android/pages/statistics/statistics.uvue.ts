@@ -1,0 +1,507 @@
+
+	import { getApiUrl } from '@/config/api.uts'
+	type PeriodTab = {
+		label: string
+		value: string
+	}
+	
+	type OverviewData = {
+		totalRecords: number
+		completedTasks: number
+		pendingRecords: number
+		completionRate: number
+	}
+	
+	type StatusDistributionItem = {
+		status: string
+		count: number
+		percentage: number
+	}
+	
+	type SeverityDistributionItem = {
+		severity: string
+		count: number
+		percentage: number
+	}
+	
+	type TrendDataItem = {
+		date: string
+		newCount: number
+		completedCount: number
+	}
+	
+	type LocationStatsItem = {
+		locationId: string
+		locationName: string
+		recordCount: number
+	}
+	
+	const __sfc__ = defineComponent({
+		data() {
+			return {
+				currentPeriod: 'month',
+				periodTabs: [
+					{ label: '本周', value: 'week' },
+					{ label: '本月', value: 'month' },
+					{ label: '本季', value: 'quarter' },
+					{ label: '本年', value: 'year' }
+				] as PeriodTab[],
+				overview: {
+				totalRecords: 0,
+				completedTasks: 0,
+				pendingRecords: 0,
+				completionRate: 0
+			} as OverviewData,
+				statusDistribution: [] as StatusDistributionItem[],
+				severityDistribution: [] as SeverityDistributionItem[],
+				trendData: [] as TrendDataItem[],
+				locationStats: [] as LocationStatsItem[],
+				loading: false
+			}
+		},
+		onLoad() {
+			this.checkLogin()
+			this.loadStatistics()
+		},
+		methods: {
+			checkLogin() {
+				const token = uni.getStorageSync('token') as string
+				if (token == null || token == '') {
+					uni.reLaunch({
+						url: '/pages/login/login'
+					})
+				}
+			},
+			
+			changePeriod(period: string) {
+				this.currentPeriod = period
+				this.loadStatistics()
+			},
+			
+			getPeriodText(): string {
+				if (this.currentPeriod == 'week') return '本周'
+				if (this.currentPeriod == 'month') return '本月'
+				if (this.currentPeriod == 'quarter') return '本季度'
+				if (this.currentPeriod == 'year') return '本年'
+				return '本月'
+			},
+			
+			async loadStatistics() {
+				if (this.loading) return
+				
+				this.loading = true
+				
+				try {
+					const token = uni.getStorageSync('token') as string
+					
+					// 加载概览数据
+					await this.loadOverview(token)
+					
+					// 加载状态分布
+					await this.loadStatusDistribution(token)
+					
+					// 加载严重程度分布
+					await this.loadSeverityDistribution(token)
+					
+					// 加载趋势数据
+					await this.loadTrendData(token)
+					
+					// 加载位置统计
+					await this.loadLocationStats(token)
+					
+				} catch (error) {
+					console.error('加载统计数据失败:', error)
+					uni.showToast({
+						title: '加载失败',
+						icon: 'none'
+					})
+				} finally {
+					this.loading = false
+				}
+			},
+			
+			loadOverview(token: string) {
+				uni.request({
+					url: getApiUrl(`/statistics/overview?period=${this.currentPeriod}`),
+					method: 'GET',
+					header: {
+						'Authorization': `Bearer ${token}`
+					},
+					success: (res) => {
+						const data = res.data as UTSJSONObject
+						if (res.statusCode === 200 && (data.getNumber('code') ?? 0) === 200) {
+							const overviewData = data.getJSON('data') as UTSJSONObject
+							this.overview = {
+								totalRecords: overviewData.getNumber('totalRecords') ?? 0,
+								completedTasks: overviewData.getNumber('completedTasks') ?? 0,
+								pendingRecords: overviewData.getNumber('pendingRecords') ?? 0,
+								completionRate: overviewData.getNumber('completionRate') ?? 0
+							}
+						}
+					},
+					fail: (error) => {
+						console.error('加载概览数据失败:', error)
+					}
+				})
+			},
+			
+			loadStatusDistribution(token: string) {
+				uni.request({
+					url: getApiUrl(`/statistics/status-distribution?period=${this.currentPeriod}`),
+					method: 'GET',
+					header: {
+						'Authorization': `Bearer ${token}`
+					},
+					success: (res) => {
+						const data = res.data as UTSJSONObject
+						if (res.statusCode === 200 && (data.getNumber('code') ?? 0) === 200) {
+							const dataArray = data.getArray('data') as Array<UTSJSONObject>
+							this.statusDistribution = []
+							for (let i = 0; i < dataArray.length; i++) {
+								const item = dataArray[i]
+								this.statusDistribution.push({
+									status: item.getString('status') ?? '',
+									count: item.getNumber('count') ?? 0,
+									percentage: item.getNumber('percentage') ?? 0
+								})
+							}
+						}
+					},
+					fail: (error) => {
+						console.error('加载状态分布失败:', error)
+					}
+				})
+			},
+			
+			loadSeverityDistribution(token: string) {
+				uni.request({
+					url: getApiUrl(`/statistics/severity-distribution?period=${this.currentPeriod}`),
+					method: 'GET',
+					header: {
+						'Authorization': `Bearer ${token}`
+					},
+					success: (res) => {
+						const data = res.data as UTSJSONObject
+						if (res.statusCode === 200 && (data.getNumber('code') ?? 0) === 200) {
+							const dataArray = data.getArray('data') as Array<UTSJSONObject>
+							this.severityDistribution = []
+							for (let i = 0; i < dataArray.length; i++) {
+								const item = dataArray[i]
+								this.severityDistribution.push({
+									severity: item.getString('severity') ?? '',
+									count: item.getNumber('count') ?? 0,
+									percentage: item.getNumber('percentage') ?? 0
+								})
+							}
+						}
+					},
+					fail: (error) => {
+						console.error('加载严重程度分布失败:', error)
+					}
+				})
+			},
+			
+			loadTrendData(token: string) {
+				uni.request({
+					url: getApiUrl(`/statistics/trends?period=${this.currentPeriod}`),
+					method: 'GET',
+					header: {
+						'Authorization': `Bearer ${token}`
+					},
+					success: (res) => {
+						const data = res.data as UTSJSONObject
+						if (res.statusCode === 200 && (data.getNumber('code') ?? 0) === 200) {
+							const dataArray = data.getArray('data') as Array<UTSJSONObject>
+							this.trendData = []
+							for (let i = 0; i < dataArray.length; i++) {
+								const item = dataArray[i]
+								this.trendData.push({
+									date: item.getString('date') ?? '',
+									newCount: item.getNumber('newCount') ?? 0,
+									completedCount: item.getNumber('completedCount') ?? 0
+								})
+							}
+						}
+					},
+					fail: (error) => {
+						console.error('加载趋势数据失败:', error)
+					}
+				})
+			},
+			
+			loadLocationStats(token: string) {
+				uni.request({
+					url: getApiUrl(`/statistics/location-stats?period=${this.currentPeriod}&limit=5`),
+					method: 'GET',
+					header: {
+						'Authorization': `Bearer ${token}`
+					},
+					success: (res) => {
+						const data = res.data as UTSJSONObject
+						if (res.statusCode === 200 && (data.getNumber('code') ?? 0) === 200) {
+							const dataArray = data.getArray('data') as Array<UTSJSONObject>
+							this.locationStats = []
+							for (let i = 0; i < dataArray.length; i++) {
+								const item = dataArray[i]
+								this.locationStats.push({
+							locationId: item.getString('locationId') ?? '',
+							locationName: item.getString('locationName') ?? '',
+							recordCount: item.getNumber('count') ?? 0
+						})
+							}
+						}
+					},
+					fail: (error) => {
+						console.error('加载位置统计失败:', error)
+					}
+				})
+			},
+			
+			getStatusText(status: string): string {
+				if (status == "0") return '待整改'
+				if (status == "1") return '已整改'
+				if (status == "2") return '已复查'
+				return '未知'
+			},
+			
+			getStatusDotClass(status: string): string {
+				if (status == '0') return 'dot-pending'
+				if (status == '1') return 'dot-processing'
+				if (status == '2') return 'dot-completed'
+				if (status == '3') return 'dot-accepted'
+				return 'dot-unknown'
+			},
+			
+			getSeverityText(severity: string): string {
+				if (severity == '1') return '低'
+				if (severity == '2') return '中'
+				if (severity == '3') return '高'
+				if (severity == '4') return '紧急'
+				return '未知'
+			},
+			
+			getSeverityDotClass(severity: string): string {
+				if (severity == '1') return 'dot-low'
+				if (severity == '2') return 'dot-medium'
+				if (severity == '3') return 'dot-high'
+				if (severity == '4') return 'dot-urgent'
+				return 'dot-unknown'
+			},
+			
+			formatTrendDate(date: string): string {
+				if (date == null || date == '') return ''
+				const d = new Date(date)
+				return `${d.getMonth() + 1}/${d.getDate()}`
+			},
+			
+			getTrendWidth(count: number, type: string): number {
+				if (this.trendData.length == 0) return 0
+				
+				let maxCount = 0
+				for (let i = 0; i < this.trendData.length; i++) {
+					const item = this.trendData[i]
+					const currentCount = type === 'new' ? item.newCount : item.completedCount
+					if (currentCount > maxCount) {
+						maxCount = currentCount
+					}
+				}
+				
+				return maxCount > 0 ? (count / maxCount) * 100 : 0
+			},
+			
+			getLocationWidth(count: number): number {
+				if (this.locationStats.length == 0) return 0
+				
+				let maxCount = 0
+				for (let i = 0; i < this.locationStats.length; i++) {
+				const item = this.locationStats[i]
+				if (item.recordCount > maxCount) {
+					maxCount = item.recordCount
+				}
+			}
+				return maxCount > 0 ? (count / maxCount) * 100 : 0
+			}
+		}
+	})
+
+export default __sfc__
+function GenPagesStatisticsStatisticsRender(this: InstanceType<typeof __sfc__>): any | null {
+const _ctx = this
+const _cache = this.$.renderCache
+  return _cE("view", _uM({ class: "container" }), [
+    _cE("view", _uM({ class: "filter-section" }), [
+      _cE("view", _uM({ class: "time-filter" }), [
+        _cE(Fragment, null, RenderHelpers.renderList(_ctx.periodTabs, (item, __key, __index, _cached): any => {
+          return _cE("view", _uM({
+            class: _nC(["time-tab", _uM({active: _ctx.currentPeriod === item.value})]),
+            key: item.value,
+            onClick: () => {_ctx.changePeriod(item.value)}
+          }), [
+            _cE("text", null, _tD(item.label), 1 /* TEXT */)
+          ], 10 /* CLASS, PROPS */, ["onClick"])
+        }), 128 /* KEYED_FRAGMENT */)
+      ])
+    ]),
+    _cE("view", _uM({ class: "overview-section" }), [
+      _cE("view", _uM({ class: "overview-title" }), [
+        _cE("text", null, "数据概览"),
+        _cE("text", _uM({ class: "period-text" }), _tD(_ctx.getPeriodText()), 1 /* TEXT */)
+      ]),
+      _cE("view", _uM({ class: "stats-grid" }), [
+        _cE("view", _uM({ class: "stats-item" }), [
+          _cE("text", _uM({ class: "stats-number" }), _tD(_ctx.overview.totalRecords), 1 /* TEXT */),
+          _cE("text", _uM({ class: "stats-label" }), "总记录数"),
+          _cE("text", _uM({ class: "stats-icon" }), "📝")
+        ]),
+        _cE("view", _uM({ class: "stats-item" }), [
+          _cE("text", _uM({ class: "stats-number" }), _tD(_ctx.overview.completedTasks), 1 /* TEXT */),
+          _cE("text", _uM({ class: "stats-label" }), "完成任务"),
+          _cE("text", _uM({ class: "stats-icon" }), "✅")
+        ]),
+        _cE("view", _uM({ class: "stats-item" }), [
+          _cE("text", _uM({ class: "stats-number" }), _tD(_ctx.overview.pendingRecords), 1 /* TEXT */),
+          _cE("text", _uM({ class: "stats-label" }), "待整改"),
+          _cE("text", _uM({ class: "stats-icon" }), "⏳")
+        ]),
+        _cE("view", _uM({ class: "stats-item" }), [
+          _cE("text", _uM({ class: "stats-number" }), _tD(_ctx.overview.completionRate) + "%", 1 /* TEXT */),
+          _cE("text", _uM({ class: "stats-label" }), "完成率"),
+          _cE("text", _uM({ class: "stats-icon" }), "📊")
+        ])
+      ])
+    ]),
+    _cE("view", _uM({ class: "chart-section" }), [
+      _cE("view", _uM({ class: "chart-header" }), [
+        _cE("text", _uM({ class: "chart-title" }), "记录状态分布")
+      ]),
+      _cE("view", _uM({ class: "status-chart" }), [
+        _cE(Fragment, null, RenderHelpers.renderList(_ctx.statusDistribution, (item, __key, __index, _cached): any => {
+          return _cE("view", _uM({
+            class: "status-item",
+            key: item.status
+          }), [
+            _cE("view", _uM({ class: "status-info" }), [
+              _cE("view", _uM({
+                class: _nC(["status-dot", _ctx.getStatusDotClass(item.status)])
+              }), null, 2 /* CLASS */),
+              _cE("text", _uM({ class: "status-name" }), _tD(_ctx.getStatusText(item.status)), 1 /* TEXT */)
+            ]),
+            _cE("view", _uM({ class: "status-data" }), [
+              _cE("text", _uM({ class: "status-count" }), _tD(item.count), 1 /* TEXT */),
+              _cE("text", _uM({ class: "status-percent" }), _tD(item.percentage) + "%", 1 /* TEXT */)
+            ]),
+            _cE("view", _uM({ class: "status-bar" }), [
+              _cE("view", _uM({
+                class: _nC(["status-progress", _ctx.getStatusDotClass(item.status)]),
+                style: _nS(_uM({width: item.percentage + '%'}))
+              }), null, 6 /* CLASS, STYLE */)
+            ])
+          ])
+        }), 128 /* KEYED_FRAGMENT */)
+      ])
+    ]),
+    _cE("view", _uM({ class: "chart-section" }), [
+      _cE("view", _uM({ class: "chart-header" }), [
+        _cE("text", _uM({ class: "chart-title" }), "严重程度分布")
+      ]),
+      _cE("view", _uM({ class: "severity-chart" }), [
+        _cE(Fragment, null, RenderHelpers.renderList(_ctx.severityDistribution, (item, __key, __index, _cached): any => {
+          return _cE("view", _uM({
+            class: "severity-item",
+            key: item.severity
+          }), [
+            _cE("view", _uM({ class: "severity-info" }), [
+              _cE("view", _uM({
+                class: _nC(["severity-dot", _ctx.getSeverityDotClass(item.severity)])
+              }), null, 2 /* CLASS */),
+              _cE("text", _uM({ class: "severity-name" }), _tD(_ctx.getSeverityText(item.severity)), 1 /* TEXT */)
+            ]),
+            _cE("view", _uM({ class: "severity-data" }), [
+              _cE("text", _uM({ class: "severity-count" }), _tD(item.count), 1 /* TEXT */),
+              _cE("text", _uM({ class: "severity-percent" }), _tD(item.percentage) + "%", 1 /* TEXT */)
+            ]),
+            _cE("view", _uM({ class: "severity-bar" }), [
+              _cE("view", _uM({
+                class: _nC(["severity-progress", _ctx.getSeverityDotClass(item.severity)]),
+                style: _nS(_uM({width: item.percentage + '%'}))
+              }), null, 6 /* CLASS, STYLE */)
+            ])
+          ])
+        }), 128 /* KEYED_FRAGMENT */)
+      ])
+    ]),
+    _cE("view", _uM({ class: "chart-section" }), [
+      _cE("view", _uM({ class: "chart-header" }), [
+        _cE("text", _uM({ class: "chart-title" }), "趋势分析")
+      ]),
+      _cE("view", _uM({ class: "trend-chart" }), [
+        _cE(Fragment, null, RenderHelpers.renderList(_ctx.trendData, (item, __key, __index, _cached): any => {
+          return _cE("view", _uM({
+            class: "trend-item",
+            key: item.date
+          }), [
+            _cE("view", _uM({ class: "trend-date" }), [
+              _cE("text", null, _tD(_ctx.formatTrendDate(item.date)), 1 /* TEXT */)
+            ]),
+            _cE("view", _uM({ class: "trend-bars" }), [
+              _cE("view", _uM({ class: "trend-bar" }), [
+                _cE("text", _uM({ class: "trend-label" }), "新增"),
+                _cE("view", _uM({
+                  class: "trend-progress new",
+                  style: _nS(_uM({width: _ctx.getTrendWidth(item.newCount, 'new') + '%'}))
+                }), null, 4 /* STYLE */),
+                _cE("text", _uM({ class: "trend-count" }), _tD(item.newCount), 1 /* TEXT */)
+              ]),
+              _cE("view", _uM({ class: "trend-bar" }), [
+                _cE("text", _uM({ class: "trend-label" }), "完成"),
+                _cE("view", _uM({
+                  class: "trend-progress completed",
+                  style: _nS(_uM({width: _ctx.getTrendWidth(item.completedCount, 'completed') + '%'}))
+                }), null, 4 /* STYLE */),
+                _cE("text", _uM({ class: "trend-count" }), _tD(item.completedCount), 1 /* TEXT */)
+              ])
+            ])
+          ])
+        }), 128 /* KEYED_FRAGMENT */)
+      ])
+    ]),
+    _cE("view", _uM({ class: "chart-section" }), [
+      _cE("view", _uM({ class: "chart-header" }), [
+        _cE("text", _uM({ class: "chart-title" }), "位置统计 TOP5")
+      ]),
+      _cE("view", _uM({ class: "location-chart" }), [
+        _cE(Fragment, null, RenderHelpers.renderList(_ctx.locationStats, (item, index, __index, _cached): any => {
+          return _cE("view", _uM({
+            class: "location-item",
+            key: item.locationId
+          }), [
+            _cE("view", _uM({ class: "location-rank" }), [
+              _cE("text", null, _tD(index + 1), 1 /* TEXT */)
+            ]),
+            _cE("view", _uM({ class: "location-info" }), [
+              _cE("text", _uM({ class: "location-name" }), _tD(item.locationName), 1 /* TEXT */),
+              _cE("view", _uM({ class: "location-bar" }), [
+                _cE("view", _uM({
+                  class: "location-progress",
+                  style: _nS(_uM({width: _ctx.getLocationWidth(item.recordCount) + '%'}))
+                }), null, 4 /* STYLE */)
+              ])
+            ]),
+            _cE("view", _uM({ class: "location-count" }), [
+              _cE("text", null, _tD(item.recordCount), 1 /* TEXT */)
+            ])
+          ])
+        }), 128 /* KEYED_FRAGMENT */),
+        _ctx.locationStats.length === 0
+          ? _cE("view", _uM({
+              key: 0,
+              class: "empty-chart"
+            }), [
+              _cE("text", null, "暂无数据")
+            ])
+          : _cC("v-if", true)
+      ])
+    ])
+  ])
+}
+const GenPagesStatisticsStatisticsStyles = [_uM([["container", _pS(_uM([["paddingTop", "20rpx"], ["paddingRight", "20rpx"], ["paddingBottom", "20rpx"], ["paddingLeft", "20rpx"], ["backgroundColor", "#f1f5f9"]]))], ["filter-section", _pS(_uM([["marginBottom", "20rpx"]]))], ["time-filter", _pS(_uM([["display", "flex"], ["backgroundImage", "none"], ["backgroundColor", "#ffffff"], ["borderTopLeftRadius", "16rpx"], ["borderTopRightRadius", "16rpx"], ["borderBottomRightRadius", "16rpx"], ["borderBottomLeftRadius", "16rpx"], ["paddingTop", "4rpx"], ["paddingRight", "4rpx"], ["paddingBottom", "4rpx"], ["paddingLeft", "4rpx"], ["boxShadow", "0 8rpx 24rpx rgba(30, 64, 175, 0.08)"], ["borderTopWidth", "1rpx"], ["borderRightWidth", "1rpx"], ["borderBottomWidth", "1rpx"], ["borderLeftWidth", "1rpx"], ["borderTopStyle", "solid"], ["borderRightStyle", "solid"], ["borderBottomStyle", "solid"], ["borderLeftStyle", "solid"], ["borderTopColor", "#dbeafe"], ["borderRightColor", "#dbeafe"], ["borderBottomColor", "#dbeafe"], ["borderLeftColor", "#dbeafe"]]))], ["time-tab", _uM([["", _uM([["flexGrow", 1], ["flexShrink", 1], ["flexBasis", "0%"], ["paddingTop", "10rpx"], ["paddingRight", "15rpx"], ["paddingBottom", "10rpx"], ["paddingLeft", "15rpx"], ["textAlign", "center"], ["borderTopLeftRadius", "12rpx"], ["borderTopRightRadius", "12rpx"], ["borderBottomRightRadius", "12rpx"], ["borderBottomLeftRadius", "12rpx"], ["transitionProperty", "all"], ["transitionDuration", "0.3s"]])], [".active", _uM([["backgroundImage", "linear-gradient(135deg, #1e40af 0%, #2563eb 50%, #38bdf8 100%)"], ["backgroundColor", "rgba(0,0,0,0)"], ["color", "#ffffff"], ["boxShadow", "0 4rpx 16rpx rgba(30, 64, 175, 0.18)"]])]])], ["overview-section", _pS(_uM([["backgroundImage", "none"], ["backgroundColor", "#ffffff"], ["borderTopLeftRadius", "24rpx"], ["borderTopRightRadius", "24rpx"], ["borderBottomRightRadius", "24rpx"], ["borderBottomLeftRadius", "24rpx"], ["paddingTop", "20rpx"], ["paddingRight", "20rpx"], ["paddingBottom", "20rpx"], ["paddingLeft", "20rpx"], ["marginBottom", "20rpx"], ["boxShadow", "0 8rpx 24rpx rgba(30, 64, 175, 0.08)"], ["borderTopWidth", "1rpx"], ["borderRightWidth", "1rpx"], ["borderBottomWidth", "1rpx"], ["borderLeftWidth", "1rpx"], ["borderTopStyle", "solid"], ["borderRightStyle", "solid"], ["borderBottomStyle", "solid"], ["borderLeftStyle", "solid"], ["borderTopColor", "#dbeafe"], ["borderRightColor", "#dbeafe"], ["borderBottomColor", "#dbeafe"], ["borderLeftColor", "#dbeafe"]]))], ["overview-title", _pS(_uM([["display", "flex"], ["justifyContent", "space-between"], ["alignItems", "center"], ["marginBottom", "20rpx"], ["paddingBottom", "15rpx"], ["borderBottomWidth", "1rpx"], ["borderBottomStyle", "solid"], ["borderBottomColor", "#eff6ff"]]))], ["period-text", _pS(_uM([["fontSize", "14rpx"], ["color", "#475569"]]))], ["stats-grid", _pS(_uM([["display", "flex"], ["flexWrap", "wrap"]]))], ["stats-item", _pS(_uM([["flexGrow", 1], ["flexShrink", 1], ["flexBasis", "0%"], ["minWidth", "150rpx"], ["backgroundImage", "linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)"], ["backgroundColor", "rgba(0,0,0,0)"], ["borderTopLeftRadius", "16rpx"], ["borderTopRightRadius", "16rpx"], ["borderBottomRightRadius", "16rpx"], ["borderBottomLeftRadius", "16rpx"], ["paddingTop", "20rpx"], ["paddingRight", "15rpx"], ["paddingBottom", "20rpx"], ["paddingLeft", "15rpx"], ["textAlign", "center"], ["position", "relative"], ["borderTopWidth", "1rpx"], ["borderRightWidth", "1rpx"], ["borderBottomWidth", "1rpx"], ["borderLeftWidth", "1rpx"], ["borderTopStyle", "solid"], ["borderRightStyle", "solid"], ["borderBottomStyle", "solid"], ["borderLeftStyle", "solid"], ["borderTopColor", "#dbeafe"], ["borderRightColor", "#dbeafe"], ["borderBottomColor", "#dbeafe"], ["borderLeftColor", "#dbeafe"]]))], ["stats-number", _pS(_uM([["fontSize", "20rpx"], ["fontWeight", "bold"], ["color", "#1e40af"], ["marginBottom", "5rpx"]]))], ["stats-label", _pS(_uM([["fontSize", "12rpx"], ["color", "#475569"]]))], ["stats-icon", _pS(_uM([["position", "absolute"], ["top", "15rpx"], ["right", "15rpx"], ["fontSize", "20rpx"], ["opacity", 0.3]]))], ["chart-section", _pS(_uM([["backgroundImage", "none"], ["backgroundColor", "#ffffff"], ["borderTopLeftRadius", "24rpx"], ["borderTopRightRadius", "24rpx"], ["borderBottomRightRadius", "24rpx"], ["borderBottomLeftRadius", "24rpx"], ["paddingTop", "20rpx"], ["paddingRight", "20rpx"], ["paddingBottom", "20rpx"], ["paddingLeft", "20rpx"], ["marginBottom", "20rpx"], ["boxShadow", "0 8rpx 24rpx rgba(30, 64, 175, 0.08)"], ["borderTopWidth", "1rpx"], ["borderRightWidth", "1rpx"], ["borderBottomWidth", "1rpx"], ["borderLeftWidth", "1rpx"], ["borderTopStyle", "solid"], ["borderRightStyle", "solid"], ["borderBottomStyle", "solid"], ["borderLeftStyle", "solid"], ["borderTopColor", "#dbeafe"], ["borderRightColor", "#dbeafe"], ["borderBottomColor", "#dbeafe"], ["borderLeftColor", "#dbeafe"]]))], ["chart-header", _pS(_uM([["marginBottom", "20rpx"], ["paddingBottom", "15rpx"], ["borderBottomWidth", "1rpx"], ["borderBottomStyle", "solid"], ["borderBottomColor", "#eff6ff"]]))], ["chart-title", _pS(_uM([["fontSize", "18rpx"], ["fontWeight", "bold"], ["color", "#0f172a"]]))], ["status-item", _pS(_uM([["marginBottom", "15rpx"], ["marginBottom:last-child", 0]]))], ["severity-item", _pS(_uM([["marginBottom", "15rpx"], ["marginBottom:last-child:last-child", 0]]))], ["status-info", _pS(_uM([["display", "flex"], ["alignItems", "center"], ["marginBottom", "8rpx"]]))], ["severity-info", _pS(_uM([["display", "flex"], ["alignItems", "center"], ["marginBottom", "8rpx"]]))], ["status-dot", _pS(_uM([["width", "12rpx"], ["height", "12rpx"], ["borderTopLeftRadius", "6rpx"], ["borderTopRightRadius", "6rpx"], ["borderBottomRightRadius", "6rpx"], ["borderBottomLeftRadius", "6rpx"], ["marginRight", "10rpx"]]))], ["severity-dot", _pS(_uM([["width", "12rpx"], ["height", "12rpx"], ["borderTopLeftRadius", "6rpx"], ["borderTopRightRadius", "6rpx"], ["borderBottomRightRadius", "6rpx"], ["borderBottomLeftRadius", "6rpx"], ["marginRight", "10rpx"]]))], ["dot-pending", _pS(_uM([["backgroundImage", "none"], ["backgroundColor", "#f59e0b"]]))], ["dot-processing", _pS(_uM([["backgroundImage", "none"], ["backgroundColor", "#2563eb"]]))], ["dot-completed", _pS(_uM([["backgroundImage", "none"], ["backgroundColor", "#16a34a"]]))], ["dot-accepted", _pS(_uM([["backgroundImage", "none"], ["backgroundColor", "#94a3b8"]]))], ["dot-low", _pS(_uM([["backgroundImage", "none"], ["backgroundColor", "#16a34a"]]))], ["dot-medium", _pS(_uM([["backgroundImage", "none"], ["backgroundColor", "#f59e0b"]]))], ["dot-high", _pS(_uM([["backgroundImage", "none"], ["backgroundColor", "#f97316"]]))], ["dot-urgent", _pS(_uM([["backgroundImage", "none"], ["backgroundColor", "#dc2626"]]))], ["status-name", _pS(_uM([["fontSize", "14rpx"], ["color", "#0f172a"], ["flexGrow", 1], ["flexShrink", 1], ["flexBasis", "0%"]]))], ["severity-name", _pS(_uM([["fontSize", "14rpx"], ["color", "#0f172a"], ["flexGrow", 1], ["flexShrink", 1], ["flexBasis", "0%"]]))], ["status-data", _pS(_uM([["display", "flex"], ["justifyContent", "space-between"], ["marginBottom", "5rpx"]]))], ["severity-data", _pS(_uM([["display", "flex"], ["justifyContent", "space-between"], ["marginBottom", "5rpx"]]))], ["status-count", _pS(_uM([["fontSize", "16rpx"], ["fontWeight", "bold"], ["color", "#0f172a"]]))], ["severity-count", _pS(_uM([["fontSize", "16rpx"], ["fontWeight", "bold"], ["color", "#0f172a"]]))], ["status-percent", _pS(_uM([["fontSize", "14rpx"], ["color", "#475569"]]))], ["severity-percent", _pS(_uM([["fontSize", "14rpx"], ["color", "#475569"]]))], ["status-bar", _pS(_uM([["height", "6rpx"], ["backgroundImage", "none"], ["backgroundColor", "#eff6ff"], ["borderTopLeftRadius", "3rpx"], ["borderTopRightRadius", "3rpx"], ["borderBottomRightRadius", "3rpx"], ["borderBottomLeftRadius", "3rpx"], ["overflow", "hidden"]]))], ["severity-bar", _pS(_uM([["height", "6rpx"], ["backgroundImage", "none"], ["backgroundColor", "#eff6ff"], ["borderTopLeftRadius", "3rpx"], ["borderTopRightRadius", "3rpx"], ["borderBottomRightRadius", "3rpx"], ["borderBottomLeftRadius", "3rpx"], ["overflow", "hidden"]]))], ["status-progress", _pS(_uM([["height", "100%"], ["borderTopLeftRadius", "3rpx"], ["borderTopRightRadius", "3rpx"], ["borderBottomRightRadius", "3rpx"], ["borderBottomLeftRadius", "3rpx"], ["transitionProperty", "width"], ["transitionDuration", "0.3s"]]))], ["severity-progress", _pS(_uM([["height", "100%"], ["borderTopLeftRadius", "3rpx"], ["borderTopRightRadius", "3rpx"], ["borderBottomRightRadius", "3rpx"], ["borderBottomLeftRadius", "3rpx"], ["transitionProperty", "width"], ["transitionDuration", "0.3s"]]))], ["trend-item", _pS(_uM([["marginBottom", "20rpx"], ["marginBottom:last-child", 0]]))], ["trend-date", _pS(_uM([["marginBottom", "10rpx"]]))], ["trend-bar", _pS(_uM([["display", "flex"], ["alignItems", "center"], ["marginBottom", "8rpx"]]))], ["trend-label", _pS(_uM([["fontSize", "12rpx"], ["color", "#475569"], ["minWidth", "40rpx"], ["marginRight", "10rpx"]]))], ["trend-progress", _uM([["", _uM([["height", "20rpx"], ["borderTopLeftRadius", "10rpx"], ["borderTopRightRadius", "10rpx"], ["borderBottomRightRadius", "10rpx"], ["borderBottomLeftRadius", "10rpx"], ["marginRight", "10rpx"], ["transitionProperty", "width"], ["transitionDuration", "0.3s"], ["flexGrow", 1], ["flexShrink", 1], ["flexBasis", "0%"], ["maxWidth", "200rpx"]])], [".new", _uM([["backgroundImage", "linear-gradient(90deg, #1e40af 0%, #2563eb 50%, #38bdf8 100%)"], ["backgroundColor", "rgba(0,0,0,0)"]])], [".completed", _uM([["backgroundImage", "linear-gradient(90deg, #16a34a 0%, #38bdf8 100%)"], ["backgroundColor", "rgba(0,0,0,0)"]])]])], ["trend-count", _pS(_uM([["fontSize", "12rpx"], ["color", "#0f172a"], ["minWidth", "30rpx"], ["textAlign", "right"]]))], ["location-item", _pS(_uM([["display", "flex"], ["alignItems", "center"], ["marginBottom", "15rpx"], ["marginBottom:last-child", 0]]))], ["location-rank", _pS(_uM([["width", "24rpx"], ["height", "24rpx"], ["borderTopLeftRadius", "12rpx"], ["borderTopRightRadius", "12rpx"], ["borderBottomRightRadius", "12rpx"], ["borderBottomLeftRadius", "12rpx"], ["backgroundImage", "linear-gradient(135deg, #1e40af 0%, #2563eb 100%)"], ["backgroundColor", "rgba(0,0,0,0)"], ["color", "#ffffff"], ["display", "flex"], ["alignItems", "center"], ["justifyContent", "center"], ["marginRight", "15rpx"], ["boxShadow", "0 4rpx 12rpx rgba(30, 64, 175, 0.18)"]]))], ["location-info", _pS(_uM([["flexGrow", 1], ["flexShrink", 1], ["flexBasis", "0%"], ["marginRight", "15rpx"]]))], ["location-name", _pS(_uM([["fontSize", "14rpx"], ["color", "#0f172a"], ["marginBottom", "5rpx"]]))], ["location-bar", _pS(_uM([["height", "6rpx"], ["backgroundImage", "none"], ["backgroundColor", "#eff6ff"], ["borderTopLeftRadius", "3rpx"], ["borderTopRightRadius", "3rpx"], ["borderBottomRightRadius", "3rpx"], ["borderBottomLeftRadius", "3rpx"], ["overflow", "hidden"]]))], ["location-progress", _pS(_uM([["height", "100%"], ["backgroundImage", "linear-gradient(90deg, #1e40af 0%, #2563eb 50%, #38bdf8 100%)"], ["backgroundColor", "rgba(0,0,0,0)"], ["borderTopLeftRadius", "3rpx"], ["borderTopRightRadius", "3rpx"], ["borderBottomRightRadius", "3rpx"], ["borderBottomLeftRadius", "3rpx"], ["transitionProperty", "width"], ["transitionDuration", "0.3s"]]))], ["location-count", _pS(_uM([["minWidth", "30rpx"], ["textAlign", "right"], ["color", "#0f172a"]]))], ["empty-chart", _pS(_uM([["textAlign", "center"], ["paddingTop", "40rpx"], ["paddingRight", 0], ["paddingBottom", "40rpx"], ["paddingLeft", 0], ["color", "#94a3b8"]]))], ["@TRANSITION", _uM([["time-tab", _uM([["property", "all"], ["duration", "0.3s"]])], ["status-progress", _uM([["property", "width"], ["duration", "0.3s"]])], ["severity-progress", _uM([["property", "width"], ["duration", "0.3s"]])], ["trend-progress", _uM([["property", "width"], ["duration", "0.3s"]])], ["location-progress", _uM([["property", "width"], ["duration", "0.3s"]])]])]])]

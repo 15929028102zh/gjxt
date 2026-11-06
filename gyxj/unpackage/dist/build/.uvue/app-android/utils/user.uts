@@ -1,0 +1,117 @@
+import { getApiUrl } from '@/config/api.uts';
+/**
+ * 当前登录用户所属部门信息
+ *
+ * deptType：0=运行部门(受检单位) 1=管理部门(检查单位)；null=未挂部门(如月检管理员)
+ */
+export type CurrentDept = {
+    deptId: string;
+    deptName: string;
+    deptType: number | null;
+};
+/**
+ * 读取本地缓存的 userInfo（解析失败或不存在时返回空对象）
+ */
+export function getCachedUserInfo(): UTSJSONObject {
+    const raw = uni.getStorageSync('userInfo');
+    const str = raw != null ? `${raw}` : '';
+    if (str == '' || str == 'null' || str == 'undefined') {
+        return {} as UTSJSONObject;
+    }
+    try {
+        return JSON.parse(str) as UTSJSONObject;
+    }
+    catch (e: any) {
+        return {} as UTSJSONObject;
+    }
+}
+/**
+ * 从服务端刷新本地缓存的用户信息
+ *
+ * 用户的部门、角色、月检管理员标志都可能在后台被改过，而本地 userInfo 是登录那一刻的快照。
+ * 不刷新的话页面会拿着旧 deptId 去查部门类型，把人当成旧部门角色渲染数据范围和按钮可见性。
+ * Web 端 layout/index.vue 每次进入都会重拉 /user/info，移动端对齐这个行为。
+ *
+ * @return 是否刷新成功
+ */
+export function refreshUserInfo(): Promise<boolean> {
+    return new Promise<boolean>((resolve, _reject) => {
+        const token = uni.getStorageSync('token');
+        const tokenStr = token != null ? `${token}` : '';
+        if (tokenStr == '' || tokenStr == 'null' || tokenStr == 'undefined') {
+            resolve(false);
+            return;
+        }
+        const cached = getCachedUserInfo();
+        const username = cached.getString('username') ?? '';
+        if (username == '') {
+            resolve(false);
+            return;
+        }
+        // avatar 是客户端由 imageUrl 换算出来的本地字段，服务端 SysUser 里没有，
+        // 刷新时要保留，否则头像会退回默认图
+        const cachedAvatar = cached.getString('avatar') ?? '';
+        uni.request({
+            url: getApiUrl(`/user/info?username=${username}`),
+            method: 'GET',
+            header: { 'Authorization': `Bearer ${tokenStr}` },
+            success: (res) => {
+                const data = res.data as UTSJSONObject;
+                if (res.statusCode == 200 && (data.getNumber('code') ?? 0) == 200) {
+                    const latest = data.getJSON('data');
+                    if (latest != null) {
+                        if ((latest.getString('avatar') ?? '') == '' && cachedAvatar != '') {
+                            latest.set('avatar', cachedAvatar);
+                        }
+                        uni.setStorageSync('userInfo', JSON.stringify(latest));
+                        resolve(true);
+                        return;
+                    }
+                }
+                resolve(false);
+            },
+            fail: () => {
+                resolve(false);
+            }
+        });
+    });
+}
+/**
+ * 取当前登录用户所属部门的最新信息
+ *
+ * 先刷新用户信息拿到最新的 deptId，再查该部门的真实类型(deptType)。
+ * 部门信息被改过后，页面不应再沿用登录时的旧快照。
+ */
+export function resolveCurrentDept(): Promise<CurrentDept> {
+    return new Promise<CurrentDept>((resolve, _reject) => {
+        refreshUserInfo().then(() => {
+            const info = getCachedUserInfo();
+            const deptId = info.getString('deptId') ?? '';
+            const deptName = info.getString('deptName') ?? '';
+            if (deptId == '') {
+                // 未挂部门：deptType 未知(null)，对齐 Web userDeptType=null
+                resolve({ deptId: '', deptName: deptName, deptType: null } as CurrentDept);
+                return;
+            }
+            const token = uni.getStorageSync('token');
+            const tokenStr = token != null ? `${token}` : '';
+            uni.request({
+                url: getApiUrl(`/dept/${deptId}`),
+                method: 'GET',
+                header: { 'Authorization': `Bearer ${tokenStr}` },
+                success: (res) => {
+                    const data = res.data as UTSJSONObject;
+                    let deptType: number | null = 0;
+                    if (res.statusCode == 200 && (data.getNumber('code') ?? 0) == 200) {
+                        const d = data.getJSON('data');
+                        deptType = d != null ? (d.getNumber('deptType') ?? 0) : 0;
+                    }
+                    resolve({ deptId: deptId, deptName: deptName, deptType: deptType } as CurrentDept);
+                },
+                fail: () => {
+                    resolve({ deptId: deptId, deptName: deptName, deptType: 0 } as CurrentDept);
+                }
+            });
+        });
+    });
+}

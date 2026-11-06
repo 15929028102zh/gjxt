@@ -1,0 +1,29 @@
+# ===== AI 编码工具目录（同一套 skills 库的重复拷贝，约 2.3GB）=====
+.agents/
+.codebuddy/
+.qoder/
+.trae/
+
+# ===== Claude Code 本地私有配置 =====
+.claude/settings.local.json
+.claude/worktrees/
+
+# ===== 依赖 =====
+node_modules/
+
+# ===== 根目录临时构建/部署脚本与日志产物 =====
+/_*
+
+# ===== 子目录临时脚本 =====
+**/_*.sql
+**/_*.py
+**/_*.txt
+
+# ===== 热重载插件产生的临时文件 =====
+*.tmp.*.*
+
+# ===== 损坏文件备份 =====
+.damaged-backup/
+
+# ===== 运行时上传数据（不纳入版本管理）=====
+backend/uploads/

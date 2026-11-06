@@ -1,0 +1,457 @@
+<template>
+	<scroll-view class="container" scroll-y="true" :style="{height: containerHeight + 'px'}">
+		<view v-if="loading" class="loading">
+			<text>加载中...</text>
+		</view>
+		<view v-else-if="detail != null" class="content">
+			<!-- 头部 -->
+			<view class="header">
+				<view class="header-left" @click="goBack">
+					<text class="back-icon">‹</text>
+				</view>
+				<text class="header-title">月检记录详情</text>
+				<view class="header-right">
+					<view class="status" :class="getStatusClass(detail.recordStatus)">
+						<text>{{ getStatusText(detail.recordStatus) }}</text>
+					</view>
+				</view>
+			</view>
+
+			<!-- 任务信息 -->
+			<view class="task-card">
+				<view class="info-item">
+					<text class="info-label">任务编号</text>
+					<text class="info-value">{{ displayValue(detail.taskNo) }}</text>
+				</view>
+				<view class="info-item">
+					<text class="info-label">问题描述</text>
+					<text class="info-value">{{ detail.problemDescription }}</text>
+				</view>
+			</view>
+
+			<!-- 问题图片 -->
+			<view v-if="problemImages.length > 0" class="section-card">
+				<view class="section-title">
+					<text class="title-text">问题图片</text>
+					<text class="title-count">（{{problemImages.length}}张）</text>
+				</view>
+				<view class="image-list">
+					<image v-for="(img, idx) in problemImages" :key="idx" :src="img" class="photo" mode="aspectFill" @click="preview(img, problemImages)"></image>
+				</view>
+			</view>
+
+			<!-- 整改信息 -->
+			<view v-if="detail.recordStatus >= 1" class="section-card">
+				<view class="section-title">
+					<text class="title-text">整改信息</text>
+				</view>
+				<view class="info-item">
+					<text class="info-label">整改人</text>
+					<text class="info-value">{{ displayValue(detail.rectifierName) }}</text>
+				</view>
+				<view class="info-item">
+					<text class="info-label">整改建议</text>
+					<text class="info-value">{{ displayValue(detail.rectificationSuggestion) }}</text>
+				</view>
+				<view class="info-item">
+					<text class="info-label">整改效果</text>
+					<text class="info-value">{{ displayValue(detail.rectificationEffect) }}</text>
+				</view>
+				<view v-if="rectificationImages.length > 0" class="info-item column">
+					<text class="info-label">整改图片（{{rectificationImages.length}}张）</text>
+					<view class="image-list">
+						<image v-for="(img, idx) in rectificationImages" :key="idx" :src="img" class="photo" mode="aspectFill" @click="preview(img, rectificationImages)"></image>
+					</view>
+				</view>
+			</view>
+
+			<!-- 复查信息 -->
+			<view v-if="detail.recordStatus >= 2" class="section-card">
+				<view class="section-title">
+					<text class="title-text">复查信息</text>
+				</view>
+				<view class="info-item">
+					<text class="info-label">复查人</text>
+					<text class="info-value">{{ displayValue(detail.reviewerName) }}</text>
+				</view>
+				<view class="info-item">
+					<text class="info-label">复查建议</text>
+					<text class="info-value">{{ displayValue(detail.reviewSuggestion) }}</text>
+				</view>
+				<view class="info-item">
+					<text class="info-label">复查效果</text>
+					<text class="info-value">{{ displayValue(detail.reviewEffect) }}</text>
+				</view>
+				<view v-if="reviewImages.length > 0" class="info-item column">
+					<text class="info-label">复查图片（{{reviewImages.length}}张）</text>
+					<view class="image-list">
+						<image v-for="(img, idx) in reviewImages" :key="idx" :src="img" class="photo" mode="aspectFill" @click="preview(img, reviewImages)"></image>
+					</view>
+				</view>
+			</view>
+
+			<!-- 基本信息 -->
+			<view class="section-card">
+				<view class="section-title">
+					<text class="title-text">基本信息</text>
+				</view>
+				<view class="info-item">
+					<text class="info-label">专业类别</text>
+					<text class="info-value">{{ displayValue(detail.professionalTypeName) }}</text>
+				</view>
+				<view class="info-item">
+					<text class="info-label">基本模块</text>
+					<text class="info-value">{{ displayValue(detail.moduleName) }}</text>
+				</view>
+				<view class="info-item">
+					<text class="info-label">责任要素</text>
+					<text class="info-value">{{ displayValue(detail.responsibilityName) }}</text>
+				</view>
+				<view class="info-item">
+					<text class="info-label">检查内容</text>
+					<text class="info-value">{{ displayValue(detail.issueName) }}</text>
+				</view>
+				<view class="info-item">
+					<text class="info-label">性质界定</text>
+					<text class="info-value">{{ displayValue(detail.qualityName) }}</text>
+				</view>
+				<view class="info-item">
+					<text class="info-label">扣分值</text>
+					<text class="info-value">{{ getDeductionScore(detail.qualityName) }}</text>
+				</view>
+				<view class="info-item">
+					<text class="info-label">发现位置</text>
+					<text class="info-value">{{ displayValue(detail.location) }}</text>
+				</view>
+				<view class="info-item">
+					<text class="info-label">受检单位</text>
+					<text class="info-value">{{ displayValue(detail.departmentName) }}</text>
+				</view>
+				<view class="info-item">
+					<text class="info-label">检查人</text>
+					<text class="info-value">{{ displayValue(detail.inspector) }}</text>
+				</view>
+				<view class="info-item">
+					<text class="info-label">责任人</text>
+					<text class="info-value">{{ displayValue(detail.responsiblePerson) }}</text>
+				</view>
+				<view class="info-item">
+					<text class="info-label">责任单位</text>
+					<text class="info-value">{{ displayValue(detail.responsibleUnit) }}</text>
+				</view>
+				<view class="info-item">
+					<text class="info-label">整改期限</text>
+					<text class="info-value">{{ displayValue(detail.rectificationDeadline) }}</text>
+				</view>
+			</view>
+		</view>
+		<view v-else class="empty">
+			<text>记录不存在</text>
+		</view>
+	</scroll-view>
+</template>
+
+<script lang="uts">
+	import { getApiUrl, apiConfig } from '@/config/api.uts'
+
+	type MonthlyDetail = {
+		id: string
+		taskNo: string
+		recordStatus: number
+		problemDescription: string
+		professionalTypeName: string
+		moduleName: string
+		responsibilityName: string
+		issueName: string
+		qualityName: string
+		location: string
+		departmentName: string
+		inspector: string
+		responsibleUnit: string
+		responsiblePerson: string
+		rectificationSuggestion: string
+		rectificationEffect: string
+		rectifierName: string
+		reviewSuggestion: string
+		reviewEffect: string
+		reviewerName: string
+		photos: string
+		rectificationImages: string
+		reviewImages: string
+		rectificationDeadline: string
+	}
+
+	export default {
+		data() {
+			return {
+				id: '',
+				detail: null as MonthlyDetail | null,
+				loading: true,
+				containerHeight: 0,
+				problemImages: [] as string[],
+				rectificationImages: [] as string[],
+				reviewImages: [] as string[]
+			}
+		},
+		onLoad(options: UTSJSONObject) {
+			this.id = options.getString('id') ?? ''
+			this.initContainer()
+			this.loadDetail()
+		},
+		methods: {
+			goBack() {
+				uni.navigateBack()
+			},
+			initContainer() {
+				uni.getSystemInfo({
+					success: (res) => { this.containerHeight = res.windowHeight }
+				})
+			},
+			loadDetail() {
+				const token = uni.getStorageSync('token')
+				uni.request({
+					url: getApiUrl(`/monthly-inspection-record/${this.id}`),
+					method: 'GET',
+					header: { 'Authorization': `Bearer ${token}` },
+					success: (res) => {
+						const data = res.data as UTSJSONObject
+						if (res.statusCode === 200 && (data.getNumber('code') ?? 0) === 200) {
+							const d = data.getJSON('data')
+							if (d != null) {
+								this.detail = {
+									id: d.getString('id') ?? '',
+									taskNo: d.getString('taskNo') ?? '',
+									recordStatus: d.getNumber('recordStatus') ?? 0,
+									problemDescription: d.getString('problemDescription') ?? '',
+									professionalTypeName: d.getString('professionalTypeName') ?? '',
+									moduleName: d.getString('moduleName') ?? '',
+									responsibilityName: d.getString('responsibilityName') ?? '',
+									issueName: d.getString('issueName') ?? '',
+									qualityName: d.getString('qualityName') ?? '',
+									location: d.getString('location') ?? '',
+									departmentName: d.getString('departmentName') ?? '',
+									inspector: d.getString('inspector') ?? '',
+									responsibleUnit: d.getString('responsibleUnit') ?? '',
+									responsiblePerson: d.getString('responsiblePerson') ?? '',
+									rectificationSuggestion: d.getString('rectificationSuggestion') ?? '',
+									rectificationEffect: d.getString('rectificationEffect') ?? '',
+									rectifierName: d.getString('rectifierName') ?? '',
+									reviewSuggestion: d.getString('reviewSuggestion') ?? '',
+									reviewEffect: d.getString('reviewEffect') ?? '',
+									reviewerName: d.getString('reviewerName') ?? '',
+									photos: d.getString('photos') ?? '',
+									rectificationImages: d.getString('rectificationImages') ?? '',
+									reviewImages: d.getString('reviewImages') ?? '',
+									rectificationDeadline: d.getString('rectificationDeadline') ?? ''
+								}
+								this.problemImages = this.parseImages(this.detail.photos)
+								this.rectificationImages = this.parseImages(this.detail.rectificationImages)
+								this.reviewImages = this.parseImages(this.detail.reviewImages)
+							}
+						}
+						this.loading = false
+					},
+					fail: (_) => { this.loading = false }
+				})
+			},
+			parseImages(s: string): string[] {
+				if (s == null || s.trim() === '') return []
+				try {
+					if (s.trim().startsWith('[') && s.trim().endsWith(']')) {
+						const arr = JSON.parse(s) as string[]
+						return arr.map(u => this.toUrl(u)).filter(u => u !== '')
+					}
+				} catch (_) {}
+				return s.split(',').map(u => u.trim()).filter(u => u !== '').map(u => this.toUrl(u))
+			},
+			toUrl(p: string): string {
+				if (p == null || p.trim() === '') return ''
+				if (p.startsWith('http://') || p.startsWith('https://') ) return p
+				return `${apiConfig.baseUrl}/api${p}`
+			},
+			getDeductionScore(qualityName: string): string {
+				if (qualityName === '观察') return '1'
+				if (qualityName === '一般') return '3'
+				if (qualityName === '重要') return '5'
+				return '-'
+			},
+			displayValue(v: string): string {
+				return v !== '' && v != null ? v : '暂无'
+			},
+			preview(current: string, urls: string[]) {
+				uni.previewImage({ current, urls })
+			},
+			getStatusText(s: number): string {
+				if (s === 0) return '待整改'
+				if (s === 1) return '已整改'
+				if (s === 2) return '已复查'
+				return '未知'
+			},
+			getStatusClass(s: number): string {
+				if (s === 0) return 'status-pending'
+				if (s === 1) return 'status-completed'
+				if (s === 2) return 'status-reviewed'
+				return 'status-unknown'
+			}
+		}
+	}
+</script>
+
+<style>
+	.container {
+		background: linear-gradient(180deg, #eff6ff 0%, #dbeafe 100%);
+	}
+
+	.loading {
+		padding: 80rpx 40rpx;
+		text-align: center;
+		color: #475569;
+		font-size: 28rpx;
+	}
+
+	.content {
+		padding: 24rpx 32rpx 80rpx;
+	}
+
+	.header {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		padding: 32rpx 40rpx;
+		background: linear-gradient(135deg, #0a2540 0%, #1e40af 55%, #0ea5e9 100%);
+		border-radius: 24rpx;
+		box-shadow: 0 12rpx 36rpx rgba(30, 64, 175, 0.32);
+		margin-bottom: 24rpx;
+		color: #ffffff;
+	}
+
+	.header-left {
+		display: flex;
+		align-items: center;
+	}
+
+	.back-icon {
+		font-size: 56rpx;
+		color: #ffffff;
+		font-weight: 300;
+		line-height: 1;
+	}
+
+	.header-title {
+		flex: 1;
+		font-size: 34rpx;
+		font-weight: 700;
+		color: #ffffff;
+		letter-spacing: 1rpx;
+		text-align: center;
+	}
+
+	.header-right {
+		display: flex;
+		align-items: center;
+	}
+
+	.status {
+		padding: 8rpx 20rpx;
+		border-radius: 16rpx;
+		font-size: 26rpx;
+		font-weight: 600;
+	}
+
+	.status-pending { background: #f59e0b; color: #ffffff; }
+	.status-completed { background: #16a34a; color: #ffffff; }
+	.status-reviewed { background: #2563eb; color: #ffffff; }
+	.status-unknown { background: #94a3b8; color: #ffffff; }
+
+	.task-card {
+		background: linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%);
+		border-radius: 20rpx;
+		padding: 32rpx;
+		margin-bottom: 24rpx;
+		box-shadow: 0 8rpx 24rpx rgba(30, 64, 175, 0.08);
+		border-left: 8rpx solid #1e40af;
+	}
+
+	.section-card {
+		background: linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%);
+		border-radius: 20rpx;
+		padding: 32rpx;
+		margin-bottom: 24rpx;
+		box-shadow: 0 8rpx 24rpx rgba(30, 64, 175, 0.08);
+	}
+
+	.section-title {
+		display: flex;
+		align-items: baseline;
+		padding-bottom: 20rpx;
+		margin-bottom: 16rpx;
+		border-bottom: 2rpx solid #dbeafe;
+	}
+
+	.title-text {
+		font-size: 32rpx;
+		font-weight: 700;
+		color: #1e40af;
+		letter-spacing: 1rpx;
+	}
+
+	.title-count {
+		font-size: 24rpx;
+		color: #64748b;
+		margin-left: 8rpx;
+	}
+
+	.info-item {
+		display: flex;
+		align-items: flex-start;
+		padding: 20rpx 0;
+		border-bottom: 2rpx solid #f1f5f9;
+	}
+
+	.info-item:last-child {
+		border-bottom: none;
+	}
+
+	.info-item.column {
+		flex-direction: column;
+		align-items: stretch;
+	}
+
+	.info-label {
+		font-size: 26rpx;
+		color: #1e293b;
+		width: 180rpx;
+		flex-shrink: 0;
+		font-weight: 600;
+	}
+
+	.info-value {
+		flex: 1;
+		font-size: 28rpx;
+		color: #0a2540;
+		font-weight: 600;
+		line-height: 1.6;
+		word-break: break-all;
+	}
+
+	.image-list {
+		display: flex;
+		flex-wrap: wrap;
+		margin-top: 12rpx;
+	}
+
+	.photo {
+		width: 200rpx;
+		height: 200rpx;
+		border-radius: 12rpx;
+		border: 2rpx solid #dbeafe;
+		margin: 8rpx;
+	}
+
+	.empty {
+		padding: 80rpx 40rpx;
+		text-align: center;
+		color: #475569;
+		font-size: 28rpx;
+	}
+</style>

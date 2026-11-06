@@ -1,0 +1,396 @@
+<template>
+	<view class="login-container">
+		<view class="login-header">
+			<image class="logo" src="/static/logo.png"></image>
+			<text class="system-title">榆林公司岗检系统</text>
+			<text class="system-subtitle">ENTERPRISE INSPECTION PLATFORM</text>
+		</view>
+		
+		<view class="login-form">
+			<view class="form-item">
+				<view class="input-wrapper">
+					<text class="icon">👤</text>
+					<input 
+						class="input" 
+						type="text" 
+						placeholder="请输入用户名" 
+						v-model="form.username"
+						maxlength="20"
+					/>
+				</view>
+			</view>
+			
+			<view class="form-item">
+				<view class="input-wrapper">
+					<text class="icon">🔒</text>
+					<input 
+						class="input" 
+						:type="showPassword ? 'text' : 'password'" 
+						placeholder="请输入密码" 
+						v-model="form.password"
+						maxlength="20"
+					/>
+					<text class="eye-icon" @click="togglePassword">{{showPassword ? '👁️' : '👁️‍🗨️'}}</text>
+				</view>
+			</view>
+			
+			<button class="login-btn" type="button" @click="handleLogin" :disabled="loading">
+				{{loading ? '登录中...' : '登录'}}
+			</button>
+			
+			
+		</view>
+	</view>
+</template>
+
+<script lang="uts">
+	import { getApiUrl, apiConfig } from '@/config/api.uts'
+	type LoginFormData = {
+		username: string
+		password: string
+	}
+
+	export default {
+		data() {
+			return {
+				form: {
+					username: '',
+					password: ''
+				} as LoginFormData,
+				showPassword: false,
+				loading: false
+			}
+		},
+		methods: {
+			togglePassword() {
+				this.showPassword = !this.showPassword
+			},
+			
+			validateForm(): boolean {
+			if (this.form.username.trim() == '') {
+				uni.showToast({
+					title: '请输入用户名',
+					icon: 'none'
+				})
+				return false
+			}
+			if (this.form.password.trim() == '') {
+				uni.showToast({
+					title: '请输入密码',
+					icon: 'none'
+				})
+				return false
+			}
+			return true
+		},
+			
+			getUserInfo(token: string) {
+		const apiUrl = getApiUrl(`/user/info?username=${this.form.username}`)
+		console.log('获取用户信息API地址:', apiUrl)
+		uni.request({
+			url: apiUrl,
+			method: 'GET',
+			header: {
+				'Content-Type': 'application/json',
+				'Authorization': 'Bearer ' + token
+			},
+				success: (res) => {
+					console.log('获取用户信息响应:', res)
+					const data = res.data as UTSJSONObject
+					console.log('响应数据:', data)
+					
+					if (res.statusCode == 200 && (data.getNumber('code') ?? 0) == 200) {
+						const userInfo = data.getJSON('data')
+						console.log('从后端获取的用户信息:', userInfo)
+						
+						if (userInfo != null) {
+							console.log('保存用户信息到本地存储:', JSON.stringify(userInfo))
+							uni.setStorageSync('userInfo', JSON.stringify(userInfo))
+							
+							// 设置用户头像
+							this.updateUserAvatar(userInfo)
+						}
+					} else {
+						console.log('获取用户信息失败，使用基本信息')
+						// 如果获取用户信息失败，使用基本信息
+						uni.setStorageSync('userInfo', JSON.stringify({ 
+							id: 'temp_' + Date.now(),
+							username: this.form.username,
+							realName: this.form.username
+						}))
+					}
+				},
+				fail: (error) => {
+					console.log('获取用户信息失败:', error)
+					// 如果获取用户信息失败，使用基本信息
+					uni.setStorageSync('userInfo', JSON.stringify({ 
+						id: 'temp_' + Date.now(),
+						username: this.form.username,
+						realName: this.form.username
+					}))
+				}
+			})
+		},
+			
+		handleLogin() {
+			if (!this.validateForm()) return
+			
+			this.loading = true
+			const loginUrl = getApiUrl('/user/login')
+			console.log('登录API地址:', loginUrl)
+		
+			uni.request({
+				url: loginUrl,
+				method: 'POST',
+				header: {
+					'Content-Type': 'application/json'
+				},
+				data: JSON.stringify(this.form),
+				success: (res) => {
+					const data = res.data as UTSJSONObject
+					if (res.statusCode == 200 && (data.getNumber('code') ?? 0) == 200) {
+						// 保存token
+						const token = data.getString('data') ?? ''
+						uni.setStorageSync('token', token)
+						// 记录token过期时间戳(与后端 jwt.expiration 24小时一致)，供各页 checkLogin 主动校验，
+						// 避免token过期后所有需认证接口静默返回403（对齐Web端cookie过期→重新登录的机制）
+						uni.setStorageSync('tokenExpires', (Date.now() + 24 * 60 * 60 * 1000).toString())
+						
+						// 获取用户详细信息
+						this.getUserInfo(token)
+						
+						uni.showToast({
+							title: '登录成功',
+							icon: 'success'
+						})
+						
+						// 跳转到首页
+						setTimeout(() => {
+							uni.reLaunch({
+								url: '/pages/home/home'
+							})
+						}, 1500)
+					} else {
+						uni.showToast({
+							title: data.getString('message') ?? '登录失败',
+							icon: 'none'
+						})
+					}
+					this.loading = false
+				},
+				fail: (error) => {
+					console.log('登录请求失败:', error)
+					uni.showToast({
+						title: '网络请求失败',
+						icon: 'none'
+					})
+					this.loading = false
+				}
+			})
+		},
+		
+		updateUserAvatar(userInfo: UTSJSONObject) {
+			const imageUrl = userInfo.getString('imageUrl')
+			if (imageUrl != null && imageUrl != '') {
+				console.log('用户已有头像，设置头像:', imageUrl)
+				// 将物理路径转换为HTTP访问路径
+				const httpImageUrl = this.convertToHttpUrl(imageUrl)
+				// 更新本地用户信息中的头像
+				userInfo.set('avatar', httpImageUrl)
+				uni.setStorageSync('userInfo', JSON.stringify(userInfo))
+				console.log('头像已更新到本地存储:', httpImageUrl)
+			} else {
+				console.log('用户暂无头像')
+			}
+		},
+		
+		// 将相对路径转换为HTTP访问路径
+		convertToHttpUrl(relativePath: string): string {
+			console.log('相对路径:', relativePath)
+			// 如果已经是HTTP路径，直接返回
+			if (relativePath.startsWith('http://') || relativePath.startsWith('https://')) {
+				return relativePath
+			}
+			
+			// 直接拼接完整的HTTP URL
+			// 后端已返回相对路径，如: /files/images/20250818/xxx.jpg
+			const httpUrl = `${apiConfig.baseUrl}/api${relativePath}`
+			console.log('转换后的HTTP URL:', httpUrl)
+			return httpUrl
+		},
+		
+		onLoad() {
+			// 检查是否已登录
+			const token = uni.getStorageSync('token')
+			if (token != null && token != '') {
+				uni.reLaunch({
+					url: '/pages/home/home'
+				})
+			}
+		}
+	}
+	}
+</script>
+
+<style>
+	/* === 企业蓝主题 === */
+	.login-container {
+		flex: 1;
+		background-color: #14295e;
+		background-image: linear-gradient(160deg, #061a33 0%, #14295e 45%, #1e40af 100%);
+		flex-direction: column;
+		justify-content: center;
+		align-items: center;
+		padding: 80px 32px 40px;
+		position: relative;
+		overflow: hidden;
+	}
+
+	/* 顶部装饰光晕 */
+	.login-container::before {
+		content: '';
+		position: absolute;
+		top: -160rpx;
+		right: -120rpx;
+		width: 480rpx;
+		height: 480rpx;
+		background: radial-gradient(circle, rgba(14, 165, 233, 0.45) 0%, rgba(14, 165, 233, 0) 70%);
+		pointer-events: none;
+	}
+
+	.login-container::after {
+		content: '';
+		position: absolute;
+		bottom: -200rpx;
+		left: -160rpx;
+		width: 560rpx;
+		height: 560rpx;
+		background: radial-gradient(circle, rgba(96, 165, 250, 0.35) 0%, rgba(96, 165, 250, 0) 70%);
+		pointer-events: none;
+	}
+
+	.login-header {
+		text-align: center;
+		margin-bottom: 64rpx;
+		align-items: center;
+		justify-content: center;
+		position: relative;
+		z-index: 2;
+	}
+
+	.logo {
+		width: 144rpx;
+		height: 144rpx;
+		border-radius: 28rpx;
+		margin-bottom: 28rpx;
+		align-self: center;
+		background: rgba(255, 255, 255, 0.95);
+		padding: 12rpx;
+		box-shadow: 0 16rpx 40rpx rgba(8, 47, 110, 0.35);
+	}
+
+	.system-title {
+		font-size: 38rpx;
+		font-weight: 700;
+		color: #ffffff;
+		margin-bottom: 12rpx;
+		text-align: center;
+		letter-spacing: 4rpx;
+	}
+
+	.system-subtitle {
+		font-size: 24rpx;
+		color: rgba(219, 234, 254, 0.95);
+		letter-spacing: 6rpx;
+		text-align: center;
+	}
+
+	.login-form {
+		width: 100%;
+		max-width: 560rpx;
+		position: relative;
+		z-index: 2;
+	}
+
+	.form-item {
+		margin-bottom: 28rpx;
+	}
+
+	.input-wrapper {
+		position: relative;
+		background: rgba(255, 255, 255, 0.96);
+		border-radius: 20rpx;
+		flex-direction: row;
+		align-items: center;
+		padding: 0 28rpx;
+		height: 96rpx;
+		width: 100%;
+		box-sizing: border-box;
+		box-shadow: 0 8rpx 24rpx rgba(8, 47, 110, 0.18);
+		border: 2rpx solid transparent;
+		transition: border-color 0.2s ease;
+	}
+
+	.input-wrapper:focus-within {
+		border-color: #60a5fa;
+		box-shadow: 0 8rpx 28rpx rgba(37, 99, 235, 0.35);
+	}
+
+	.icon {
+		font-size: 32rpx;
+		margin-right: 16rpx;
+		color: #2563eb;
+		flex-shrink: 0;
+	}
+
+	.input {
+		flex: 1;
+		height: 100%;
+		border: none;
+		background: transparent;
+		font-size: 30rpx;
+		color: #0f172a;
+		padding-left: 0;
+	}
+
+	.eye-icon {
+		font-size: 30rpx;
+		color: #64748b;
+		padding: 8rpx;
+	}
+
+	.login-btn {
+		width: 100%;
+		padding: 24rpx;
+		background: #1e40af;
+		color: #ffffff;
+		border: none;
+		border-radius: 16rpx;
+		font-size: 32rpx;
+		font-weight: 600;
+		margin-top: 48rpx;
+		margin-bottom: 24rpx;
+	}
+
+	/* uni-app x 的 button 文字由 ::after 承载：文字色要单独给，
+	   背景必须显式置透明，否则伪元素默认白底会露成一条细线 */
+	.login-btn::after {
+		color: #ffffff;
+		background-color: transparent;
+		border: none;
+	}
+
+	.login-btn:active {
+		background: #1e3a8a;
+	}
+
+	.login-btn:disabled {
+		background: #94a3b8;
+		color: #ffffff;
+	}
+
+	.login-btn:disabled::after {
+		color: #ffffff;
+		background-color: transparent;
+	}
+</style>

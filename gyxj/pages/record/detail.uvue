@@ -1,0 +1,917 @@
+<template>
+	<scroll-view class="container" scroll-y="true" :style="{height: containerHeight + 'px'}" enable-back-to-top="true">
+		<view v-if="loading" class="loading-state">
+			<text class="loading-text">加载中...</text>
+		</view>
+
+		<view v-else-if="recordDetail" class="detail-content">
+			<!-- 状态标题 -->
+			<view class="status-header">
+				<text class="page-title">{{isDelayed ? '延迟整改录入' : '问题详情'}}</text>
+				<view class="record-status" :class="getStatusClass(recordDetail?.status ?? 0)">
+					<text>{{isDelayed ? '延迟整改' : getStatusText(recordDetail?.status ?? 0)}}</text>
+				</view>
+			</view>
+
+			<!-- 问题照片 -->
+			<view class="form-item" v-if="imageList.length > 0">
+				<text class="form-label">📷 问题照片 ({{imageList.length}}张)</text>
+				<view class="image-upload">
+					<view class="image-list">
+						<view class="image-item" v-for="(image, index) in imageList" :key="index">
+							<image
+								:src="image"
+								mode="aspectFill"
+								class="uploaded-image"
+								@click="previewImage(index)"
+								@error="onImageError"
+								@load="onImageLoad"
+							></image>
+						</view>
+					</view>
+				</view>
+			</view>
+
+			<!-- 问题描述 -->
+			<view class="form-item">
+				<text class="form-label">问题描述</text>
+				<view class="form-input-wrapper">
+					<text class="form-display-text">{{recordDetail?.problemDescription ?? ''}}</text>
+				</view>
+			</view>
+
+			<!-- 责任单位 -->
+			<view class="form-item">
+				<text class="form-label">责任单位</text>
+				<view class="form-input-wrapper">
+					<text class="form-display-text">{{recordDetail?.responsibleUnit ?? ''}}</text>
+				</view>
+			</view>
+
+			<!-- 责任人 -->
+			<view class="form-item">
+				<text class="form-label">责任人</text>
+				<view class="form-input-wrapper">
+					<text class="form-display-text">{{recordDetail?.responsiblePerson ?? ''}}</text>
+				</view>
+			</view>
+
+			<!-- 性质界定 -->
+			<view class="form-item">
+				<text class="form-label">性质界定</text>
+				<view class="form-input-wrapper">
+					<text class="form-display-text">{{recordDetail?.natureName ?? ''}}</text>
+				</view>
+			</view>
+
+			<!-- 考核情况 -->
+			<view class="form-item">
+				<text class="form-label">考核情况</text>
+				<view class="form-input-wrapper">
+					<text class="form-display-text">{{recordDetail?.assessmentSituation ?? ''}}</text>
+				</view>
+			</view>
+
+			<!-- 考核金额 -->
+			<view class="form-item">
+				<text class="form-label">考核金额</text>
+				<view class="form-input-wrapper">
+					<text class="form-display-text">{{recordDetail?.assessmentAmount ?? ''}}元</text>
+				</view>
+			</view>
+
+			<!-- 安全记分 -->
+			<view class="form-item">
+				<text class="form-label">安全记分</text>
+				<view class="form-input-wrapper">
+					<text class="form-display-text">{{recordDetail?.safetyScore ?? ''}}</text>
+				</view>
+			</view>
+
+			<!-- 专业 -->
+			<view class="form-item">
+				<text class="form-label">专业</text>
+				<view class="form-input-wrapper">
+					<text class="form-display-text">{{recordDetail?.professionName ?? ''}}</text>
+				</view>
+			</view>
+
+			<!-- 发生部位 -->
+			<view class="form-item">
+				<text class="form-label">发生部位</text>
+				<view class="form-input-wrapper">
+					<text class="form-display-text">{{recordDetail?.location ?? ''}}</text>
+				</view>
+			</view>
+
+			<!-- 检查人 -->
+			<view class="form-item">
+				<text class="form-label">检查人</text>
+				<view class="form-input-wrapper">
+					<text class="form-display-text">{{recordDetail?.inspector ?? ''}}</text>
+				</view>
+			</view>
+
+			<!-- 检查组组长 -->
+			<view class="form-item">
+				<text class="form-label">检查组组长</text>
+				<view class="form-input-wrapper">
+					<text class="form-display-text">{{recordDetail?.groupLeader ?? ''}}</text>
+				</view>
+			</view>
+
+			<!-- 检查组副组长 -->
+			<view class="form-item">
+				<text class="form-label">检查组副组长</text>
+				<view class="form-input-wrapper">
+					<text class="form-display-text">{{recordDetail?.deputyLeader ?? ''}}</text>
+				</view>
+			</view>
+
+			<!-- 所属部门 -->
+			<view class="form-item">
+				<text class="form-label">所属部门</text>
+				<view class="form-input-wrapper">
+					<text class="form-display-text">{{recordDetail?.departmentName ?? ''}}</text>
+				</view>
+			</view>
+
+			<!-- 整改期限 -->
+			<view class="form-item">
+				<text class="form-label">整改期限</text>
+				<view class="form-input-wrapper">
+					<text class="form-display-text">{{formatDate(recordDetail?.rectificationDeadline ?? '')}}</text>
+				</view>
+			</view>
+
+			<!-- 整改人（当前登录用户，只读） -->
+			<view class="form-item">
+				<text class="form-label">整改人</text>
+				<view class="form-input-wrapper">
+					<text class="form-display-text">{{ (recordDetail?.rectifierName ?? '') !== '' ? (recordDetail?.rectifierName ?? '') : (currentUserName !== '' ? currentUserName : '当前登录用户') }}</text>
+				</view>
+			</view>
+
+			<!-- 整改效果描述 -->
+			<view class="form-item">
+				<text class="form-label">整改效果描述</text>
+				<view class="form-input-wrapper">
+					<textarea
+						v-model="rectificationEffect"
+						class="form-textarea"
+						placeholder="请描述整改效果..."
+						maxlength="500"
+						show-confirm-bar="false"
+					></textarea>
+				</view>
+			</view>
+
+			<!-- 整改状态 -->
+			<view class="form-item">
+				<text class="form-label">📋 整改状态</text>
+				<view class="status-selector">
+					<view class="status-option pending" :class="{active: rectificationStatus === 0}" @click="setRectificationStatus(0)">
+						<text>⏳ 未整改</text>
+					</view>
+					<view class="status-option completed" :class="{active: rectificationStatus === 1}" @click="setRectificationStatus(1)">
+						<text>✅ 已整改</text>
+					</view>
+				</view>
+			</view>
+
+			<!-- 整改图片 -->
+			<view class="form-item">
+				<text class="form-label">📷 整改图片 ({{rectificationImages.length}}/3)</text>
+				<view class="image-upload">
+					<view class="image-list">
+						<view class="image-item" v-for="(image, index) in rectificationImages" :key="index">
+							<image
+								:src="image"
+								mode="aspectFill"
+								class="uploaded-image"
+								@click="previewRectificationImage(index)"
+								@error="onImageError"
+								@load="onImageLoad"
+							></image>
+							<view class="image-delete" @click="removeRectificationImage(index)">
+								<text>×</text>
+							</view>
+						</view>
+
+						<view class="image-add" v-if="rectificationImages.length < 3" @click="chooseRectificationImage">
+							<text class="add-icon">+</text>
+							<text class="add-text">添加图片</text>
+						</view>
+					</view>
+				</view>
+			</view>
+
+			<!-- 保存整改信息按钮 -->
+			<view class="save-button-wrapper">
+				<button class="save-btn" @click="saveRectificationInfo" :disabled="saving">
+					{{saving ? (isDelayed ? '确认中...' : '保存中...') : (isDelayed ? '确认整改' : '保存整改信息')}}
+				</button>
+			</view>
+		</view>
+
+		<view v-else class="error-state">
+			<text class="error-text">记录不存在或已被删除</text>
+		</view>
+	</scroll-view>
+</template>
+
+<script lang="uts">
+	import { getApiUrl, apiConfig } from '@/config/api.uts'
+
+	type RecordDetail = {
+		id: string
+		problemDescription: string
+		responsibleUnit: string
+		responsiblePerson: string
+		natureId: string
+		natureName: string
+		assessmentSituation: string
+		assessmentAmount: number
+		safetyScore: number
+		professionId: string
+		professionName: string
+		location: string
+		inspector: string
+		groupLeader: string
+		deputyLeader: string
+		departmentId: string
+		departmentName: string
+		rectificationDeadline: string
+		status: number
+		createTime: string
+		updateTime: string
+		problemImageUrls: string
+		locationName: string
+		severity: number
+		taskName: string
+		reporterName: string
+		suggestions: string
+		reporterId: string
+		rectificationEffect: string
+		rectificationImageUrls: string
+		rectificationTime: string
+		rectifierName: string
+	}
+
+	export default {
+		data() {
+			// 同步计算 scroll-view 高度:windowHeight + 200px 偏移确保底部图片完整显示
+			// 必须 data() 同步执行避免 scroll-view 定型问题
+			let containerHeight = 0
+			try {
+				const sysInfo = uni.getSystemInfoSync()
+				containerHeight = sysInfo.windowHeight ?? 0
+			} catch (e) {
+				console.error('获取屏幕信息失败:', e)
+			}
+			return {
+				recordId: '',
+				recordDetail: null as RecordDetail | null,
+				imageList: [] as Array<string>,
+				loading: true,
+				canOperate: false,
+				rectificationEffect: '',
+				rectificationImages: [] as Array<string>,
+				rectificationStatus: 0,
+				saving: false,
+				containerHeight: containerHeight,
+				isDelayed: false,
+				// 整改人：当前登录用户姓名（只读，确认整改时写库）
+				currentUserName: ''
+			}
+		},
+		onLoad(options: UTSJSONObject) {
+			this.recordId = options.getString('id') ?? ''
+			this.isDelayed = options.getString('delayed') === 'true'
+			this.checkLogin()
+			this.loadCurrentUserName()
+			this.loadRecordDetail()
+		},
+		methods: {
+			checkLogin() {
+				const token = uni.getStorageSync('token')
+				if (token == null || token == '') {
+					uni.reLaunch({
+						url: '/pages/login/login'
+					})
+				}
+			},
+
+			// 整改人取当前登录用户真实姓名
+			loadCurrentUserName() {
+				const userInfoStr = uni.getStorageSync('userInfo') as string
+				if (userInfoStr == null || userInfoStr == '') return
+				try {
+					const userInfo = JSON.parse(userInfoStr) as UTSJSONObject
+					this.currentUserName = userInfo.getString('realName') ?? userInfo.getString('username') ?? ''
+				} catch (e) {
+					console.error('解析用户信息失败:', e)
+				}
+			},
+
+
+			loadRecordDetail() {
+				const token = uni.getStorageSync('token')
+				uni.showLoading({ title: '加载中...' })
+				uni.request({
+					url: getApiUrl(`/inspection-record/${this.recordId}`),
+					method: 'GET',
+					header: {
+						'Authorization': `Bearer ${token}`
+					},
+					success: (response) => {
+						uni.hideLoading()
+						const data = response.data as UTSJSONObject
+						if (response.statusCode === 200 && (data.getNumber('code') ?? 0) === 200) {
+							const recordData = data.getJSON('data')
+							if (recordData != null) {
+								this.recordDetail = {
+									id: recordData.getString('id') ?? '',
+									problemDescription: recordData.getString('problemDescription') ?? '',
+									responsibleUnit: recordData.getString('responsibleUnit') ?? '',
+									responsiblePerson: recordData.getString('responsiblePerson') ?? '',
+									natureId: recordData.getString('natureId') ?? '',
+									natureName: recordData.getString('natureName') ?? recordData.getString('natureDefinition') ?? '',
+									assessmentSituation: recordData.getString('assessmentSituation') ?? '',
+									assessmentAmount: recordData.getNumber('assessmentAmount') ?? 0,
+									safetyScore: recordData.getNumber('safetyScore') ?? 0,
+									professionId: recordData.getString('professionId') ?? '',
+									professionName: recordData.getString('professionName') ?? '',
+									location: recordData.getString('location') ?? '',
+									inspector: recordData.getString('inspector') ?? '',
+									groupLeader: recordData.getString('groupLeader') ?? '',
+									deputyLeader: recordData.getString('deputyLeader') ?? '',
+									departmentId: recordData.getString('departmentId') ?? '',
+									departmentName: recordData.getString('departmentName') ?? '',
+									rectificationDeadline: recordData.getString('rectificationDeadline') ?? '',
+									status: recordData.getNumber('status') ?? 0,
+									createTime: recordData.getString('createTime') ?? '',
+									updateTime: recordData.getString('updateTime') ?? '',
+									problemImageUrls: recordData.getString('problemImageUrls') ?? '',
+									locationName: recordData.getString('locationName') ?? '',
+									severity: recordData.getNumber('severity') ?? 0,
+									taskName: recordData.getString('taskName') ?? '',
+									reporterName: recordData.getString('reporterName') ?? '',
+									suggestions: recordData.getString('suggestions') ?? '',
+									reporterId: recordData.getString('reporterId') ?? '',
+									rectificationEffect: recordData.getString('rectificationEffect') ?? '',
+									rectificationImageUrls: recordData.getString('rectificationImageUrls') ?? '',
+									rectificationTime: recordData.getString('rectificationTime') ?? '',
+									rectifierName: recordData.getString('rectifierName') ?? ''
+								} as RecordDetail
+								this.imageList = this.processImageUrls(this.recordDetail?.problemImageUrls ?? '')
+								if (this.recordDetail?.rectificationEffect != null && this.recordDetail.rectificationEffect !== '') {
+									this.rectificationEffect = this.recordDetail.rectificationEffect
+								}
+								this.rectificationImages = this.processImageUrls(this.recordDetail?.rectificationImageUrls ?? '')
+								this.rectificationStatus = this.recordDetail?.status ?? 0
+							}
+						} else {
+							uni.showToast({
+								title: data.getString('message') ?? '加载失败',
+								icon: 'none'
+							})
+						}
+						this.loading = false
+					},
+					fail: (error) => {
+						uni.hideLoading()
+						console.error('加载记录详情失败:', error)
+						uni.showToast({ title: '网络错误', icon: 'none' })
+						this.loading = false
+					}
+				})
+			},
+
+			convertToHttpUrl(relativePath: string): string {
+				if (relativePath == null || relativePath == '' || relativePath.trim() === '') {
+					return ''
+				}
+				if (relativePath.startsWith('http://') || relativePath.startsWith('https://')) {
+					return relativePath
+				}
+				return `${apiConfig.baseUrl}/api${relativePath}`
+			},
+
+			processImageUrls(imageUrls: string): string[] {
+				if (imageUrls == null || imageUrls.trim() === '') {
+					return []
+				}
+				try {
+					if (imageUrls.trim().startsWith('[') && imageUrls.trim().endsWith(']')) {
+						const parsed = JSON.parse(imageUrls) as string[]
+						return parsed.map(url => this.convertToHttpUrl(url)).filter(url => url !== '')
+					}
+				} catch (e) {
+					console.log('JSON解析失败,尝试按逗号分隔处理:', e)
+				}
+				return imageUrls.split(',')
+					.map(url => url.trim())
+					.filter(url => url !== '')
+					.map(url => this.convertToHttpUrl(url))
+			},
+
+			previewImage(index: number) {
+				uni.previewImage({
+					current: index,
+					urls: this.imageList
+				})
+			},
+
+			previewRectificationImage(index: number) {
+				uni.previewImage({
+					current: index,
+					urls: this.rectificationImages
+				})
+			},
+
+			formatDate(dateTimeStr: string): string {
+				if (dateTimeStr == null || dateTimeStr == '') return ''
+				if (dateTimeStr.includes(' ')) {
+					return dateTimeStr.split(' ')[0]
+				}
+				return dateTimeStr
+			},
+
+			onImageLoad(e: any) {},
+
+			onImageError(e: any) {
+				uni.showToast({ title: '图片加载失败', icon: 'none' })
+			},
+
+			chooseRectificationImage() {
+				if (this.rectificationImages.length >= 3) {
+					uni.showToast({ title: '最多只能上传3张图片', icon: 'none' })
+					return
+				}
+				uni.chooseImage({
+					count: 3 - this.rectificationImages.length,
+					sourceType: ['camera', 'album'],
+					success: (res) => {
+						const tempFilePaths = res.tempFilePaths
+						for (let i = 0; i < tempFilePaths.length; i++) {
+							this.rectificationImages.push(tempFilePaths[i])
+						}
+					}
+				})
+			},
+
+			removeRectificationImage(index: number) {
+				this.rectificationImages.splice(index, 1)
+			},
+
+			setRectificationStatus(value: number) {
+				this.rectificationStatus = value
+			},
+
+			async saveRectificationInfo() {
+				if (this.saving) return
+
+				if (this.rectificationEffect.trim().length === 0) {
+					uni.showToast({ title: '请填写整改效果', icon: 'none' })
+					return
+				}
+
+				this.saving = true
+
+				try {
+					let rectificationImageUrls: string[] = []
+					if (this.rectificationImages.length > 0) {
+						uni.showLoading({ title: '上传整改图片中...' })
+						rectificationImageUrls = await this.uploadRectificationImages()
+						uni.hideLoading()
+					}
+
+					const userInfoStr = uni.getStorageSync('userInfo') as string
+					let currentUserId = ''
+					let rectifierName = ''
+					if (userInfoStr != null && userInfoStr !== '') {
+						try {
+							const userInfo = JSON.parse(userInfoStr) as UTSJSONObject
+							currentUserId = userInfo.getString('id') ?? ''
+							rectifierName = userInfo.getString('realName') ?? userInfo.getString('username') ?? ''
+						} catch (e) {
+							console.error('解析用户信息失败:', e)
+						}
+					}
+
+					const payload = {
+						rectificationDescription: this.rectificationEffect,
+						rectificationEffect: this.rectificationEffect,
+						rectificationImages: rectificationImageUrls.join(','),
+						rectificationStatus: this.rectificationStatus,
+						status: this.rectificationStatus === 1 ? 1 : 0,
+						rectifierId: currentUserId,
+						rectifierName: rectifierName,
+						rectificationTime: new Date().toISOString().replace('T', ' ').substring(0, 19)
+					}
+
+					uni.showLoading({ title: '保存中...' })
+					const token = uni.getStorageSync('token')
+					uni.request({
+						url: getApiUrl(`/inspection-record/${this.recordDetail?.id ?? ''}/rectify`),
+						method: 'PUT',
+						header: {
+							'Authorization': `Bearer ${token}`,
+							'Content-Type': 'application/json'
+						},
+						data: payload,
+						success: (response) => {
+							uni.hideLoading()
+							const data = response.data as UTSJSONObject
+							if (response.statusCode === 200 && (data.getNumber('code') ?? 0) === 200) {
+								uni.showToast({ title: '保存成功', icon: 'success' })
+								setTimeout(() => {
+									uni.navigateBack()
+								}, 1500)
+							} else {
+								uni.showToast({
+									title: data.getString('message') ?? '保存失败',
+									icon: 'none'
+								})
+							}
+							this.saving = false
+						},
+						fail: (error) => {
+							uni.hideLoading()
+							console.error('保存整改信息失败:', error)
+							uni.showToast({ title: '网络错误', icon: 'none' })
+							this.saving = false
+						}
+					})
+				} catch (error) {
+					uni.hideLoading()
+					console.error('上传图片失败:', error)
+					uni.showToast({ title: '图片上传失败,请重试', icon: 'none' })
+					this.saving = false
+				}
+			},
+
+			async uploadRectificationImages(): Promise<string[]> {
+				if (this.rectificationImages.length === 0) {
+					return []
+				}
+				const token = uni.getStorageSync('token')
+				const uploadPromises = this.rectificationImages.map(imagePath => {
+					return new Promise<string>((resolve, reject) => {
+						uni.uploadFile({
+							url: getApiUrl('/upload/image'),
+							filePath: imagePath,
+							name: 'file',
+							header: {
+								'Authorization': `Bearer ${token}`
+							},
+							success: (res) => {
+								try {
+									const data = JSON.parse(res.data) as UTSJSONObject
+									if (res.statusCode === 200 && (data.getNumber('code') ?? 0) === 200) {
+										const dataObj = data.getJSON('data')
+										const imageUrl = dataObj?.getString('filePath') ?? ''
+										if (imageUrl != null && imageUrl !== '') {
+											resolve(imageUrl)
+										} else {
+											reject(new Error('上传成功但未获取到图片URL'))
+										}
+									} else {
+										reject(new Error(data.getString('message') ?? '上传失败'))
+									}
+								} catch (e) {
+									reject(new Error('解析响应失败'))
+								}
+							},
+							fail: (error) => {
+								reject(new Error(`上传失败: ${error.errMsg ?? '网络错误'}`))
+							}
+						})
+					})
+				})
+				return await Promise.all(uploadPromises)
+			},
+
+			getStatusText(status: number): string {
+				switch (status) {
+					case 0: return '待整改'
+					case 1: return '已整改'
+					case 2: return '已复查'
+					default: return '未知'
+				}
+			},
+
+			getStatusClass(status: number): string {
+				switch (status) {
+					case 0: return 'status-pending'
+					case 1: return 'status-completed'
+					case 2: return 'status-reviewed'
+					default: return 'status-unknown'
+				}
+			}
+		}
+	}
+</script>
+
+<style>
+	.container {
+		background-color: #f1f5f9;
+		height: 100vh;
+	}
+
+	.loading-state {
+		text-align: center;
+		padding: 60px 0;
+	}
+
+	.loading-text {
+		font-size: 16px;
+		color: #475569;
+	}
+
+	.detail-content {
+		padding: 24rpx 32rpx;
+		padding-bottom: 130rpx;
+	}
+
+	.status-header {
+		background: linear-gradient(135deg, #1e40af 0%, #2563eb 100%);
+		border-radius: 8px;
+		padding: 15px;
+		margin-bottom: 15px;
+		box-shadow: 0 8rpx 24rpx rgba(30, 64, 175, 0.08);
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+	}
+
+	.page-title {
+		font-size: 18px;
+		font-weight: bold;
+		color: #ffffff;
+	}
+
+	.record-status {
+		padding: 6px 12px;
+		border-radius: 6px;
+		font-size: 14px;
+		font-weight: bold;
+	}
+
+	/* 状态色 */
+	.status-pending {
+		background: #fef3c7;
+		color: #b45309;
+	}
+
+	.status-processing {
+		background: #dbeafe;
+		color: #2563eb;
+	}
+
+	.status-completed {
+		background: #dcfce7;
+		color: #16a34a;
+	}
+
+	.status-accepted {
+		background: #1e40af;
+		color: #ffffff;
+	}
+
+	.status-unknown {
+		background: #f1f5f9;
+		color: #475569;
+	}
+
+	.severity-low {
+		color: #16a34a;
+		font-weight: bold;
+	}
+
+	.severity-medium {
+		color: #f59e0b;
+		font-weight: bold;
+	}
+
+	.severity-high {
+		color: #dc2626;
+		font-weight: bold;
+	}
+
+	.severity-urgent {
+		color: #dc2626;
+		font-weight: bold;
+	}
+
+	.error-state {
+		text-align: center;
+		padding: 60px 0;
+	}
+
+	.error-text {
+		font-size: 16px;
+		color: #475569;
+	}
+
+	/* 表单样式 */
+	.form-item {
+		background: #fff;
+		border-radius: 8px;
+		padding: 15px;
+		margin-bottom: 15px;
+		box-shadow: 0 8rpx 24rpx rgba(30, 64, 175, 0.08);
+	}
+
+	.form-label {
+		font-size: 16px;
+		color: #0f172a;
+		margin-bottom: 10px;
+		font-weight: 500;
+	}
+
+	.form-input-wrapper {
+		position: relative;
+	}
+
+	.form-display-text {
+		font-size: 16px;
+		color: #0f172a;
+		padding: 12px 15px;
+		background: #eff6ff;
+		border-radius: 8px;
+		border: 1px solid #dbeafe;
+		min-height: 20px;
+		overflow-wrap: break-word;
+	}
+
+	.form-textarea {
+		width: 100%;
+		min-height: 100px;
+		padding: 12px 15px;
+		background: #eff6ff;
+		border-radius: 8px;
+		border: 1px solid #dbeafe;
+		font-size: 16px;
+		color: #0f172a;
+		box-sizing: border-box;
+	}
+
+	.form-textarea:focus {
+		border-color: #2563eb;
+	}
+
+	/* 图片上传样式 */
+	.image-upload {
+		margin-top: 10px;
+	}
+
+	.image-list {
+		display: flex;
+		flex-wrap: wrap;
+	}
+
+	.image-list .image-item {
+		margin: 5px;
+	}
+
+	.image-item {
+		position: relative;
+		width: 80px;
+		height: 80px;
+	}
+
+	.uploaded-image {
+		width: 100%;
+		height: 100%;
+		border-radius: 8px;
+		border: 1px solid #dbeafe;
+	}
+
+	.image-delete {
+		position: absolute;
+		top: -5px;
+		right: -5px;
+		width: 20px;
+		height: 20px;
+		background: #dc2626;
+		color: white;
+		border-radius: 10px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		font-size: 12px;
+	}
+
+	.image-add {
+		width: 80px;
+		height: 80px;
+		border: 2px dashed #38bdf8;
+		border-radius: 8px;
+		display: flex;
+		flex-direction: column;
+		justify-content: center;
+		align-items: center;
+		background: #eff6ff;
+	}
+
+	.add-icon {
+		font-size: 24px;
+		color: #2563eb;
+		margin-bottom: 5px;
+	}
+
+	.add-text {
+		font-size: 12px;
+		color: #475569;
+	}
+
+	/* 状态选择器样式 */
+	.status-selector {
+		display: flex;
+		flex-direction: row;
+		margin-top: 15px;
+		padding: 0 5px;
+		flex-wrap: nowrap;
+		align-items: center;
+		justify-content: space-between;
+	}
+
+	.status-selector .status-option {
+		margin: 0 6px;
+	}
+
+	.status-option {
+		flex: 1;
+		height: 60px;
+		border: 2px solid #dbeafe;
+		border-radius: 12px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		background: linear-gradient(135deg, #ffffff 0%, #eff6ff 100%);
+		box-shadow: 0 2px 8px rgba(30, 64, 175, 0.08);
+		transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+		position: relative;
+		overflow: hidden;
+		margin: 0 6px;
+		font-size: 14px;
+		font-weight: 600;
+		color: #0f172a;
+		text-align: center;
+	}
+
+	.status-option.pending {
+		border-color: #f59e0b;
+		background: transparent;
+		color: #b45309;
+	}
+
+	.status-option.pending.active {
+		border-color: #f59e0b;
+		background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+		box-shadow: 0 4px 15px rgba(245, 158, 11, 0.32);
+		transform: translateY(-2px);
+		color: white;
+	}
+
+	.status-option.completed {
+		border-color: #16a34a;
+		background: transparent;
+		color: #16a34a;
+	}
+
+	.status-option.completed.active {
+		border-color: #16a34a;
+		background: linear-gradient(135deg, #16a34a 0%, #22c55e 100%);
+		box-shadow: 0 4px 15px rgba(22, 163, 74, 0.32);
+		transform: translateY(-2px);
+		color: white;
+	}
+
+	/* 保存按钮样式 */
+	.save-button-wrapper {
+		background: #fff;
+		padding: 30rpx;
+		border-radius: 20rpx;
+		box-shadow: 0 8rpx 24rpx rgba(30, 64, 175, 0.08);
+		margin-top: 20rpx;
+	}
+
+	.save-btn {
+		width: 100%;
+		padding: 24rpx;
+		background: #1e40af;
+		color: #ffffff;
+		border: none;
+		border-radius: 16rpx;
+		font-size: 32rpx;
+		font-weight: 600;
+	}
+
+	.save-btn:disabled {
+		background: #94a3b8;
+		color: #f1f5f9;
+	}
+</style>

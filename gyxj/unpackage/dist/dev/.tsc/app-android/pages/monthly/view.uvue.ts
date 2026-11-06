@@ -1,0 +1,320 @@
+
+  import { getApiUrl, apiConfig } from '@/config/api.uts'
+
+  type MonthlyDetail = { __$originalPosition?: UTSSourceMapPosition<"MonthlyDetail", "pages/monthly/view.uvue", 141, 8>;
+    id: string
+    recordStatus: number
+    problemDescription: string
+    professionalTypeName: string
+    moduleName: string
+    responsibilityName: string
+    issueName: string
+    qualityName: string
+    location: string
+    departmentName: string
+    inspector: string
+    responsibleUnit: string
+    responsiblePerson: string
+    rectificationSuggestion: string
+    rectificationEffect: string
+    rectifierName: string
+    reviewSuggestion: string
+    reviewEffect: string
+    reviewerName: string
+    photos: string
+    rectificationImages: string
+    reviewImages: string
+    rectificationDeadline: string
+  }
+
+  const __sfc__ = defineComponent({
+    data() {
+      return {
+        id: '',
+        detail: null as MonthlyDetail | null,
+        loading: true,
+        containerHeight: 0,
+        problemImages: [] as string[],
+        rectificationImages: [] as string[],
+        reviewImages: [] as string[]
+      }
+    },
+    onLoad(options: UTSJSONObject) {
+      this.id = options.getString('id') ?? ''
+      this.initContainer()
+      this.loadDetail()
+    },
+    methods: {
+      initContainer() {
+        uni.getSystemInfo({
+          success: (res) => { this.containerHeight = res.windowHeight }
+        })
+      },
+      loadDetail() {
+        const token = uni.getStorageSync('token')
+        uni.request({
+          url: getApiUrl(`/monthly-inspection-record/${this.id}`),
+          method: 'GET',
+          header: { 'Authorization': `Bearer ${token}` },
+          success: (res) => {
+            const data = res.data as UTSJSONObject
+            if (res.statusCode === 200 && (data.getNumber('code') ?? 0) === 200) {
+              const d = data.getJSON('data')
+              if (d != null) {
+                this.detail = {
+                  id: d.getString('id') ?? '',
+                  recordStatus: d.getNumber('recordStatus') ?? 0,
+                  problemDescription: d.getString('problemDescription') ?? '',
+                  professionalTypeName: d.getString('professionalTypeName') ?? '',
+                  moduleName: d.getString('moduleName') ?? '',
+                  responsibilityName: d.getString('responsibilityName') ?? '',
+                  issueName: d.getString('issueName') ?? '',
+                  qualityName: d.getString('qualityName') ?? '',
+                  location: d.getString('location') ?? '',
+                  departmentName: d.getString('departmentName') ?? '',
+                  inspector: d.getString('inspector') ?? '',
+                  responsibleUnit: d.getString('responsibleUnit') ?? '',
+                  responsiblePerson: d.getString('responsiblePerson') ?? '',
+                  rectificationSuggestion: d.getString('rectificationSuggestion') ?? '',
+                  rectificationEffect: d.getString('rectificationEffect') ?? '',
+                  rectifierName: d.getString('rectifierName') ?? '',
+                  reviewSuggestion: d.getString('reviewSuggestion') ?? '',
+                  reviewEffect: d.getString('reviewEffect') ?? '',
+                  reviewerName: d.getString('reviewerName') ?? '',
+                  photos: d.getString('photos') ?? '',
+                  rectificationImages: d.getString('rectificationImages') ?? '',
+                  reviewImages: d.getString('reviewImages') ?? '',
+                  rectificationDeadline: d.getString('rectificationDeadline') ?? ''
+                }
+                this.problemImages = this.parseImages(this.detail.photos)
+                this.rectificationImages = this.parseImages(this.detail.rectificationImages)
+                this.reviewImages = this.parseImages(this.detail.reviewImages)
+              }
+            }
+            this.loading = false
+          },
+          fail: (_) => { this.loading = false }
+        })
+      },
+      parseImages(s: string): string[] {
+        if (s == null || s.trim() === '') return []
+        try {
+          if (s.trim().startsWith('[') && s.trim().endsWith(']')) {
+            const arr = UTSAndroid.consoleDebugError(JSON.parse(s), " at pages/monthly/view.uvue:240") as string[]
+            return arr.map(u => this.toUrl(u)).filter(u => u !== '')
+          }
+        } catch (_) {}
+        return s.split(',').map(u => u.trim()).filter(u => u !== '').map(u => this.toUrl(u))
+      },
+      toUrl(p: string): string {
+        if (p == null || p.trim() === '') return ''
+        if (p.startsWith('http://') || p.startsWith('https://')) return p
+        return `${apiConfig.baseUrl}/api${p}`
+      },
+      getDeductionScore(qualityName: string): string {
+        if (qualityName === '观察') return '1'
+        if (qualityName === '一般') return '3'
+        if (qualityName === '重要') return '5'
+        return '-'
+      },
+      displayValue(v: string): string {
+        return v !== '' && v != null ? v : '暂无'
+      },
+      preview(current: string, urls: string[]) {
+        uni.previewImage({ current, urls })
+      },
+      getStatusText(s: number): string {
+        if (s === 0) return '待整改'
+        if (s === 1) return '已整改'
+        if (s === 2) return '已复查'
+        return '未知'
+      },
+      getStatusClass(s: number): string {
+        if (s === 0) return 'status-pending'
+        if (s === 1) return 'status-completed'
+        if (s === 2) return 'status-reviewed'
+        return 'status-unknown'
+      }
+    }
+  })
+
+export default __sfc__
+function GenPagesMonthlyViewRender(this: InstanceType<typeof __sfc__>): any | null {
+const _ctx = this
+const _cache = this.$.renderCache
+  return _cE("scroll-view", _uM({
+    class: "container",
+    "scroll-y": "true",
+    style: _nS(_uM({height: _ctx.containerHeight + 'px'}))
+  }), [
+    isTrue(_ctx.loading)
+      ? _cE("view", _uM({
+          key: 0,
+          class: "loading"
+        }), [
+          _cE("text", null, "加载中...")
+        ])
+      : _ctx.detail != null
+        ? _cE("view", _uM({
+            key: 1,
+            class: "content"
+          }), [
+            _cE("view", _uM({ class: "header" }), [
+              _cE("text", _uM({ class: "title" }), "月检记录详情"),
+              _cE("view", _uM({
+                class: _nC(["status", _ctx.getStatusClass(_ctx.detail.recordStatus)])
+              }), [
+                _cE("text", null, _tD(_ctx.getStatusText(_ctx.detail.recordStatus)), 1 /* TEXT */)
+              ], 2 /* CLASS */)
+            ]),
+            _ctx.problemImages.length > 0
+              ? _cE("view", _uM({
+                  key: 0,
+                  class: "photos"
+                }), [
+                  _cE("text", _uM({ class: "label" }), "问题图片（" + _tD(_ctx.problemImages.length) + "张）", 1 /* TEXT */),
+                  _cE("view", _uM({ class: "image-list" }), [
+                    _cE(Fragment, null, RenderHelpers.renderList(_ctx.problemImages, (img, idx, __index, _cached): any => {
+                      return _cE("image", _uM({
+                        key: idx,
+                        src: img,
+                        class: "photo",
+                        mode: "aspectFill",
+                        onClick: () => {_ctx.preview(img, _ctx.problemImages)}
+                      }), null, 8 /* PROPS */, ["src", "onClick"])
+                    }), 128 /* KEYED_FRAGMENT */)
+                  ])
+                ])
+              : _cC("v-if", true),
+            _ctx.detail.recordStatus >= 1
+              ? _cE("view", _uM({ key: 1 }), [
+                  _cE("view", _uM({ class: "item" }), [
+                    _cE("text", _uM({ class: "label" }), "整改人"),
+                    _cE("text", _uM({ class: "value" }), _tD(_ctx.displayValue(_ctx.detail.rectifierName)), 1 /* TEXT */)
+                  ]),
+                  _cE("view", _uM({ class: "item" }), [
+                    _cE("text", _uM({ class: "label" }), "整改建议"),
+                    _cE("text", _uM({ class: "value" }), _tD(_ctx.displayValue(_ctx.detail.rectificationSuggestion)), 1 /* TEXT */)
+                  ]),
+                  _cE("view", _uM({ class: "item" }), [
+                    _cE("text", _uM({ class: "label" }), "整改效果"),
+                    _cE("text", _uM({ class: "value" }), _tD(_ctx.displayValue(_ctx.detail.rectificationEffect)), 1 /* TEXT */)
+                  ]),
+                  _ctx.rectificationImages.length > 0
+                    ? _cE("view", _uM({
+                        key: 0,
+                        class: "photos"
+                      }), [
+                        _cE("text", _uM({ class: "label" }), "整改图片（" + _tD(_ctx.rectificationImages.length) + "张）", 1 /* TEXT */),
+                        _cE("view", _uM({ class: "image-list" }), [
+                          _cE(Fragment, null, RenderHelpers.renderList(_ctx.rectificationImages, (img, idx, __index, _cached): any => {
+                            return _cE("image", _uM({
+                              key: idx,
+                              src: img,
+                              class: "photo",
+                              mode: "aspectFill",
+                              onClick: () => {_ctx.preview(img, _ctx.rectificationImages)}
+                            }), null, 8 /* PROPS */, ["src", "onClick"])
+                          }), 128 /* KEYED_FRAGMENT */)
+                        ])
+                      ])
+                    : _cC("v-if", true)
+                ])
+              : _cC("v-if", true),
+            _ctx.detail.recordStatus >= 2
+              ? _cE("view", _uM({ key: 2 }), [
+                  _cE("view", _uM({ class: "item" }), [
+                    _cE("text", _uM({ class: "label" }), "复查人"),
+                    _cE("text", _uM({ class: "value" }), _tD(_ctx.displayValue(_ctx.detail.reviewerName)), 1 /* TEXT */)
+                  ]),
+                  _cE("view", _uM({ class: "item" }), [
+                    _cE("text", _uM({ class: "label" }), "复查建议"),
+                    _cE("text", _uM({ class: "value" }), _tD(_ctx.displayValue(_ctx.detail.reviewSuggestion)), 1 /* TEXT */)
+                  ]),
+                  _cE("view", _uM({ class: "item" }), [
+                    _cE("text", _uM({ class: "label" }), "复查效果"),
+                    _cE("text", _uM({ class: "value" }), _tD(_ctx.displayValue(_ctx.detail.reviewEffect)), 1 /* TEXT */)
+                  ]),
+                  _ctx.reviewImages.length > 0
+                    ? _cE("view", _uM({
+                        key: 0,
+                        class: "photos"
+                      }), [
+                        _cE("text", _uM({ class: "label" }), "复查图片（" + _tD(_ctx.reviewImages.length) + "张）", 1 /* TEXT */),
+                        _cE("view", _uM({ class: "image-list" }), [
+                          _cE(Fragment, null, RenderHelpers.renderList(_ctx.reviewImages, (img, idx, __index, _cached): any => {
+                            return _cE("image", _uM({
+                              key: idx,
+                              src: img,
+                              class: "photo",
+                              mode: "aspectFill",
+                              onClick: () => {_ctx.preview(img, _ctx.reviewImages)}
+                            }), null, 8 /* PROPS */, ["src", "onClick"])
+                          }), 128 /* KEYED_FRAGMENT */)
+                        ])
+                      ])
+                    : _cC("v-if", true)
+                ])
+              : _cC("v-if", true),
+            _cE("view", _uM({ class: "item" }), [
+              _cE("text", _uM({ class: "label" }), "问题描述"),
+              _cE("text", _uM({ class: "value" }), _tD(_ctx.detail.problemDescription), 1 /* TEXT */)
+            ]),
+            _cE("view", _uM({ class: "item" }), [
+              _cE("text", _uM({ class: "label" }), "专业类别"),
+              _cE("text", _uM({ class: "value" }), _tD(_ctx.detail.professionalTypeName), 1 /* TEXT */)
+            ]),
+            _cE("view", _uM({ class: "item" }), [
+              _cE("text", _uM({ class: "label" }), "基本模块"),
+              _cE("text", _uM({ class: "value" }), _tD(_ctx.detail.moduleName), 1 /* TEXT */)
+            ]),
+            _cE("view", _uM({ class: "item" }), [
+              _cE("text", _uM({ class: "label" }), "责任要素"),
+              _cE("text", _uM({ class: "value" }), _tD(_ctx.detail.responsibilityName), 1 /* TEXT */)
+            ]),
+            _cE("view", _uM({ class: "item" }), [
+              _cE("text", _uM({ class: "label" }), "检查内容"),
+              _cE("text", _uM({ class: "value" }), _tD(_ctx.detail.issueName), 1 /* TEXT */)
+            ]),
+            _cE("view", _uM({ class: "item" }), [
+              _cE("text", _uM({ class: "label" }), "性质界定"),
+              _cE("text", _uM({ class: "value" }), _tD(_ctx.detail.qualityName), 1 /* TEXT */)
+            ]),
+            _cE("view", _uM({ class: "item" }), [
+              _cE("text", _uM({ class: "label" }), "扣分值"),
+              _cE("text", _uM({ class: "value" }), _tD(_ctx.getDeductionScore(_ctx.detail.qualityName)), 1 /* TEXT */)
+            ]),
+            _cE("view", _uM({ class: "item" }), [
+              _cE("text", _uM({ class: "label" }), "发现位置"),
+              _cE("text", _uM({ class: "value" }), _tD(_ctx.detail.location), 1 /* TEXT */)
+            ]),
+            _cE("view", _uM({ class: "item" }), [
+              _cE("text", _uM({ class: "label" }), "受检单位"),
+              _cE("text", _uM({ class: "value" }), _tD(_ctx.displayValue(_ctx.detail.departmentName)), 1 /* TEXT */)
+            ]),
+            _cE("view", _uM({ class: "item" }), [
+              _cE("text", _uM({ class: "label" }), "检查人"),
+              _cE("text", _uM({ class: "value" }), _tD(_ctx.detail.inspector), 1 /* TEXT */)
+            ]),
+            _cE("view", _uM({ class: "item" }), [
+              _cE("text", _uM({ class: "label" }), "责任人"),
+              _cE("text", _uM({ class: "value" }), _tD(_ctx.detail.responsiblePerson), 1 /* TEXT */)
+            ]),
+            _cE("view", _uM({ class: "item" }), [
+              _cE("text", _uM({ class: "label" }), "责任单位"),
+              _cE("text", _uM({ class: "value" }), _tD(_ctx.detail.responsibleUnit), 1 /* TEXT */)
+            ]),
+            _cE("view", _uM({ class: "item" }), [
+              _cE("text", _uM({ class: "label" }), "整改期限"),
+              _cE("text", _uM({ class: "value" }), _tD(_ctx.detail.rectificationDeadline), 1 /* TEXT */)
+            ])
+          ])
+        : _cE("view", _uM({
+            key: 2,
+            class: "empty"
+          }), [
+            _cE("text", null, "记录不存在")
+          ])
+  ], 4 /* STYLE */)
+}
+const GenPagesMonthlyViewStyles = [_uM([["container", _pS(_uM([["backgroundImage", "none"], ["backgroundColor", "#f1f5f9"]]))], ["loading", _pS(_uM([["paddingTop", "40rpx"], ["paddingRight", "40rpx"], ["paddingBottom", "40rpx"], ["paddingLeft", "40rpx"], ["textAlign", "center"], ["color", "#475569"], ["fontSize", "28rpx"]]))], ["content", _pS(_uM([["paddingTop", "32rpx"], ["paddingRight", "32rpx"], ["paddingBottom", "32rpx"], ["paddingLeft", "32rpx"]]))], ["header", _pS(_uM([["display", "flex"], ["justifyContent", "space-between"], ["alignItems", "center"], ["marginBottom", "24rpx"], ["paddingTop", "32rpx"], ["paddingRight", "32rpx"], ["paddingBottom", "32rpx"], ["paddingLeft", "32rpx"], ["backgroundImage", "none"], ["backgroundColor", "#ffffff"], ["borderTopLeftRadius", "20rpx"], ["borderTopRightRadius", "20rpx"], ["borderBottomRightRadius", "20rpx"], ["borderBottomLeftRadius", "20rpx"], ["boxShadow", "0 8rpx 24rpx rgba(30, 64, 175, 0.08)"], ["borderTopWidth", "4rpx"], ["borderTopStyle", "solid"], ["borderTopColor", "#1e40af"]]))], ["title", _pS(_uM([["fontSize", "36rpx"], ["fontWeight", 600], ["color", "#1e40af"]]))], ["status", _pS(_uM([["paddingTop", "8rpx"], ["paddingRight", "20rpx"], ["paddingBottom", "8rpx"], ["paddingLeft", "20rpx"], ["borderTopLeftRadius", "12rpx"], ["borderTopRightRadius", "12rpx"], ["borderBottomRightRadius", "12rpx"], ["borderBottomLeftRadius", "12rpx"], ["fontSize", "26rpx"], ["fontWeight", 500]]))], ["status-pending", _pS(_uM([["backgroundImage", "none"], ["backgroundColor", "#f59e0b"], ["color", "#ffffff"]]))], ["status-completed", _pS(_uM([["backgroundImage", "none"], ["backgroundColor", "#16a34a"], ["color", "#ffffff"]]))], ["status-reviewed", _pS(_uM([["backgroundImage", "none"], ["backgroundColor", "#2563eb"], ["color", "#ffffff"]]))], ["status-unknown", _pS(_uM([["backgroundImage", "none"], ["backgroundColor", "#94a3b8"], ["color", "#ffffff"]]))], ["item", _pS(_uM([["backgroundImage", "none"], ["backgroundColor", "#ffffff"], ["marginBottom", "16rpx"], ["paddingTop", "24rpx"], ["paddingRight", "24rpx"], ["paddingBottom", "24rpx"], ["paddingLeft", "24rpx"], ["borderTopLeftRadius", "16rpx"], ["borderTopRightRadius", "16rpx"], ["borderBottomRightRadius", "16rpx"], ["borderBottomLeftRadius", "16rpx"], ["boxShadow", "0 8rpx 24rpx rgba(30, 64, 175, 0.08)"], ["borderLeftWidth", "6rpx"], ["borderLeftStyle", "solid"], ["borderLeftColor", "#2563eb"]]))], ["label", _pS(_uM([["fontSize", "28rpx"], ["color", "#1e293b"], ["marginBottom", "12rpx"], ["fontWeight", 600]]))], ["value", _pS(_uM([["fontSize", "28rpx"], ["color", "#0a2540"], ["fontWeight", 600]]))], ["photos", _pS(_uM([["backgroundImage", "none"], ["backgroundColor", "#ffffff"], ["marginBottom", "16rpx"], ["paddingTop", "24rpx"], ["paddingRight", "24rpx"], ["paddingBottom", "24rpx"], ["paddingLeft", "24rpx"], ["borderTopLeftRadius", "16rpx"], ["borderTopRightRadius", "16rpx"], ["borderBottomRightRadius", "16rpx"], ["borderBottomLeftRadius", "16rpx"], ["boxShadow", "0 8rpx 24rpx rgba(30, 64, 175, 0.08)"]]))], ["image-list", _pS(_uM([["display", "flex"], ["flexWrap", "wrap"]]))], ["photo", _uM([[".image-list ", _uM([["marginTop", "8rpx"], ["marginRight", "8rpx"], ["marginBottom", "8rpx"], ["marginLeft", "8rpx"]])], ["", _uM([["width", "200rpx"], ["height", "200rpx"], ["borderTopLeftRadius", "12rpx"], ["borderTopRightRadius", "12rpx"], ["borderBottomRightRadius", "12rpx"], ["borderBottomLeftRadius", "12rpx"], ["borderTopWidth", "2rpx"], ["borderRightWidth", "2rpx"], ["borderBottomWidth", "2rpx"], ["borderLeftWidth", "2rpx"], ["borderTopStyle", "solid"], ["borderRightStyle", "solid"], ["borderBottomStyle", "solid"], ["borderLeftStyle", "solid"], ["borderTopColor", "#dbeafe"], ["borderRightColor", "#dbeafe"], ["borderBottomColor", "#dbeafe"], ["borderLeftColor", "#dbeafe"]])]])], ["empty", _pS(_uM([["paddingTop", "40rpx"], ["paddingRight", "40rpx"], ["paddingBottom", "40rpx"], ["paddingLeft", "40rpx"], ["textAlign", "center"], ["color", "#475569"], ["fontSize", "28rpx"]]))]])]

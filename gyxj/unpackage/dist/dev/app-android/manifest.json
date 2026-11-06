@@ -1,0 +1,37 @@
+{
+  "id": "__UNI__B5A0920",
+  "name": "榆林公司岗检系统",
+  "description": "",
+  "version": {
+    "name": "1.0.7",
+    "code": "107"
+  },
+  "uni-app-x": {
+    "compilerVersion": "5.15"
+  },
+  "app-android": {
+    "distribute": {
+      "modules": {},
+      "icons": {
+        "hdpi": "F:/kuake/豆包.png",
+        "xhdpi": "F:/kuake/豆包.png",
+        "xxhdpi": "F:/kuake/豆包.png",
+        "xxxhdpi": "F:/kuake/豆包.png"
+      },
+      "splashScreens": {
+        "default": {}
+      },
+      "abiFilters": [
+        "x86",
+        "x86_64",
+        "arm64-v8a",
+        "armeabi-v7a"
+      ]
+    },
+    "permissions": [
+      "<uses-permission android:name=\"android.permission.INTERNET\" />",
+      "<uses-permission android:name=\"android.permission.ACCESS_NETWORK_STATE\" />",
+      "<uses-permission android:name=\"android.permission.ACCESS_WIFI_STATE\" />"
+    ]
+  }
+}

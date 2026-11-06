@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gjxt.inspection.mapper.SysDictionaryMapper">
+
+    <!-- 结果映射 -->
+    <resultMap id="BaseResultMap" type="com.gjxt.inspection.entity.SysDictionary">
+        <id column="id" property="id" />
+        <result column="dict_type" property="dictType" />
+        <result column="dict_label" property="dictLabel" />
+        <result column="dict_value" property="dictValue" />
+        <result column="dict_code" property="dictCode" />
+        <result column="description" property="description" />
+        <result column="status" property="status" />
+        <result column="sort_order" property="sortOrder" />
+        <result column="create_time" property="createTime" />
+        <result column="update_time" property="updateTime" />
+        <result column="deleted" property="deleted" />
+    </resultMap>
+
+    <!-- 基础字段 -->
+    <sql id="Base_Column_List">
+        id, dict_type, dict_label, dict_value, dict_code, description, status, sort_order, 
+        create_time, update_time, deleted
+    </sql>
+
+    <!-- 根据字典类型查询启用状态的字典列表 -->
+    <select id="selectByDictType" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List" />
+        FROM sys_dictionary
+        WHERE dict_type = #{dictType} AND status = 1 AND deleted = 0
+        ORDER BY sort_order ASC, create_time DESC
+    </select>
+
+    <!-- 检查字典标签是否存在 -->
+    <select id="checkDictLabelExists" resultType="int">
+        SELECT COUNT(1)
+        FROM sys_dictionary
+        WHERE dict_type = #{dictType} AND dict_label = #{dictLabel} AND deleted = 0
+        <if test="excludeId != null">
+            AND id != #{excludeId}
+        </if>
+    </select>
+
+    <!-- 检查字典键值是否存在 -->
+    <select id="checkDictValueExists" resultType="int">
+        SELECT COUNT(1)
+        FROM sys_dictionary
+        WHERE dict_type = #{dictType} AND dict_value = #{dictValue} AND deleted = 0
+        <if test="excludeId != null">
+            AND id != #{excludeId}
+        </if>
+    </select>
+
+    <!-- 获取所有字典类型 -->
+    <select id="selectAllDictTypes" resultType="string">
+        SELECT DISTINCT dict_type
+        FROM sys_dictionary
+        WHERE deleted = 0
+        ORDER BY dict_type
+    </select>
+
+</mapper>

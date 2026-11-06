@@ -1,0 +1,384 @@
+import { getApiUrl } from '@/config/api.uts';
+import { isMonthlyAdmin } from '@/utils/permission.uts';
+import { refreshUserInfo } from '@/utils/user.uts';
+type RecentRecord = {
+    id: string;
+    problemDescription: string;
+    locationName: string;
+    createTime: string;
+    status: string;
+};
+type StatisticsData = {
+    pendingIssues: number;
+    completedIssues: number;
+    monthRecords: number;
+};
+type RequestResponse = {
+    data: UTSJSONObject;
+    statusCode: number;
+};
+const __sfc__ = defineComponent({
+    data() {
+        return {
+            userInfo: {} as UTSJSONObject,
+            currentDate: '',
+            statistics: {
+                pendingIssues: 0,
+                completedIssues: 0,
+                monthRecords: 0
+            } as StatisticsData,
+            recentRecords: [] as RecentRecord[]
+        };
+    },
+    onLoad(options: OnLoadOptions) {
+        this.checkLogin();
+        this.initData();
+        // 先刷新服务端 userInfo(部门/角色可能已被后台调整)，再按最新 deptId 过滤统计与记录
+        refreshUserInfo().then(() => {
+            // 刷新后重新应用本地快照，页面上的用户名/头像才是最新的
+            const userInfoStr = uni.getStorageSync('userInfo') as string;
+            if (userInfoStr != null && userInfoStr != '') {
+                this.userInfo = JSON.parse(userInfoStr) as UTSJSONObject;
+            }
+            this.loadStatistics();
+            this.loadRecentRecords();
+        });
+    },
+    methods: {
+        checkLogin() {
+            const token = uni.getStorageSync('token');
+            if (token == null || token == '') {
+                uni.reLaunch({
+                    url: '/pages/login/login'
+                });
+                return;
+            }
+            const userInfoStr = uni.getStorageSync('userInfo') as string;
+            if (userInfoStr != null && userInfoStr != '') {
+                this.userInfo = JSON.parse(userInfoStr) as UTSJSONObject;
+            }
+            else {
+                this.userInfo = {} as UTSJSONObject;
+            }
+        },
+        initData() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = (now.getMonth() + 1).toString(10);
+            const formattedMonth = month.length == 1 ? `0${month}` : month;
+            const day = now.getDate().toString(10);
+            const formattedDay = day.length == 1 ? `0${day}` : day;
+            const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
+            const weekday = weekdays[now.getDay()];
+            this.currentDate = `${year}年${formattedMonth}月${formattedDay}日 星期${weekday}`;
+        },
+        loadStatistics() {
+            const token = uni.getStorageSync('token');
+            // 获取用户信息，包括部门和管理员权限
+            let departmentId = '';
+            // 月检域管理员用 isMonthlyAdmin()(严格 isMonthlyAdmin===1,对齐 Web permission.js)
+            const isAdmin = isMonthlyAdmin();
+            const userInfoData = uni.getStorageSync('userInfo');
+            const userInfoStr = userInfoData != null ? userInfoData as string : '';
+            if (userInfoStr != null && userInfoStr != '' && userInfoStr != 'null' && userInfoStr != 'undefined') {
+                try {
+                    const parsedUserInfo = JSON.parse(userInfoStr) as UTSJSONObject;
+                    departmentId = parsedUserInfo.getString('deptId') ?? '';
+                }
+                catch (error: any) {
+                    console.error('用户信息JSON解析失败:', error);
+                }
+            }
+            // 构建部门过滤参数 - 管理员用户不需要部门过滤
+            const deptParam = (!isAdmin && departmentId != null && departmentId != '') ? `&departmentId=${departmentId}` : '';
+            // 分别获取待整改、已整改、已复查的数量
+            let pendingCount = 0, completedCount = 0, reviewedCount = 0;
+            let completedRequests = 0;
+            const totalRequests = 3;
+            const updateStatistics = () => {
+                this.statistics = {
+                    pendingIssues: pendingCount,
+                    completedIssues: completedCount,
+                    monthRecords: reviewedCount
+                } as StatisticsData;
+            };
+            // 获取待整改数量（状态为0）
+            uni.request({
+                url: getApiUrl(`/monthly-inspection-record/page?current=1&size=1&status=0${deptParam}`),
+                method: 'GET',
+                header: {
+                    'Authorization': `Bearer ${token}`
+                },
+                success: (res) => {
+                    const response = res.data as UTSJSONObject;
+                    if (res.statusCode == 200 && (response.getNumber('code') ?? 0) == 200) {
+                        const data = response.getJSON('data') as UTSJSONObject;
+                        pendingCount = data.getNumber('total') ?? 0;
+                    }
+                    completedRequests++;
+                    if (completedRequests === totalRequests) {
+                        updateStatistics();
+                    }
+                },
+                fail: (error) => {
+                    console.log('加载待整改数据失败:', error);
+                    completedRequests++;
+                    if (completedRequests === totalRequests) {
+                        updateStatistics();
+                    }
+                }
+            });
+            // 获取已整改数量（状态为1）
+            uni.request({
+                url: getApiUrl(`/monthly-inspection-record/page?current=1&size=1&status=1${deptParam}`),
+                method: 'GET',
+                header: {
+                    'Authorization': `Bearer ${token}`
+                },
+                success: (res) => {
+                    const response = res.data as UTSJSONObject;
+                    if (res.statusCode == 200 && (response.getNumber('code') ?? 0) == 200) {
+                        const data = response.getJSON('data') as UTSJSONObject;
+                        completedCount = data.getNumber('total') ?? 0;
+                    }
+                    completedRequests++;
+                    if (completedRequests === totalRequests) {
+                        updateStatistics();
+                    }
+                },
+                fail: (error) => {
+                    console.log('加载已整改数据失败:', error);
+                    completedRequests++;
+                    if (completedRequests === totalRequests) {
+                        updateStatistics();
+                    }
+                }
+            });
+            // 获取已复查数量（状态为2）
+            uni.request({
+                url: getApiUrl(`/monthly-inspection-record/page?current=1&size=1&status=2${deptParam}`),
+                method: 'GET',
+                header: {
+                    'Authorization': `Bearer ${token}`
+                },
+                success: (res) => {
+                    const response = res.data as UTSJSONObject;
+                    if (res.statusCode == 200 && (response.getNumber('code') ?? 0) == 200) {
+                        const data = response.getJSON('data') as UTSJSONObject;
+                        reviewedCount = data.getNumber('total') ?? 0;
+                    }
+                    completedRequests++;
+                    if (completedRequests === totalRequests) {
+                        updateStatistics();
+                    }
+                },
+                fail: (error) => {
+                    console.log('加载已复查数据失败:', error);
+                    completedRequests++;
+                    if (completedRequests === totalRequests) {
+                        updateStatistics();
+                    }
+                }
+            });
+        },
+        loadRecentRecords() {
+            const token = uni.getStorageSync('token');
+            uni.request({
+                url: getApiUrl('/inspection-record/page?pageNum=1&pageSize=5'),
+                method: 'GET',
+                header: {
+                    'Authorization': `Bearer ${token}`
+                },
+                success: (res) => {
+                    const response = res.data as UTSJSONObject;
+                    if (res.statusCode == 200 && (response.getNumber('code') ?? 0) == 200) {
+                        const data = response.getJSON('data') as UTSJSONObject;
+                        const records = data.getArray('records') as Array<UTSJSONObject>;
+                        this.recentRecords = [];
+                        for (let i = 0; i < records.length; i++) {
+                            const item = records[i];
+                            const record: RecentRecord = {
+                                id: item.getString('id') ?? '',
+                                problemDescription: item.getString('problemDescription') ?? '',
+                                locationName: item.getString('locationName') ?? '',
+                                createTime: item.getString('createTime') ?? '',
+                                status: item.getString('status') ?? ''
+                            };
+                            this.recentRecords.push(record);
+                        }
+                    }
+                },
+                fail: (error) => {
+                    console.log('加载最近记录失败:', error);
+                }
+            });
+        },
+        getStatusText(status: string): string {
+            if (status == "0")
+                return '待整改';
+            if (status == "1")
+                return '已整改';
+            if (status == "2")
+                return '已复查';
+            return '未知';
+        },
+        getStatusClass(status: string): string {
+            if (status == "0")
+                return 'status-pending';
+            if (status == "1")
+                return 'status-completed';
+            if (status == "2")
+                return 'status-accepted';
+            return 'status-unknown';
+        },
+        goToPendingIssues() {
+            uni.navigateTo({
+                url: '/pages/record/record?status=0&monthly=true'
+            });
+        },
+        goToCompletedIssues() {
+            uni.navigateTo({
+                url: '/pages/record/record?status=1&monthly=true'
+            });
+        },
+        goToReviewedRecords() {
+            uni.navigateTo({
+                url: '/pages/record/record?status=2&monthly=true'
+            });
+        },
+        goToRecords() {
+            uni.switchTab({
+                url: '/pages/record/record'
+            });
+        },
+        goToStatistics() {
+            uni.navigateTo({
+                url: '/pages/statistics/statistics'
+            });
+        },
+        goToAddRecord() {
+            uni.navigateTo({
+                url: '/pages/record/add'
+            });
+        }
+    }
+});
+export default __sfc__;
+function GenPagesIndexIndexRender(this: InstanceType<typeof __sfc__>): any | null {
+    const _ctx = this;
+    const _cache = this.$.renderCache;
+    return _cE("view", _uM({ class: "container" }), [
+        _cE("view", _uM({ class: "header" }), [
+            _cE("view", _uM({ class: "welcome" }), [
+                _cE("text", _uM({ class: "welcome-text" }), "欢迎回来，" + _tD((_ctx.userInfo as UTSJSONObject).getString('realName') ?? '用户'), 1 /* TEXT */),
+                _cE("text", _uM({ class: "date-text" }), _tD(_ctx.currentDate), 1 /* TEXT */)
+            ]),
+            _cE("image", _uM({
+                class: "avatar",
+                src: "/static/avatar.png"
+            }))
+        ]),
+        _cE("view", _uM({ class: "stats-container" }), [
+            _cE("view", _uM({
+                class: "stats-card",
+                onClick: _ctx.goToPendingIssues
+            }), [
+                _cE("text", _uM({ class: "stats-number" }), _tD(_ctx.statistics.pendingIssues), 1 /* TEXT */),
+                _cE("text", _uM({ class: "stats-label" }), "待整改"),
+                _cE("text", _uM({ class: "stats-icon" }), "⚠️")
+            ], 8 /* PROPS */, ["onClick"]),
+            _cE("view", _uM({
+                class: "stats-card",
+                onClick: _ctx.goToCompletedIssues
+            }), [
+                _cE("text", _uM({ class: "stats-number" }), _tD(_ctx.statistics.completedIssues), 1 /* TEXT */),
+                _cE("text", _uM({ class: "stats-label" }), "已整改"),
+                _cE("text", _uM({ class: "stats-icon" }), "✅")
+            ], 8 /* PROPS */, ["onClick"]),
+            _cE("view", _uM({
+                class: "stats-card",
+                onClick: _ctx.goToReviewedRecords
+            }), [
+                _cE("text", _uM({ class: "stats-number" }), _tD(_ctx.statistics.monthRecords), 1 /* TEXT */),
+                _cE("text", _uM({ class: "stats-label" }), "已复查"),
+                _cE("text", _uM({ class: "stats-icon" }), "📊")
+            ], 8 /* PROPS */, ["onClick"])
+        ]),
+        _cE("view", _uM({ class: "quick-actions" }), [
+            _cE("text", _uM({ class: "section-title" }), "快捷功能"),
+            _cE("view", _uM({ class: "actions-grid" }), [
+                _cE("view", _uM({
+                    class: "action-item",
+                    onClick: _ctx.goToAddRecord
+                }), [
+                    _cE("view", _uM({ class: "action-icon" }), "➕"),
+                    _cE("text", _uM({ class: "action-text" }), "新增记录")
+                ], 8 /* PROPS */, ["onClick"]),
+                _cE("view", _uM({
+                    class: "action-item",
+                    onClick: _ctx.goToPendingIssues
+                }), [
+                    _cE("view", _uM({ class: "action-icon" }), "⚠️"),
+                    _cE("text", _uM({ class: "action-text" }), "待整改问题")
+                ], 8 /* PROPS */, ["onClick"]),
+                _cE("view", _uM({
+                    class: "action-item",
+                    onClick: _ctx.goToRecords
+                }), [
+                    _cE("view", _uM({ class: "action-icon" }), "📝"),
+                    _cE("text", _uM({ class: "action-text" }), "巡检记录")
+                ], 8 /* PROPS */, ["onClick"]),
+                _cE("view", _uM({
+                    class: "action-item",
+                    onClick: _ctx.goToCompletedIssues
+                }), [
+                    _cE("view", _uM({ class: "action-icon" }), "✅"),
+                    _cE("text", _uM({ class: "action-text" }), "已整改问题")
+                ], 8 /* PROPS */, ["onClick"]),
+                _cE("view", _uM({
+                    class: "action-item",
+                    onClick: _ctx.goToStatistics
+                }), [
+                    _cE("view", _uM({ class: "action-icon" }), "📊"),
+                    _cE("text", _uM({ class: "action-text" }), "统计分析")
+                ], 8 /* PROPS */, ["onClick"])
+            ])
+        ]),
+        _cE("view", _uM({ class: "recent-records" }), [
+            _cE("view", _uM({ class: "section-header" }), [
+                _cE("text", _uM({ class: "section-title" }), "最近记录"),
+                _cE("text", _uM({
+                    class: "more-text",
+                    onClick: _ctx.goToRecords
+                }), "查看更多", 8 /* PROPS */, ["onClick"])
+            ]),
+            _cE("view", _uM({ class: "records-list" }), [
+                _cE(Fragment, null, RenderHelpers.renderList(_ctx.recentRecords, (record, __key, __index, _cached): any => {
+                    return _cE("view", _uM({
+                        class: "record-item",
+                        key: record.id
+                    }), [
+                        _cE("view", _uM({ class: "record-info" }), [
+                            _cE("text", _uM({ class: "record-title" }), _tD(record.problemDescription), 1 /* TEXT */),
+                            _cE("text", _uM({ class: "record-meta" }), _tD(record.locationName) + " · " + _tD(record.createTime), 1 /* TEXT */)
+                        ]),
+                        _cE("view", _uM({
+                            class: _nC(["record-status", _ctx.getStatusClass(record.status)])
+                        }), [
+                            _cE("text", null, _tD(_ctx.getStatusText(record.status)), 1 /* TEXT */)
+                        ], 2 /* CLASS */)
+                    ]);
+                }), 128 /* KEYED_FRAGMENT */),
+                _ctx.recentRecords.length === 0
+                    ? _cE("view", _uM({
+                        key: 0,
+                        class: "empty-state"
+                    }), [
+                        _cE("text", _uM({ class: "empty-text" }), "暂无记录")
+                    ])
+                    : _cC("v-if", true)
+            ])
+        ])
+    ]);
+}
+const GenPagesIndexIndexStyles = [_uM([["container", _pS(_uM([["paddingTop", "20rpx"], ["paddingRight", "20rpx"], ["paddingBottom", "20rpx"], ["paddingLeft", "20rpx"], ["backgroundColor", "#f1f5f9"]]))], ["header", _pS(_uM([["display", "flex"], ["justifyContent", "space-between"], ["alignItems", "center"], ["marginBottom", "20rpx"], ["paddingTop", "24rpx"], ["paddingRight", "20rpx"], ["paddingBottom", "24rpx"], ["paddingLeft", "20rpx"], ["backgroundImage", "linear-gradient(135deg, #1e40af 0%, #2563eb 50%, #38bdf8 100%)"], ["backgroundColor", "rgba(0,0,0,0)"], ["borderTopLeftRadius", "24rpx"], ["borderTopRightRadius", "24rpx"], ["borderBottomRightRadius", "24rpx"], ["borderBottomLeftRadius", "24rpx"], ["boxShadow", "0 8rpx 32rpx rgba(30, 64, 175, 0.24)"]]))], ["welcome", _pS(_uM([["flexGrow", 1], ["flexShrink", 1], ["flexBasis", "0%"]]))], ["greeting", _uM([[".welcome-text ", _uM([["fontSize", "20rpx"], ["fontWeight", "bold"], ["color", "#ffffff"], ["marginBottom", "4rpx"], ["textShadow", "0 2rpx 4rpx rgba(15, 23, 42, 0.18)"]])]])], ["date-text", _pS(_uM([["fontSize", "14rpx"], ["color", "rgba(255,255,255,0.85)"]]))], ["avatar", _pS(_uM([["width", "50rpx"], ["height", "50rpx"], ["borderTopLeftRadius", "25rpx"], ["borderTopRightRadius", "25rpx"], ["borderBottomRightRadius", "25rpx"], ["borderBottomLeftRadius", "25rpx"], ["backgroundColor", "rgba(255,255,255,0.25)"], ["borderTopWidth", "2rpx"], ["borderRightWidth", "2rpx"], ["borderBottomWidth", "2rpx"], ["borderLeftWidth", "2rpx"], ["borderTopStyle", "solid"], ["borderRightStyle", "solid"], ["borderBottomStyle", "solid"], ["borderLeftStyle", "solid"], ["borderTopColor", "rgba(255,255,255,0.4)"], ["borderRightColor", "rgba(255,255,255,0.4)"], ["borderBottomColor", "rgba(255,255,255,0.4)"], ["borderLeftColor", "rgba(255,255,255,0.4)"]]))], ["stats-container", _pS(_uM([["display", "flex"], ["justifyContent", "space-between"], ["marginBottom", "30rpx"]]))], ["stats-card", _pS(_uM([["flexGrow", 1], ["flexShrink", 1], ["flexBasis", "0%"], ["backgroundImage", "none"], ["backgroundColor", "#ffffff"], ["borderTopLeftRadius", "24rpx"], ["borderTopRightRadius", "24rpx"], ["borderBottomRightRadius", "24rpx"], ["borderBottomLeftRadius", "24rpx"], ["paddingTop", "20rpx"], ["paddingRight", "15rpx"], ["paddingBottom", "20rpx"], ["paddingLeft", "15rpx"], ["marginTop", 0], ["marginRight", "5rpx"], ["marginBottom", 0], ["marginLeft", "5rpx"], ["textAlign", "center"], ["position", "relative"], ["boxShadow", "0 8rpx 24rpx rgba(30, 64, 175, 0.08)"], ["borderTopWidth", "1rpx"], ["borderRightWidth", "1rpx"], ["borderBottomWidth", "1rpx"], ["borderLeftWidth", "1rpx"], ["borderTopStyle", "solid"], ["borderRightStyle", "solid"], ["borderBottomStyle", "solid"], ["borderLeftStyle", "solid"], ["borderTopColor", "#dbeafe"], ["borderRightColor", "#dbeafe"], ["borderBottomColor", "#dbeafe"], ["borderLeftColor", "#dbeafe"]]))], ["stats-number", _pS(_uM([["fontSize", "24rpx"], ["fontWeight", "bold"], ["color", "#1e40af"], ["marginBottom", "5rpx"]]))], ["stats-label", _pS(_uM([["fontSize", "12rpx"], ["color", "#475569"]]))], ["stats-icon", _pS(_uM([["position", "absolute"], ["top", "15rpx"], ["right", "15rpx"], ["fontSize", "20rpx"], ["opacity", 0.3]]))], ["quick-actions", _pS(_uM([["marginBottom", "30rpx"]]))], ["section-title", _pS(_uM([["fontSize", "18rpx"], ["fontWeight", "bold"], ["color", "#0f172a"], ["marginBottom", "15rpx"]]))], ["actions-grid", _pS(_uM([["display", "flex"], ["flexWrap", "wrap"], ["justifyContent", "space-between"]]))], ["action-item", _pS(_uM([["width", "48%"], ["backgroundImage", "none"], ["backgroundColor", "#ffffff"], ["borderTopLeftRadius", "24rpx"], ["borderTopRightRadius", "24rpx"], ["borderBottomRightRadius", "24rpx"], ["borderBottomLeftRadius", "24rpx"], ["paddingTop", "20rpx"], ["paddingRight", "20rpx"], ["paddingBottom", "20rpx"], ["paddingLeft", "20rpx"], ["marginBottom", "10rpx"], ["textAlign", "center"], ["boxShadow", "0 8rpx 24rpx rgba(30, 64, 175, 0.08)"], ["borderTopWidth", "1rpx"], ["borderRightWidth", "1rpx"], ["borderBottomWidth", "1rpx"], ["borderLeftWidth", "1rpx"], ["borderTopStyle", "solid"], ["borderRightStyle", "solid"], ["borderBottomStyle", "solid"], ["borderLeftStyle", "solid"], ["borderTopColor", "#dbeafe"], ["borderRightColor", "#dbeafe"], ["borderBottomColor", "#dbeafe"], ["borderLeftColor", "#dbeafe"]]))], ["action-icon", _pS(_uM([["fontSize", "32rpx"], ["marginBottom", "10rpx"], ["color", "#2563eb"]]))], ["action-text", _pS(_uM([["fontSize", "14rpx"], ["color", "#0f172a"]]))], ["recent-records", _pS(_uM([["backgroundImage", "none"], ["backgroundColor", "#ffffff"], ["borderTopLeftRadius", "24rpx"], ["borderTopRightRadius", "24rpx"], ["borderBottomRightRadius", "24rpx"], ["borderBottomLeftRadius", "24rpx"], ["paddingTop", "20rpx"], ["paddingRight", "20rpx"], ["paddingBottom", "20rpx"], ["paddingLeft", "20rpx"], ["boxShadow", "0 8rpx 24rpx rgba(30, 64, 175, 0.08)"], ["borderTopWidth", "1rpx"], ["borderRightWidth", "1rpx"], ["borderBottomWidth", "1rpx"], ["borderLeftWidth", "1rpx"], ["borderTopStyle", "solid"], ["borderRightStyle", "solid"], ["borderBottomStyle", "solid"], ["borderLeftStyle", "solid"], ["borderTopColor", "#dbeafe"], ["borderRightColor", "#dbeafe"], ["borderBottomColor", "#dbeafe"], ["borderLeftColor", "#dbeafe"]]))], ["section-header", _pS(_uM([["display", "flex"], ["justifyContent", "space-between"], ["alignItems", "center"], ["marginBottom", "15rpx"]]))], ["more-text", _pS(_uM([["fontSize", "14rpx"], ["color", "#2563eb"]]))], ["record-item", _pS(_uM([["display", "flex"], ["justifyContent", "space-between"], ["alignItems", "center"], ["paddingTop", "15rpx"], ["paddingRight", 0], ["paddingBottom", "15rpx"], ["paddingLeft", 0], ["borderBottomWidth", "1rpx"], ["borderBottomStyle", "solid"], ["borderBottomColor", "#eff6ff"], ["borderBottomWidth:last-child", "medium"], ["borderBottomStyle:last-child", "none"], ["borderBottomColor:last-child", "#000000"]]))], ["record-info", _pS(_uM([["flexGrow", 1], ["flexShrink", 1], ["flexBasis", "0%"]]))], ["record-title", _pS(_uM([["fontSize", "16rpx"], ["color", "#0f172a"], ["marginBottom", "5rpx"]]))], ["record-meta", _pS(_uM([["fontSize", "12rpx"], ["color", "#94a3b8"]]))], ["record-status", _pS(_uM([["paddingTop", "4rpx"], ["paddingRight", "8rpx"], ["paddingBottom", "4rpx"], ["paddingLeft", "8rpx"], ["borderTopLeftRadius", "12rpx"], ["borderTopRightRadius", "12rpx"], ["borderBottomRightRadius", "12rpx"], ["borderBottomLeftRadius", "12rpx"], ["fontSize", "12rpx"]]))], ["status-pending", _pS(_uM([["backgroundImage", "none"], ["backgroundColor", "#fef3c7"], ["color", "#b45309"]]))], ["status-processing", _pS(_uM([["backgroundImage", "none"], ["backgroundColor", "#dbeafe"], ["color", "#1e40af"]]))], ["status-completed", _pS(_uM([["backgroundImage", "none"], ["backgroundColor", "#dcfce7"], ["color", "#15803d"]]))], ["status-accepted", _pS(_uM([["backgroundImage", "none"], ["backgroundColor", "#e2e8f0"], ["color", "#475569"]]))], ["empty-state", _pS(_uM([["textAlign", "center"], ["paddingTop", "40rpx"], ["paddingRight", 0], ["paddingBottom", "40rpx"], ["paddingLeft", 0]]))], ["empty-text", _pS(_uM([["fontSize", "14rpx"], ["color", "#94a3b8"]]))]])];

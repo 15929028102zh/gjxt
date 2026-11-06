@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>岗检系统 · 月检操作手册 V3.0</title>
+<style>
+  :root {
+    --primary: #1a56a8;
+    --primary-light: #e8f0fb;
+    --accent: #ff8f1f;
+    --danger: #d93026;
+    --success: #1e8e3e;
+    --text: #2c3e50;
+    --text-light: #6b7a8c;
+    --border: #dde5ee;
+    --bg: #f4f7fa;
+    --card-bg: #ffffff;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.75;
+    font-size: 15px;
+  }
+  /* ===== 顶部横幅 ===== */
+  .hero {
+    background: linear-gradient(135deg, #123c78 0%, #1a56a8 55%, #2f74d0 100%);
+    color: #fff;
+    padding: 42px 24px 34px;
+    text-align: center;
+  }
+  .hero h1 { font-size: 30px; letter-spacing: 2px; margin-bottom: 14px; }
+  .hero .badges { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+  .hero .badge {
+    background: rgba(255,255,255,.16);
+    border: 1px solid rgba(255,255,255,.35);
+    border-radius: 20px;
+    padding: 3px 16px;
+    font-size: 13px;
+  }
+  .hero .badge.hot { background: var(--accent); border-color: var(--accent); font-weight: bold; }
+  /* ===== 布局 ===== */
+  .layout {
+    max-width: 1180px;
+    margin: 24px auto 60px;
+    padding: 0 20px;
+    display: flex;
+    gap: 24px;
+    align-items: flex-start;
+  }
+  /* ===== 侧边目录 ===== */
+  .toc {
+    width: 220px;
+    flex-shrink: 0;
+    position: sticky;
+    top: 20px;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 8px;
+    max-height: calc(100vh - 40px);
+    overflow-y: auto;
+  }
+  .toc h3 {
+    font-size: 14px; color: var(--text-light);
+    padding: 0 12px 8px; border-bottom: 1px solid var(--border); margin-bottom: 6px;
+  }
+  .toc a {
+    display: block; padding: 6px 12px; font-size: 13.5px;
+    color: var(--text); text-decoration: none; border-radius: 6px;
+  }
+  .toc a:hover { background: var(--primary-light); color: var(--primary); }
+  /* ===== 主体 ===== */
+  .main { flex: 1; min-width: 0; }
+  section {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 26px 30px;
+    margin-bottom: 22px;
+  }
+  h2 {
+    font-size: 21px; color: var(--primary);
+    padding-left: 12px; border-left: 5px solid var(--primary);
+    margin-bottom: 18px;
+  }
+  h3 { font-size: 17px; margin: 22px 0 10px; color: var(--text); }
+  h3 .sub-tag {
+    display: inline-block; font-size: 12px; font-weight: normal;
+    background: var(--primary-light); color: var(--primary);
+    border-radius: 4px; padding: 1px 8px; margin-left: 8px; vertical-align: 2px;
+  }
+  p { margin: 8px 0; }
+  ul, ol { padding-left: 24px; margin: 8px 0; }
+  li { margin: 4px 0; }
+  strong { color: #143c73; }
+  /* ===== 流程图 ===== */
+  .flow { display: flex; flex-direction: column; align-items: center; margin: 18px 0 6px; }
+  .flow-step {
+    width: 100%; max-width: 720px;
+    background: var(--primary-light);
+    border: 1px solid #bcd2ee;
+    border-left: 6px solid var(--primary);
+    border-radius: 8px;
+    padding: 12px 18px;
+    font-size: 14.5px;
+  }
+  .flow-step .no {
+    display: inline-block; width: 24px; height: 24px; line-height: 24px;
+    text-align: center; background: var(--primary); color: #fff;
+    border-radius: 50%; font-weight: bold; margin-right: 10px; font-size: 13px;
+  }
+  .flow-step.last { border-left-color: var(--success); background: #eaf7ee; border-color: #bfe5c9; }
+  .flow-step.last .no { background: var(--success); }
+  .flow-arrow { color: var(--primary); font-size: 20px; line-height: 1.4; font-weight: bold; }
+  .flow-branch {
+    width: 100%; max-width: 720px; display: flex; gap: 12px; flex-wrap: wrap;
+  }
+  .flow-branch .flow-step { flex: 1; min-width: 260px; }
+  /* ===== 提示框 ===== */
+  .callout {
+    border-radius: 8px; padding: 14px 18px; margin: 14px 0;
+    font-size: 14.5px; border: 1px solid;
+  }
+  .callout .callout-title { font-weight: bold; margin-bottom: 4px; display: block; }
+  .callout.warn { background: #fff7e8; border-color: #ffd591; }
+  .callout.warn .callout-title { color: #ad6800; }
+  .callout.danger { background: #fff1f0; border-color: #ffa39e; }
+  .callout.danger .callout-title { color: var(--danger); }
+  .callout.info { background: var(--primary-light); border-color: #bcd2ee; }
+  .callout.info .callout-title { color: var(--primary); }
+  .callout.tip { background: #eaf7ee; border-color: #b7eb8f; }
+  .callout.tip .callout-title { color: var(--success); }
+  /* ===== 表格 ===== */
+  table {
+    width: 100%; border-collapse: collapse; margin: 12px 0;
+    font-size: 14px;
+  }
+  th, td { border: 1px solid var(--border); padding: 8px 12px; text-align: left; vertical-align: top; }
+  th { background: var(--primary); color: #fff; font-weight: 600; white-space: nowrap; }
+  tr:nth-child(even) td { background: #f8fafc; }
+  td.c, th.c { text-align: center; }
+  .table-scroll { overflow-x: auto; }
+  /* 状态徽章 */
+  .st { display: inline-block; border-radius: 4px; padding: 0 10px; font-size: 13px; font-weight: bold; white-space: nowrap; }
+  .st-4 { background: #e6f0ff; color: #1a56a8; }
+  .st-0 { background: #fff3e0; color: #d46b08; }
+  .st-1 { background: #fffbe6; color: #ad8b00; }
+  .st-2 { background: #eaf7ee; color: #1e8e3e; }
+  .st-3 { background: #f9f0ff; color: #722ed1; }
+  .yes { color: var(--success); font-weight: bold; }
+  .no  { color: var(--danger); font-weight: bold; }
+  .dim { color: var(--text-light); }
+  /* ===== FAQ ===== */
+  details.faq {
+    border: 1px solid var(--border); border-radius: 8px;
+    margin: 10px 0; background: #fbfcfe; overflow: hidden;
+  }
+  details.faq summary {
+    cursor: pointer; padding: 12px 16px; font-weight: bold;
+    color: var(--primary); list-style: none; position: relative; padding-right: 40px;
+  }
+  details.faq summary::-webkit-details-marker { display: none; }
+  details.faq summary::after {
+    content: "+"; position: absolute; right: 16px; top: 50%; transform: translateY(-50%);
+    font-size: 20px; color: var(--accent); font-weight: bold;
+  }
+  details.faq[open] summary::after { content: "−"; }
+  details.faq[open] summary { background: var(--primary-light); }
+  details.faq .faq-body { padding: 10px 18px 14px; border-top: 1px dashed var(--border); }
+  /* ===== 更新日志 ===== */
+  .changelog li { margin: 8px 0; }
+  /* ===== 页脚 ===== */
+  footer {
+    text-align: center; color: var(--text-light); font-size: 13px;
+    padding: 20px; border-top: 1px solid var(--border);
+  }
+  /* ===== 响应式 ===== */
+  @media (max-width: 900px) {
+    .toc { display: none; }
+    section { padding: 20px 16px; }
+    .hero h1 { font-size: 24px; }
+  }
+  /* ===== 打印 ===== */
+  @media print {
+    body { background: #fff; font-size: 12px; }
+    .toc { display: none; }
+    .hero { background: var(--primary); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    section { border: none; padding: 8px 0; margin-bottom: 8px; page-break-inside: avoid; }
+    details.faq { page-break-inside: avoid; }
+    details.faq summary::after { display: none; }
+    th { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <h1>岗检系统 · 月检操作手册</h1>
+  <div class="badges">
+    <span class="badge hot">V3.0（2026-09）</span>
+    <span class="badge">适用对象：检查（管理）部门 · 运行（受检）部门 · 系统管理员</span>
+    <span class="badge">取代旧版 V2.0（2026-08-11）</span>
+  </div>
+</div>
+
+<div class="layout">
+
+  <!-- 目录 -->
+  <nav class="toc">
+    <h3>目 录</h3>
+    <a href="#s1">一、流程总览</a>
+    <a href="#s2">二、记录状态说明</a>
+    <a href="#s3">三、任务阶段说明</a>
+    <a href="#s4">四、角色与终端分工</a>
+    <a href="#s5">五、Web 端操作指南</a>
+    <a href="#s6">六、移动端操作指南</a>
+    <a href="#s7">七、阶段×状态对照表</a>
+    <a href="#s8">八、照片与文字限制</a>
+    <a href="#s9">九、常见问题 FAQ</a>
+    <a href="#s10">十、V3.0 更新点</a>
+  </nav>
+
+  <div class="main">
+
+    <!-- 一、流程总览 -->
+    <section id="s1">
+      <h2>一、流程总览</h2>
+      <p>月检业务是一个"<strong>建任务 → 录问题 → 提交公示 → 整改 → 复查闭环</strong>"的完整流程：</p>
+      <div class="flow">
+        <div class="flow-step"><span class="no">①</span><strong>Web端</strong>：创建月检任务，设置月检时间段、公示时间段，发送通知</div>
+        <div class="flow-arrow">↓</div>
+        <div class="flow-step"><span class="no">②</span><strong>移动端</strong>：检查部门人员选择任务，逐条录入发现的问题（保存后状态为"已确认/待提交"）</div>
+        <div class="flow-arrow">↓</div>
+        <div class="flow-step"><span class="no">③</span><strong>Web端</strong>：检查部门在【月检提交】页面，将录入的问题单条或批量提交（状态变为"待整改"）</div>
+        <div class="flow-arrow">↓</div>
+        <div class="flow-step"><span class="no">④</span><strong>公示期</strong>：问题对外公示；公示期内如需修改，必须走"编辑审核"</div>
+        <div class="flow-arrow">↓</div>
+        <div class="flow-step"><span class="no">⑤</span><strong>公示期结束后</strong>：</div>
+        <div class="flow-branch" style="margin-top:10px;">
+          <div class="flow-step last">· 运行（受检）部门 → 移动端【确认整改】，填写整改建议/效果、上传整改照片（状态变为"已整改"）</div>
+          <div class="flow-step last">· 检查（管理）部门 → 移动端【确认复查】，填写复查结论、上传复查照片（状态变为"已复查"，问题闭环）</div>
+        </div>
+      </div>
+      <div class="callout danger">
+        <span class="callout-title">⚠ 重要提醒（最容易出错的环节）</span>
+        移动端录入保存成功 ≠ 问题进入整改流程。保存后记录处于"<strong>已确认（待提交）</strong>"状态，必须由检查部门在 Web 端【月检提交】页面统一提交后，才会进入"待整改"状态、开始公示和整改流程。
+      </div>
+    </section>
+
+    <!-- 二、记录状态说明 -->
+    <section id="s2">
+      <h2>二、记录状态说明</h2>
+      <table>
+        <tr><th class="c">状态码</th><th>状态徽章</th><th>含义</th></tr>
+        <tr><td class="c">4</td><td><span class="st st-4">已确认（待提交）</span></td><td>移动端刚录入保存的记录，等待检查部门在 Web 端提交</td></tr>
+        <tr><td class="c">0</td><td><span class="st st-0">待整改</span></td><td>已提交，等待运行部门整改（公示期结束后可操作"确认整改"）</td></tr>
+        <tr><td class="c">1</td><td><span class="st st-1">已整改</span></td><td>运行部门已确认整改，等待检查部门复查</td></tr>
+        <tr><td class="c">2</td><td><span class="st st-2">已复查</span></td><td>检查部门已确认复查，问题闭环</td></tr>
+        <tr><td class="c">3</td><td><span class="st st-3">待审核</span></td><td>公示期内提交了编辑/删除申请，等待管理员在【待审核记录】中审批</td></tr>
+      </table>
+    </section>
+
+    <!-- 三、任务阶段说明 -->
+    <section id="s3">
+      <h2>三、任务阶段说明</h2>
+      <p>每个任务根据"月检时间段"和"公示时间段"自动计算当前阶段，<strong>不同阶段允许的操作不同</strong>：</p>
+      <table>
+        <tr><th class="c">阶段</th><th>名称</th><th>时间范围</th><th>允许的关键操作</th></tr>
+        <tr><td class="c">阶段1</td><td>录入期内</td><td>月检时间段之内</td><td>录入问题、提交、直接回退（无需审核）</td></tr>
+        <tr><td class="c">阶段2</td><td>公示前</td><td>录入结束 ~ 公示开始之前</td><td>提交、直接编辑/删除/回退（无需审核）</td></tr>
+        <tr><td class="c">阶段3</td><td>公示期内</td><td>公示时间段之内</td><td>修改/删除必须提交"编辑审核"；回退走编辑审核通道</td></tr>
+        <tr><td class="c">阶段4</td><td>公示期后</td><td>公示结束时间之后</td><td><strong style="color:var(--danger)">禁止编辑/删除/回退</strong>；开放"确认整改""确认复查"</td></tr>
+      </table>
+      <div class="callout tip">
+        <span class="callout-title">💡 记忆口诀</span>
+        公示前随便改、公示期改了要审、公示后只能整改复查。
+      </div>
+    </section>
+
+    <!-- 四、角色与终端分工 -->
+    <section id="s4">
+      <h2>四、角色与终端分工</h2>
+      <table>
+        <tr><th>角色</th><th>使用终端</th><th>主要职责</th></tr>
+        <tr><td>检查（管理）部门人员</td><td>移动端 + Web端</td><td>移动端录入问题、确认复查；Web端建任务、发通知、提交记录、审核、导出</td></tr>
+        <tr><td>运行（受检）部门人员</td><td>移动端</td><td>查看本部门问题、确认整改；查看延迟整改提醒</td></tr>
+        <tr><td>系统管理员</td><td>Web端</td><td>全部功能：任务管理、岗检标准维护、审核、导出、延迟整改督办</td></tr>
+      </table>
+      <h3>终端分工原则</h3>
+      <ul>
+        <li><strong>移动端</strong>只负责三件事：<strong>录入 → 整改 → 复查</strong>（移动端不提供编辑、删除、撤回、审核入口）。</li>
+        <li><strong>Web端</strong>负责管理动作：<strong>建任务、发通知、提交、编辑、删除、回退、审核、导出、延迟整改督办</strong>。</li>
+        <li>Web 端【月检提交】页面<strong>仅检查（管理）部门可见</strong>，运行部门登录后看不到该页面数据。</li>
+      </ul>
+    </section>
+
+    <!-- 五、Web端操作指南 -->
+    <section id="s5">
+      <h2>五、Web 端操作指南</h2>
+      <p>Web 端左侧菜单【月检管理】下共有 6 个页面：</p>
+      <table>
+        <tr><th>菜单</th><th>路径</th><th>开放对象</th></tr>
+        <tr><td>月检任务</td><td>月检管理 → 月检任务</td><td>月检管理员</td></tr>
+        <tr><td>月检记录录入</td><td>月检管理 → 月检记录录入</td><td>检查部门 / 管理员</td></tr>
+        <tr><td>月检提交</td><td>月检管理 → 月检提交</td><td>检查部门（运行部门不可见数据）</td></tr>
+        <tr><td>岗检标准</td><td>月检管理 → 岗检标准</td><td>月检管理员</td></tr>
+        <tr><td>延迟整改</td><td>月检管理 → 延迟整改</td><td>全部相关人员</td></tr>
+        <tr><td>待审核记录</td><td>月检管理 → 待审核记录</td><td>有审核权限的管理员</td></tr>
+      </table>
+
+      <h3>5.1 月检任务<span class="sub-tag">建任务、发通知</span></h3>
+      <p><strong>新增任务</strong>，只需填写 4 项：</p>
+      <ol>
+        <li><strong>任务名称</strong>（必填）</li>
+        <li><strong>月检时间段</strong>（必填）—— 决定"录入期"，只有在此时间段内才能在移动端录入问题</li>
+        <li><strong>公示时间段</strong>（必填）—— 决定"公示期"，公示期内修改要走审核，公示期结束后才能整改/复查</li>
+        <li><strong>任务描述</strong>（选填）</li>
+      </ol>
+      <p>任务编号由系统自动生成（YJ + 日期），无需手填。</p>
+      <p><strong>操作按钮说明：</strong></p>
+      <ul>
+        <li><strong>通知</strong>：向相关部门发送任务开始通知；发送后按钮置灰，防止重复发送。</li>
+        <li><strong>批量通知</strong>：勾选多个任务一次性发送通知。</li>
+        <li><strong>查看</strong>：任务详情中会显示"<strong>当前阶段</strong>"（未开始 / 录入期内 / 公示前 / 公示期内），可据此判断当前能做什么操作。</li>
+        <li><strong>编辑 / 删除</strong>：管理员可修改任务时间段或删除任务。</li>
+      </ul>
+      <div class="callout info">
+        <span class="callout-title">📌 建议时间安排</span>
+        月检时间段结束后紧接着开始公示期，公示期一般不少于整改所需时间；公示期结束时间一到，整改/复查入口自动开放。
+      </div>
+
+      <h3>5.2 月检提交<span class="sub-tag">把录入的问题正式提交</span></h3>
+      <p>这是流程第③步的核心页面，<strong>仅检查（管理）部门使用</strong>：</p>
+      <ol>
+        <li>页面列出所有状态为"<span class="st st-4">已确认（待提交）</span>"的记录（即移动端已保存但尚未提交的记录）。</li>
+        <li><strong>单条提交</strong>：点击某条记录后的"提交"按钮。</li>
+        <li><strong>批量提交</strong>：勾选多条记录，点击"批量提交"。</li>
+        <li>提交成功后，记录状态变为"<span class="st st-0">待整改</span>"，进入公示与整改流程。</li>
+      </ol>
+      <p><strong>此页面也可以修改和删除记录，规则按阶段区分：</strong></p>
+      <ul>
+        <li>公示期前（阶段1/2）：可直接编辑、直接删除。</li>
+        <li>公示期内（阶段3）：点击编辑/删除会弹出"<strong>提交编辑审核</strong>"窗口，需要填写修改说明（至少 5 个字），提交后记录变为"待审核"，等管理员审批。</li>
+        <li>公示期后（阶段4）：<strong>不可编辑、不可删除</strong>，系统会提示"已超过公示期，记录不可编辑或删除"。</li>
+      </ul>
+
+      <h3>5.3 月检记录录入<span class="sub-tag">查看全部记录、确认整改/复查、回退</span></h3>
+      <p>检查部门和管理员使用的记录总览页：</p>
+      <ul>
+        <li><strong>查询筛选</strong>：可按状态（待整改 / 已整改 / 已复查 / 待审核）、任务、部门等条件筛选。</li>
+        <li><strong>新增</strong>：也可在 Web 端直接新增记录（照片最多 5 张）。</li>
+        <li><strong>导出</strong>：月检管理员可将记录导出为 Excel。</li>
+      </ul>
+      <p><strong>行内操作按钮：</strong></p>
+      <table>
+        <tr><th>按钮</th><th>可用条件</th><th>说明</th></tr>
+        <tr><td>查看</td><td>任何时候</td><td>查看记录详情</td></tr>
+        <tr><td>确认整改</td><td><strong>仅公示期结束后（阶段4）</strong></td><td>公示期结束前按钮置灰，鼠标悬停提示"公示期结束后才可确认整改"</td></tr>
+        <tr><td>确认复查</td><td>记录状态为"已整改"</td><td>检查部门复查确认</td></tr>
+        <tr><td>回退 / 编辑</td><td>阶段1、2、3 可见</td><td>见下方回退规则</td></tr>
+      </table>
+      <div class="callout warn">
+        <span class="callout-title">★ 回退规则（重点）</span>
+        <ul style="margin:4px 0 0;">
+          <li><strong>阶段1 / 阶段2（公示期前）</strong>：点击"回退"，确认后记录直接回到"已确认（待提交）"状态，可重新编辑或再次提交，<strong>无需审核</strong>。</li>
+          <li><strong>阶段3（公示期内）</strong>：按钮显示为"编辑"，点击后打开编辑表单，修改字段后点击"提交审核"，系统会记录<strong>原值 → 新值的对比</strong>，填写修改说明（至少 5 个字）后提交，记录进入"待审核"状态。</li>
+          <li><strong>阶段4（公示期后）</strong>：不可回退，系统提示"当前不在可回退时段"。</li>
+        </ul>
+      </div>
+
+      <h3>5.4 待审核记录<span class="sub-tag">审核中心</span></h3>
+      <p>有审核权限的管理员在此页面处理公示期内提交的申请，分两个页签：</p>
+      <p><strong>① 编辑审核页签（常用）</strong></p>
+      <ul>
+        <li>列出所有公示期内提交的编辑申请（状态为"待审核"）。</li>
+        <li>点击可查看<strong>修改对比明细</strong>：每个被修改的字段以"原值 → 新值"的形式展示（如：责任人、责任单位、发现位置、问题描述、性质界定、受检单位、整改期限、检查人等）。</li>
+        <li><strong>通过</strong>：修改的字段值<strong>直接生效</strong>，记录恢复到提交申请前的状态，继续原流程。</li>
+        <li><strong>拒绝</strong>：修改不生效，记录保持原样，回到申请前的状态。</li>
+      </ul>
+      <p><strong>② 回退审核页签</strong></p>
+      <ul>
+        <li>历史通道，用于处理特殊回退申请；通过审核后记录回到"待整改"状态。当前日常操作基本不使用此页签。</li>
+      </ul>
+
+      <h3>5.5 延迟整改<span class="sub-tag">超期问题督办</span></h3>
+      <ul>
+        <li>页面自动列出：<strong>整改期限已过、但状态仍是"待整改"</strong> 的记录，并显示超期天数。</li>
+        <li>管理员可以在此直接点击"确认整改"（针对状态为待整改的记录）或"确认复查"（针对已整改的记录），也可以点击"查看"了解详情后线下督办。</li>
+        <li>建议每周查看一次此页面，对超期未整改的部门进行催办。</li>
+      </ul>
+
+      <h3>5.6 岗检标准<span class="sub-tag">标准库维护</span></h3>
+      <ul>
+        <li>管理员维护岗检标准库（四级结构：专业类别 → 基本模块 → 责任要素 → 检查内容）。</li>
+        <li>标准按"<strong>标准组</strong>"划分（如：第一组-生产、第二组-辅助）。录入问题时，系统会根据所选<strong>受检单位</strong>自动匹配对应标准组的标准条目。</li>
+        <li>日常用户无需操作此页面，仅管理员维护。</li>
+      </ul>
+    </section>
+
+    <!-- 六、移动端操作指南 -->
+    <section id="s6">
+      <h2>六、移动端操作指南</h2>
+
+      <h3>6.1 月检主页</h3>
+      <p>登录后进入月检主页，包含：</p>
+      <ul>
+        <li><strong>通知铃铛</strong>：查看"系统通知"和"任务通知"两个页签，了解任务发布、审核结果等消息；支持一键全部已读。</li>
+        <li><strong>问题录入按钮</strong>：<strong>仅检查（管理）部门人员和管理员可见</strong>。点击后弹出"选择任务"窗口。</li>
+        <li><strong>延迟整改按钮</strong>：查看已超期未整改的问题。</li>
+        <li><strong>统计卡片</strong>（点击可跳转对应列表）：
+          <ul>
+            <li>待整改问题 → 状态为"待整改"且整改期限未过的记录</li>
+            <li>已整改问题 → 状态为"已整改"的记录</li>
+            <li>已复查记录 → 状态为"已复查"的记录</li>
+          </ul>
+        </li>
+      </ul>
+
+      <h3>6.2 录入问题<span class="sub-tag">检查部门</span></h3>
+      <p><strong>步骤：</strong></p>
+      <ol>
+        <li>点击【问题录入】→ 在弹窗中选择任务（可按名称搜索）。若任务不在录入期内，系统会拦截并提示。</li>
+        <li>进入录入表单，<strong>按从上到下的顺序填写</strong>：</li>
+      </ol>
+      <div class="table-scroll">
+      <table>
+        <tr><th class="c">序号</th><th>字段</th><th>填写说明</th></tr>
+        <tr><td class="c">1</td><td>问题照片</td><td>最多 <strong>3 张</strong>，单张 ≤ 5MB，支持 JPG/PNG</td></tr>
+        <tr><td class="c">2</td><td>受检单位</td><td>选择被检查的运行部门。<strong>选定后系统自动按该部门所属标准组加载下方的检查标准</strong></td></tr>
+        <tr><td class="c">3</td><td>发现位置</td><td>问题所在具体位置</td></tr>
+        <tr><td class="c">4</td><td>问题描述</td><td>必填，最多 500 字</td></tr>
+        <tr><td class="c">5</td><td>专业类别</td><td>四级级联选择第 1 级</td></tr>
+        <tr><td class="c">6</td><td>基本模块</td><td>四级级联选择第 2 级</td></tr>
+        <tr><td class="c">7</td><td>责任要素</td><td>四级级联选择第 3 级</td></tr>
+        <tr><td class="c">8</td><td>检查内容</td><td>四级级联选择第 4 级；选定后<strong>自动显示对应扣分值</strong>（仅供查看，不影响录入）</td></tr>
+        <tr><td class="c">9</td><td>性质界定</td><td>选择问题性质</td></tr>
+        <tr><td class="c">10</td><td>检查单位</td><td><strong>自动锁定为当前用户所在管理部门，只读，不可修改</strong></td></tr>
+        <tr><td class="c">11</td><td>检查人</td><td>可多选</td></tr>
+        <tr><td class="c">12</td><td>责任人</td><td>可多选</td></tr>
+        <tr><td class="c">13</td><td>责任单位</td><td>可多选</td></tr>
+        <tr><td class="c">14</td><td>整改期限</td><td>选择日期，运行部门须在此日期前完成整改</td></tr>
+      </table>
+      </div>
+      <ol start="3">
+        <li>点击保存。保存成功后记录状态为"<span class="st st-4">已确认（待提交）</span>"。</li>
+      </ol>
+      <div class="callout danger">
+        <span class="callout-title">⚠ 再次提醒</span>
+        保存后请通知检查部门内勤在 Web 端【月检提交】页面统一提交，否则问题不会进入整改流程。
+      </div>
+      <div class="callout info">
+        <span class="callout-title">📌 注意</span>
+        只有任务的"月检时间段"内才能录入；录入期结束后系统会拒绝新增。移动端<strong>不提供</strong>对已保存记录的编辑和删除功能，如需修改请到 Web 端处理。
+      </div>
+
+      <h3>6.3 确认整改<span class="sub-tag">运行部门</span></h3>
+      <p><strong>开放条件（两者必须同时满足，否则入口置灰并提示原因）：</strong></p>
+      <ul>
+        <li>任务处于<strong>公示期结束后</strong>（阶段4）——公示期内提示"公示期尚未结束，整改入口暂不可用"；</li>
+        <li>当前用户为<strong>运行（受检）部门</strong>人员或管理员——检查部门用户提示"当前部门类型无整改权限"。</li>
+      </ul>
+      <p><strong>操作步骤：</strong></p>
+      <ol>
+        <li>在月检主页点击"待整改问题"统计卡，或从记录列表找到状态为"待整改"的本部门问题。</li>
+        <li>打开记录详情，点击【确认整改】。</li>
+        <li>填写：
+          <ul>
+            <li><strong>整改建议</strong>（必填）</li>
+            <li><strong>整改效果</strong>（必填，最多 500 字）</li>
+            <li><strong>整改照片</strong>（最多 3 张，单张 ≤ 5MB）</li>
+          </ul>
+        </li>
+        <li>提交后状态变为"<span class="st st-1">已整改</span>"，等待检查部门复查。</li>
+      </ol>
+
+      <h3>6.4 确认复查<span class="sub-tag">检查部门</span></h3>
+      <p><strong>开放条件（两者必须同时满足）：</strong></p>
+      <ul>
+        <li>任务处于<strong>公示期结束后</strong>（阶段4）；</li>
+        <li>当前用户为<strong>检查（管理）部门</strong>人员或管理员。</li>
+      </ul>
+      <p><strong>操作步骤：</strong></p>
+      <ol>
+        <li>找到状态为"已整改"的记录，打开详情，点击【确认复查】。</li>
+        <li>填写：
+          <ul>
+            <li><strong>复查建议</strong>（必填）</li>
+            <li><strong>复查效果</strong>（必填）</li>
+            <li><strong>复查照片</strong>（最多 3 张，单张 ≤ 5MB）</li>
+            <li>复查时如发现责任人/责任单位需要调整，可在此修改。</li>
+          </ul>
+        </li>
+        <li>提交后状态变为"<span class="st st-2">已复查</span>"，该问题正式闭环。</li>
+      </ol>
+
+      <h3>6.5 延迟整改提醒</h3>
+      <ul>
+        <li>移动端月检主页的【延迟整改】按钮，列出<strong>整改期限已过但仍未整改</strong>的本部门问题。</li>
+        <li>运行部门应优先处理此类问题；Web 端【延迟整改】页面同步展示，供管理员督办。</li>
+      </ul>
+    </section>
+
+    <!-- 七、对照表 -->
+    <section id="s7">
+      <h2>七、各阶段 × 各状态可操作对照表</h2>
+      <div class="table-scroll">
+      <table>
+        <tr>
+          <th>当前阶段</th><th class="c">录入新问题</th><th class="c">提交（4→0）</th><th class="c">直接编辑/删除</th>
+          <th class="c">编辑需审核</th><th class="c">回退</th><th class="c">确认整改</th><th class="c">确认复查</th>
+        </tr>
+        <tr>
+          <td>阶段1 录入期内</td><td class="c"><span class="yes">✅</span>（移动端/Web）</td><td class="c"><span class="yes">✅</span></td>
+          <td class="c"><span class="yes">✅</span></td><td class="c dim">—</td><td class="c"><span class="yes">✅</span> 直接回退到待提交</td>
+          <td class="c"><span class="no">❌</span></td><td class="c"><span class="no">❌</span></td>
+        </tr>
+        <tr>
+          <td>阶段2 公示前</td><td class="c"><span class="no">❌</span></td><td class="c"><span class="yes">✅</span></td>
+          <td class="c"><span class="yes">✅</span></td><td class="c dim">—</td><td class="c"><span class="yes">✅</span> 直接回退到待提交</td>
+          <td class="c"><span class="no">❌</span></td><td class="c"><span class="no">❌</span></td>
+        </tr>
+        <tr>
+          <td>阶段3 公示期内</td><td class="c"><span class="no">❌</span></td><td class="c"><span class="yes">✅</span></td>
+          <td class="c"><span class="no">❌</span></td><td class="c"><span class="yes">✅</span> 编辑/删除需提交审核</td>
+          <td class="c"><span class="yes">✅</span> 走编辑审核通道</td><td class="c"><span class="no">❌</span></td><td class="c"><span class="no">❌</span></td>
+        </tr>
+        <tr>
+          <td>阶段4 公示期后</td><td class="c"><span class="no">❌</span></td><td class="c"><span class="no">❌</span></td>
+          <td class="c"><span class="no">❌</span></td><td class="c"><span class="no">❌</span></td><td class="c"><span class="no">❌</span></td>
+          <td class="c"><span class="yes">✅</span>（运行部门）</td><td class="c"><span class="yes">✅</span>（检查部门）</td>
+        </tr>
+      </table>
+      </div>
+      <div class="callout info">
+        <span class="callout-title">📌 说明</span>
+        只有状态为"已确认（待提交，4）"的记录可以被删除；已进入整改流程的记录不能删除，只能通过审核通道修改。
+      </div>
+    </section>
+
+    <!-- 八、限制一览 -->
+    <section id="s8">
+      <h2>八、照片与文字限制一览</h2>
+      <table>
+        <tr><th>项目</th><th>限制</th></tr>
+        <tr><td>移动端录入问题照片</td><td>最多 3 张</td></tr>
+        <tr><td>Web 端新增记录照片</td><td>最多 5 张</td></tr>
+        <tr><td>整改照片</td><td>最多 3 张</td></tr>
+        <tr><td>复查照片</td><td>最多 3 张</td></tr>
+        <tr><td>单张照片大小</td><td>≤ 5MB，格式 JPG / PNG</td></tr>
+        <tr><td>问题描述</td><td>≤ 500 字</td></tr>
+        <tr><td>整改效果</td><td>≤ 500 字</td></tr>
+        <tr><td>编辑审核修改说明</td><td>必填，至少 5 个字，≤ 500 字</td></tr>
+      </table>
+    </section>
+
+    <!-- 九、FAQ -->
+    <section id="s9">
+      <h2>九、常见问题（FAQ）</h2>
+
+      <details class="faq" open>
+        <summary>Q1：移动端保存了问题，为什么运行部门看不到"待整改"？</summary>
+        <div class="faq-body">保存后记录是"已确认（待提交）"状态，需要检查部门在 Web 端【月检管理 → 月检提交】中提交后才变成"待整改"。这是最常见的问题。</div>
+      </details>
+
+      <details class="faq">
+        <summary>Q2：为什么"确认整改"按钮是灰色的？</summary>
+        <div class="faq-body">两种可能：① 公示期还没结束（必须等公示时间段结束后才开放）；② 当前用户是检查部门人员（整改只能由运行部门或管理员操作）。</div>
+      </details>
+
+      <details class="faq">
+        <summary>Q3：为什么"确认复查"入口不可用？</summary>
+        <div class="faq-body">复查只能由<strong>检查（管理）部门</strong>人员或管理员操作，且同样必须等到公示期结束后。</div>
+      </details>
+
+      <details class="faq">
+        <summary>Q4：公示期内发现录错了怎么办？</summary>
+        <div class="faq-body">在 Web 端【月检提交】或【月检记录录入】页面对该记录点"编辑"，修改后填写修改说明（≥5 字）提交审核；管理员在【待审核记录】中看到"原值 → 新值"对比后审批。通过后修改直接生效，记录回到原状态；拒绝则维持原样。</div>
+      </details>
+
+      <details class="faq">
+        <summary>Q5：录入期内录错了怎么办？</summary>
+        <div class="faq-body">公示期开始之前（阶段1/2）可直接在 Web 端编辑、删除或"回退"，回退后记录回到"待提交"状态，改完再重新提交即可，无需审核。</div>
+      </details>
+
+      <details class="faq">
+        <summary>Q6：为什么移动端选完受检单位后，检查内容下拉的条目变了？</summary>
+        <div class="faq-body">这是正常现象。系统按受检单位所属的"标准组"（第一组-生产 / 第二组-辅助）自动过滤岗检标准，只显示该组适用的标准条目。</div>
+      </details>
+
+      <details class="faq">
+        <summary>Q7：整改期限过了还没整改会怎样？</summary>
+        <div class="faq-body">该记录会出现在移动端【延迟整改】和 Web 端【月检管理 → 延迟整改】页面，显示超期天数，管理员会督办。请尽快在移动端完成"确认整改"。</div>
+      </details>
+
+      <details class="faq">
+        <summary>Q8：任务通知发了，但有人说没收到？</summary>
+        <div class="faq-body">请对方查看移动端月检主页右上角的铃铛通知（含"系统通知"和"任务通知"两个页签）。通知按钮发送后会置灰，管理员可通过"批量通知"补发。</div>
+      </details>
+
+      <details class="faq">
+        <summary>Q9：运行部门登录 Web 端为什么看不到【月检提交】的数据？</summary>
+        <div class="faq-body">该页面仅对检查（管理）部门开放，属正常权限控制。运行部门的整改操作请在移动端完成。</div>
+      </details>
+
+      <details class="faq">
+        <summary>Q10：检查单位一栏为什么改不了？</summary>
+        <div class="faq-body">检查单位自动锁定为录入人所在的管理部门，为保证数据真实性不允许修改。</div>
+      </details>
+    </section>
+
+    <!-- 十、更新点 -->
+    <section id="s10">
+      <h2>十、相对旧版手册（V2.0）的主要更新点</h2>
+      <ol class="changelog">
+        <li><strong>岗检标准按"标准组"过滤</strong>：录入时选定受检单位后，四级级联标准自动按该单位所属标准组（第一组/第二组）加载。</li>
+        <li><strong>移动端不再提供编辑入口</strong>：移动端只保留"录入、整改、复查、查看"，编辑/删除/回退/审核全部集中在 Web 端。</li>
+        <li><strong>整改/复查双重管控</strong>：必须"公示期结束后 + 部门类型匹配"（整改=运行部门、复查=检查部门）才能操作，Web 端"确认整改"同样限制在公示期结束后。</li>
+        <li><strong>公示期编辑审核升级</strong>：审核中心展示字段级"原值 → 新值"对比；审核通过后修改直接生效并恢复到申请前状态；拒绝则回滚。</li>
+        <li><strong>月检提交页权限收紧</strong>：仅检查（管理）部门可见，运行部门登录不再显示数据。</li>
+        <li><strong>任务表单简化</strong>：建任务只需任务名称、月检时间段、公示时间段、任务描述 4 项，任务编号自动生成。</li>
+      </ol>
+    </section>
+
+  </div>
+</div>
+
+<footer>
+  岗检系统 · 月检操作手册 V3.0（2026-09）｜ 取代《月检操作流程系统说明》V2.0（2026-08-11）｜ 如需纸质版可直接使用浏览器"打印"功能
+</footer>
+
+</body>
+</html>

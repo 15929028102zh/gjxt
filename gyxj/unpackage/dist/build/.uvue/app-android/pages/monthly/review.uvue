@@ -1,0 +1,531 @@
+import { getApiUrl, apiConfig } from '@/config/api.uts';
+import { resolveCurrentDept, getCachedUserInfo, CurrentDept } from '@/utils/user.uts';
+// V3:当前用户类型(对齐 Web:复查按钮只看 deptType,与 admin 无关)
+type CurrentUser = {
+    deptId: string;
+    deptName: string;
+    deptType: number | null; // 0=运行部门 1=管理部门 null=无部门(如管理员)
+};
+type MonthlyReviewDetail = {
+    id: string;
+    problemDescription: string;
+    location: string;
+    rectificationEffect: string;
+    rectificationSuggestion: string;
+    rectificationImages: string;
+    rectificationDeadline: string;
+    departmentName: string;
+    professionalTypeName: string;
+    responsibilityName: string;
+    issueName: string;
+    moduleName: string;
+    inspector: string;
+    responsiblePerson: string;
+    responsibleUnit: string;
+    qualityName: string;
+    checkUnitName: string;
+    natureModified: number;
+    photos: string;
+    taskId: string;
+};
+const __sfc__ = defineComponent({
+    data() {
+        return {
+            id: '',
+            detail: null as MonthlyReviewDetail | null,
+            rectImages: [] as string[],
+            reviewSuggestion: '',
+            reviewEffect: '',
+            reviewImages: [] as string[],
+            loading: true,
+            saving: false,
+            problemImages: [] as string[],
+            containerHeight: 0,
+            // V3:当前用户(用于部门类型判断)
+            currentUser: { deptId: '', deptName: '', deptType: null } as CurrentUser,
+            // 复查人：当前登录用户姓名（只读）
+            currentUserName: '',
+            // V3:任务期阶段(仅保留兼容,复查可见性不再依赖 phase)
+            taskPhase: 0
+        };
+    },
+    onLoad(options: UTSJSONObject) {
+        this.id = options.getString('id') ?? '';
+        this.loadDetail().then(() => {
+            // V3:详情加载完后,拉当前用户 + 任务 phase(用于按钮可见性判断)
+            this.loadCurrentUser();
+            this.loadTaskPhase();
+        });
+    },
+    onReady() {
+        uni.getSystemInfo({ success: (res) => { this.containerHeight = res.windowHeight; } });
+    },
+    methods: {
+        convertToHttpUrl(path: string): string {
+            if (path == null || path == '')
+                return '';
+            if (path.startsWith('http://') || path.startsWith('https://'))
+                return path;
+            return `${apiConfig.baseUrl}/api${path}`;
+        },
+        getDeductionScore(qualityName: string): string {
+            if (qualityName === '观察')
+                return '1';
+            if (qualityName === '一般')
+                return '3';
+            if (qualityName === '重要')
+                return '5';
+            return '-';
+        },
+        displayValue(v: string): string {
+            return v !== '' && v != null ? v : '暂无';
+        },
+        loadDetail(): Promise<void> {
+            return new Promise((resolve, _reject) => {
+                const token = uni.getStorageSync('token');
+                uni.request({
+                    url: getApiUrl(`/monthly-inspection-record/${this.id}`),
+                    method: 'GET',
+                    header: { 'Authorization': `Bearer ${token}` },
+                    success: (res) => {
+                        const data = res.data as UTSJSONObject;
+                        if (res.statusCode === 200 && (data.getNumber('code') ?? 0) === 200) {
+                            const d = data.getJSON('data') as UTSJSONObject | null;
+                            if (d != null) {
+                                this.detail = {
+                                    id: d!!.getString('id') ?? '',
+                                    problemDescription: d!!.getString('problemDescription') ?? '',
+                                    location: d!!.getString('location') ?? '',
+                                    rectificationEffect: (d!!.getString('rectificationEffect') ?? ''),
+                                    rectificationSuggestion: (d!!.getString('rectificationSuggestion') ?? ''),
+                                    rectificationImages: d!!.getString('rectificationImages') ?? '',
+                                    rectificationDeadline: d!!.getString('rectificationDeadline') ?? '',
+                                    departmentName: d!!.getString('departmentName') ?? '',
+                                    professionalTypeName: d!!.getString('professionalTypeName') ?? '',
+                                    responsibilityName: d!!.getString('responsibilityName') ?? '',
+                                    issueName: d!!.getString('issueName') ?? '',
+                                    moduleName: d!!.getString('moduleName') ?? '',
+                                    inspector: d!!.getString('inspector') ?? '',
+                                    responsiblePerson: d!!.getString('responsiblePerson') ?? '',
+                                    responsibleUnit: d!!.getString('responsibleUnit') ?? '',
+                                    qualityName: d!!.getString('qualityName') ?? '',
+                                    checkUnitName: d!!.getString('checkUnitName') ?? '',
+                                    natureModified: d!!.getNumber('natureModified') ?? 0,
+                                    photos: d!!.getString('photos') ?? '',
+                                    taskId: d!!.getString('taskId') ?? ''
+                                } as MonthlyReviewDetail;
+                                if (this.detail!.photos != null && this.detail!.photos != '') {
+                                    const p = this.detail!.photos;
+                                    if (p.trim().startsWith('[') && p.trim().endsWith(']')) {
+                                        try {
+                                            this.problemImages = (JSON.parse(p) as string[]);
+                                        }
+                                        catch (_: any) { }
+                                    }
+                                    else {
+                                        this.problemImages = p.split(',').map((u): string => u.trim()).filter((u): boolean => u != '');
+                                    }
+                                }
+                                const imgs = this.detail!.rectificationImages;
+                                if (imgs != null && imgs != '') {
+                                    if (imgs.trim().startsWith('[') && imgs.trim().endsWith(']')) {
+                                        try {
+                                            this.rectImages = (JSON.parse(imgs) as string[]);
+                                        }
+                                        catch (_: any) { }
+                                    }
+                                    else {
+                                        this.rectImages = imgs.split(',').map((u): string => u.trim()).filter((u): boolean => u != '');
+                                    }
+                                }
+                            }
+                        }
+                        else {
+                            uni.showToast({ title: data.getString('message') ?? '加载失败', icon: 'none' });
+                        }
+                        this.loading = false;
+                        resolve(void 0);
+                    },
+                    fail: (_) => {
+                        this.loading = false;
+                        uni.showToast({ title: '网络错误', icon: 'none' });
+                        resolve(void 0);
+                    }
+                });
+            });
+        },
+        // V3:加载当前用户(取 deptType 用于复查按钮可见性)
+        // resolveCurrentDept 先刷新服务端 userInfo 再取部门类型，避免用登录时的旧 deptId 快照判定角色
+        loadCurrentUser() {
+            resolveCurrentDept().then((dept: CurrentDept) => {
+                this.currentUser = { deptId: dept.deptId, deptName: dept.deptName, deptType: dept.deptType } as CurrentUser;
+                // 复查人取当前登录用户真实姓名
+                const info = getCachedUserInfo();
+                this.currentUserName = info.getString('realName') ?? info.getString('username') ?? '';
+            });
+        },
+        // V3:从 taskId 拉任务计算 phase
+        loadTaskPhase() {
+            if (this.detail == null)
+                return;
+            const token = uni.getStorageSync('token');
+            uni.request({
+                url: getApiUrl(`/monthly-inspection-task/${this.detail!.taskId ?? ''}`),
+                method: 'GET',
+                header: { 'Authorization': `Bearer ${token}` },
+                success: (res) => {
+                    const data = res.data as UTSJSONObject;
+                    if (res.statusCode !== 200 || (data.getNumber('code') ?? 0) !== 200)
+                        return;
+                    const t = data.getJSON('data');
+                    if (t == null)
+                        return;
+                    const tObj = t as UTSJSONObject;
+                    const pubStartStr = tObj.getString('publicityStartTime') ?? '';
+                    const pubEndStr = tObj.getString('publicityEndTime') ?? '';
+                    const now = new Date();
+                    const parseDt = (s: string): Date | null => {
+                        if (s == null || s == '')
+                            return null;
+                        return new Date(s.replace(' ', 'T'));
+                    };
+                    const pubStart = parseDt(pubStartStr);
+                    const pubEnd = parseDt(pubEndStr);
+                    if (pubStart == null || pubEnd == null) {
+                        this.taskPhase = 0;
+                        return;
+                    }
+                    if (now < pubStart)
+                        this.taskPhase = 2;
+                    else if (now <= pubEnd)
+                        this.taskPhase = 3;
+                    else
+                        this.taskPhase = 4;
+                }
+            });
+        },
+        // 对齐 Web showReviewButton:复查按钮仅由 deptType 决定(deptType !== 0),不受公示期限制
+        isReviewVisible(): boolean {
+            return this.currentUser.deptType !== 0;
+        },
+        previewRect(i: number) {
+            uni.previewImage({ current: i, urls: this.rectImages.map((u): string => this.convertToHttpUrl(u)) });
+        },
+        previewProblemImage(i: number) {
+            uni.previewImage({ current: i, urls: this.problemImages.map((u): string => this.convertToHttpUrl(u)) });
+        },
+        chooseReview() {
+            if (this.reviewImages.length >= 3) {
+                uni.showToast({ title: '最多3张', icon: 'none' });
+                return;
+            }
+            uni.chooseImage({
+                count: 3 - this.reviewImages.length,
+                sourceType: ['camera', 'album'],
+                success: (res) => {
+                    const token = uni.getStorageSync('token');
+                    res.tempFilePaths.forEach((p) => {
+                        uni.uploadFile({
+                            url: getApiUrl('/upload/image'),
+                            filePath: p,
+                            name: 'file',
+                            header: { 'Authorization': `Bearer ${token}` },
+                            success: (upRes) => {
+                                try {
+                                    const result = JSON.parse(upRes.data) as UTSJSONObject;
+                                    if (upRes.statusCode === 200 && (result.getNumber('code') ?? 0) === 200) {
+                                        const dataObj = result.getJSON('data');
+                                        const url = dataObj?.getString('filePath') ?? '';
+                                        if (url != '')
+                                            this.reviewImages.push(url);
+                                    }
+                                    else {
+                                        uni.showToast({ title: result.getString('message') ?? '上传失败', icon: 'none' });
+                                    }
+                                }
+                                catch (_: any) {
+                                    uni.showToast({ title: '上传失败', icon: 'none' });
+                                }
+                            },
+                            fail: (_) => { uni.showToast({ title: '上传失败', icon: 'none' }); }
+                        });
+                    });
+                }
+            });
+        },
+        previewReview(i: number) {
+            uni.previewImage({ current: i, urls: this.reviewImages.map((u): string => this.convertToHttpUrl(u)) });
+        },
+        removeReview(i: number) { this.reviewImages.splice(i, 1); },
+        submitReview() {
+            if (this.saving)
+                return;
+            if (this.reviewSuggestion.trim() == '') {
+                uni.showToast({ title: '请填写复查建议', icon: 'none' });
+                return;
+            }
+            if (this.reviewEffect.trim() == '') {
+                uni.showToast({ title: '请填写复查效果', icon: 'none' });
+                return;
+            }
+            this.saving = true;
+            const token = uni.getStorageSync('token');
+            // 对齐 Web ReviewDialog:复查提交仅含建议/效果/图片,不含责任人/单位
+            const data = {
+                reviewSuggestion: this.reviewSuggestion,
+                reviewEffect: this.reviewEffect,
+                reviewImages: this.reviewImages.join(','),
+                // 复查人（当前登录用户）
+                reviewerName: this.currentUserName
+            } as UTSJSONObject;
+            uni.request({
+                url: getApiUrl(`/monthly-inspection-record/${this.id}/review`),
+                method: 'PUT',
+                header: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                data: data,
+                success: (res) => {
+                    const resp = res.data as UTSJSONObject;
+                    if (res.statusCode === 200 && (resp.getNumber('code') ?? 0) === 200) {
+                        uni.showToast({ title: '复查确认成功', icon: 'success' });
+                        setTimeout(function () { uni.navigateBack(); }, 1200);
+                    }
+                    else {
+                        uni.showToast({ title: resp.getString('message') ?? '提交失败', icon: 'none' });
+                    }
+                    this.saving = false;
+                },
+                fail: (_) => { this.saving = false; uni.showToast({ title: '网络错误', icon: 'none' }); }
+            });
+        }
+    }
+});
+export default __sfc__;
+function GenPagesMonthlyReviewRender(this: InstanceType<typeof __sfc__>): any | null {
+    const _ctx = this;
+    const _cache = this.$.renderCache;
+    return _cE("scroll-view", _uM({
+        class: "container",
+        "scroll-y": "true",
+        style: _nS(_uM({ height: _ctx.containerHeight + 'px' })),
+        "enable-back-to-top": "true"
+    }), [
+        isTrue(_ctx.loading)
+            ? _cE("view", _uM({
+                key: 0,
+                class: "loading-state"
+            }), [
+                _cE("text", null, "加载中...")
+            ])
+            : _ctx.detail != null
+                ? _cE("view", _uM({
+                    key: 1,
+                    class: "content"
+                }), [
+                    _cE("view", _uM({ class: "section" }), [
+                        _cE("text", _uM({ class: "title" }), "问题信息"),
+                        _cE("view", _uM({ class: "field" }), [
+                            _cE("text", _uM({ class: "label" }), "问题描述"),
+                            _cE("text", _uM({ class: "value" }), _tD(_ctx.detail!.problemDescription), 1 /* TEXT */)
+                        ]),
+                        _cE("view", _uM({ class: "field" }), [
+                            _cE("text", _uM({ class: "label" }), "专业类别"),
+                            _cE("text", _uM({ class: "value" }), _tD(_ctx.detail!.professionalTypeName), 1 /* TEXT */)
+                        ]),
+                        _cE("view", _uM({ class: "field" }), [
+                            _cE("text", _uM({ class: "label" }), "基本模块"),
+                            _cE("text", _uM({ class: "value" }), _tD(_ctx.detail!.moduleName), 1 /* TEXT */)
+                        ]),
+                        _cE("view", _uM({ class: "field" }), [
+                            _cE("text", _uM({ class: "label" }), "责任要素"),
+                            _cE("text", _uM({ class: "value" }), _tD(_ctx.detail!.responsibilityName), 1 /* TEXT */)
+                        ]),
+                        _cE("view", _uM({ class: "field" }), [
+                            _cE("text", _uM({ class: "label" }), "检查内容"),
+                            _cE("text", _uM({ class: "value" }), _tD(_ctx.detail!.issueName), 1 /* TEXT */)
+                        ]),
+                        _cE("view", _uM({ class: "field" }), [
+                            _cE("text", _uM({ class: "label" }), "性质界定"),
+                            _cE("text", _uM({ class: "value" }), _tD(_ctx.detail!.qualityName), 1 /* TEXT */)
+                        ]),
+                        _cE("view", _uM({ class: "field" }), [
+                            _cE("text", _uM({ class: "label" }), "性质界定是否人工修改"),
+                            _cE("text", _uM({ class: "value" }), _tD(_ctx.detail!.natureModified === 1 ? '是(已修改)' : '否(未修改)'), 1 /* TEXT */)
+                        ]),
+                        _cE("view", _uM({ class: "field" }), [
+                            _cE("text", _uM({ class: "label" }), "扣分值"),
+                            _cE("text", _uM({ class: "value" }), _tD(_ctx.getDeductionScore(_ctx.detail!.qualityName)), 1 /* TEXT */)
+                        ]),
+                        _cE("view", _uM({ class: "field" }), [
+                            _cE("text", _uM({ class: "label" }), "发现位置"),
+                            _cE("text", _uM({ class: "value" }), _tD(_ctx.detail!.location), 1 /* TEXT */)
+                        ]),
+                        _cE("view", _uM({ class: "field" }), [
+                            _cE("text", _uM({ class: "label" }), "检查单位"),
+                            _cE("text", _uM({ class: "value" }), _tD(_ctx.displayValue(_ctx.detail!.checkUnitName)), 1 /* TEXT */)
+                        ]),
+                        _cE("view", _uM({ class: "field" }), [
+                            _cE("text", _uM({ class: "label" }), "受检单位"),
+                            _cE("text", _uM({ class: "value" }), _tD(_ctx.displayValue(_ctx.detail!.departmentName)), 1 /* TEXT */)
+                        ]),
+                        _cE("view", _uM({ class: "field" }), [
+                            _cE("text", _uM({ class: "label" }), "检查人"),
+                            _cE("text", _uM({ class: "value" }), _tD(_ctx.detail!.inspector), 1 /* TEXT */)
+                        ]),
+                        _cE("view", _uM({ class: "field" }), [
+                            _cE("text", _uM({ class: "label" }), "责任人"),
+                            _cE("text", _uM({ class: "value" }), _tD(_ctx.displayValue(_ctx.detail!.responsiblePerson)), 1 /* TEXT */)
+                        ]),
+                        _cE("view", _uM({ class: "field" }), [
+                            _cE("text", _uM({ class: "label" }), "责任单位"),
+                            _cE("text", _uM({ class: "value" }), _tD(_ctx.displayValue(_ctx.detail!.responsibleUnit)), 1 /* TEXT */)
+                        ]),
+                        _cE("view", _uM({ class: "field" }), [
+                            _cE("text", _uM({ class: "label" }), "整改期限"),
+                            _cE("text", _uM({ class: "value" }), _tD(_ctx.detail!.rectificationDeadline), 1 /* TEXT */)
+                        ])
+                    ]),
+                    _ctx.problemImages.length > 0
+                        ? _cE("view", _uM({
+                            key: 0,
+                            class: "section"
+                        }), [
+                            _cE("text", _uM({ class: "title" }), "问题图片（" + _tD(_ctx.problemImages.length) + "张）", 1 /* TEXT */),
+                            _cE("view", _uM({ class: "image-list" }), [
+                                _cE(Fragment, null, RenderHelpers.renderList(_ctx.problemImages, (img, i, __index, _cached): any => {
+                                    return _cE("view", _uM({
+                                        class: "image-item",
+                                        key: i
+                                    }), [
+                                        _cE("image", _uM({
+                                            src: _ctx.convertToHttpUrl(img),
+                                            mode: "aspectFill",
+                                            class: "image",
+                                            onClick: () => { _ctx.previewProblemImage(i); }
+                                        }), null, 8 /* PROPS */, ["src", "onClick"])
+                                    ]);
+                                }), 128 /* KEYED_FRAGMENT */)
+                            ])
+                        ])
+                        : _cC("v-if", true),
+                    _cE("view", _uM({ class: "section" }), [
+                        _cE("text", _uM({ class: "title" }), "整改情况"),
+                        _cE("view", _uM({ class: "readonly-field" }), [
+                            _cE("text", _uM({ class: "label" }), "整改建议："),
+                            _cE("text", _uM({ class: "value" }), _tD(_ctx.displayValue(_ctx.detail!.rectificationSuggestion)), 1 /* TEXT */)
+                        ]),
+                        _cE("view", _uM({ class: "readonly-field" }), [
+                            _cE("text", _uM({ class: "label" }), "整改效果："),
+                            _cE("text", _uM({ class: "value" }), _tD(_ctx.displayValue(_ctx.detail!.rectificationEffect)), 1 /* TEXT */)
+                        ])
+                    ]),
+                    _ctx.rectImages.length > 0
+                        ? _cE("view", _uM({
+                            key: 1,
+                            class: "section"
+                        }), [
+                            _cE("text", _uM({ class: "title" }), "整改图片（" + _tD(_ctx.rectImages.length) + "张）", 1 /* TEXT */),
+                            _cE("view", _uM({ class: "image-list" }), [
+                                _cE(Fragment, null, RenderHelpers.renderList(_ctx.rectImages, (img, i, __index, _cached): any => {
+                                    return _cE("view", _uM({
+                                        class: "image-item",
+                                        key: i
+                                    }), [
+                                        _cE("image", _uM({
+                                            src: _ctx.convertToHttpUrl(img),
+                                            mode: "aspectFill",
+                                            class: "image",
+                                            onClick: () => { _ctx.previewRect(i); }
+                                        }), null, 8 /* PROPS */, ["src", "onClick"])
+                                    ]);
+                                }), 128 /* KEYED_FRAGMENT */)
+                            ])
+                        ])
+                        : _cC("v-if", true),
+                    _cE("view", _uM({ class: "section" }), [
+                        _cE("text", _uM({ class: "title" }), "复查人"),
+                        _cE("view", _uM({ class: "readonly-field" }), [
+                            _cE("text", _uM({ class: "label" }), "复查人："),
+                            _cE("text", _uM({ class: "value" }), _tD(_ctx.currentUserName !== '' ? _ctx.currentUserName : '当前登录用户'), 1 /* TEXT */)
+                        ])
+                    ]),
+                    _cE("view", _uM({ class: "section" }), [
+                        _cE("text", _uM({ class: "title" }), "复查建议"),
+                        _cE("textarea", _uM({
+                            class: "textarea",
+                            modelValue: _ctx.reviewSuggestion,
+                            onInput: ($event: UniInputEvent) => { (_ctx.reviewSuggestion) = $event.detail.value; },
+                            placeholder: "请填写复查建议/结论",
+                            maxlength: "500"
+                        }), null, 40 /* PROPS, NEED_HYDRATION */, ["modelValue", "onInput"])
+                    ]),
+                    _cE("view", _uM({ class: "section" }), [
+                        _cE("text", _uM({ class: "title" }), "复查效果"),
+                        _cE("textarea", _uM({
+                            class: "textarea",
+                            modelValue: _ctx.reviewEffect,
+                            onInput: ($event: UniInputEvent) => { (_ctx.reviewEffect) = $event.detail.value; },
+                            placeholder: "请填写复查实际效果",
+                            maxlength: "500"
+                        }), null, 40 /* PROPS, NEED_HYDRATION */, ["modelValue", "onInput"])
+                    ]),
+                    _cE("view", _uM({ class: "section" }), [
+                        _cE("text", _uM({ class: "title" }), "复查图片（最多3张，已选" + _tD(_ctx.reviewImages.length) + "张）", 1 /* TEXT */),
+                        _cE("view", _uM({ class: "image-list" }), [
+                            _cE(Fragment, null, RenderHelpers.renderList(_ctx.reviewImages, (img, i, __index, _cached): any => {
+                                return _cE("view", _uM({
+                                    class: "image-item",
+                                    key: i
+                                }), [
+                                    _cE("image", _uM({
+                                        src: _ctx.convertToHttpUrl(img),
+                                        mode: "aspectFill",
+                                        class: "image",
+                                        onClick: () => { _ctx.previewReview(i); }
+                                    }), null, 8 /* PROPS */, ["src", "onClick"]),
+                                    _cE("view", _uM({
+                                        class: "delete",
+                                        onClick: () => { _ctx.removeReview(i); }
+                                    }), [
+                                        _cE("text", null, "×")
+                                    ], 8 /* PROPS */, ["onClick"])
+                                ]);
+                            }), 128 /* KEYED_FRAGMENT */),
+                            _ctx.reviewImages.length < 3
+                                ? _cE("view", _uM({
+                                    key: 0,
+                                    class: "add",
+                                    onClick: _ctx.chooseReview
+                                }), [
+                                    _cE("text", _uM({ class: "add-icon" }), "+"),
+                                    _cE("text", _uM({ class: "add-text" }), "添加图片")
+                                ], 8 /* PROPS */, ["onClick"])
+                                : _cC("v-if", true)
+                        ])
+                    ]),
+                    isTrue(_ctx.isReviewVisible())
+                        ? _cE("view", _uM({
+                            key: 2,
+                            class: "footer"
+                        }), [
+                            _cE("button", _uM({
+                                class: "submit",
+                                onClick: _ctx.submitReview,
+                                disabled: _ctx.saving
+                            }), _tD(_ctx.saving ? '提交中...' : '确认复查'), 9 /* TEXT, PROPS */, ["onClick", "disabled"])
+                        ])
+                        : _cE("view", _uM({
+                            key: 3,
+                            class: "footer footer-locked"
+                        }), [
+                            _cE("text", _uM({ class: "locked-text" }), "当前部门类型无复查权限")
+                        ])
+                ])
+                : _cE("view", _uM({
+                    key: 2,
+                    class: "error"
+                }), [
+                    _cE("text", null, "记录不存在或已删除")
+                ])
+    ], 4 /* STYLE */);
+}
+const GenPagesMonthlyReviewStyles = [_uM([["container", _pS(_uM([["backgroundImage", "none"], ["backgroundColor", "#f1f5f9"]]))], ["loading-state", _pS(_uM([["paddingTop", 20], ["paddingRight", 20], ["paddingBottom", 20], ["paddingLeft", 20], ["textAlign", "center"], ["color", "#475569"]]))], ["error", _pS(_uM([["paddingTop", 20], ["paddingRight", 20], ["paddingBottom", 20], ["paddingLeft", 20], ["textAlign", "center"], ["color", "#475569"]]))], ["content", _pS(_uM([["paddingTop", "24rpx"], ["paddingRight", "32rpx"], ["paddingBottom", "24rpx"], ["paddingLeft", "32rpx"]]))], ["section", _pS(_uM([["backgroundImage", "none"], ["backgroundColor", "#ffffff"], ["borderTopLeftRadius", "20rpx"], ["borderTopRightRadius", "20rpx"], ["borderBottomRightRadius", "20rpx"], ["borderBottomLeftRadius", "20rpx"], ["paddingTop", "32rpx"], ["paddingRight", "32rpx"], ["paddingBottom", "32rpx"], ["paddingLeft", "32rpx"], ["marginBottom", "28rpx"], ["boxShadow", "0 8rpx 24rpx rgba(30, 64, 175, 0.08)"], ["borderTopWidth", "4rpx"], ["borderTopStyle", "solid"], ["borderTopColor", "#1e40af"]]))], ["title", _pS(_uM([["fontSize", "32rpx"], ["fontWeight", 600], ["color", "#1e40af"], ["marginBottom", "24rpx"], ["paddingLeft", "16rpx"], ["borderLeftWidth", "6rpx"], ["borderLeftStyle", "solid"], ["borderLeftColor", "#2563eb"]]))], ["field", _pS(_uM([["marginBottom", "20rpx"], ["display", "flex"], ["justifyContent", "space-between"], ["paddingTop", "8rpx"], ["paddingRight", 0], ["paddingBottom", "8rpx"], ["paddingLeft", 0]]))], ["label", _uM([["", _uM([["fontSize", "28rpx"], ["color", "#475569"]])], [".field-edit ", _uM([["width", "180rpx"], ["flexShrink", 0], ["color", "#475569"]])], [".readonly-field ", _uM([["minWidth", "176rpx"], ["flexShrink", 0], ["color", "#2563eb"], ["fontWeight", 500]])]])], ["value", _uM([["", _uM([["fontSize", "28rpx"], ["color", "#0f172a"], ["textAlign", "right"], ["maxWidth", 480], ["fontWeight", 500]])], [".readonly-field ", _uM([["textAlign", "left"], ["flexGrow", 1], ["flexShrink", 1], ["flexBasis", "0%"], ["wordBreak", "break-all"], ["color", "#0f172a"]])]])], ["field-edit", _pS(_uM([["marginBottom", "20rpx"], ["display", "flex"], ["alignItems", "center"], ["paddingTop", "8rpx"], ["paddingRight", 0], ["paddingBottom", "8rpx"], ["paddingLeft", 0]]))], ["readonly-field", _pS(_uM([["marginBottom", "20rpx"], ["display", "flex"], ["alignItems", "flex-start"], ["paddingTop", "12rpx"], ["paddingRight", "12rpx"], ["paddingBottom", "12rpx"], ["paddingLeft", "12rpx"], ["backgroundImage", "none"], ["backgroundColor", "#eff6ff"], ["borderTopLeftRadius", "12rpx"], ["borderTopRightRadius", "12rpx"], ["borderBottomRightRadius", "12rpx"], ["borderBottomLeftRadius", "12rpx"]]))], ["textarea", _pS(_uM([["width", "100%"], ["minHeight", "200rpx"], ["paddingTop", "24rpx"], ["paddingRight", "24rpx"], ["paddingBottom", "24rpx"], ["paddingLeft", "24rpx"], ["borderTopWidth", "2rpx"], ["borderRightWidth", "2rpx"], ["borderBottomWidth", "2rpx"], ["borderLeftWidth", "2rpx"], ["borderTopStyle", "solid"], ["borderRightStyle", "solid"], ["borderBottomStyle", "solid"], ["borderLeftStyle", "solid"], ["borderTopColor", "#dbeafe"], ["borderRightColor", "#dbeafe"], ["borderBottomColor", "#dbeafe"], ["borderLeftColor", "#dbeafe"], ["borderTopLeftRadius", "12rpx"], ["borderTopRightRadius", "12rpx"], ["borderBottomRightRadius", "12rpx"], ["borderBottomLeftRadius", "12rpx"], ["backgroundImage", "none"], ["backgroundColor", "#ffffff"], ["fontSize", "28rpx"], ["color", "#0f172a"], ["borderTopColor:focus", "#2563eb"], ["borderRightColor:focus", "#2563eb"], ["borderBottomColor:focus", "#2563eb"], ["borderLeftColor:focus", "#2563eb"], ["backgroundImage:focus", "none"], ["backgroundColor:focus", "#eff6ff"]]))], ["textarea-mini", _pS(_uM([["flexGrow", 1], ["flexShrink", 1], ["flexBasis", "0%"], ["minHeight", "80rpx"], ["paddingTop", "16rpx"], ["paddingRight", "20rpx"], ["paddingBottom", "16rpx"], ["paddingLeft", "20rpx"], ["borderTopWidth", "2rpx"], ["borderRightWidth", "2rpx"], ["borderBottomWidth", "2rpx"], ["borderLeftWidth", "2rpx"], ["borderTopStyle", "solid"], ["borderRightStyle", "solid"], ["borderBottomStyle", "solid"], ["borderLeftStyle", "solid"], ["borderTopColor", "#dbeafe"], ["borderRightColor", "#dbeafe"], ["borderBottomColor", "#dbeafe"], ["borderLeftColor", "#dbeafe"], ["borderTopLeftRadius", "12rpx"], ["borderTopRightRadius", "12rpx"], ["borderBottomRightRadius", "12rpx"], ["borderBottomLeftRadius", "12rpx"], ["backgroundImage", "none"], ["backgroundColor", "#ffffff"], ["fontSize", "28rpx"], ["color", "#0f172a"], ["borderTopColor:focus", "#2563eb"], ["borderRightColor:focus", "#2563eb"], ["borderBottomColor:focus", "#2563eb"], ["borderLeftColor:focus", "#2563eb"], ["backgroundImage:focus", "none"], ["backgroundColor:focus", "#eff6ff"]]))], ["footer-locked", _pS(_uM([["textAlign", "center"], ["paddingTop", "40rpx"], ["paddingRight", "30rpx"], ["paddingBottom", "40rpx"], ["paddingLeft", "30rpx"]]))], ["locked-text", _pS(_uM([["fontSize", "28rpx"], ["color", "#94a3b8"]]))], ["image-list", _pS(_uM([["display", "flex"], ["flexWrap", "wrap"]]))], ["image-item", _uM([[".image-list ", _uM([["marginTop", "10rpx"], ["marginRight", "10rpx"], ["marginBottom", "10rpx"], ["marginLeft", "10rpx"]])], ["", _uM([["position", "relative"], ["width", "200rpx"], ["height", "200rpx"]])]])], ["add", _uM([[".image-list ", _uM([["marginTop", "10rpx"], ["marginRight", "10rpx"], ["marginBottom", "10rpx"], ["marginLeft", "10rpx"]])], ["", _uM([["width", "200rpx"], ["height", "200rpx"], ["borderTopWidth", "4rpx"], ["borderRightWidth", "4rpx"], ["borderBottomWidth", "4rpx"], ["borderLeftWidth", "4rpx"], ["borderTopStyle", "dashed"], ["borderRightStyle", "dashed"], ["borderBottomStyle", "dashed"], ["borderLeftStyle", "dashed"], ["borderTopColor", "#2563eb"], ["borderRightColor", "#2563eb"], ["borderBottomColor", "#2563eb"], ["borderLeftColor", "#2563eb"], ["borderTopLeftRadius", "16rpx"], ["borderTopRightRadius", "16rpx"], ["borderBottomRightRadius", "16rpx"], ["borderBottomLeftRadius", "16rpx"], ["display", "flex"], ["flexDirection", "column"], ["alignItems", "center"], ["justifyContent", "center"], ["backgroundImage", "none"], ["backgroundColor", "#eff6ff"]])]])], ["no-image", _uM([[".image-list ", _uM([["marginTop", "10rpx"], ["marginRight", "10rpx"], ["marginBottom", "10rpx"], ["marginLeft", "10rpx"]])], ["", _uM([["fontSize", "24rpx"], ["color", "#94a3b8"]])]])], ["image", _pS(_uM([["width", "100%"], ["height", "100%"], ["borderTopLeftRadius", "16rpx"], ["borderTopRightRadius", "16rpx"], ["borderBottomRightRadius", "16rpx"], ["borderBottomLeftRadius", "16rpx"], ["borderTopWidth", "2rpx"], ["borderRightWidth", "2rpx"], ["borderBottomWidth", "2rpx"], ["borderLeftWidth", "2rpx"], ["borderTopStyle", "solid"], ["borderRightStyle", "solid"], ["borderBottomStyle", "solid"], ["borderLeftStyle", "solid"], ["borderTopColor", "#dbeafe"], ["borderRightColor", "#dbeafe"], ["borderBottomColor", "#dbeafe"], ["borderLeftColor", "#dbeafe"]]))], ["delete", _pS(_uM([["position", "absolute"], ["top", "-12rpx"], ["right", "-12rpx"], ["width", "44rpx"], ["height", "44rpx"], ["backgroundImage", "none"], ["backgroundColor", "#dc2626"], ["borderTopLeftRadius", "50%"], ["borderTopRightRadius", "50%"], ["borderBottomRightRadius", "50%"], ["borderBottomLeftRadius", "50%"], ["display", "flex"], ["alignItems", "center"], ["justifyContent", "center"], ["color", "#ffffff"], ["fontWeight", 600]]))], ["add-icon", _pS(_uM([["fontSize", "44rpx"], ["color", "#2563eb"], ["fontWeight", 600]]))], ["add-text", _pS(_uM([["fontSize", "24rpx"], ["color", "#2563eb"], ["marginTop", "8rpx"]]))], ["footer", _pS(_uM([["backgroundImage", "none"], ["backgroundColor", "#ffffff"], ["paddingTop", "30rpx"], ["paddingRight", "30rpx"], ["paddingBottom", "30rpx"], ["paddingLeft", "30rpx"], ["borderTopLeftRadius", "20rpx"], ["borderTopRightRadius", "20rpx"], ["borderBottomRightRadius", "20rpx"], ["borderBottomLeftRadius", "20rpx"], ["boxShadow", "0 8rpx 24rpx rgba(30, 64, 175, 0.08)"]]))], ["submit", _pS(_uM([["width", "100%"], ["paddingTop", "24rpx"], ["paddingRight", "24rpx"], ["paddingBottom", "24rpx"], ["paddingLeft", "24rpx"], ["backgroundImage", "none"], ["backgroundColor", "#1e40af"], ["color", "#ffffff"], ["borderTopWidth", "medium"], ["borderRightWidth", "medium"], ["borderBottomWidth", "medium"], ["borderLeftWidth", "medium"], ["borderTopStyle", "none"], ["borderRightStyle", "none"], ["borderBottomStyle", "none"], ["borderLeftStyle", "none"], ["borderTopColor", "#000000"], ["borderRightColor", "#000000"], ["borderBottomColor", "#000000"], ["borderLeftColor", "#000000"], ["borderTopLeftRadius", "16rpx"], ["borderTopRightRadius", "16rpx"], ["borderBottomRightRadius", "16rpx"], ["borderBottomLeftRadius", "16rpx"], ["fontSize", "32rpx"], ["fontWeight", 600], ["color::after", "#ffffff"], ["borderTopWidth::after", "medium"], ["borderRightWidth::after", "medium"], ["borderBottomWidth::after", "medium"], ["borderLeftWidth::after", "medium"], ["borderTopStyle::after", "none"], ["borderRightStyle::after", "none"], ["borderBottomStyle::after", "none"], ["borderLeftStyle::after", "none"], ["borderTopColor::after", "#000000"], ["borderRightColor::after", "#000000"], ["borderBottomColor::after", "#000000"], ["borderLeftColor::after", "#000000"]]))]])];

@@ -1,0 +1,405 @@
+<template>
+  <scroll-view class="container" scroll-y="true" :style="{height: containerHeight + 'px'}" enable-back-to-top="true">
+    <view v-if="loading" class="loading-state"><text>加载中...</text></view>
+    <view v-else-if="detail != null" class="content">
+      <!-- 问题信息（与月检 AddDialog 字段统一） -->
+      <view class="section">
+        <text class="title">问题信息</text>
+        <view class="field"><text class="label">问题描述</text><text class="value">{{detail.problemDescription}}</text></view>
+        <view class="field"><text class="label">专业类别</text><text class="value">{{detail.professionalTypeName}}</text></view>
+        <view class="field"><text class="label">基本模块</text><text class="value">{{detail.moduleName}}</text></view>
+        <view class="field"><text class="label">责任要素</text><text class="value">{{detail.responsibilityName}}</text></view>
+        <view class="field"><text class="label">检查内容</text><text class="value">{{detail.issueName}}</text></view>
+        <view class="field"><text class="label">性质界定</text><text class="value">{{detail.qualityName}}</text></view>
+        <view class="field"><text class="label">性质界定是否人工修改</text><text class="value">{{detail.natureModified === 1 ? '是(已修改)' : '否(未修改)'}}</text></view>
+        <view class="field"><text class="label">扣分值</text><text class="value">{{getDeductionScore(detail.qualityName)}}</text></view>
+        <view class="field"><text class="label">发现位置</text><text class="value">{{detail.location}}</text></view>
+        <view class="field"><text class="label">检查单位</text><text class="value">{{displayValue(detail.checkUnitName)}}</text></view>
+        <view class="field"><text class="label">受检单位</text><text class="value">{{displayValue(detail.departmentName)}}</text></view>
+        <view class="field"><text class="label">检查人</text><text class="value">{{detail.inspector}}</text></view>
+        <!-- 对齐 Web ReviewDialog:复查页责任人/责任单位只读展示,不可编辑、不提交 -->
+        <view class="field"><text class="label">责任人</text><text class="value">{{displayValue(detail.responsiblePerson)}}</text></view>
+        <view class="field"><text class="label">责任单位</text><text class="value">{{displayValue(detail.responsibleUnit)}}</text></view>
+        <view class="field"><text class="label">整改期限</text><text class="value">{{detail.rectificationDeadline}}</text></view>
+      </view>
+
+      <view class="section" v-if="problemImages.length > 0">
+        <text class="title">问题图片（{{problemImages.length}}张）</text>
+        <view class="image-list">
+          <view class="image-item" v-for="(img, i) in problemImages" :key="i">
+            <image :src="convertToHttpUrl(img)" mode="aspectFill" class="image" @click="previewProblemImage(i)"></image>
+          </view>
+        </view>
+      </view>
+
+      <!-- 整改信息（只读） -->
+      <view class="section">
+        <text class="title">整改情况</text>
+        <view class="readonly-field">
+          <text class="label">整改建议：</text>
+          <text class="value">{{displayValue(detail.rectificationSuggestion)}}</text>
+        </view>
+        <view class="readonly-field">
+          <text class="label">整改效果：</text>
+          <text class="value">{{displayValue(detail.rectificationEffect)}}</text>
+        </view>
+      </view>
+
+      <view class="section" v-if="rectImages.length > 0">
+        <text class="title">整改图片（{{rectImages.length}}张）</text>
+        <view class="image-list">
+          <view class="image-item" v-for="(img, i) in rectImages" :key="i">
+            <image :src="convertToHttpUrl(img)" mode="aspectFill" class="image" @click="previewRect(i)"></image>
+          </view>
+        </view>
+      </view>
+
+      <!-- 复查人（当前登录用户，只读，确认复查时写库） -->
+      <view class="section">
+        <text class="title">复查人</text>
+        <view class="readonly-field">
+          <text class="label">复查人：</text>
+          <text class="value">{{currentUserName !== '' ? currentUserName : '当前登录用户'}}</text>
+        </view>
+      </view>
+
+      <!-- 复查建议 -->
+      <view class="section">
+        <text class="title">复查建议</text>
+        <textarea class="textarea" v-model="reviewSuggestion" placeholder="请填写复查建议/结论" maxlength="500"></textarea>
+      </view>
+
+      <!-- 复查效果 -->
+      <view class="section">
+        <text class="title">复查效果</text>
+        <textarea class="textarea" v-model="reviewEffect" placeholder="请填写复查实际效果" maxlength="500"></textarea>
+      </view>
+
+      <!-- 复查图片 -->
+      <view class="section">
+        <text class="title">复查图片（最多3张，已选{{reviewImages.length}}张）</text>
+        <view class="image-list">
+          <view class="image-item" v-for="(img, i) in reviewImages" :key="i">
+            <image :src="convertToHttpUrl(img)" mode="aspectFill" class="image" @click="previewReview(i)"></image>
+            <view class="delete" @click="removeReview(i)"><text>×</text></view>
+          </view>
+          <view v-if="reviewImages.length < 3" class="add" @click="chooseReview">
+            <text class="add-icon">+</text>
+            <text class="add-text">添加图片</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- V3:复查按钮按公示期 + deptType 控制可见性 -->
+      <view v-if="isReviewVisible()" class="footer">
+        <button class="submit" @click="submitReview" :disabled="saving">{{saving ? '提交中...' : '确认复查'}}</button>
+      </view>
+      <view v-else class="footer footer-locked">
+        <text class="locked-text">当前部门类型无复查权限</text>
+      </view>
+    </view>
+    <view v-else class="error"><text>记录不存在或已删除</text></view>
+  </scroll-view>
+</template>
+
+<script lang="uts">
+  import { getApiUrl, apiConfig } from '@/config/api.uts'
+  import { resolveCurrentDept, getCachedUserInfo, CurrentDept } from '@/utils/user.uts'
+
+  // V3:当前用户类型(对齐 Web:复查按钮只看 deptType,与 admin 无关)
+  type CurrentUser = {
+    deptId: string
+    deptName: string
+    deptType: number | null  // 0=运行部门 1=管理部门 null=无部门(如管理员)
+  }
+
+  type MonthlyReviewDetail = {
+    id: string
+    problemDescription: string
+    location: string
+    rectificationEffect: string
+    rectificationSuggestion: string
+    rectificationImages: string
+    rectificationDeadline: string
+    departmentName: string
+    professionalTypeName: string
+    responsibilityName: string
+    issueName: string
+    moduleName: string
+    inspector: string
+    responsiblePerson: string
+    responsibleUnit: string
+    qualityName: string
+    checkUnitName: string
+    natureModified: number
+    photos: string
+    taskId: string
+  }
+
+  export default {
+    data() {
+      return {
+        id: '',
+        detail: null as MonthlyReviewDetail | null,
+        rectImages: [] as string[],
+        reviewSuggestion: '',
+        reviewEffect: '',
+        reviewImages: [] as string[],
+        loading: true,
+        saving: false,
+        problemImages: [] as string[],
+        containerHeight: 0,
+        // V3:当前用户(用于部门类型判断)
+        currentUser: { deptId: '', deptName: '', deptType: null } as CurrentUser,
+        // 复查人：当前登录用户姓名（只读）
+        currentUserName: '',
+        // V3:任务期阶段(仅保留兼容,复查可见性不再依赖 phase)
+        taskPhase: 0
+      }
+    },
+    onLoad(options: UTSJSONObject) {
+      this.id = options.getString('id') ?? ''
+      this.loadDetail().then(() => {
+        // V3:详情加载完后,拉当前用户 + 任务 phase(用于按钮可见性判断)
+        this.loadCurrentUser()
+        this.loadTaskPhase()
+      })
+    },
+    onReady() {
+      uni.getSystemInfo({ success: (res) => { this.containerHeight = res.windowHeight } })
+    },
+    methods: {
+      convertToHttpUrl(path: string): string {
+        if (path == null || path == '') return ''
+        if (path.startsWith('http://') || path.startsWith('https://')) return path
+        return `${apiConfig.baseUrl}/api${path}`
+      },
+      getDeductionScore(qualityName: string): string {
+        if (qualityName === '观察') return '1'
+        if (qualityName === '一般') return '3'
+        if (qualityName === '重要') return '5'
+        return '-'
+      },
+      displayValue(v: string): string {
+        return v !== '' && v != null ? v : '暂无'
+      },
+      loadDetail(): Promise<void> {
+        return new Promise((resolve) => {
+          const token = uni.getStorageSync('token')
+          uni.request({
+            url: getApiUrl(`/monthly-inspection-record/${this.id}`),
+            method: 'GET',
+            header: { 'Authorization': `Bearer ${token}` },
+            success: (res) => {
+              const data = res.data as UTSJSONObject
+              if (res.statusCode === 200 && (data.getNumber('code') ?? 0) === 200) {
+                const d = data.getJSON('data') as UTSJSONObject | null
+                if (d != null) {
+                  this.detail = {
+                    id: d!!.getString('id') ?? '',
+                    problemDescription: d!!.getString('problemDescription') ?? '',
+                    location: d!!.getString('location') ?? '',
+                    rectificationEffect: (d!!.getString('rectificationEffect') ?? ''),
+                    rectificationSuggestion: (d!!.getString('rectificationSuggestion') ?? ''),
+                    rectificationImages: d!!.getString('rectificationImages') ?? '',
+                    rectificationDeadline: d!!.getString('rectificationDeadline') ?? '',
+                    departmentName: d!!.getString('departmentName') ?? '',
+                    professionalTypeName: d!!.getString('professionalTypeName') ?? '',
+                    responsibilityName: d!!.getString('responsibilityName') ?? '',
+                    issueName: d!!.getString('issueName') ?? '',
+                    moduleName: d!!.getString('moduleName') ?? '',
+                    inspector: d!!.getString('inspector') ?? '',
+                    responsiblePerson: d!!.getString('responsiblePerson') ?? '',
+                    responsibleUnit: d!!.getString('responsibleUnit') ?? '',
+                    qualityName: d!!.getString('qualityName') ?? '',
+                    checkUnitName: d!!.getString('checkUnitName') ?? '',
+                    natureModified: d!!.getNumber('natureModified') ?? 0,
+                    photos: d!!.getString('photos') ?? '',
+                    taskId: d!!.getString('taskId') ?? ''
+                  }
+                  if (this.detail.photos != null && this.detail.photos != '') {
+                    const p = this.detail.photos
+                    if (p.trim().startsWith('[') && p.trim().endsWith(']')) {
+                      try { this.problemImages = (JSON.parse(p) as string[]) } catch (_) {}
+                    } else { this.problemImages = p.split(',').map((u) => u.trim()).filter((u) => u != '') }
+                  }
+                  const imgs = this.detail.rectificationImages
+                  if (imgs != null && imgs != '') {
+                    if (imgs.trim().startsWith('[') && imgs.trim().endsWith(']')) {
+                      try { this.rectImages = (JSON.parse(imgs) as string[]) } catch (_) {}
+                    } else { this.rectImages = imgs.split(',').map((u) => u.trim()).filter((u) => u != '') }
+                  }
+                }
+              } else { uni.showToast({ title: data.getString('message') ?? '加载失败', icon: 'none' }) }
+              this.loading = false
+              resolve()
+            },
+            fail: (_) => {
+              this.loading = false
+              uni.showToast({ title: '网络错误', icon: 'none' })
+              resolve()
+            }
+          })
+        })
+      },
+      // V3:加载当前用户(取 deptType 用于复查按钮可见性)
+      // resolveCurrentDept 先刷新服务端 userInfo 再取部门类型，避免用登录时的旧 deptId 快照判定角色
+      loadCurrentUser() {
+        resolveCurrentDept().then((dept: CurrentDept) => {
+          this.currentUser = { deptId: dept.deptId, deptName: dept.deptName, deptType: dept.deptType }
+          // 复查人取当前登录用户真实姓名
+          const info = getCachedUserInfo()
+          this.currentUserName = info.getString('realName') ?? info.getString('username') ?? ''
+        })
+      },
+      // V3:从 taskId 拉任务计算 phase
+      loadTaskPhase() {
+        if (this.detail == null) return
+        const token = uni.getStorageSync('token')
+        uni.request({
+          url: getApiUrl(`/monthly-inspection-task/${this.detail.taskId ?? ''}`),
+          method: 'GET',
+          header: { 'Authorization': `Bearer ${token}` },
+          success: (res) => {
+            const data = res.data as UTSJSONObject
+            if (res.statusCode !== 200 || (data.getNumber('code') ?? 0) !== 200) return
+            const t = data.getJSON('data')
+            if (t == null) return
+            const tObj = t as UTSJSONObject
+            const pubStartStr = tObj.getString('publicityStartTime') ?? ''
+            const pubEndStr = tObj.getString('publicityEndTime') ?? ''
+            const now = new Date()
+            const parseDt = (s: string): Date | null => {
+              if (s == null || s == '') return null
+              return new Date(s.replace(' ', 'T'))
+            }
+            const pubStart = parseDt(pubStartStr)
+            const pubEnd = parseDt(pubEndStr)
+            if (pubStart == null || pubEnd == null) { this.taskPhase = 0; return }
+            if (now < pubStart) this.taskPhase = 2
+            else if (now <= pubEnd) this.taskPhase = 3
+            else this.taskPhase = 4
+          }
+        })
+      },
+      // 对齐 Web showReviewButton:复查按钮仅由 deptType 决定(deptType !== 0),不受公示期限制
+      isReviewVisible(): boolean {
+        return this.currentUser.deptType !== 0
+      },
+      previewRect(i: number) {
+        uni.previewImage({ current: i, urls: this.rectImages.map((u) => this.convertToHttpUrl(u)) })
+      },
+      previewProblemImage(i: number) {
+        uni.previewImage({ current: i, urls: this.problemImages.map((u) => this.convertToHttpUrl(u)) })
+      },
+      chooseReview() {
+        if (this.reviewImages.length >= 3) { uni.showToast({ title: '最多3张', icon: 'none' }); return }
+        uni.chooseImage({
+          count: 3 - this.reviewImages.length,
+          sourceType: ['camera', 'album'],
+          success: (res) => {
+            const token = uni.getStorageSync('token')
+            res.tempFilePaths.forEach((p) => {
+              uni.uploadFile({
+                url: getApiUrl('/upload/image'),
+                filePath: p,
+                name: 'file',
+                header: { 'Authorization': `Bearer ${token}` },
+                success: (upRes) => {
+                  try {
+                    const result = JSON.parse(upRes.data) as UTSJSONObject
+                    if (upRes.statusCode === 200 && (result.getNumber('code') ?? 0) === 200) {
+                      const dataObj = result.getJSON('data')
+                      const url = dataObj?.getString('filePath') ?? ''
+                      if (url != '') this.reviewImages.push(url)
+                    } else { uni.showToast({ title: result.getString('message') ?? '上传失败', icon: 'none' }) }
+                  } catch (_) { uni.showToast({ title: '上传失败', icon: 'none' }) }
+                },
+                fail: (_) => { uni.showToast({ title: '上传失败', icon: 'none' }) }
+              })
+            })
+          }
+        })
+      },
+      previewReview(i: number) {
+        uni.previewImage({ current: i, urls: this.reviewImages.map((u) => this.convertToHttpUrl(u)) })
+      },
+      removeReview(i: number) { this.reviewImages.splice(i, 1) },
+      submitReview() {
+        if (this.saving) return
+        if (this.reviewSuggestion.trim() == '') {
+          uni.showToast({ title: '请填写复查建议', icon: 'none' }); return
+        }
+        if (this.reviewEffect.trim() == '') {
+          uni.showToast({ title: '请填写复查效果', icon: 'none' }); return
+        }
+        this.saving = true
+        const token = uni.getStorageSync('token')
+        // 对齐 Web ReviewDialog:复查提交仅含建议/效果/图片,不含责任人/单位
+        const data = {
+          reviewSuggestion: this.reviewSuggestion,
+          reviewEffect: this.reviewEffect,
+          reviewImages: this.reviewImages.join(','),
+          // 复查人（当前登录用户）
+          reviewerName: this.currentUserName
+        }
+        uni.request({
+          url: getApiUrl(`/monthly-inspection-record/${this.id}/review`),
+          method: 'PUT',
+          header: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+          data: data,
+          success: (res) => {
+            const resp = res.data as UTSJSONObject
+            if (res.statusCode === 200 && (resp.getNumber('code') ?? 0) === 200) {
+              uni.showToast({ title: '复查确认成功', icon: 'success' })
+              setTimeout(function(){ uni.navigateBack() }, 1200)
+            } else { uni.showToast({ title: resp.getString('message') ?? '提交失败', icon: 'none' }) }
+            this.saving = false
+          },
+          fail: (_) => { this.saving = false; uni.showToast({ title: '网络错误', icon: 'none' }) }
+        })
+      }
+    }
+  }
+</script>
+
+<style>
+  .container { background: #f1f5f9 }
+  .loading-state, .error { padding: 20px; text-align: center; color: #475569 }
+  .content { padding: 24rpx 32rpx }
+  .section { background: #ffffff; border-radius: 20rpx; padding: 32rpx; margin-bottom: 28rpx; box-shadow: 0 8rpx 24rpx rgba(30, 64, 175, 0.08); border-top: 4rpx solid #1e40af }
+  .title { font-size: 32rpx; font-weight: 600; color: #1e40af; margin-bottom: 24rpx; padding-left: 16rpx; border-left: 6rpx solid #2563eb }
+  .field { margin-bottom: 20rpx; display: flex; justify-content: space-between; padding: 8rpx 0 }
+  .label { font-size: 28rpx; color: #475569 }
+  .value { font-size: 28rpx; color: #0f172a; text-align: right; max-width: 480px; font-weight: 500 }
+  /* V3:责任人/责任单位可编辑样式 */
+  .field-edit { margin-bottom: 20rpx; display: flex; align-items: center; padding: 8rpx 0 }
+  .field-edit .label { width: 180rpx; flex-shrink: 0; color: #475569 }
+  .readonly-field { margin-bottom: 20rpx; display: flex; align-items: flex-start; padding: 12rpx; background: #eff6ff; border-radius: 12rpx }
+  .readonly-field .label { min-width: 176rpx; flex-shrink: 0; color: #2563eb; font-weight: 500 }
+  .readonly-field .value { text-align: left; flex: 1; word-break: break-all; color: #0f172a }
+  .textarea { width: 100%; min-height: 200rpx; padding: 24rpx; border: 2rpx solid #dbeafe; border-radius: 12rpx; background: #ffffff; font-size: 28rpx; color: #0f172a }
+  .textarea:focus { border-color: #2563eb; background: #eff6ff }
+  /* V3:责任人/责任单位单行编辑框 */
+  .textarea-mini { flex: 1; min-height: 80rpx; padding: 16rpx 20rpx; border: 2rpx solid #dbeafe; border-radius: 12rpx; background: #ffffff; font-size: 28rpx; color: #0f172a }
+  .textarea-mini:focus { border-color: #2563eb; background: #eff6ff }
+  /* V3:锁定状态 footer */
+  .footer-locked { text-align: center; padding: 40rpx 30rpx }
+  .locked-text { font-size: 28rpx; color: #94a3b8 }
+  .image-list { display: flex; flex-wrap: wrap }
+  .image-list .image-item { margin: 10rpx }
+  .image-list .add { margin: 10rpx }
+  .image-list .no-image { margin: 10rpx }
+  .image-item { position: relative; width: 200rpx; height: 200rpx }
+  .image { width: 100%; height: 100%; border-radius: 16rpx; border: 2rpx solid #dbeafe }
+  .delete { position: absolute; top: -12rpx; right: -12rpx; width: 44rpx; height: 44rpx; background: #dc2626; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #ffffff; font-weight: 600 }
+  .add { width: 200rpx; height: 200rpx; border: 4rpx dashed #2563eb; border-radius: 16rpx; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #eff6ff }
+  .add-icon { font-size: 44rpx; color: #2563eb; font-weight: 600 }
+  .add-text { font-size: 24rpx; color: #2563eb; margin-top: 8rpx }
+  .no-image { font-size: 24rpx; color: #94a3b8 }
+  .footer { background: #ffffff; padding: 30rpx; border-radius: 20rpx; box-shadow: 0 8rpx 24rpx rgba(30, 64, 175, 0.08) }
+  .submit { width: 100%; padding: 24rpx; background: #1e40af; color: #ffffff; border: none; border-radius: 16rpx; font-size: 32rpx; font-weight: 600 }
+  .submit::after { color: #ffffff; border: none }
+  .submit[disabled] { background: #94a3b8 }
+  .submit[disabled]::after { color: #ffffff }
+</style>

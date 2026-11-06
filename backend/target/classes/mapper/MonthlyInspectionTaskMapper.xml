@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gjxt.inspection.mapper.MonthlyInspectionTaskMapper">
+
+    <!-- 基础结果映射 -->
+    <resultMap id="BaseResultMap" type="com.gjxt.inspection.entity.MonthlyInspectionTask">
+        <id column="id" property="id" jdbcType="VARCHAR"/>
+        <result column="task_no" property="taskNo" jdbcType="VARCHAR"/>
+        <result column="task_name" property="taskName" jdbcType="VARCHAR"/>
+        <result column="inspection_start_time" property="inspectionStartTime" jdbcType="TIMESTAMP"/>
+        <result column="inspection_end_time" property="inspectionEndTime" jdbcType="TIMESTAMP"/>
+        <result column="publicity_start_time" property="publicityStartTime" jdbcType="TIMESTAMP"/>
+        <result column="publicity_end_time" property="publicityEndTime" jdbcType="TIMESTAMP"/>
+        <result column="task_description" property="taskDescription" jdbcType="VARCHAR"/>
+        <result column="status" property="status" jdbcType="INTEGER"/>
+        <result column="notification_sent" property="notificationSent" jdbcType="INTEGER"/>
+        <result column="create_user_id" property="createUserId" jdbcType="VARCHAR"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="update_time" property="updateTime" jdbcType="TIMESTAMP"/>
+        <result column="deleted" property="deleted" jdbcType="INTEGER"/>
+    </resultMap>
+
+    <!-- 详情结果映射（包含创建人姓名） -->
+    <resultMap id="TaskDetailResultMap" type="com.gjxt.inspection.entity.MonthlyInspectionTask" extends="BaseResultMap">
+        <result column="create_user_name" property="createUserName" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <!-- 基础列 -->
+    <sql id="Base_Column_List">
+        id, task_no, task_name, inspection_start_time, inspection_end_time,
+        publicity_start_time, publicity_end_time, task_description, status,
+        notification_sent, create_user_id, create_time, update_time, deleted
+    </sql>
+
+    <!-- 详情查询列（包含关联信息） -->
+    <sql id="Detail_Column_List">
+        t.id, t.task_no, t.task_name, t.inspection_start_time, t.inspection_end_time,
+        t.publicity_start_time, t.publicity_end_time, t.task_description, t.status,
+        t.notification_sent, t.create_user_id, t.create_time, t.update_time, t.deleted,
+        cu.real_name as create_user_name
+    </sql>
+
+    <!-- 分页查询月检任务列表 -->
+    <select id="selectTaskPage" resultMap="TaskDetailResultMap">
+        SELECT
+        <include refid="Detail_Column_List"/>
+        FROM sys_monthly_inspection_task t
+        LEFT JOIN sys_user cu ON t.create_user_id = cu.id AND cu.deleted = 0
+        WHERE t.deleted = 0
+        <if test="status != null">
+            AND t.status = #{status}
+        </if>
+        <if test="taskName != null and taskName != ''">
+            AND (t.task_name LIKE CONCAT('%', #{taskName}, '%')
+                 OR t.task_no LIKE CONCAT('%', #{taskName}, '%'))
+        </if>
+        <if test="inspectionStartTime != null">
+            AND t.inspection_start_time &gt;= #{inspectionStartTime}
+        </if>
+        <if test="inspectionEndTime != null">
+            AND t.inspection_end_time &lt;= #{inspectionEndTime}
+        </if>
+        ORDER BY t.create_time DESC
+    </select>
+
+    <!-- 根据ID查询任务详情 -->
+    <select id="selectTaskDetail" resultMap="TaskDetailResultMap">
+        SELECT
+        <include refid="Detail_Column_List"/>
+        FROM sys_monthly_inspection_task t
+        LEFT JOIN sys_user cu ON t.create_user_id = cu.id AND cu.deleted = 0
+        WHERE t.id = #{id} AND t.deleted = 0
+    </select>
+
+    <!-- 根据用户ID查询相关任务（按创建人） -->
+    <select id="selectTasksByUserId" resultMap="TaskDetailResultMap">
+        SELECT
+        <include refid="Detail_Column_List"/>
+        FROM sys_monthly_inspection_task t
+        LEFT JOIN sys_user cu ON t.create_user_id = cu.id AND cu.deleted = 0
+        WHERE t.deleted = 0
+        AND t.create_user_id = #{userId}
+        <if test="status != null">
+            AND t.status = #{status}
+        </if>
+        ORDER BY t.create_time DESC
+    </select>
+
+    <!-- 统计各状态任务数量 -->
+    <select id="selectStatusStatistics" resultType="map">
+        SELECT
+        status,
+        COUNT(*) as count
+        FROM sys_monthly_inspection_task
+        WHERE deleted = 0
+        GROUP BY status
+    </select>
+
+    <!-- 统计各部门任务数量（按创建人所属部门统计） -->
+    <select id="selectDepartmentStatistics" resultType="map">
+        SELECT
+        d.dept_name as department_name,
+        COUNT(t.id) as count
+        FROM sys_monthly_inspection_task t
+        LEFT JOIN sys_user u ON t.create_user_id = u.id AND u.deleted = 0
+        LEFT JOIN sys_dept d ON u.dept_id = d.id AND d.deleted = 0
+        WHERE t.deleted = 0
+        <if test="status != null">
+            AND t.status = #{status}
+        </if>
+        GROUP BY u.dept_id, d.dept_name
+        ORDER BY count DESC
+    </select>
+
+    <!-- 统计各专业任务数量（占位：任务不再持有 profession_id，返回空集） -->
+    <select id="selectProfessionStatistics" resultType="map">
+        SELECT NULL as profession_name, 0 as count
+        WHERE 1 = 0
+    </select>
+
+    <!-- 查询需要发送通知的任务 -->
+    <select id="selectTasksForNotification" resultMap="TaskDetailResultMap">
+        SELECT
+        <include refid="Detail_Column_List"/>
+        FROM sys_monthly_inspection_task t
+        LEFT JOIN sys_user cu ON t.create_user_id = cu.id AND cu.deleted = 0
+        WHERE t.deleted = 0 AND t.notification_sent = 0
+        ORDER BY t.create_time ASC
+    </select>
+
+    <!-- 批量更新通知发送状态 -->
+    <update id="batchUpdateNotificationSent">
+        UPDATE sys_monthly_inspection_task
+        SET notification_sent = 1, update_time = NOW()
+        WHERE id IN
+        <foreach collection="taskIds" item="taskId" open="(" separator="," close=")">
+            #{taskId}
+        </foreach>
+        AND deleted = 0
+    </update>
+
+    <!-- 根据任务编号查询任务 -->
+    <select id="selectByTaskNo" resultMap="TaskDetailResultMap">
+        SELECT
+        <include refid="Detail_Column_List"/>
+        FROM sys_monthly_inspection_task t
+        LEFT JOIN sys_user cu ON t.create_user_id = cu.id AND cu.deleted = 0
+        WHERE t.task_no = #{taskNo} AND t.deleted = 0
+    </select>
+
+</mapper>

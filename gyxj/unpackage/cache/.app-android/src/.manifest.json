@@ -1,0 +1,85 @@
+{
+  "version": "1",
+  "env": {
+    "vapor": false,
+    "compiler_version": "5.15"
+  },
+  "files": {
+    "pages/home/home.kt": {
+      "class": "GenPagesHomeHome",
+      "md5": "0d81c69628e1e57aa653cb29bd30b32664b642bc"
+    },
+    "pages/monthly/review.kt": {
+      "class": "GenPagesMonthlyReview",
+      "md5": "fff4a3b9e36a0042450159259c2ded0385e75295"
+    },
+    "pages/monthly/task-record.kt": {
+      "class": "GenPagesMonthlyTaskRecord",
+      "md5": "ed3b8f2fd44f5eeddb4699b4c3b5d896e07d0a8e"
+    },
+    "pages/record/detail.kt": {
+      "md5": "831a54a2d755b228e1535614e77bddddff228c2b",
+      "class": "GenPagesRecordDetail"
+    },
+    "pages/weekly/weekly.kt": {
+      "class": "GenPagesWeeklyWeekly",
+      "md5": "b88f28bd63caebced10472e20900d469644f1b20"
+    },
+    "pages/monthly/view.kt": {
+      "class": "GenPagesMonthlyView",
+      "md5": "92dc52d6d74c6ea77ed8b8b84674cab61c59ce61"
+    },
+    "pages/record/add.kt": {
+      "class": "GenPagesRecordAdd",
+      "md5": "7c19c2e76798ada7e3645c6ce3abfaabe420db0b"
+    },
+    "pages/monthly/rectify.kt": {
+      "md5": "f06bb2885a9ba95b88e55e9662e043e6a5053f17",
+      "class": "GenPagesMonthlyRectify"
+    },
+    "pages/monthly/monthly.kt": {
+      "class": "GenPagesMonthlyMonthly",
+      "md5": "c429eb4d4504427f4ec4a8ee068e3774db9776c6"
+    },
+    "pages/record/record.kt": {
+      "class": "GenPagesRecordRecord",
+      "md5": "5ccd9868153f3bf356dba851c2e8a7c107aed9cd"
+    },
+    "pages/statistics/statistics.kt": {
+      "md5": "f74cf848b0de02822d3daf593a41d383d8401c06",
+      "class": "GenPagesStatisticsStatistics"
+    },
+    "uni_modules/tui-xechars/components/tui-xechars/tui-xechars.kt": {
+      "md5": "93ed3f3870c7e6c6eb45ef695178819213262627",
+      "class": "GenUniModulesTuiXecharsComponentsTuiXecharsTuiXechars"
+    },
+    "pages/chart-test/chart-test.kt": {
+      "md5": "b0d926350e356bf06ceb475dcabc7485de00770a",
+      "class": "GenPagesChartTestChartTest"
+    },
+    "pages/index/index.kt": {
+      "class": "GenPagesIndexIndex",
+      "md5": "9cd3534ed666afa6649a842fe6865588475727f8"
+    },
+    "index.kt": {
+      "class": "",
+      "md5": "2162abc0f37417a2a1d37ff3d720df5520dfdd27"
+    },
+    "pages/profile/profile.kt": {
+      "class": "GenPagesProfileProfile",
+      "md5": "f0c2757b04fbab2c5a942003c284c342949dc447"
+    },
+    "pages/login/login.kt": {
+      "md5": "d25255491d87a66127d7bc1bb9ecb4b0749cfc5c",
+      "class": "GenPagesLoginLogin"
+    },
+    "pages/test/test.kt": {
+      "class": "GenPagesTestTest",
+      "md5": "d033e8153c8eb8916b1e4e103c5ac18f01448fc7"
+    },
+    "pages/record/review.kt": {
+      "class": "GenPagesRecordReview",
+      "md5": "3fb3b897b28a10df0e8b805522ea473f881b8f1b"
+    }
+  }
+}

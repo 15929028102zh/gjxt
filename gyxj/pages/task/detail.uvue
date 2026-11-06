@@ -1,0 +1,608 @@
+<template>
+	<view class="container">
+		<view v-if="loading" class="loading-state">
+			<text class="loading-text">加载中...</text>
+		</view>
+		
+		<view v-else-if="taskDetail" class="detail-content">
+			<!-- 任务基本信息 -->
+			<view class="info-card">
+				<view class="card-header">
+					<text class="card-title">基本信息</text>
+					<view class="task-status" :class="getStatusClass(taskDetail?.status ?? 0)">
+			<text>{{getStatusText(taskDetail?.status ?? 0)}}</text>
+				</view>
+				</view>
+				<view class="info-list">
+					<view class="info-item">
+						<text class="info-label">任务名称</text>
+						<text class="info-value">{{taskDetail?.taskName ?? ''}}</text>
+					</view>
+					<view class="info-item">
+						<text class="info-label">巡检位置</text>
+						<text class="info-value">{{taskDetail?.locationName ?? ''}}</text>
+					</view>
+					<view class="info-item">
+						<text class="info-label">计划时间</text>
+						<text class="info-value">{{taskDetail?.plannedTime ?? ''}}</text>
+					</view>
+					<view class="info-item" v-if="taskDetail?.assigneeName">
+			<text class="info-label">负责人</text>
+			<text class="info-value">{{taskDetail?.assigneeName ?? ''}}</text>
+				</view>
+					<view class="info-item">
+						<text class="info-label">创建时间</text>
+						<text class="info-value">{{taskDetail?.createTime ?? ''}}</text>
+					</view>
+					<view class="info-item" v-if="taskDetail?.updateTime">
+			<text class="info-label">更新时间</text>
+			<text class="info-value">{{taskDetail?.updateTime ?? ''}}</text>
+				</view>
+				</view>
+			</view>
+			
+			<!-- 任务描述 -->
+			<view class="info-card" v-if="taskDetail?.description">
+				<view class="card-header">
+					<text class="card-title">任务描述</text>
+				</view>
+				<view class="description-content">
+					<text class="description-text">{{taskDetail?.description ?? ''}}</text>
+				</view>
+			</view>
+
+			<!-- 巡检要求 -->
+			<view class="info-card" v-if="taskDetail?.requirements">
+				<view class="card-header">
+					<text class="card-title">巡检要求</text>
+				</view>
+				<view class="description-content">
+					<text class="description-text">{{taskDetail?.requirements ?? ''}}</text>
+				</view>
+			</view>
+			
+			<!-- 相关记录 -->
+			<view class="info-card">
+				<view class="card-header">
+					<text class="card-title">相关记录</text>
+					<text class="record-count">({{relatedRecords.length}}条)</text>
+				</view>
+				<view class="records-list">
+					<view class="record-item" v-for="record in relatedRecords" :key="record.id" @click="goToRecordDetail(record.id)">
+						<view class="record-info">
+							<text class="record-title">{{record.problemDescription}}</text>
+							<text class="record-time">{{record.createTime}}</text>
+						</view>
+						<view class="record-status" :class="getRecordStatusClass(record.status)">
+							<text>{{getRecordStatusText(record.status)}}</text>
+						</view>
+					</view>
+					<view v-if="relatedRecords.length === 0" class="empty-records">
+						<text class="empty-text">暂无相关记录</text>
+					</view>
+				</view>
+			</view>
+		</view>
+		
+		<!-- 操作按钮 -->
+		<view class="action-buttons" v-if="taskDetail != null && taskDetail?.status !== 3">
+			<button class="action-btn primary" @click="startTask" v-if="taskDetail?.status === 0">
+				开始执行
+			</button>
+			<button class="action-btn success" @click="completeTask" v-if="taskDetail?.status === 1">
+				完成任务
+			</button>
+			<button class="action-btn secondary" @click="addRecord" v-if="taskDetail?.status === 1">
+				新增记录
+			</button>
+		</view>
+	</view>
+</template>
+
+<script lang="uts">
+	import { getApiUrl } from '@/config/api.uts'
+	type TaskDetail = {
+		id: number
+		taskName: string
+		locationName: string
+		plannedTime: string
+		assigneeName?: string
+		createTime: string
+		updateTime?: string
+		status: number
+		description?: string
+		requirements?: string
+	}
+
+	type RelatedRecord = {
+		id: string
+		problemDescription: string
+		createTime: string
+		status: number
+	}
+
+	export default {
+		data() {
+			return {
+				taskId: 0 as number,
+				taskDetail: null as TaskDetail | null,
+				relatedRecords: [] as Array<RelatedRecord>,
+				loading: true as boolean
+			}
+		},
+		onLoad(options: UTSJSONObject) {
+			this.taskId = options.getNumber('id') ?? 0
+			this.checkLogin()
+			this.loadTaskDetail()
+			this.loadRelatedRecords()
+		},
+		methods: {
+			checkLogin() {
+				const token = uni.getStorageSync('token') as string
+				if (token == null || token == '') {
+					uni.reLaunch({
+						url: '/pages/login/login'
+					})
+				}
+			},
+			
+			async loadTaskDetail() {
+				try {
+					const token = uni.getStorageSync('token')
+				uni.request({
+					url: getApiUrl(`/inspection-task/${this.taskId}`),
+					method: 'GET',
+					header: {
+						'Authorization': `Bearer ${token}`
+					},
+					success: (res) => {
+							const data = res.data as UTSJSONObject
+							if (res.statusCode === 200 && data.getNumber('code') === 200) {
+								const taskData = data.getJSON('data')
+								if (taskData != null) {
+									this.taskDetail = {
+					id: taskData?.getNumber('id') ?? 0,
+					taskName: taskData?.getString('taskName') ?? '',
+					locationName: taskData?.getString('locationName') ?? '',
+					plannedTime: taskData?.getString('plannedTime') ?? '',
+					assigneeName: taskData?.getString('assigneeName') ?? '',
+					createTime: taskData?.getString('createTime') ?? '',
+					updateTime: taskData?.getString('updateTime') ?? '',
+					status: taskData?.getNumber('status') ?? 0,
+					description: taskData?.getString('description') ?? '',
+					requirements: taskData?.getString('requirements') ?? ''
+				}
+								}
+						// 设置页面标题
+				if (this.taskDetail != null && this.taskDetail?.taskName != null && (this.taskDetail?.taskName?.length ?? 0) > 0) {
+					uni.setNavigationBarTitle({
+						title: this.taskDetail?.taskName ?? ''
+					})
+				}
+						} else {
+				uni.showToast({
+					title: data.getString('message') ?? '加载失败',
+					icon: 'none'
+				})
+			}
+					},
+					fail: (error) => {
+						console.error('加载任务详情失败:', error)
+						uni.showToast({
+							title: '网络错误',
+							icon: 'none'
+						})
+					}
+				})
+				} catch (error) {
+					console.error('加载任务详情失败:', error)
+					uni.showToast({
+						title: '网络错误',
+						icon: 'none'
+					})
+				} finally {
+					this.loading = false
+				}
+			},
+			
+			loadRelatedRecords() {
+				const token = uni.getStorageSync('token')
+				uni.request({
+					url: getApiUrl(`/inspection-record/page?taskId=${this.taskId}&pageSize=50`),
+					method: 'GET',
+					header: {
+						'Authorization': `Bearer ${token}`
+					},
+					success: (res) => {
+						const data = res.data as UTSJSONObject
+						if (res.statusCode === 200 && data.getNumber('code') === 200) {
+							const responseData = data.getJSON('data')
+							if (responseData != null) {
+								const records = responseData.getArray('records') as Array<UTSJSONObject>
+								if (records != null) {
+									this.relatedRecords = []
+									for (let i = 0; i < records.length; i++) {
+										const item = records[i]
+										this.relatedRecords.push({
+											id: item.getString('id') ?? '',
+											problemDescription: item.getString('problemDescription') ?? '',
+											createTime: item.getString('createTime') ?? '',
+											status: item.getNumber('status') ?? 0
+										})
+									}
+								} else {
+									this.relatedRecords = [] as Array<RelatedRecord>
+								}
+							} else {
+								this.relatedRecords = [] as Array<RelatedRecord>
+							}
+						}
+					},
+					fail: (error) => {
+						console.error('加载相关记录失败:', error)
+					}
+				})
+			},
+			
+			startTask() {
+				uni.showModal({
+					title: '确认操作',
+					content: '确定要开始执行此任务吗？',
+					success: (res) => {
+						if (res.confirm) {
+							const token = uni.getStorageSync('token')
+							uni.request({
+								url: getApiUrl(`/inspection-task/${this.taskId}/start`),
+								method: 'PUT',
+								header: {
+									'Authorization': `Bearer ${token}`
+								},
+								success: (response) => {
+									const data = response.data as UTSJSONObject
+					if (response.statusCode === 200 && data.getNumber('code') === 200) {
+										uni.showToast({
+											title: '任务已开始',
+											icon: 'success'
+									})
+									this.loadTaskDetail()
+								} else {
+				uni.showToast({
+					title: data.getString('message') ?? '操作失败',
+					icon: 'none'
+				})
+			}
+							},
+							fail: (error) => {
+								console.error('开始任务失败:', error)
+								uni.showToast({
+									title: '网络错误',
+									icon: 'none'
+								})
+							}
+						})
+					}
+				}
+			})
+		},
+		
+		completeTask() {
+			uni.showModal({
+				title: '确认操作',
+				content: '确定要完成此任务吗？',
+				success: (res) => {
+					if (res.confirm) {
+						const token = uni.getStorageSync('token')
+						uni.request({
+							url: getApiUrl(`/inspection-task/${this.taskId}/complete`),
+						method: 'PUT',
+						header: {
+							'Authorization': `Bearer ${token}`
+						},
+						success: (response) => {
+							const data = response.data as UTSJSONObject
+				if (response.statusCode === 200 && data.getNumber('code') === 200) {
+								uni.showToast({
+									title: '任务已完成',
+									icon: 'success'
+								})
+								this.loadTaskDetail()
+							} else {
+				uni.showToast({
+					title: data.getString('message') ?? '操作失败',
+					icon: 'none'
+				})
+			}
+						},
+						fail: (error) => {
+							console.error('完成任务失败:', error)
+							uni.showToast({
+								title: '网络错误',
+								icon: 'none'
+							})
+						}
+					})
+				}
+			}
+		})
+	},
+			
+			addRecord() {
+				uni.navigateTo({
+					url: `/pages/record/add?taskId=${this.taskId}`
+				})
+			},
+			
+			goToRecordDetail(recordId: string) {
+				uni.navigateTo({
+					url: `/pages/record/detail?id=${recordId}`
+				})
+			},
+			
+			getStatusText(status: number): string {
+				switch (status) {
+					case 0: return '待执行'
+					case 1: return '执行中'
+					case 2: return '已完成'
+					case 3: return '已取消'
+					default: return '未知'
+				}
+			},
+			
+			getStatusClass(status: number): string {
+				switch (status) {
+					case 0: return 'status-pending'
+					case 1: return 'status-processing'
+					case 2: return 'status-completed'
+					case 3: return 'status-cancelled'
+					default: return 'status-unknown'
+				}
+			},
+			
+			getRecordStatusText(status: number): string {
+				switch (status) {
+					case 0: return '待整改'
+					case 1: return '已整改'
+					case 2: return '已复查'
+					default: return '未知'
+				}
+			},
+			
+			getRecordStatusClass(status: number): string {
+				switch (status) {
+					case 0: return 'record-status-pending'
+					case 1: return 'record-status-completed'
+					case 2: return 'record-status-accepted'
+					default: return 'record-status-unknown'
+				}
+			}
+		}
+	}
+</script>
+
+<style>
+	.container {
+		padding: 20px;
+		background: linear-gradient(180deg, #eff6ff 0%, #dbeafe 100%);
+		padding-bottom: 100px;
+	}
+	
+	.loading-state {
+		text-align: center;
+		padding: 60px 0;
+	}
+	
+	.loading-text {
+		font-size: 16px;
+		color: #666;
+	}
+	
+	.detail-content {
+		
+	}
+	
+	.info-card {
+		background: #fff;
+		border-radius: 12px;
+		padding: 20px;
+		margin-bottom: 20px;
+		box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+	}
+	
+	.card-header {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		margin-bottom: 20px;
+		padding-bottom: 15px;
+		border-bottom: 1px solid #f0f0f0;
+	}
+	
+	.card-title {
+		font-size: 18px;
+		font-weight: bold;
+		color: #333;
+	}
+	
+	.record-count {
+		font-size: 14px;
+		color: #666;
+	}
+	
+	.task-status {
+		padding: 6px 12px;
+		border-radius: 6px;
+		font-size: 14px;
+		font-weight: bold;
+	}
+	
+	.status-pending {
+		background: #fff3cd;
+		color: #856404;
+	}
+	
+	.status-processing {
+		background: #d1ecf1;
+		color: #0c5460;
+	}
+	
+	.status-completed {
+		background: #d4edda;
+		color: #155724;
+	}
+	
+	.status-cancelled {
+		background: #f8d7da;
+		color: #721c24;
+	}
+	
+	.info-list {
+		
+	}
+	
+	.info-item {
+		display: flex;
+		padding: 12px 0;
+		border-bottom: 1px solid #f8f9fa;
+	}
+	
+	.info-item:last-child {
+		border-bottom: none;
+	}
+	
+	.info-label {
+		font-size: 14px;
+		color: #666;
+		min-width: 80px;
+		font-weight: 500;
+	}
+	
+	.info-value {
+		font-size: 14px;
+		color: #333;
+		flex: 1;
+		word-break: break-all;
+	}
+	
+	.description-content {
+		padding: 15px;
+		background: #f8f9fa;
+		border-radius: 8px;
+		line-height: 1.6;
+	}
+	
+	.description-text {
+		font-size: 14px;
+		color: #333;
+	}
+	
+	.records-list {
+		
+	}
+	
+	.record-item {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		padding: 15px 0;
+		border-bottom: 1px solid #f0f0f0;
+	}
+	
+	.record-item:last-child {
+		border-bottom: none;
+	}
+	
+	.record-info {
+		flex: 1;
+		margin-right: 10px;
+	}
+	
+	.record-title {
+		font-size: 14px;
+		color: #333;
+		margin-bottom: 5px;
+		word-break: break-all;
+	}
+	
+	.record-time {
+		font-size: 12px;
+		color: #999;
+	}
+	
+	.record-status {
+		padding: 4px 8px;
+		border-radius: 4px;
+		font-size: 12px;
+		white-space: nowrap;
+	}
+	
+	.record-status-pending {
+		background: #fff3cd;
+		color: #856404;
+	}
+	
+	.record-status-processing {
+		background: #d1ecf1;
+		color: #0c5460;
+	}
+	
+	.record-status-completed {
+		background: #d4edda;
+		color: #155724;
+	}
+	
+	.record-status-accepted {
+		background: #e2e3e5;
+		color: #383d41;
+	}
+	
+	.empty-records {
+		text-align: center;
+		padding: 40px 0;
+	}
+	
+	.empty-text {
+		font-size: 14px;
+		color: #999;
+	}
+	
+	.action-buttons {
+		position: fixed;
+		bottom: 0;
+		left: 0;
+		right: 0;
+		padding: 20px;
+		background: #fff;
+		border-top: 1px solid #f0f0f0;
+		display: flex;
+		gap: 15px;
+	}
+	
+	.action-btn {
+		flex: 1;
+		height: 44px;
+		border-radius: 8px;
+		border: none;
+		font-size: 16px;
+		font-weight: bold;
+		cursor: pointer;
+	}
+	
+	.action-btn.primary {
+		background: linear-gradient(135deg, #1e40af 0%, #0ea5e9 100%);
+		color: #fff;
+	}
+	
+	.action-btn.success {
+		background: #28a745;
+		color: #fff;
+	}
+	
+	.action-btn.secondary {
+		background: #6c757d;
+		color: #fff;
+	}
+	
+	.action-btn:active {
+		opacity: 0.8;
+	}
+</style>

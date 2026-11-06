@@ -1,0 +1,53 @@
+<template>
+	<canvas class="tui-xcharts-main" :id="guid" @click="tap" @touchstart="touchStart" @touchmove="touchMove"
+		@touchend="touchEnd">
+	</canvas>
+</template>
+
+<script setup>
+	import { TuiGuid } from '../../libs/common'
+	import { TuiCharts } from '../../index'
+	const guid : string = `tui${TuiGuid(20)}`
+	const emits = defineEmits(['initFinished', 'select'])
+	const charts = new TuiCharts()
+	const ins = getCurrentInstance()?.proxy as ComponentPublicInstance
+	onMounted(() => {
+		nextTick(() => {
+			(uni.getElementById(guid) as UniElement).getBoundingClientRectAsync()?.then((rst : DOMRect) => {
+				uni.createCanvasContextAsync({
+					id: guid,
+					component: ins,
+					success: (context : CanvasContext) => {
+						const ctx = context.getContext('2d')!;
+						const canvas = ctx.canvas
+						const dpr = uni.getWindowInfo().pixelRatio;
+						canvas.width = canvas.offsetWidth * dpr;
+						canvas.height = canvas.offsetHeight * dpr;
+						ctx.scale(dpr, dpr);
+						charts.setInsMethod(ins, rst)
+						charts.setContext(context)
+						emits('initFinished', charts)
+					}
+				})
+			});
+		})
+	})
+	function touchStart(e : UniTouchEvent) {
+		charts.touchStart(e)
+	}
+	function touchMove(e : UniTouchEvent) {
+		charts.touchMove(e)
+	}
+	function touchEnd(e : UniTouchEvent) {
+		charts.touchEnd(e)
+	}
+	function tap(e : UniPointerEvent) {
+		charts.tap(e)
+	}
+</script>
+<style>
+	.tui-xcharts-main {
+		width: 690rpx;
+		height: 500rpx;
+	}
+</style>

@@ -1,0 +1,21 @@
+{
+    "id": "ml-weboscket",
+    "name": "ws",
+    "displayName": "ws",
+    "version": "1.0.0",
+    "description": "基于uniapp官方api制作的weboscket连接工具，支持多个长连接、心跳检测、自动重连、网络状态检测",
+    "keywords": [
+        "ws、websocket、ts"
+    ],
+    "dcloudext": {
+        "type": "js_sdk",
+        "sale": {
+            "regular": {
+                "price": "0.00"
+            },
+            "sourcecode": {
+                "price": "0.00"
+            }
+        }
+    }
+}

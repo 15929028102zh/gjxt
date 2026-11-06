@@ -1,0 +1,165 @@
+2026-11-04 09:20:26 [main] INFO  com.gjxt.inspection.InspectionSystemApplication - Starting InspectionSystemApplication using Java 1.8.0_391 on 误入凡尘的灵 with PID 45920 (F:\gjxt\backend\target\classes started by 174344 in F:\gjxt\backend)
+2026-11-04 09:20:26 [main] DEBUG com.gjxt.inspection.InspectionSystemApplication - Running with Spring Boot v2.7.18, Spring v5.3.31
+2026-11-04 09:20:26 [main] INFO  com.gjxt.inspection.InspectionSystemApplication - No active profile set, falling back to 1 default profile: "default"
+2026-11-04 09:20:29 [main] INFO  o.s.boot.web.embedded.tomcat.TomcatWebServer - Tomcat initialized with port(s): 8081 (http)
+2026-11-04 09:20:29 [main] INFO  org.apache.catalina.core.AprLifecycleListener - Loaded Apache Tomcat Native library [1.3.8] using APR version [1.7.6].
+2026-11-04 09:20:29 [main] INFO  org.apache.catalina.core.AprLifecycleListener - APR capabilities: IPv6 [true], sendfile [true], accept filters [false], random [true], UDS [true].
+2026-11-04 09:20:29 [main] INFO  org.apache.catalina.core.AprLifecycleListener - APR/OpenSSL configuration: useAprConnector [false], useOpenSSL [true]
+2026-11-04 09:20:29 [main] INFO  org.apache.catalina.core.AprLifecycleListener - OpenSSL successfully initialized [OpenSSL 3.0.21 9 Jun 2026]
+2026-11-04 09:20:29 [main] INFO  org.apache.catalina.core.StandardService - Starting service [Tomcat]
+2026-11-04 09:20:29 [main] INFO  org.apache.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/9.0.83]
+2026-11-04 09:20:29 [main] INFO  o.a.c.c.ContainerBase.[Tomcat].[localhost].[/api] - Initializing Spring embedded WebApplicationContext
+2026-11-04 09:20:29 [main] INFO  o.s.b.w.s.c.ServletWebServerApplicationContext - Root WebApplicationContext: initialization completed in 3110 ms
+2026-11-04 09:20:29 [main] INFO  c.a.d.s.b.a.DruidDataSourceAutoConfigure - Init DruidDataSource
+2026-11-04 09:20:53 [main] INFO  com.alibaba.druid.pool.DruidDataSource - {dataSource-1} inited
+2026-11-04 09:20:53 [main] DEBUG c.gjxt.inspection.security.JwtAuthenticationFilter - Filter 'jwtAuthenticationFilter' configured for use
+2026-11-04 09:20:56 [main] WARN  o.s.b.a.s.s.UserDetailsServiceAutoConfiguration - 
+
+Using generated security password: 6b77c979-6455-43be-87a1-c6e0915c2b4a
+
+This generated password is for development use only. Your security configuration must be updated before running your application in production.
+
+2026-11-04 09:20:56 [main] INFO  o.s.security.web.DefaultSecurityFilterChain - Will secure any request with [org.springframework.security.web.session.DisableEncodeUrlFilter@519c6fcc, org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter@6ad1701a, org.springframework.security.web.context.SecurityContextPersistenceFilter@7e8279e5, org.springframework.security.web.header.HeaderWriterFilter@125d47c4, org.springframework.web.filter.CorsFilter@7ecda95b, org.springframework.security.web.authentication.logout.LogoutFilter@3c770db4, com.gjxt.inspection.security.JwtAuthenticationFilter@58d6b7b9, org.springframework.security.web.savedrequest.RequestCacheAwareFilter@3caafa67, org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter@62b475e2, org.springframework.security.web.authentication.AnonymousAuthenticationFilter@22da2fe6, org.springframework.security.web.session.SessionManagementFilter@23468512, org.springframework.security.web.access.ExceptionTranslationFilter@19489b27, org.springframework.security.web.access.intercept.FilterSecurityInterceptor@3421debd]
+2026-11-04 09:20:57 [main] INFO  org.quartz.impl.StdSchedulerFactory - Using default implementation for ThreadExecutor
+2026-11-04 09:20:57 [main] INFO  org.quartz.core.SchedulerSignalerImpl - Initialized Scheduler Signaller of type: class org.quartz.core.SchedulerSignalerImpl
+2026-11-04 09:20:57 [main] INFO  org.quartz.core.QuartzScheduler - Quartz Scheduler v.2.3.2 created.
+2026-11-04 09:20:57 [main] INFO  org.quartz.simpl.RAMJobStore - RAMJobStore initialized.
+2026-11-04 09:20:57 [main] INFO  org.quartz.core.QuartzScheduler - Scheduler meta-data: Quartz Scheduler (v2.3.2) 'quartzScheduler' with instanceId 'NON_CLUSTERED'
+  Scheduler class: 'org.quartz.core.QuartzScheduler' - running locally.
+  NOT STARTED.
+  Currently in standby mode.
+  Number of jobs executed: 0
+  Using thread pool 'org.quartz.simpl.SimpleThreadPool' - with 10 threads.
+  Using job-store 'org.quartz.simpl.RAMJobStore' - which does not support persistence. and is not clustered.
+
+2026-11-04 09:20:57 [main] INFO  org.quartz.impl.StdSchedulerFactory - Quartz scheduler 'quartzScheduler' initialized from an externally provided properties instance.
+2026-11-04 09:20:57 [main] INFO  org.quartz.impl.StdSchedulerFactory - Quartz scheduler version: 2.3.2
+2026-11-04 09:20:57 [main] INFO  org.quartz.core.QuartzScheduler - JobFactory set to: org.springframework.scheduling.quartz.SpringBeanJobFactory@150fc7a7
+2026-11-04 09:20:57 [main] INFO  o.s.b.actuate.endpoint.web.EndpointLinksResolver - Exposing 3 endpoint(s) beneath base path '/actuator'
+2026-11-04 09:20:57 [main] INFO  o.s.boot.web.embedded.tomcat.TomcatWebServer - Tomcat started on port(s): 8081 (http) with context path '/api'
+2026-11-04 09:20:57 [main] INFO  o.s.m.simp.broker.SimpleBrokerMessageHandler - Starting...
+2026-11-04 09:20:57 [main] INFO  o.s.m.simp.broker.SimpleBrokerMessageHandler - BrokerAvailabilityEvent[available=true, SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@69d103f0]]
+2026-11-04 09:20:57 [main] INFO  o.s.m.simp.broker.SimpleBrokerMessageHandler - Started.
+2026-11-04 09:20:57 [main] INFO  o.s.scheduling.quartz.SchedulerFactoryBean - Starting Quartz Scheduler now
+2026-11-04 09:20:57 [main] INFO  org.quartz.core.QuartzScheduler - Scheduler quartzScheduler_$_NON_CLUSTERED started.
+2026-11-04 09:20:57 [main] INFO  com.gjxt.inspection.InspectionSystemApplication - Started InspectionSystemApplication in 31.779 seconds (JVM running for 32.255)
+2026-11-04 09:21:56 [MessageBroker-1] INFO  o.s.web.socket.config.WebSocketMessageBrokerStats - WebSocketSession[0 current WS(0)-HttpStream(0)-HttpPoll(0), 0 total, 0 closed abnormally (0 connect failure, 0 send limit, 0 transport error)], stompSubProtocol[processed CONNECT(0)-CONNECTED(0)-DISCONNECT(0)], stompBrokerRelay[null], inboundChannel[pool size = 0, active threads = 0, queued tasks = 0, completed tasks = 0], outboundChannel[pool size = 0, active threads = 0, queued tasks = 0, completed tasks = 0], sockJsScheduler[pool size = 2, active threads = 1, queued tasks = 1, completed tasks = 0]
+2026-11-04 09:28:15 [http-nio-0.0.0.0-8081-exec-5] INFO  o.a.c.c.ContainerBase.[Tomcat].[localhost].[/api] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-11-04 09:28:15 [http-nio-0.0.0.0-8081-exec-5] INFO  org.springframework.web.servlet.DispatcherServlet - Initializing Servlet 'dispatcherServlet'
+2026-11-04 09:28:15 [http-nio-0.0.0.0-8081-exec-5] INFO  org.springframework.web.servlet.DispatcherServlet - Completed initialization in 4 ms
+2026-11-04 09:28:40 [http-nio-0.0.0.0-8081-exec-4] WARN  o.s.w.s.m.support.DefaultHandlerExceptionResolver - Resolved [org.springframework.http.converter.HttpMessageNotReadableException: JSON parse error: Invalid UTF-8 middle byte 0xd8; nested exception is com.fasterxml.jackson.databind.JsonMappingException: Invalid UTF-8 middle byte 0xd8<EOL> at [Source: (org.springframework.util.StreamUtils$NonClosingInputStream); line: 1, column: 66] (through reference chain: com.gjxt.inspection.entity.MonthlyInspectionRecord["problemDescription"])]
+2026-11-04 09:28:51 [http-nio-0.0.0.0-8081-exec-7] WARN  o.s.w.s.m.support.DefaultHandlerExceptionResolver - Resolved [org.springframework.http.converter.HttpMessageNotReadableException: JSON parse error: Invalid UTF-8 middle byte 0xd8; nested exception is com.fasterxml.jackson.databind.JsonMappingException: Invalid UTF-8 middle byte 0xd8<EOL> at [Source: (org.springframework.util.StreamUtils$NonClosingInputStream); line: 1, column: 66] (through reference chain: com.gjxt.inspection.entity.MonthlyInspectionRecord["problemDescription"])]
+2026-11-04 09:29:36 [http-nio-0.0.0.0-8081-exec-10] INFO  c.g.i.service.impl.NotificationServiceImpl - 批量创建通知成功, count: 4
+2026-11-04 09:29:36 [http-nio-0.0.0.0-8081-exec-10] INFO  c.g.i.service.WebSocketNotificationService - WebSocket 批量推送完成，成功 4 条，失败 0 条
+2026-11-04 09:29:58 [http-nio-0.0.0.0-8081-exec-6] INFO  c.g.i.service.impl.NotificationServiceImpl - 批量创建通知成功, count: 4
+2026-11-04 09:29:58 [http-nio-0.0.0.0-8081-exec-6] INFO  c.g.i.service.WebSocketNotificationService - WebSocket 批量推送完成，成功 4 条，失败 0 条
+2026-11-04 13:35:18 [main] INFO  com.gjxt.inspection.InspectionSystemApplication - Starting InspectionSystemApplication using Java 1.8.0_391 on 误入凡尘的灵 with PID 18704 (F:\gjxt\backend\target\classes started by 174344 in F:\gjxt\backend)
+2026-11-04 13:35:18 [main] DEBUG com.gjxt.inspection.InspectionSystemApplication - Running with Spring Boot v2.7.18, Spring v5.3.31
+2026-11-04 13:35:18 [main] INFO  com.gjxt.inspection.InspectionSystemApplication - No active profile set, falling back to 1 default profile: "default"
+2026-11-04 13:35:21 [main] INFO  o.s.boot.web.embedded.tomcat.TomcatWebServer - Tomcat initialized with port(s): 8081 (http)
+2026-11-04 13:35:21 [main] INFO  org.apache.catalina.core.AprLifecycleListener - Loaded Apache Tomcat Native library [1.3.8] using APR version [1.7.6].
+2026-11-04 13:35:21 [main] INFO  org.apache.catalina.core.AprLifecycleListener - APR capabilities: IPv6 [true], sendfile [true], accept filters [false], random [true], UDS [true].
+2026-11-04 13:35:21 [main] INFO  org.apache.catalina.core.AprLifecycleListener - APR/OpenSSL configuration: useAprConnector [false], useOpenSSL [true]
+2026-11-04 13:35:21 [main] INFO  org.apache.catalina.core.AprLifecycleListener - OpenSSL successfully initialized [OpenSSL 3.0.21 9 Jun 2026]
+2026-11-04 13:35:21 [main] INFO  org.apache.catalina.core.StandardService - Starting service [Tomcat]
+2026-11-04 13:35:21 [main] INFO  org.apache.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/9.0.83]
+2026-11-04 13:35:21 [main] INFO  o.a.c.c.ContainerBase.[Tomcat].[localhost].[/api] - Initializing Spring embedded WebApplicationContext
+2026-11-04 13:35:21 [main] INFO  o.s.b.w.s.c.ServletWebServerApplicationContext - Root WebApplicationContext: initialization completed in 3173 ms
+2026-11-04 13:35:21 [main] INFO  c.a.d.s.b.a.DruidDataSourceAutoConfigure - Init DruidDataSource
+2026-11-04 13:35:44 [main] INFO  com.alibaba.druid.pool.DruidDataSource - {dataSource-1} inited
+2026-11-04 13:35:44 [main] DEBUG c.gjxt.inspection.security.JwtAuthenticationFilter - Filter 'jwtAuthenticationFilter' configured for use
+2026-11-04 13:35:47 [main] WARN  o.s.b.a.s.s.UserDetailsServiceAutoConfiguration - 
+
+Using generated security password: 2e45910d-bfe4-46f3-9530-8c29848bf1e4
+
+This generated password is for development use only. Your security configuration must be updated before running your application in production.
+
+2026-11-04 13:35:47 [main] INFO  o.s.security.web.DefaultSecurityFilterChain - Will secure any request with [org.springframework.security.web.session.DisableEncodeUrlFilter@4a070cf0, org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter@764b14b8, org.springframework.security.web.context.SecurityContextPersistenceFilter@1c240cf2, org.springframework.security.web.header.HeaderWriterFilter@13ed066e, org.springframework.web.filter.CorsFilter@202d9236, org.springframework.security.web.authentication.logout.LogoutFilter@1f736d00, com.gjxt.inspection.security.JwtAuthenticationFilter@3f1ef9d6, org.springframework.security.web.savedrequest.RequestCacheAwareFilter@58f2466c, org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter@2b53840a, org.springframework.security.web.authentication.AnonymousAuthenticationFilter@1f782c05, org.springframework.security.web.session.SessionManagementFilter@20801cbb, org.springframework.security.web.access.ExceptionTranslationFilter@648c5fb3, org.springframework.security.web.access.intercept.FilterSecurityInterceptor@2dafae61]
+2026-11-04 13:35:48 [main] INFO  org.quartz.impl.StdSchedulerFactory - Using default implementation for ThreadExecutor
+2026-11-04 13:35:48 [main] INFO  org.quartz.core.SchedulerSignalerImpl - Initialized Scheduler Signaller of type: class org.quartz.core.SchedulerSignalerImpl
+2026-11-04 13:35:48 [main] INFO  org.quartz.core.QuartzScheduler - Quartz Scheduler v.2.3.2 created.
+2026-11-04 13:35:48 [main] INFO  org.quartz.simpl.RAMJobStore - RAMJobStore initialized.
+2026-11-04 13:35:48 [main] INFO  org.quartz.core.QuartzScheduler - Scheduler meta-data: Quartz Scheduler (v2.3.2) 'quartzScheduler' with instanceId 'NON_CLUSTERED'
+  Scheduler class: 'org.quartz.core.QuartzScheduler' - running locally.
+  NOT STARTED.
+  Currently in standby mode.
+  Number of jobs executed: 0
+  Using thread pool 'org.quartz.simpl.SimpleThreadPool' - with 10 threads.
+  Using job-store 'org.quartz.simpl.RAMJobStore' - which does not support persistence. and is not clustered.
+
+2026-11-04 13:35:48 [main] INFO  org.quartz.impl.StdSchedulerFactory - Quartz scheduler 'quartzScheduler' initialized from an externally provided properties instance.
+2026-11-04 13:35:48 [main] INFO  org.quartz.impl.StdSchedulerFactory - Quartz scheduler version: 2.3.2
+2026-11-04 13:35:48 [main] INFO  org.quartz.core.QuartzScheduler - JobFactory set to: org.springframework.scheduling.quartz.SpringBeanJobFactory@45bbc52f
+2026-11-04 13:35:48 [main] INFO  o.s.b.actuate.endpoint.web.EndpointLinksResolver - Exposing 3 endpoint(s) beneath base path '/actuator'
+2026-11-04 13:35:49 [main] INFO  o.s.boot.web.embedded.tomcat.TomcatWebServer - Tomcat started on port(s): 8081 (http) with context path '/api'
+2026-11-04 13:35:49 [main] INFO  o.s.m.simp.broker.SimpleBrokerMessageHandler - Starting...
+2026-11-04 13:35:49 [main] INFO  o.s.m.simp.broker.SimpleBrokerMessageHandler - BrokerAvailabilityEvent[available=true, SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@54247647]]
+2026-11-04 13:35:49 [main] INFO  o.s.m.simp.broker.SimpleBrokerMessageHandler - Started.
+2026-11-04 13:35:49 [main] INFO  o.s.scheduling.quartz.SchedulerFactoryBean - Starting Quartz Scheduler now
+2026-11-04 13:35:49 [main] INFO  org.quartz.core.QuartzScheduler - Scheduler quartzScheduler_$_NON_CLUSTERED started.
+2026-11-04 13:35:49 [main] INFO  com.gjxt.inspection.InspectionSystemApplication - Started InspectionSystemApplication in 31.356 seconds (JVM running for 31.82)
+2026-11-04 13:36:47 [MessageBroker-1] INFO  o.s.web.socket.config.WebSocketMessageBrokerStats - WebSocketSession[0 current WS(0)-HttpStream(0)-HttpPoll(0), 0 total, 0 closed abnormally (0 connect failure, 0 send limit, 0 transport error)], stompSubProtocol[processed CONNECT(0)-CONNECTED(0)-DISCONNECT(0)], stompBrokerRelay[null], inboundChannel[pool size = 0, active threads = 0, queued tasks = 0, completed tasks = 0], outboundChannel[pool size = 0, active threads = 0, queued tasks = 0, completed tasks = 0], sockJsScheduler[pool size = 2, active threads = 1, queued tasks = 1, completed tasks = 0]
+2026-11-04 13:51:17 [http-nio-0.0.0.0-8081-exec-2] INFO  o.a.c.c.ContainerBase.[Tomcat].[localhost].[/api] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-11-04 13:51:17 [http-nio-0.0.0.0-8081-exec-2] INFO  org.springframework.web.servlet.DispatcherServlet - Initializing Servlet 'dispatcherServlet'
+2026-11-04 13:51:17 [http-nio-0.0.0.0-8081-exec-2] INFO  org.springframework.web.servlet.DispatcherServlet - Completed initialization in 4 ms
+2026-11-04 14:06:47 [MessageBroker-2] INFO  o.s.web.socket.config.WebSocketMessageBrokerStats - WebSocketSession[0 current WS(0)-HttpStream(0)-HttpPoll(0), 0 total, 0 closed abnormally (0 connect failure, 0 send limit, 0 transport error)], stompSubProtocol[processed CONNECT(0)-CONNECTED(0)-DISCONNECT(0)], stompBrokerRelay[null], inboundChannel[pool size = 0, active threads = 0, queued tasks = 0, completed tasks = 0], outboundChannel[pool size = 0, active threads = 0, queued tasks = 0, completed tasks = 0], sockJsScheduler[pool size = 3, active threads = 1, queued tasks = 1, completed tasks = 1]
+2026-11-04 14:27:59 [http-nio-0.0.0.0-8081-exec-5] INFO  c.g.i.service.impl.NotificationServiceImpl - 批量创建通知成功, count: 4
+2026-11-04 14:27:59 [http-nio-0.0.0.0-8081-exec-5] INFO  c.g.i.service.WebSocketNotificationService - WebSocket 批量推送完成，成功 4 条，失败 0 条
+2026-11-04 14:31:33 [http-nio-0.0.0.0-8081-exec-3] INFO  c.g.i.service.impl.NotificationServiceImpl - 批量创建通知成功, count: 4
+2026-11-04 14:31:33 [http-nio-0.0.0.0-8081-exec-3] INFO  c.g.i.service.WebSocketNotificationService - WebSocket 批量推送完成，成功 4 条，失败 0 条
+2026-11-04 14:32:12 [http-nio-0.0.0.0-8081-exec-9] INFO  c.g.i.service.impl.NotificationServiceImpl - 批量创建通知成功, count: 4
+2026-11-04 14:32:12 [http-nio-0.0.0.0-8081-exec-9] INFO  c.g.i.service.WebSocketNotificationService - WebSocket 批量推送完成，成功 4 条，失败 0 条
+2026-11-04 14:36:47 [MessageBroker-3] INFO  o.s.web.socket.config.WebSocketMessageBrokerStats - WebSocketSession[0 current WS(0)-HttpStream(0)-HttpPoll(0), 0 total, 0 closed abnormally (0 connect failure, 0 send limit, 0 transport error)], stompSubProtocol[processed CONNECT(0)-CONNECTED(0)-DISCONNECT(0)], stompBrokerRelay[null], inboundChannel[pool size = 0, active threads = 0, queued tasks = 0, completed tasks = 0], outboundChannel[pool size = 0, active threads = 0, queued tasks = 0, completed tasks = 0], sockJsScheduler[pool size = 4, active threads = 1, queued tasks = 1, completed tasks = 2]
+2026-11-04 16:13:05 [main] INFO  com.gjxt.inspection.InspectionSystemApplication - Starting InspectionSystemApplication using Java 1.8.0_391 on 误入凡尘的灵 with PID 46340 (F:\gjxt\backend\target\classes started by 174344 in F:\gjxt\backend)
+2026-11-04 16:13:05 [main] DEBUG com.gjxt.inspection.InspectionSystemApplication - Running with Spring Boot v2.7.18, Spring v5.3.31
+2026-11-04 16:13:05 [main] INFO  com.gjxt.inspection.InspectionSystemApplication - No active profile set, falling back to 1 default profile: "default"
+2026-11-04 16:13:08 [main] INFO  o.s.boot.web.embedded.tomcat.TomcatWebServer - Tomcat initialized with port(s): 8081 (http)
+2026-11-04 16:13:08 [main] INFO  org.apache.catalina.core.AprLifecycleListener - Loaded Apache Tomcat Native library [1.3.8] using APR version [1.7.6].
+2026-11-04 16:13:08 [main] INFO  org.apache.catalina.core.AprLifecycleListener - APR capabilities: IPv6 [true], sendfile [true], accept filters [false], random [true], UDS [true].
+2026-11-04 16:13:08 [main] INFO  org.apache.catalina.core.AprLifecycleListener - APR/OpenSSL configuration: useAprConnector [false], useOpenSSL [true]
+2026-11-04 16:13:08 [main] INFO  org.apache.catalina.core.AprLifecycleListener - OpenSSL successfully initialized [OpenSSL 3.0.21 9 Jun 2026]
+2026-11-04 16:13:08 [main] INFO  org.apache.catalina.core.StandardService - Starting service [Tomcat]
+2026-11-04 16:13:08 [main] INFO  org.apache.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/9.0.83]
+2026-11-04 16:13:08 [main] INFO  o.a.c.c.ContainerBase.[Tomcat].[localhost].[/api] - Initializing Spring embedded WebApplicationContext
+2026-11-04 16:13:08 [main] INFO  o.s.b.w.s.c.ServletWebServerApplicationContext - Root WebApplicationContext: initialization completed in 3247 ms
+2026-11-04 16:13:08 [main] INFO  c.a.d.s.b.a.DruidDataSourceAutoConfigure - Init DruidDataSource
+2026-11-04 16:13:33 [main] INFO  com.alibaba.druid.pool.DruidDataSource - {dataSource-1} inited
+2026-11-04 16:13:33 [main] DEBUG c.gjxt.inspection.security.JwtAuthenticationFilter - Filter 'jwtAuthenticationFilter' configured for use
+2026-11-04 16:13:35 [main] WARN  o.s.b.a.s.s.UserDetailsServiceAutoConfiguration - 
+
+Using generated security password: 249d8b77-627c-4378-8641-a916d3b7007f
+
+This generated password is for development use only. Your security configuration must be updated before running your application in production.
+
+2026-11-04 16:13:35 [main] INFO  o.s.security.web.DefaultSecurityFilterChain - Will secure any request with [org.springframework.security.web.session.DisableEncodeUrlFilter@4a070cf0, org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter@764b14b8, org.springframework.security.web.context.SecurityContextPersistenceFilter@1c240cf2, org.springframework.security.web.header.HeaderWriterFilter@13ed066e, org.springframework.web.filter.CorsFilter@202d9236, org.springframework.security.web.authentication.logout.LogoutFilter@1f736d00, com.gjxt.inspection.security.JwtAuthenticationFilter@3f1ef9d6, org.springframework.security.web.savedrequest.RequestCacheAwareFilter@58f2466c, org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter@2b53840a, org.springframework.security.web.authentication.AnonymousAuthenticationFilter@1f782c05, org.springframework.security.web.session.SessionManagementFilter@20801cbb, org.springframework.security.web.access.ExceptionTranslationFilter@648c5fb3, org.springframework.security.web.access.intercept.FilterSecurityInterceptor@2dafae61]
+2026-11-04 16:13:37 [main] INFO  org.quartz.impl.StdSchedulerFactory - Using default implementation for ThreadExecutor
+2026-11-04 16:13:37 [main] INFO  org.quartz.core.SchedulerSignalerImpl - Initialized Scheduler Signaller of type: class org.quartz.core.SchedulerSignalerImpl
+2026-11-04 16:13:37 [main] INFO  org.quartz.core.QuartzScheduler - Quartz Scheduler v.2.3.2 created.
+2026-11-04 16:13:37 [main] INFO  org.quartz.simpl.RAMJobStore - RAMJobStore initialized.
+2026-11-04 16:13:37 [main] INFO  org.quartz.core.QuartzScheduler - Scheduler meta-data: Quartz Scheduler (v2.3.2) 'quartzScheduler' with instanceId 'NON_CLUSTERED'
+  Scheduler class: 'org.quartz.core.QuartzScheduler' - running locally.
+  NOT STARTED.
+  Currently in standby mode.
+  Number of jobs executed: 0
+  Using thread pool 'org.quartz.simpl.SimpleThreadPool' - with 10 threads.
+  Using job-store 'org.quartz.simpl.RAMJobStore' - which does not support persistence. and is not clustered.
+
+2026-11-04 16:13:37 [main] INFO  org.quartz.impl.StdSchedulerFactory - Quartz scheduler 'quartzScheduler' initialized from an externally provided properties instance.
+2026-11-04 16:13:37 [main] INFO  org.quartz.impl.StdSchedulerFactory - Quartz scheduler version: 2.3.2
+2026-11-04 16:13:37 [main] INFO  org.quartz.core.QuartzScheduler - JobFactory set to: org.springframework.scheduling.quartz.SpringBeanJobFactory@45bbc52f
+2026-11-04 16:13:37 [main] INFO  o.s.b.actuate.endpoint.web.EndpointLinksResolver - Exposing 3 endpoint(s) beneath base path '/actuator'
+2026-11-04 16:13:37 [main] INFO  o.s.boot.web.embedded.tomcat.TomcatWebServer - Tomcat started on port(s): 8081 (http) with context path '/api'
+2026-11-04 16:13:37 [main] INFO  o.s.m.simp.broker.SimpleBrokerMessageHandler - Starting...
+2026-11-04 16:13:37 [main] INFO  o.s.m.simp.broker.SimpleBrokerMessageHandler - BrokerAvailabilityEvent[available=true, SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@54247647]]
+2026-11-04 16:13:37 [main] INFO  o.s.m.simp.broker.SimpleBrokerMessageHandler - Started.
+2026-11-04 16:13:37 [main] INFO  o.s.scheduling.quartz.SchedulerFactoryBean - Starting Quartz Scheduler now
+2026-11-04 16:13:37 [main] INFO  org.quartz.core.QuartzScheduler - Scheduler quartzScheduler_$_NON_CLUSTERED started.
+2026-11-04 16:13:37 [main] INFO  com.gjxt.inspection.InspectionSystemApplication - Started InspectionSystemApplication in 32.309 seconds (JVM running for 32.746)
+2026-11-04 16:13:50 [http-nio-0.0.0.0-8081-exec-1] INFO  o.a.c.c.ContainerBase.[Tomcat].[localhost].[/api] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-11-04 16:13:50 [http-nio-0.0.0.0-8081-exec-1] INFO  org.springframework.web.servlet.DispatcherServlet - Initializing Servlet 'dispatcherServlet'
+2026-11-04 16:13:50 [http-nio-0.0.0.0-8081-exec-1] INFO  org.springframework.web.servlet.DispatcherServlet - Completed initialization in 1 ms
+2026-11-04 16:14:02 [http-nio-0.0.0.0-8081-exec-4] INFO  c.g.i.service.impl.NotificationServiceImpl - 批量创建通知成功, count: 4
+2026-11-04 16:14:02 [http-nio-0.0.0.0-8081-exec-4] INFO  c.g.i.service.WebSocketNotificationService - WebSocket 批量推送完成，成功 4 条，失败 0 条
+2026-11-04 16:14:36 [MessageBroker-1] INFO  o.s.web.socket.config.WebSocketMessageBrokerStats - WebSocketSession[0 current WS(0)-HttpStream(0)-HttpPoll(0), 0 total, 0 closed abnormally (0 connect failure, 0 send limit, 0 transport error)], stompSubProtocol[processed CONNECT(0)-CONNECTED(0)-DISCONNECT(0)], stompBrokerRelay[null], inboundChannel[pool size = 0, active threads = 0, queued tasks = 0, completed tasks = 0], outboundChannel[pool size = 0, active threads = 0, queued tasks = 0, completed tasks = 0], sockJsScheduler[pool size = 2, active threads = 1, queued tasks = 1, completed tasks = 0]
+2026-11-04 16:17:05 [http-nio-0.0.0.0-8081-exec-8] INFO  c.g.i.service.impl.NotificationServiceImpl - 批量创建通知成功, count: 4
+2026-11-04 16:17:05 [http-nio-0.0.0.0-8081-exec-8] INFO  c.g.i.service.WebSocketNotificationService - WebSocket 批量推送完成，成功 4 条，失败 0 条

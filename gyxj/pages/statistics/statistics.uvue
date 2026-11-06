@@ -1,0 +1,811 @@
+<template>
+	<view class="container">
+		<!-- 时间筛选 -->
+		<view class="filter-section">
+			<view class="time-filter">
+				<view 
+					class="time-tab" 
+					:class="{active: currentPeriod === item.value}" 
+					v-for="item in periodTabs" 
+					:key="item.value"
+					@click="changePeriod(item.value)"
+				>
+					<text>{{item.label}}</text>
+				</view>
+			</view>
+		</view>
+		
+		<!-- 概览统计 -->
+		<view class="overview-section">
+			<view class="overview-title">
+				<text>数据概览</text>
+				<text class="period-text">{{getPeriodText()}}</text>
+			</view>
+			<view class="stats-grid">
+				<view class="stats-item">
+					<text class="stats-number">{{overview.totalRecords}}</text>
+					<text class="stats-label">总记录数</text>
+					<text class="stats-icon">📝</text>
+				</view>
+				<view class="stats-item">
+					<text class="stats-number">{{overview.completedTasks}}</text>
+					<text class="stats-label">完成任务</text>
+					<text class="stats-icon">✅</text>
+				</view>
+				<view class="stats-item">
+					<text class="stats-number">{{overview.pendingRecords}}</text>
+					<text class="stats-label">待整改</text>
+					<text class="stats-icon">⏳</text>
+				</view>
+				<view class="stats-item">
+					<text class="stats-number">{{overview.completionRate}}%</text>
+					<text class="stats-label">完成率</text>
+					<text class="stats-icon">📊</text>
+				</view>
+			</view>
+		</view>
+		
+		<!-- 记录状态分布 -->
+		<view class="chart-section">
+			<view class="chart-header">
+				<text class="chart-title">记录状态分布</text>
+			</view>
+			<view class="status-chart">
+				<view class="status-item" v-for="item in statusDistribution" :key="item.status">
+					<view class="status-info">
+						<view class="status-dot" :class="getStatusDotClass(item.status)"></view>
+						<text class="status-name">{{getStatusText(item.status)}}</text>
+					</view>
+					<view class="status-data">
+						<text class="status-count">{{item.count}}</text>
+						<text class="status-percent">{{item.percentage}}%</text>
+					</view>
+					<view class="status-bar">
+						<view class="status-progress" :class="getStatusDotClass(item.status)" :style="{width: item.percentage + '%'}"></view>
+					</view>
+				</view>
+			</view>
+		</view>
+		
+		<!-- 严重程度分布 -->
+		<view class="chart-section">
+			<view class="chart-header">
+				<text class="chart-title">严重程度分布</text>
+			</view>
+			<view class="severity-chart">
+				<view class="severity-item" v-for="item in severityDistribution" :key="item.severity">
+					<view class="severity-info">
+						<view class="severity-dot" :class="getSeverityDotClass(item.severity)"></view>
+						<text class="severity-name">{{getSeverityText(item.severity)}}</text>
+					</view>
+					<view class="severity-data">
+						<text class="severity-count">{{item.count}}</text>
+						<text class="severity-percent">{{item.percentage}}%</text>
+					</view>
+					<view class="severity-bar">
+						<view class="severity-progress" :class="getSeverityDotClass(item.severity)" :style="{width: item.percentage + '%'}"></view>
+					</view>
+				</view>
+			</view>
+		</view>
+		
+		<!-- 趋势分析 -->
+		<view class="chart-section">
+			<view class="chart-header">
+				<text class="chart-title">趋势分析</text>
+			</view>
+			<view class="trend-chart">
+				<view class="trend-item" v-for="item in trendData" :key="item.date">
+					<view class="trend-date">
+						<text>{{formatTrendDate(item.date)}}</text>
+					</view>
+					<view class="trend-bars">
+						<view class="trend-bar">
+							<text class="trend-label">新增</text>
+							<view class="trend-progress new" :style="{width: getTrendWidth(item.newCount, 'new') + '%'}"></view>
+							<text class="trend-count">{{item.newCount}}</text>
+						</view>
+						<view class="trend-bar">
+							<text class="trend-label">完成</text>
+							<view class="trend-progress completed" :style="{width: getTrendWidth(item.completedCount, 'completed') + '%'}"></view>
+							<text class="trend-count">{{item.completedCount}}</text>
+						</view>
+					</view>
+				</view>
+			</view>
+		</view>
+		
+		<!-- 位置统计 -->
+		<view class="chart-section">
+			<view class="chart-header">
+				<text class="chart-title">位置统计 TOP5</text>
+			</view>
+			<view class="location-chart">
+				<view class="location-item" v-for="(item, index) in locationStats" :key="item.locationId">
+					<view class="location-rank">
+						<text>{{index + 1}}</text>
+					</view>
+					<view class="location-info">
+						<text class="location-name">{{item.locationName}}</text>
+						<view class="location-bar">
+							<view class="location-progress" :style="{width: getLocationWidth(item.recordCount) + '%'}"></view>
+						</view>
+					</view>
+					<view class="location-count">
+					<text>{{item.recordCount}}</text>
+				</view>
+				</view>
+				<view v-if="locationStats.length === 0" class="empty-chart">
+					<text>暂无数据</text>
+				</view>
+			</view>
+		</view>
+	</view>
+</template>
+
+<script lang="uts">
+	import { getApiUrl } from '@/config/api.uts'
+	type PeriodTab = {
+		label: string
+		value: string
+	}
+	
+	type OverviewData = {
+		totalRecords: number
+		completedTasks: number
+		pendingRecords: number
+		completionRate: number
+	}
+	
+	type StatusDistributionItem = {
+		status: string
+		count: number
+		percentage: number
+	}
+	
+	type SeverityDistributionItem = {
+		severity: string
+		count: number
+		percentage: number
+	}
+	
+	type TrendDataItem = {
+		date: string
+		newCount: number
+		completedCount: number
+	}
+	
+	type LocationStatsItem = {
+		locationId: string
+		locationName: string
+		recordCount: number
+	}
+	
+	export default {
+		data() {
+			return {
+				currentPeriod: 'month',
+				periodTabs: [
+					{ label: '本周', value: 'week' },
+					{ label: '本月', value: 'month' },
+					{ label: '本季', value: 'quarter' },
+					{ label: '本年', value: 'year' }
+				] as PeriodTab[],
+				overview: {
+				totalRecords: 0,
+				completedTasks: 0,
+				pendingRecords: 0,
+				completionRate: 0
+			} as OverviewData,
+				statusDistribution: [] as StatusDistributionItem[],
+				severityDistribution: [] as SeverityDistributionItem[],
+				trendData: [] as TrendDataItem[],
+				locationStats: [] as LocationStatsItem[],
+				loading: false
+			}
+		},
+		onLoad() {
+			this.checkLogin()
+			this.loadStatistics()
+		},
+		methods: {
+			checkLogin() {
+				const token = uni.getStorageSync('token') as string
+				if (token == null || token == '') {
+					uni.reLaunch({
+						url: '/pages/login/login'
+					})
+				}
+			},
+			
+			changePeriod(period: string) {
+				this.currentPeriod = period
+				this.loadStatistics()
+			},
+			
+			getPeriodText(): string {
+				if (this.currentPeriod == 'week') return '本周'
+				if (this.currentPeriod == 'month') return '本月'
+				if (this.currentPeriod == 'quarter') return '本季度'
+				if (this.currentPeriod == 'year') return '本年'
+				return '本月'
+			},
+			
+			async loadStatistics() {
+				if (this.loading) return
+				
+				this.loading = true
+				
+				try {
+					const token = uni.getStorageSync('token') as string
+					
+					// 加载概览数据
+					await this.loadOverview(token)
+					
+					// 加载状态分布
+					await this.loadStatusDistribution(token)
+					
+					// 加载严重程度分布
+					await this.loadSeverityDistribution(token)
+					
+					// 加载趋势数据
+					await this.loadTrendData(token)
+					
+					// 加载位置统计
+					await this.loadLocationStats(token)
+					
+				} catch (error) {
+					console.error('加载统计数据失败:', error)
+					uni.showToast({
+						title: '加载失败',
+						icon: 'none'
+					})
+				} finally {
+					this.loading = false
+				}
+			},
+			
+			loadOverview(token: string) {
+				uni.request({
+					url: getApiUrl(`/statistics/overview?period=${this.currentPeriod}`),
+					method: 'GET',
+					header: {
+						'Authorization': `Bearer ${token}`
+					},
+					success: (res) => {
+						const data = res.data as UTSJSONObject
+						if (res.statusCode === 200 && (data.getNumber('code') ?? 0) === 200) {
+							const overviewData = data.getJSON('data') as UTSJSONObject
+							this.overview = {
+								totalRecords: overviewData.getNumber('totalRecords') ?? 0,
+								completedTasks: overviewData.getNumber('completedTasks') ?? 0,
+								pendingRecords: overviewData.getNumber('pendingRecords') ?? 0,
+								completionRate: overviewData.getNumber('completionRate') ?? 0
+							}
+						}
+					},
+					fail: (error) => {
+						console.error('加载概览数据失败:', error)
+					}
+				})
+			},
+			
+			loadStatusDistribution(token: string) {
+				uni.request({
+					url: getApiUrl(`/statistics/status-distribution?period=${this.currentPeriod}`),
+					method: 'GET',
+					header: {
+						'Authorization': `Bearer ${token}`
+					},
+					success: (res) => {
+						const data = res.data as UTSJSONObject
+						if (res.statusCode === 200 && (data.getNumber('code') ?? 0) === 200) {
+							const dataArray = data.getArray('data') as Array<UTSJSONObject>
+							this.statusDistribution = []
+							for (let i = 0; i < dataArray.length; i++) {
+								const item = dataArray[i]
+								this.statusDistribution.push({
+									status: item.getString('status') ?? '',
+									count: item.getNumber('count') ?? 0,
+									percentage: item.getNumber('percentage') ?? 0
+								})
+							}
+						}
+					},
+					fail: (error) => {
+						console.error('加载状态分布失败:', error)
+					}
+				})
+			},
+			
+			loadSeverityDistribution(token: string) {
+				uni.request({
+					url: getApiUrl(`/statistics/severity-distribution?period=${this.currentPeriod}`),
+					method: 'GET',
+					header: {
+						'Authorization': `Bearer ${token}`
+					},
+					success: (res) => {
+						const data = res.data as UTSJSONObject
+						if (res.statusCode === 200 && (data.getNumber('code') ?? 0) === 200) {
+							const dataArray = data.getArray('data') as Array<UTSJSONObject>
+							this.severityDistribution = []
+							for (let i = 0; i < dataArray.length; i++) {
+								const item = dataArray[i]
+								this.severityDistribution.push({
+									severity: item.getString('severity') ?? '',
+									count: item.getNumber('count') ?? 0,
+									percentage: item.getNumber('percentage') ?? 0
+								})
+							}
+						}
+					},
+					fail: (error) => {
+						console.error('加载严重程度分布失败:', error)
+					}
+				})
+			},
+			
+			loadTrendData(token: string) {
+				uni.request({
+					url: getApiUrl(`/statistics/trends?period=${this.currentPeriod}`),
+					method: 'GET',
+					header: {
+						'Authorization': `Bearer ${token}`
+					},
+					success: (res) => {
+						const data = res.data as UTSJSONObject
+						if (res.statusCode === 200 && (data.getNumber('code') ?? 0) === 200) {
+							const dataArray = data.getArray('data') as Array<UTSJSONObject>
+							this.trendData = []
+							for (let i = 0; i < dataArray.length; i++) {
+								const item = dataArray[i]
+								this.trendData.push({
+									date: item.getString('date') ?? '',
+									newCount: item.getNumber('newCount') ?? 0,
+									completedCount: item.getNumber('completedCount') ?? 0
+								})
+							}
+						}
+					},
+					fail: (error) => {
+						console.error('加载趋势数据失败:', error)
+					}
+				})
+			},
+			
+			loadLocationStats(token: string) {
+				uni.request({
+					url: getApiUrl(`/statistics/location-stats?period=${this.currentPeriod}&limit=5`),
+					method: 'GET',
+					header: {
+						'Authorization': `Bearer ${token}`
+					},
+					success: (res) => {
+						const data = res.data as UTSJSONObject
+						if (res.statusCode === 200 && (data.getNumber('code') ?? 0) === 200) {
+							const dataArray = data.getArray('data') as Array<UTSJSONObject>
+							this.locationStats = []
+							for (let i = 0; i < dataArray.length; i++) {
+								const item = dataArray[i]
+								this.locationStats.push({
+							locationId: item.getString('locationId') ?? '',
+							locationName: item.getString('locationName') ?? '',
+							recordCount: item.getNumber('count') ?? 0
+						})
+							}
+						}
+					},
+					fail: (error) => {
+						console.error('加载位置统计失败:', error)
+					}
+				})
+			},
+			
+			getStatusText(status: string): string {
+				if (status == "0") return '待整改'
+				if (status == "1") return '已整改'
+				if (status == "2") return '已复查'
+				return '未知'
+			},
+			
+			getStatusDotClass(status: string): string {
+				if (status == '0') return 'dot-pending'
+				if (status == '1') return 'dot-processing'
+				if (status == '2') return 'dot-completed'
+				if (status == '3') return 'dot-accepted'
+				return 'dot-unknown'
+			},
+			
+			getSeverityText(severity: string): string {
+				if (severity == '1') return '低'
+				if (severity == '2') return '中'
+				if (severity == '3') return '高'
+				if (severity == '4') return '紧急'
+				return '未知'
+			},
+			
+			getSeverityDotClass(severity: string): string {
+				if (severity == '1') return 'dot-low'
+				if (severity == '2') return 'dot-medium'
+				if (severity == '3') return 'dot-high'
+				if (severity == '4') return 'dot-urgent'
+				return 'dot-unknown'
+			},
+			
+			formatTrendDate(date: string): string {
+				if (date == null || date == '') return ''
+				const d = new Date(date)
+				return `${d.getMonth() + 1}/${d.getDate()}`
+			},
+			
+			getTrendWidth(count: number, type: string): number {
+				if (this.trendData.length == 0) return 0
+				
+				let maxCount = 0
+				for (let i = 0; i < this.trendData.length; i++) {
+					const item = this.trendData[i]
+					const currentCount = type === 'new' ? item.newCount : item.completedCount
+					if (currentCount > maxCount) {
+						maxCount = currentCount
+					}
+				}
+				
+				return maxCount > 0 ? (count / maxCount) * 100 : 0
+			},
+			
+			getLocationWidth(count: number): number {
+				if (this.locationStats.length == 0) return 0
+				
+				let maxCount = 0
+				for (let i = 0; i < this.locationStats.length; i++) {
+				const item = this.locationStats[i]
+				if (item.recordCount > maxCount) {
+					maxCount = item.recordCount
+				}
+			}
+				return maxCount > 0 ? (count / maxCount) * 100 : 0
+			}
+		}
+	}
+</script>
+
+<style>
+	.container {
+		padding: 20rpx;
+		background-color: #f1f5f9;
+	}
+
+	.filter-section {
+		margin-bottom: 20rpx;
+	}
+
+	.time-filter {
+		display: flex;
+		background: #fff;
+		border-radius: 16rpx;
+		padding: 4rpx;
+		box-shadow: 0 8rpx 24rpx rgba(30, 64, 175, 0.08);
+		border: 1rpx solid #dbeafe;
+	}
+
+	.time-tab {
+		flex: 1;
+		padding: 10rpx 15rpx;
+		text-align: center;
+		border-radius: 12rpx;
+		transition: all 0.3s;
+	}
+
+	.time-tab.active {
+		background: linear-gradient(135deg, #1e40af 0%, #2563eb 50%, #38bdf8 100%);
+		color: #fff;
+		box-shadow: 0 4rpx 16rpx rgba(30, 64, 175, 0.18);
+	}
+
+
+
+	.overview-section {
+		background: #fff;
+		border-radius: 24rpx;
+		padding: 20rpx;
+		margin-bottom: 20rpx;
+		box-shadow: 0 8rpx 24rpx rgba(30, 64, 175, 0.08);
+		border: 1rpx solid #dbeafe;
+	}
+
+	.overview-title {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		margin-bottom: 20rpx;
+		padding-bottom: 15rpx;
+		border-bottom: 1rpx solid #eff6ff;
+	}
+
+
+
+	.period-text {
+		font-size: 14rpx;
+		color: #475569;
+	}
+
+	.stats-grid {
+		display: flex;
+		flex-wrap: wrap;
+	}
+
+	.stats-item {
+		flex: 1;
+		min-width: 150rpx;
+		background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+		border-radius: 16rpx;
+		padding: 20rpx 15rpx;
+		text-align: center;
+		position: relative;
+		border: 1rpx solid #dbeafe;
+	}
+
+	.stats-number {
+		font-size: 20rpx;
+		font-weight: bold;
+		color: #1e40af;
+		margin-bottom: 5rpx;
+	}
+
+	.stats-label {
+		font-size: 12rpx;
+		color: #475569;
+	}
+
+	.stats-icon {
+		position: absolute;
+		top: 15rpx;
+		right: 15rpx;
+		font-size: 20rpx;
+		opacity: 0.3;
+	}
+
+	.chart-section {
+		background: #fff;
+		border-radius: 24rpx;
+		padding: 20rpx;
+		margin-bottom: 20rpx;
+		box-shadow: 0 8rpx 24rpx rgba(30, 64, 175, 0.08);
+		border: 1rpx solid #dbeafe;
+	}
+
+	.chart-header {
+		margin-bottom: 20rpx;
+		padding-bottom: 15rpx;
+		border-bottom: 1rpx solid #eff6ff;
+	}
+
+	.chart-title {
+		font-size: 18rpx;
+		font-weight: bold;
+		color: #0f172a;
+	}
+
+	.status-chart, .severity-chart {
+
+	}
+
+	.status-item, .severity-item {
+		margin-bottom: 15rpx;
+	}
+
+	.status-item:last-child, .severity-item:last-child {
+		margin-bottom: 0;
+	}
+
+	.status-info, .severity-info {
+		display: flex;
+		align-items: center;
+		margin-bottom: 8rpx;
+	}
+
+	.status-dot, .severity-dot {
+		width: 12rpx;
+		height: 12rpx;
+		border-radius: 6rpx;
+		margin-right: 10rpx;
+	}
+
+	.dot-pending {
+		background: #f59e0b;
+	}
+
+	.dot-processing {
+		background: #2563eb;
+	}
+
+	.dot-completed {
+		background: #16a34a;
+	}
+
+	.dot-accepted {
+		background: #94a3b8;
+	}
+
+	.dot-low {
+		background: #16a34a;
+	}
+
+	.dot-medium {
+		background: #f59e0b;
+	}
+
+	.dot-high {
+		background: #f97316;
+	}
+
+	.dot-urgent {
+		background: #dc2626;
+	}
+
+	.status-name, .severity-name {
+		font-size: 14rpx;
+		color: #0f172a;
+		flex: 1;
+	}
+
+	.status-data, .severity-data {
+		display: flex;
+		justify-content: space-between;
+		margin-bottom: 5rpx;
+	}
+
+	.status-count, .severity-count {
+		font-size: 16rpx;
+		font-weight: bold;
+		color: #0f172a;
+	}
+
+	.status-percent, .severity-percent {
+		font-size: 14rpx;
+		color: #475569;
+	}
+
+	.status-bar, .severity-bar {
+		height: 6rpx;
+		background: #eff6ff;
+		border-radius: 3rpx;
+		overflow: hidden;
+	}
+
+	.status-progress, .severity-progress {
+		height: 100%;
+		border-radius: 3rpx;
+		transition: width 0.3s;
+	}
+
+	.trend-chart {
+
+	}
+
+	.trend-item {
+		margin-bottom: 20rpx;
+	}
+
+	.trend-item:last-child {
+		margin-bottom: 0;
+	}
+
+	.trend-date {
+		margin-bottom: 10rpx;
+	}
+
+
+
+	.trend-bars {
+
+	}
+
+	.trend-bar {
+		display: flex;
+		align-items: center;
+		margin-bottom: 8rpx;
+	}
+
+	.trend-label {
+		font-size: 12rpx;
+		color: #475569;
+		min-width: 40rpx;
+		margin-right: 10rpx;
+	}
+
+	.trend-progress {
+		height: 20rpx;
+		border-radius: 10rpx;
+		margin-right: 10rpx;
+		transition: width 0.3s;
+		flex: 1;
+		max-width: 200rpx;
+	}
+
+	.trend-progress.new {
+		background: linear-gradient(90deg, #1e40af 0%, #2563eb 50%, #38bdf8 100%);
+	}
+
+	.trend-progress.completed {
+		background: linear-gradient(90deg, #16a34a 0%, #38bdf8 100%);
+	}
+
+	.trend-count {
+		font-size: 12rpx;
+		color: #0f172a;
+		min-width: 30rpx;
+		text-align: right;
+	}
+
+	.location-chart {
+
+	}
+
+	.location-item {
+		display: flex;
+		align-items: center;
+		margin-bottom: 15rpx;
+	}
+
+	.location-item:last-child {
+		margin-bottom: 0;
+	}
+
+	.location-rank {
+		width: 24rpx;
+		height: 24rpx;
+		border-radius: 12rpx;
+		background: linear-gradient(135deg, #1e40af 0%, #2563eb 100%);
+		color: #fff;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		margin-right: 15rpx;
+		box-shadow: 0 4rpx 12rpx rgba(30, 64, 175, 0.18);
+	}
+
+
+
+	.location-info {
+		flex: 1;
+		margin-right: 15rpx;
+	}
+
+	.location-name {
+		font-size: 14rpx;
+		color: #0f172a;
+		margin-bottom: 5rpx;
+	}
+
+	.location-bar {
+		height: 6rpx;
+		background: #eff6ff;
+		border-radius: 3rpx;
+		overflow: hidden;
+	}
+
+	.location-progress {
+		height: 100%;
+		background: linear-gradient(90deg, #1e40af 0%, #2563eb 50%, #38bdf8 100%);
+		border-radius: 3rpx;
+		transition: width 0.3s;
+	}
+
+	.location-count {
+		min-width: 30rpx;
+		text-align: right;
+		color: #0f172a;
+	}
+
+
+
+	.empty-chart {
+		text-align: center;
+		padding: 40rpx 0;
+		color: #94a3b8;
+	}
+
+
+</style>

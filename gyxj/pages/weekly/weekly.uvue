@@ -1,0 +1,817 @@
+<template>
+	<scroll-view 
+		class="container" 
+		scroll-y="true" 
+		:scroll-top="scrollTop" 
+		:style="{height: containerHeight + 'px'}" 
+		enable-back-to-top="true"
+		refresher-enabled="true"
+		:refresher-triggered="isRefreshing"
+		refresher-default-style="black"
+		refresher-background="#f5f5f5"
+		@refresherrefresh="onRefresh"
+		@refresherrestore="onRefreshRestore"
+	>
+		<!-- 顶部欢迎区域 -->
+		<view class="header">
+			<view class="welcome">
+				<text class="greeting">欢迎回来，{{userName}}</text>
+				<text class="app-name">{{currentDate}}</text>
+			</view>
+			<image class="avatar" :src="userInfo != null && (userInfo.getString('avatar') ?? '') != '' ? (userInfo.getString('avatar') ?? '') : '/static/default-avatar.svg'" mode="aspectFill"></image>
+		</view>
+			<!-- 操作按钮 -->
+		<view class="action-buttons">
+			<view class="action-button" @click="goToAddRecord">
+				<view class="button-icon">➕</view>
+				<text class="button-text">周检</text>
+				<text class="button-text-sub">每周安全检查</text>
+			</view>
+			<view class="action-button delayed-button" @click="goToDelayedRecord">
+				<view class="button-icon">⏰</view>
+				<text class="button-text">延迟整改</text>
+				<text class="button-text-sub">延期问题处理</text>
+			</view>
+		</view>
+		<!-- 统计卡片 -->
+		<view class="stats-container">
+			<view class="stats-card" @click="goToPendingIssues">
+				<text class="stats-number">{{statistics.pendingIssues}}</text>
+				<text class="stats-label">待整改</text>
+				<text class="stats-icon">⚠️</text>
+			</view>
+			<view class="stats-card" @click="goToCompletedIssues">
+				<text class="stats-number">{{statistics.completedIssues}}</text>
+				<text class="stats-label">已整改</text>
+				<text class="stats-icon">✅</text>
+			</view>
+			<view class="stats-card" @click="goToReviewedRecords">
+				<text class="stats-number">{{statistics.reviewedCount}}</text>
+				<text class="stats-label">已复查数量</text>
+				<text class="stats-icon">✅</text>
+			</view>
+		</view>
+		
+	
+		
+		
+	</scroll-view>
+</template>
+
+<script lang="uts">
+	import { getApiUrl } from '@/config/api.uts'
+	import { isWeeklyAdmin } from '@/utils/permission.uts'
+	import { refreshUserInfo } from '@/utils/user.uts'
+	
+	type RecentRecord = {
+		id: string,
+		problemDescription: string,
+		locationName: string,
+		createTime: string,
+		status: string
+	}
+
+	type StatisticsData = {
+		pendingIssues: number,
+		completedIssues: number,
+		reviewedCount: number
+	}
+
+	export default {
+		data() {
+			return {
+				userInfo: {} as UTSJSONObject,
+				userName: '用户', // 简化的用户姓名变量
+				currentDate: '',
+				scrollTop: 0,
+				containerHeight: 0,
+				// 下拉刷新相关
+				isRefreshing: false,
+				statistics: {
+					pendingIssues: 0,
+					completedIssues: 0,
+					reviewedCount: 0
+				} as StatisticsData,
+				recentRecords: [] as RecentRecord[]
+			}
+		},
+		onLoad() {
+			if (!this.checkLogin()) return
+			this.initContainerHeight()
+			// 先刷新服务端 userInfo(部门/角色可能已被后台调整)，再按最新 deptId 过滤与展示
+			refreshUserInfo().then(() => {
+				this.loadUserInfo()
+				this.initData()
+				this.loadStatistics()
+				this.loadRecentRecords()
+			})
+		},
+		methods: {
+			checkLogin() {
+				const token = uni.getStorageSync('token')
+				if (token == null || token == '') {
+					uni.reLaunch({
+						url: '/pages/login/login'
+					})
+					return false
+				}
+				return true
+			},
+			
+			// 加载用户信息
+			loadUserInfo() {
+				const userInfoData = uni.getStorageSync('userInfo')
+				const userInfoStr = userInfoData != null ? userInfoData as string : ''
+				
+				if (userInfoStr != null && userInfoStr != '' && userInfoStr != 'null' && userInfoStr != 'undefined') {
+					try {
+						const parsedUserInfo = JSON.parse(userInfoStr) as UTSJSONObject
+						this.userInfo = parsedUserInfo
+						// 设置简化的用户姓名
+						const realNameValue = parsedUserInfo.getString('realName')
+						this.userName = realNameValue != null ? realNameValue : '用户'
+					} catch (error) {
+						console.error('用户信息JSON解析失败:', error)
+						this.userInfo = {} as UTSJSONObject
+						this.userName = '解析失败用户'
+					}
+				} else {
+					this.userInfo = {} as UTSJSONObject
+					this.userName = '默认用户'
+				}
+			},
+			
+			initData() {
+				const now = new Date()
+				const year = now.getFullYear()
+				const month = (now.getMonth() + 1).toString()
+				const formattedMonth = month.length == 1 ? `0${month}` : month
+				const day = now.getDate().toString()
+				const formattedDay = day.length == 1 ? `0${day}` : day
+				const weekdays = ['日', '一', '二', '三', '四', '五', '六']
+				const weekday = weekdays[now.getDay()]
+				this.currentDate = `${year}年${formattedMonth}月${formattedDay}日 星期${weekday}`
+			},
+			
+			loadStatistics() {
+				console.log('开始加载统计数据')
+				const token = uni.getStorageSync('token')
+				
+				// 获取用户信息：部门 ID + 周检管理员标志
+				let departmentId = ''
+				// 周检域管理员用 isWeeklyAdmin()(对齐 Web permission.js:老 isAdmin=1 或 isWeeklyAdmin=1)
+				const isAdmin = isWeeklyAdmin()
+				const userInfoData = uni.getStorageSync('userInfo')
+				const userInfoStr = userInfoData != null ? userInfoData as string : ''
+				if (userInfoStr != null && userInfoStr != '' && userInfoStr != 'null' && userInfoStr != 'undefined') {
+					try {
+					const parsedUserInfo = JSON.parse(userInfoStr) as UTSJSONObject
+					departmentId = parsedUserInfo.getString('deptId') ?? ''
+					console.log("获取到的部门id",departmentId)
+					console.log("是否为管理员",isAdmin)
+					} catch (error) {
+						console.error('用户信息JSON解析失败:', error)
+					}
+				}
+				
+				// 构建部门过滤参数 - 管理员用户不需要部门过滤
+				const deptParam = (!isAdmin && departmentId != null && departmentId != '') ? `&departmentId=${departmentId}` : ''
+				
+				// 获取待整改数量（状态为0）- 使用分页查询API获取准确数量
+				const pendingUrl = getApiUrl(`/inspection-record/page?current=1&size=1&status=0${deptParam}`)
+				console.log('待整改数量请求URL:', pendingUrl)
+				uni.request({
+					url: pendingUrl,
+					method: 'GET',
+					header: {
+						'Authorization': `Bearer ${token}`
+					},
+					success: (res) => {
+						console.log('待整改数量请求成功:', res)
+						const response = res.data as UTSJSONObject
+						if (res.statusCode == 200 && (response.getNumber('code') ?? 0) == 200) {
+							const data = response.getJSON('data') as UTSJSONObject
+							this.statistics.pendingIssues = data.getNumber('total') ?? 0
+							console.log('待整改数量:', this.statistics.pendingIssues)
+						} else {
+							console.log('待整改数量请求失败:', response)
+						}
+					},
+					fail: (error) => {
+						console.log('待整改数量请求错误:', error)
+					}
+				})
+				
+				// 获取已整改数量（状态为1）- 使用分页查询API获取准确数量
+				const completedUrl = getApiUrl(`/inspection-record/page?current=1&size=1&status=1${deptParam}`)
+				console.log('已整改数量请求URL:', completedUrl)
+				uni.request({
+					url: completedUrl,
+					method: 'GET',
+					header: {
+						'Authorization': `Bearer ${token}`
+					},
+					success: (res) => {
+						console.log('已整改数量请求成功:', res)
+						const response = res.data as UTSJSONObject
+						if (res.statusCode == 200 && (response.getNumber('code') ?? 0) == 200) {
+							const data = response.getJSON('data') as UTSJSONObject
+							this.statistics.completedIssues = data.getNumber('total') ?? 0
+							console.log('已整改数量:', this.statistics.completedIssues)
+						} else {
+							console.log('已整改数量请求失败:', response)
+						}
+					},
+					fail: (error) => {
+						console.log('已整改数量请求错误:', error)
+					}
+				})
+				
+				// 获取已复查数量（状态为2）- 使用分页查询API获取准确数量
+				const reviewedUrl = getApiUrl(`/inspection-record/page?current=1&size=1&status=2${deptParam}`)
+				console.log('已复查数量请求URL:', reviewedUrl)
+				uni.request({
+					url: reviewedUrl,
+					method: 'GET',
+					header: {
+						'Authorization': `Bearer ${token}`
+					},
+					success: (res) => {
+						console.log('已复查数量请求成功:', res)
+						const response = res.data as UTSJSONObject
+						if (res.statusCode == 200 && (response.getNumber('code') ?? 0) == 200) {
+							const data = response.getJSON('data') as UTSJSONObject
+							this.statistics.reviewedCount = data.getNumber('total') ?? 0
+							console.log('已复查数量:', this.statistics.reviewedCount)
+						} else {
+							console.log('已复查数量请求失败:', response)
+						}
+					},
+					fail: (error) => {
+						console.log('已复查数量请求错误:', error)
+					}
+				})
+			},
+			
+			loadRecentRecords() {
+				const token = uni.getStorageSync('token')
+				
+				// 获取用户信息：部门 ID + 周检管理员标志
+				let departmentId = ''
+				// 周检域管理员用 isWeeklyAdmin()(对齐 Web permission.js)
+				const isAdmin = isWeeklyAdmin()
+				const userInfoData = uni.getStorageSync('userInfo')
+				const userInfoStr = userInfoData != null ? userInfoData as string : ''
+				if (userInfoStr != null && userInfoStr != '' && userInfoStr != 'null' && userInfoStr != 'undefined') {
+					try {
+						const parsedUserInfo = JSON.parse(userInfoStr) as UTSJSONObject
+						departmentId = parsedUserInfo.getString('deptId') ?? ''
+					} catch (error) {
+						console.error('用户信息JSON解析失败:', error)
+					}
+				}
+				
+				// 构建部门过滤参数 - 管理员用户不需要部门过滤
+				const deptParam = (!isAdmin && departmentId != null && departmentId != '') ? `&departmentId=${departmentId}` : ''
+				
+				const apiUrl = getApiUrl(`/inspection-record/page?current=1&size=5&status=0${deptParam}`)
+				console.log('请求URL:', apiUrl)
+				uni.request({
+				url: apiUrl,
+					method: 'GET',
+					header: {
+						'Authorization': `Bearer ${token}`
+					},
+					success: (res) => {
+						const response = res.data as UTSJSONObject
+						if (res.statusCode == 200 && (response.getNumber('code') ?? 0) == 200) {
+							const data = response.getJSON('data') as UTSJSONObject
+							const records = data.getArray('records') as Array<UTSJSONObject>
+							this.recentRecords = []
+							for (let i = 0; i < records.length; i++) {
+								const item = records[i]
+								const record: RecentRecord = {
+									id: item.getString('id') ?? '',
+									problemDescription: item.getString('problemDescription') ?? '',
+									locationName: item.getString('locationName') ?? '',
+									createTime: item.getString('createTime') ?? '',
+									status: item.getString('status') ?? ''
+								}
+								this.recentRecords.push(record)
+							}
+						}
+					},
+					fail: (error) => {
+						console.log('加载最近记录失败:', error)
+					}
+				})
+			},
+			
+			getStatusText(status: string | null): string {
+				if (status == null) return '未知'
+				if (status == "0") return '待整改'
+				if (status == "1") return '已整改'
+				if (status == "2") return '已复查'
+				return '未知'
+			},
+			
+			getStatusClass(status: string | null): string {
+				if (status == null) return 'status-unknown'
+				if (status == "0") return 'status-pending'
+				if (status == "1") return 'status-completed'
+				if (status == "2") return 'status-accepted'
+				return 'status-unknown'
+			},
+			
+			goToPendingIssues() {
+				uni.navigateTo({
+					url: '/pages/record/record?status=0'
+				})
+			},
+			
+			goToCompletedIssues() {
+				uni.navigateTo({
+					url: '/pages/record/record?status=1'
+				})
+			},
+			
+			goToReviewedRecords() {
+				uni.navigateTo({
+					url: '/pages/record/record?type=reviewed'
+				})
+			},
+			
+			goToRecords() {
+				uni.switchTab({
+					url: '/pages/record/record'
+				})
+			},
+			
+			goToAddRecord() {
+				uni.navigateTo({
+					url: '/pages/record/add'
+				})
+			},
+			
+			goToDelayedRecord() {
+				// 延迟整改是指超过整改期限但仍未整改的记录
+				// 这些记录的状态是0（待整改），但已经超过了整改期限
+				uni.navigateTo({
+					url: '/pages/record/record?status=0&delayed=true'
+				})
+			},
+			
+			goToRecordDetail(recordId: string) {
+				uni.navigateTo({
+					url: `/pages/record/detail?id=${recordId}`
+				})
+			},
+			
+			// 下拉刷新事件处理
+			onRefresh() {
+				console.log('开始下拉刷新')
+				this.isRefreshing = true
+				
+				// 重新加载数据
+				this.reloadAllData()
+			},
+			
+			// 刷新恢复事件处理
+			onRefreshRestore() {
+				console.log('刷新恢复')
+				this.isRefreshing = false
+			},
+			
+			// 重新加载所有数据
+			reloadAllData() {
+				console.log('重新加载所有数据')
+				
+				try {
+					// 重新初始化时间
+					this.initData()
+					
+					// 重新加载用户信息
+					this.loadUserInfo()
+					
+					// 重新加载统计数据和记录
+					this.loadStatistics()
+					this.loadRecentRecords()
+					
+					console.log('数据加载完成')
+					
+				} catch (error) {
+					console.error('数据加载失败:', error)
+				} finally {
+					// 无论成功还是失败，都要关闭刷新动画
+					setTimeout(() => {
+						console.log('关闭刷新动画')
+						this.isRefreshing = false
+					}, 1000) // 1秒后关闭刷新动画
+				}
+			},
+			
+			initContainerHeight() {
+				const res = uni.getSystemInfoSync()
+				this.containerHeight = res.windowHeight
+			}
+		}
+	}
+</script>
+
+<style>
+	.container {
+		padding: 30rpx;
+		padding-bottom: 150rpx;
+		background: linear-gradient(180deg, #eff6ff 0%, #dbeafe 100%);
+		box-sizing: border-box;
+		min-height: 1200rpx;
+	}
+
+	.header {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		padding: 30rpx 25rpx;
+		background: #ffffff;
+		border-radius: 24rpx;
+		margin-bottom: 30rpx;
+		box-shadow: 0 12rpx 36rpx rgba(30, 64, 175, 0.18);
+		position: relative;
+		overflow: hidden;
+		border: 2rpx solid #dbeafe;
+	}
+
+	.header::before {
+		content: '';
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 8rpx;
+		height: 100%;
+		background: linear-gradient(180deg, #1e40af, #0ea5e9);
+	}
+
+	.welcome {
+		display: flex;
+		flex-direction: column;
+		flex: 1;
+		z-index: 2;
+		position: relative;
+		padding-left: 12rpx;
+	}
+
+	.greeting {
+		color: #0a2540;
+		font-size: 36rpx;
+		font-weight: 700;
+		margin-bottom: 10rpx;
+		letter-spacing: 1rpx;
+	}
+
+	.app-name {
+		color: #475569;
+		font-size: 26rpx;
+		font-weight: 500;
+		letter-spacing: 0.3rpx;
+	}
+
+	.avatar {
+		width: 100rpx;
+		height: 100rpx;
+		border-radius: 50rpx;
+		background-color: #eff6ff;
+		overflow: hidden;
+		border: 3rpx solid #dbeafe;
+		box-shadow: 0 6rpx 20rpx rgba(30, 64, 175, 0.12);
+		z-index: 2;
+		position: relative;
+		transition: all 0.3s ease;
+	}
+
+	.avatar:active {
+		transform: scale(0.95);
+	}
+
+	.stats-container {
+		display: flex;
+		justify-content: space-between;
+		margin-bottom: 30rpx;
+	}
+
+	.stats-card {
+		flex: 1;
+		background: linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%);
+		border-radius: 20rpx;
+		padding: 32rpx 20rpx;
+		text-align: center;
+		position: relative;
+		box-shadow: 0 8rpx 24rpx rgba(30, 64, 175, 0.08);
+		overflow: hidden;
+		margin: 0 8rpx;
+		border: 1rpx solid rgba(255, 255, 255, 0.8);
+	}
+
+	.stats-card::before {
+		content: '';
+		position: absolute;
+		top: 0;
+		left: 0;
+		right: 0;
+		height: 4rpx;
+		background: linear-gradient(90deg, #1e40af, #0ea5e9);
+	}
+
+	.stats-number {
+		font-size: 48rpx;
+		font-weight: 700;
+		color: #0a2540;
+		margin-bottom: 8rpx;
+	}
+
+	.stats-label {
+		font-size: 26rpx;
+		color: #1e293b;
+		font-weight: 600;
+		margin-bottom: 8rpx;
+	}
+
+	.stats-icon {
+		font-size: 36rpx;
+		position: absolute;
+		top: 20rpx;
+		right: 20rpx;
+		opacity: 0.18;
+	}
+
+	.action-buttons {
+		margin-bottom: 30rpx;
+		display: flex;
+		flex-direction: row;
+		justify-content: space-between;
+	}
+
+	.action-buttons .action-button {
+		margin: 0 8rpx;
+	}
+
+	.action-button {
+		flex: 1;
+		background: #ffffff;
+		border: 2rpx solid #dbeafe;
+		border-radius: 20rpx;
+		padding: 36rpx 16rpx;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		box-shadow: 0 8rpx 24rpx rgba(30, 64, 175, 0.12);
+		min-width: 0;
+		transition: transform 0.2s ease;
+		position: relative;
+		overflow: hidden;
+	}
+
+	.action-button::before {
+		content: '';
+		position: absolute;
+		top: 0;
+		left: 0;
+		right: 0;
+		height: 6rpx;
+		background: linear-gradient(90deg, #1e40af, #0ea5e9);
+	}
+
+	.action-button:active {
+		transform: scale(0.97);
+	}
+
+	.delayed-button {
+		background: #fffbeb !important;
+		border-color: #fde68a !important;
+	}
+
+	.delayed-button::before {
+		background: linear-gradient(90deg, #b45309, #f59e0b) !important;
+	}
+
+	.button-icon {
+		font-size: 44rpx;
+		margin-bottom: 14rpx;
+		color: #1e40af;
+		flex-shrink: 0;
+	}
+
+	.delayed-button .button-icon {
+		color: #b45309;
+	}
+
+	.button-text {
+		font-size: 32rpx;
+		color: #0a2540;
+		font-weight: 700;
+		letter-spacing: 1rpx;
+	}
+
+	.delayed-button .button-text {
+		color: #7c2d12;
+	}
+
+	.button-text-sub {
+		font-size: 22rpx;
+		color: #475569;
+		font-weight: 500;
+		margin-top: 6rpx;
+		letter-spacing: 0.5rpx;
+	}
+
+	.delayed-button .button-text-sub {
+		color: #92400e;
+	}
+
+	.recent-records {
+		margin-bottom: 20rpx;
+	}
+
+	.section-title {
+		font-size: 18rpx;
+		font-weight: bold;
+		color: #0f172a;
+		margin-bottom: 15rpx;
+		flex-direction: column;
+	}
+
+	.section-header {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		margin-bottom: 15rpx;
+	}
+
+	.more-text {
+		font-size: 14rpx;
+		color: #2563eb;
+	}
+
+	.records-list {
+		background: #fff;
+		border-radius: 24rpx;
+		padding: 15rpx;
+		box-shadow: 0 8rpx 24rpx rgba(30, 64, 175, 0.08);
+		border: 1rpx solid #dbeafe;
+	}
+
+	.record-item {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		padding: 15rpx 0;
+		border-bottom: 1rpx solid #eff6ff;
+	}
+
+	.record-item:last-child {
+		border-bottom: none;
+	}
+
+	.record-info {
+		flex: 1;
+	}
+
+	.record-title {
+		font-size: 16rpx;
+		color: #0f172a;
+		flex-direction: column;
+		margin-bottom: 4rpx;
+	}
+
+	.record-meta {
+		font-size: 12rpx;
+		color: #94a3b8;
+		flex-direction: column;
+	}
+
+	.record-status {
+		padding: 4rpx 8rpx;
+		border-radius: 12rpx;
+		font-size: 12rpx;
+	}
+
+	.status-pending {
+		background-color: #fef3c7;
+		color: #b45309;
+	}
+
+	.status-processing {
+		background-color: #dbeafe;
+		color: #1e40af;
+	}
+
+	.status-completed {
+		background-color: #dcfce7;
+		color: #15803d;
+	}
+
+	.status-accepted {
+		background-color: #e2e8f0;
+		color: #475569;
+	}
+
+	.status-unknown {
+		background-color: #f1f5f9;
+		color: #94a3b8;
+	}
+
+	.empty-state {
+		text-align: center;
+		padding: 40rpx 20rpx;
+	}
+
+	/* 待整改记录样式 */
+	.recent-section {
+		margin: 20rpx;
+	}
+
+	.section-header {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		margin-bottom: 15rpx;
+	}
+
+	.section-title {
+		font-size: 18rpx;
+		font-weight: 600;
+		color: #0f172a;
+	}
+
+	.view-all {
+		font-size: 14rpx;
+		color: #2563eb;
+	}
+
+	.empty-records {
+		background: #fff;
+		border-radius: 24rpx;
+		padding: 40rpx 20rpx;
+		text-align: center;
+		box-shadow: 0 8rpx 24rpx rgba(30, 64, 175, 0.08);
+		border: 1rpx solid #dbeafe;
+	}
+
+	.empty-text {
+		font-size: 14rpx;
+		color: #94a3b8;
+	}
+
+	.records-list .record-item {
+		background: #fff;
+		border-radius: 24rpx;
+		padding: 15rpx;
+		margin-bottom: 10rpx;
+		box-shadow: 0 8rpx 24rpx rgba(30, 64, 175, 0.08);
+		border: 1rpx solid #dbeafe;
+		border-bottom: 1rpx solid #dbeafe;
+	}
+
+	.record-content {
+		display: flex;
+		flex-direction: column;
+	}
+
+	.record-content .problem-desc { margin-top: 8rpx; }
+
+	.problem-desc {
+		font-size: 16rpx;
+		color: #0f172a;
+		font-weight: 500;
+		line-height: 1.4;
+	}
+
+	.location-name {
+		font-size: 14rpx;
+		color: #475569;
+	}
+
+	.record-footer {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		margin-top: 5rpx;
+	}
+
+	.create-time {
+		font-size: 12rpx;
+		color: #94a3b8;
+	}
+
+	.status-tag {
+		padding: 4rpx 8rpx;
+		border-radius: 24rpx;
+		font-size: 12rpx;
+	}
+
+	.status-text {
+		color: #fff;
+		font-weight: 500;
+	}
+
+</style>

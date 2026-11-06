@@ -1,0 +1,62 @@
+
+  import { wsClient } from '@/utils/ws-client.uts'
+  import { initNotificationStore, destroyNotificationStore } from '@/stores/notification.uts'
+  import { refreshUserInfo } from '@/utils/user.uts'
+
+
+	let firstBackTime = 0
+
+	const __sfc__ = defineApp({
+		onLaunch: function () {
+			console.log('App Launch')
+			// P0-Fix: App 启动时拉起全局通知系统(仅在已登录态)
+			try {
+				initNotificationStore()
+				wsClient.start()
+			} catch (e) {
+				console.error('[App] init notification store failed:', e)
+			}
+		},
+		onShow: function () {
+			console.log('App Show')
+			// 回到前台时,如果 ws 已断,主动通知客户端检查(自动重连)
+			try {
+				wsClient.notifyLoginChanged()
+			} catch (e) { /* ignore */ }
+			// 回到前台时刷新本地 userInfo 快照：部门、角色、月检管理员标志都可能在后台被改过，
+			// 不刷新的话页面会拿着登录那一刻的旧 deptId 去判定数据范围和按钮可见性
+			refreshUserInfo()
+		},
+		onHide: function () {
+			console.log('App Hide')
+			// 注意:不要 stop() —— App 进入后台 WebSocket 通常仍要保持连接(取决于系统策略)
+		},
+
+		onLastPageBackPress: function () {
+			console.log('App LastPageBackPress')
+			if (firstBackTime == 0) {
+				uni.showToast({
+					title: '再按一次退出应用',
+					position: 'bottom',
+				})
+				firstBackTime = Date.now()
+				setTimeout(() => {
+					firstBackTime = 0
+				}, 2000)
+			} else if (Date.now() - firstBackTime < 2000) {
+				firstBackTime = Date.now()
+				uni.exit()
+			}
+		},
+
+		onExit: function () {
+			console.log('App Exit')
+			try {
+				destroyNotificationStore()
+				wsClient.stop()
+			} catch (e) { /* ignore */ }
+		},
+	})
+
+export default __sfc__
+const GenAppStyles = [_uM([["uni-row", _pS(_uM([["flexDirection", "row"]]))], ["uni-column", _pS(_uM([["flexDirection", "column"]]))]])]

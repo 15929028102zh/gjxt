@@ -1,0 +1,97 @@
+{
+	"name": "榆林公司岗检系统",
+	"appid": "__UNI__B5A0920",
+	"description": "",
+	"versionName": "1.0.7",
+	"versionCode": "107",
+	"uni-app-x": {},
+	"quickapp": {},
+	"mp-weixin": {
+		"appid": "",
+		"setting": {
+			"urlCheck": false
+		},
+		"usingComponents": true
+	},
+	"mp-alipay": {
+		"usingComponents": true
+	},
+	"mp-baidu": {
+		"usingComponents": true
+	},
+	"mp-toutiao": {
+		"usingComponents": true
+	},
+	"uniStatistics": {
+		"enable": false
+	},
+	"vueVersion": "3",
+	"app": {
+		"distribute": {
+			"icons": {
+				"android": {
+					"hdpi": "",
+					"xhdpi": "",
+					"xxhdpi": "",
+					"xxxhdpi": ""
+				}
+			}
+		},
+		"networkSecurityConfig": {
+			"domain-config": [{
+					"domain": "192.168.75.128",
+					"cleartextTrafficPermitted": true
+				},
+				{
+					"domain": "192.168.0.35",
+					"cleartextTrafficPermitted": true
+				},
+				{
+					"domain": "10.116.40.104",
+					"cleartextTrafficPermitted": true
+				},
+				{
+					"domain": "localhost",
+					"cleartextTrafficPermitted": true
+				}
+			]
+		}
+	},
+	"app-android": {
+		"distribute": {
+			"modules": {},
+			"icons": {
+				"hdpi": "F:/kuake/豆包.png",
+				"xhdpi": "F:/kuake/豆包.png",
+				"xxhdpi": "F:/kuake/豆包.png",
+				"xxxhdpi": "F:/kuake/豆包.png"
+			},
+			"splashScreens": {
+				"default": {}
+			},
+			"abiFilters": [
+				"x86",
+				"x86_64",
+				"arm64-v8a",
+				"armeabi-v7a"
+			]
+		},
+		"permissions": [
+			"<uses-permission android:name=\"android.permission.INTERNET\" />",
+			"<uses-permission android:name=\"android.permission.ACCESS_NETWORK_STATE\" />",
+			"<uses-permission android:name=\"android.permission.ACCESS_WIFI_STATE\" />"
+		]
+	},
+	"app-ios": {
+		"distribute": {
+			"modules": {},
+			"icons": {},
+			"splashScreens": {}
+		}
+	},
+	"web": {
+		"router": {
+			"mode": ""
+		}
+	}
+}

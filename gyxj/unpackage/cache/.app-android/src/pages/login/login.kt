@@ -1,0 +1,211 @@
+@file:Suppress("UNCHECKED_CAST", "USELESS_CAST", "INAPPLICABLE_JVM_NAME", "UNUSED_ANONYMOUS_PARAMETER", "SENSELESS_COMPARISON", "NAME_SHADOWING", "UNNECESSARY_NOT_NULL_ASSERTION")
+package uni.UNIB5A0920
+import io.dcloud.uniapp.*
+import io.dcloud.uniapp.extapi.*
+import io.dcloud.uniapp.framework.*
+import io.dcloud.uniapp.runtime.*
+import io.dcloud.uniapp.vue.*
+import io.dcloud.uniapp.vue.shared.*
+import io.dcloud.unicloud.*
+import io.dcloud.uts.*
+import io.dcloud.uts.Map
+import io.dcloud.uts.Set
+import io.dcloud.uts.UTSAndroid
+import kotlin.properties.Delegates
+import io.dcloud.uniapp.extapi.getStorageSync as uni_getStorageSync
+import io.dcloud.uniapp.extapi.reLaunch as uni_reLaunch
+import io.dcloud.uniapp.extapi.request as uni_request
+import io.dcloud.uniapp.extapi.setStorageSync as uni_setStorageSync
+import io.dcloud.uniapp.extapi.showToast as uni_showToast
+open class GenPagesLoginLogin : BasePage {
+    constructor(__ins: ComponentInternalInstance, __renderer: String?) : super(__ins, __renderer) {}
+    @Suppress("UNUSED_PARAMETER", "UNUSED_VARIABLE")
+    override fun `$render`(): Any? {
+        val _ctx = this
+        val _cache = this.`$`.renderCache
+        return _cE("view", _uM("class" to "login-container"), _uA(
+            _cE("view", _uM("class" to "login-header"), _uA(
+                _cE("image", _uM("class" to "logo", "src" to "/static/logo.png")),
+                _cE("text", _uM("class" to "system-title"), "榆林公司岗检系统"),
+                _cE("text", _uM("class" to "system-subtitle"), "ENTERPRISE INSPECTION PLATFORM")
+            )),
+            _cE("view", _uM("class" to "login-form"), _uA(
+                _cE("view", _uM("class" to "form-item"), _uA(
+                    _cE("view", _uM("class" to "input-wrapper"), _uA(
+                        _cE("text", _uM("class" to "icon"), "👤"),
+                        _cE("input", _uM("class" to "input", "type" to "text", "placeholder" to "请输入用户名", "modelValue" to _ctx.form.username, "onInput" to fun(`$event`: UniInputEvent){
+                            _ctx.form.username = `$event`.detail.value
+                        }
+                        , "maxlength" to "20"), null, 40, _uA(
+                            "modelValue",
+                            "onInput"
+                        ))
+                    ))
+                )),
+                _cE("view", _uM("class" to "form-item"), _uA(
+                    _cE("view", _uM("class" to "input-wrapper"), _uA(
+                        _cE("text", _uM("class" to "icon"), "🔒"),
+                        _cE("input", _uM("class" to "input", "type" to if (_ctx.showPassword) {
+                            "text"
+                        } else {
+                            "password"
+                        }
+                        , "placeholder" to "请输入密码", "modelValue" to _ctx.form.password, "onInput" to fun(`$event`: UniInputEvent){
+                            _ctx.form.password = `$event`.detail.value
+                        }
+                        , "maxlength" to "20"), null, 40, _uA(
+                            "type",
+                            "modelValue",
+                            "onInput"
+                        )),
+                        _cE("text", _uM("class" to "eye-icon", "onClick" to _ctx.togglePassword), _tD(if (_ctx.showPassword) {
+                            "👁️"
+                        } else {
+                            "👁️‍🗨️"
+                        }
+                        ), 9, _uA(
+                            "onClick"
+                        ))
+                    ))
+                )),
+                _cE("button", _uM("class" to "login-btn", "type" to "button", "onClick" to _ctx.handleLogin, "disabled" to _ctx.loading), _tD(if (_ctx.loading) {
+                    "登录中..."
+                } else {
+                    "登录"
+                }
+                ), 9, _uA(
+                    "onClick",
+                    "disabled"
+                ))
+            ))
+        ))
+    }
+    open var form: LoginFormData by `$data`
+    open var showPassword: Boolean by `$data`
+    open var loading: Boolean by `$data`
+    @Suppress("USELESS_CAST")
+    override fun data(): Map<String, Any?> {
+        return _uM("form" to LoginFormData(username = "", password = ""), "showPassword" to false, "loading" to false)
+    }
+    open var togglePassword = ::gen_togglePassword_fn
+    open fun gen_togglePassword_fn() {
+        this.showPassword = !this.showPassword
+    }
+    open var validateForm = ::gen_validateForm_fn
+    open fun gen_validateForm_fn(): Boolean {
+        if (this.form.username.trim() == "") {
+            uni_showToast(ShowToastOptions(title = "请输入用户名", icon = "none"))
+            return false
+        }
+        if (this.form.password.trim() == "") {
+            uni_showToast(ShowToastOptions(title = "请输入密码", icon = "none"))
+            return false
+        }
+        return true
+    }
+    open var getUserInfo = ::gen_getUserInfo_fn
+    open fun gen_getUserInfo_fn(token: String) {
+        val apiUrl = getApiUrl("/user/info?username=" + this.form.username)
+        console.log("获取用户信息API地址:", apiUrl, " at pages/login/login.uvue:89")
+        uni_request<Any>(RequestOptions(url = apiUrl, method = "GET", header = _uO("Content-Type" to "application/json", "Authorization" to ("Bearer " + token)), success = fun(res){
+            console.log("获取用户信息响应:", res, " at pages/login/login.uvue:98")
+            val data = res.data as UTSJSONObject
+            console.log("响应数据:", data, " at pages/login/login.uvue:100")
+            if (res.statusCode == 200 && (data.getNumber("code") ?: 0) == 200) {
+                val userInfo = data.getJSON("data")
+                console.log("从后端获取的用户信息:", userInfo, " at pages/login/login.uvue:104")
+                if (userInfo != null) {
+                    console.log("保存用户信息到本地存储:", JSON.stringify(userInfo), " at pages/login/login.uvue:107")
+                    uni_setStorageSync("userInfo", JSON.stringify(userInfo))
+                    this.updateUserAvatar(userInfo)
+                }
+            } else {
+                console.log("获取用户信息失败，使用基本信息", " at pages/login/login.uvue:114")
+                uni_setStorageSync("userInfo", JSON.stringify(_uO("id" to ("temp_" + Date.now()), "username" to this.form.username, "realName" to this.form.username)))
+            }
+        }
+        , fail = fun(error){
+            console.log("获取用户信息失败:", error, " at pages/login/login.uvue:124")
+            uni_setStorageSync("userInfo", JSON.stringify(_uO("id" to ("temp_" + Date.now()), "username" to this.form.username, "realName" to this.form.username)))
+        }
+        ))
+    }
+    open var handleLogin = ::gen_handleLogin_fn
+    open fun gen_handleLogin_fn() {
+        if (!this.validateForm()) {
+            return
+        }
+        this.loading = true
+        val loginUrl = getApiUrl("/user/login")
+        console.log("登录API地址:", loginUrl, " at pages/login/login.uvue:140")
+        uni_request<Any>(RequestOptions(url = loginUrl, method = "POST", header = _uO("Content-Type" to "application/json"), data = JSON.stringify(this.form), success = fun(res){
+            val data = res.data as UTSJSONObject
+            if (res.statusCode == 200 && (data.getNumber("code") ?: 0) == 200) {
+                val token = data.getString("data") ?: ""
+                uni_setStorageSync("token", token)
+                uni_setStorageSync("tokenExpires", (Date.now() + 86400000).toString(10))
+                this.getUserInfo(token)
+                uni_showToast(ShowToastOptions(title = "登录成功", icon = "success"))
+                setTimeout(fun(){
+                    uni_reLaunch(ReLaunchOptions(url = "/pages/home/home"))
+                }, 1500)
+            } else {
+                uni_showToast(ShowToastOptions(title = data.getString("message") ?: "登录失败", icon = "none"))
+            }
+            this.loading = false
+        }
+        , fail = fun(error){
+            console.log("登录请求失败:", error, " at pages/login/login.uvue:182")
+            uni_showToast(ShowToastOptions(title = "网络请求失败", icon = "none"))
+            this.loading = false
+        }
+        ))
+    }
+    open var updateUserAvatar = ::gen_updateUserAvatar_fn
+    open fun gen_updateUserAvatar_fn(userInfo: UTSJSONObject) {
+        val imageUrl = userInfo.getString("imageUrl")
+        if (imageUrl != null && imageUrl != "") {
+            console.log("用户已有头像，设置头像:", imageUrl, " at pages/login/login.uvue:195")
+            val httpImageUrl = this.convertToHttpUrl(imageUrl)
+            userInfo.set("avatar", httpImageUrl)
+            uni_setStorageSync("userInfo", JSON.stringify(userInfo))
+            console.log("头像已更新到本地存储:", httpImageUrl, " at pages/login/login.uvue:201")
+        } else {
+            console.log("用户暂无头像", " at pages/login/login.uvue:203")
+        }
+    }
+    open var convertToHttpUrl = ::gen_convertToHttpUrl_fn
+    open fun gen_convertToHttpUrl_fn(relativePath: String): String {
+        console.log("相对路径:", relativePath, " at pages/login/login.uvue:209")
+        if (relativePath.startsWith("http://") || relativePath.startsWith("https://")) {
+            return relativePath
+        }
+        val httpUrl = "" + apiConfig.baseUrl + "/api" + relativePath
+        console.log("转换后的HTTP URL:", httpUrl, " at pages/login/login.uvue:218")
+        return httpUrl
+    }
+    open var onLoad = ::gen_onLoad_fn
+    open fun gen_onLoad_fn() {
+        val token = uni_getStorageSync("token")
+        if (token != null && token != "") {
+            uni_reLaunch(ReLaunchOptions(url = "/pages/home/home"))
+        }
+    }
+    companion object {
+        val styles: Map<String, Map<String, Map<String, Any>>> by lazy {
+            _nCS(_uA(
+                styles0
+            ))
+        }
+        val styles0: Map<String, Map<String, Map<String, Any>>>
+            get() {
+                return _uM("login-container" to _pS(_uM("flexGrow" to 1, "flexShrink" to 1, "flexBasis" to "0%", "backgroundColor" to "#14295e", "backgroundImage" to "linear-gradient(160deg, #061a33 0%, #14295e 45%, #1e40af 100%)", "flexDirection" to "column", "justifyContent" to "center", "alignItems" to "center", "paddingTop" to 80, "paddingRight" to 32, "paddingBottom" to 40, "paddingLeft" to 32, "position" to "relative", "overflow" to "hidden", "content::before" to "''", "position::before" to "absolute", "top::before" to "-160rpx", "right::before" to "-120rpx", "width::before" to "480rpx", "height::before" to "480rpx", "pointerEvents::before" to "none", "content::after" to "''", "position::after" to "absolute", "bottom::after" to "-200rpx", "left::after" to "-160rpx", "width::after" to "560rpx", "height::after" to "560rpx", "pointerEvents::after" to "none")), "login-header" to _pS(_uM("textAlign" to "center", "marginBottom" to "64rpx", "alignItems" to "center", "justifyContent" to "center", "position" to "relative", "zIndex" to 2)), "logo" to _pS(_uM("width" to "144rpx", "height" to "144rpx", "borderTopLeftRadius" to "28rpx", "borderTopRightRadius" to "28rpx", "borderBottomRightRadius" to "28rpx", "borderBottomLeftRadius" to "28rpx", "marginBottom" to "28rpx", "alignSelf" to "center", "backgroundImage" to "none", "backgroundColor" to "rgba(255,255,255,0.95)", "paddingTop" to "12rpx", "paddingRight" to "12rpx", "paddingBottom" to "12rpx", "paddingLeft" to "12rpx", "boxShadow" to "0 16rpx 40rpx rgba(8, 47, 110, 0.35)")), "system-title" to _pS(_uM("fontSize" to "38rpx", "fontWeight" to 700, "color" to "#ffffff", "marginBottom" to "12rpx", "textAlign" to "center", "letterSpacing" to "4rpx")), "system-subtitle" to _pS(_uM("fontSize" to "24rpx", "color" to "rgba(219,234,254,0.95)", "letterSpacing" to "6rpx", "textAlign" to "center")), "login-form" to _pS(_uM("width" to "100%", "maxWidth" to "560rpx", "position" to "relative", "zIndex" to 2)), "form-item" to _pS(_uM("marginBottom" to "28rpx")), "input-wrapper" to _pS(_uM("position" to "relative", "backgroundImage" to "none", "backgroundColor" to "rgba(255,255,255,0.96)", "borderTopLeftRadius" to "20rpx", "borderTopRightRadius" to "20rpx", "borderBottomRightRadius" to "20rpx", "borderBottomLeftRadius" to "20rpx", "flexDirection" to "row", "alignItems" to "center", "paddingTop" to 0, "paddingRight" to "28rpx", "paddingBottom" to 0, "paddingLeft" to "28rpx", "height" to "96rpx", "width" to "100%", "boxSizing" to "border-box", "boxShadow" to "0 8rpx 24rpx rgba(8, 47, 110, 0.18)", "borderTopWidth" to "2rpx", "borderRightWidth" to "2rpx", "borderBottomWidth" to "2rpx", "borderLeftWidth" to "2rpx", "borderTopStyle" to "solid", "borderRightStyle" to "solid", "borderBottomStyle" to "solid", "borderLeftStyle" to "solid", "borderTopColor" to "rgba(0,0,0,0)", "borderRightColor" to "rgba(0,0,0,0)", "borderBottomColor" to "rgba(0,0,0,0)", "borderLeftColor" to "rgba(0,0,0,0)", "transitionProperty" to "borderColor", "transitionDuration" to "0.2s", "transitionTimingFunction" to "ease", "borderTopColor:focus-within" to "#60a5fa", "borderRightColor:focus-within" to "#60a5fa", "borderBottomColor:focus-within" to "#60a5fa", "borderLeftColor:focus-within" to "#60a5fa", "boxShadow:focus-within" to "0 8rpx 28rpx rgba(37, 99, 235, 0.35)")), "icon" to _pS(_uM("fontSize" to "32rpx", "marginRight" to "16rpx", "color" to "#2563eb", "flexShrink" to 0)), "input" to _pS(_uM("flexGrow" to 1, "flexShrink" to 1, "flexBasis" to "0%", "height" to "100%", "borderTopWidth" to "medium", "borderRightWidth" to "medium", "borderBottomWidth" to "medium", "borderLeftWidth" to "medium", "borderTopStyle" to "none", "borderRightStyle" to "none", "borderBottomStyle" to "none", "borderLeftStyle" to "none", "borderTopColor" to "#000000", "borderRightColor" to "#000000", "borderBottomColor" to "#000000", "borderLeftColor" to "#000000", "backgroundImage" to "none", "backgroundColor" to "rgba(0,0,0,0)", "fontSize" to "30rpx", "color" to "#0f172a", "paddingLeft" to 0)), "eye-icon" to _pS(_uM("fontSize" to "30rpx", "color" to "#64748b", "paddingTop" to "8rpx", "paddingRight" to "8rpx", "paddingBottom" to "8rpx", "paddingLeft" to "8rpx")), "login-btn" to _pS(_uM("width" to "100%", "paddingTop" to "24rpx", "paddingRight" to "24rpx", "paddingBottom" to "24rpx", "paddingLeft" to "24rpx", "backgroundImage" to "none", "backgroundColor" to "#1e40af", "color" to "#ffffff", "borderTopWidth" to "medium", "borderRightWidth" to "medium", "borderBottomWidth" to "medium", "borderLeftWidth" to "medium", "borderTopStyle" to "none", "borderRightStyle" to "none", "borderBottomStyle" to "none", "borderLeftStyle" to "none", "borderTopColor" to "#000000", "borderRightColor" to "#000000", "borderBottomColor" to "#000000", "borderLeftColor" to "#000000", "borderTopLeftRadius" to "16rpx", "borderTopRightRadius" to "16rpx", "borderBottomRightRadius" to "16rpx", "borderBottomLeftRadius" to "16rpx", "fontSize" to "32rpx", "fontWeight" to 600, "marginTop" to "48rpx", "marginBottom" to "24rpx", "color::after" to "#ffffff", "backgroundColor::after" to "rgba(0,0,0,0)", "borderTopWidth::after" to "medium", "borderRightWidth::after" to "medium", "borderBottomWidth::after" to "medium", "borderLeftWidth::after" to "medium", "borderTopStyle::after" to "none", "borderRightStyle::after" to "none", "borderBottomStyle::after" to "none", "borderLeftStyle::after" to "none", "borderTopColor::after" to "#000000", "borderRightColor::after" to "#000000", "borderBottomColor::after" to "#000000", "borderLeftColor::after" to "#000000", "backgroundImage:active" to "none", "backgroundColor:active" to "#1e3a8a", "backgroundImage:disabled" to "none", "backgroundColor:disabled" to "#94a3b8", "color:disabled" to "#ffffff", "color:disabled::after" to "#ffffff", "backgroundColor:disabled::after" to "rgba(0,0,0,0)")), "@TRANSITION" to _uM("input-wrapper" to _uM("property" to "borderColor", "duration" to "0.2s", "timingFunction" to "ease")))
+            }
+        var inheritAttrs = true
+        var inject: Map<String, Map<String, Any?>> = _uM()
+        var emits: Map<String, Any?> = _uM()
+        var props = _nP(_uM())
+        var propsNeedCastKeys: UTSArray<String> = _uA()
+        var components: Map<String, CreateVueComponent> = _uM()
+    }
+}

@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gjxt.inspection.mapper.SysUserMapper">
+
+    <!-- 结果映射 -->
+    <resultMap id="BaseResultMap" type="com.gjxt.inspection.entity.SysUser">
+        <id column="id" property="id" />
+        <result column="username" property="username" />
+        <result column="password" property="password" />
+        <result column="real_name" property="realName" />
+        <result column="phone" property="phone" />
+        <result column="email" property="email" />
+        <result column="department" property="department" />
+        <result column="dept_id" property="deptId" />
+        <result column="dept_name" property="deptName" />
+        <result column="position" property="position" />
+        <result column="role" property="role" />
+        <result column="status" property="status" />
+        <result column="last_login_time" property="lastLoginTime" />
+        <result column="create_time" property="createTime" />
+        <result column="update_time" property="updateTime" />
+        <result column="deleted" property="deleted" />
+        <result column="image_url" property="imageUrl" />
+        <result column="weekly_permission" property="weeklyPermission" />
+        <result column="monthly_permission" property="monthlyPermission" />
+        <result column="audit_permission" property="auditPermission" />
+        <result column="is_admin" property="isAdmin" />
+        <result column="is_weekly_admin" property="isWeeklyAdmin" />
+        <result column="is_monthly_admin" property="isMonthlyAdmin" />
+    </resultMap>
+
+    <!-- 基础字段 -->
+    <sql id="Base_Column_List">
+        id, username, password, real_name, phone, email, department, dept_id, position, role, status,
+        last_login_time, create_time, update_time, deleted, weekly_permission, monthly_permission, audit_permission,
+        is_admin, is_weekly_admin, is_monthly_admin
+    </sql>
+
+    <!-- 根据用户名查询用户 -->
+    <select id="selectByUsername" parameterType="string" resultMap="BaseResultMap">
+        SELECT u.id, u.username, u.password, u.real_name, u.phone, u.email,
+               u.department, u.dept_id, u.position, u.role, u.status,
+               u.last_login_time, u.create_time, u.update_time, u.deleted,
+               u.image_url, u.weekly_permission, u.monthly_permission, u.audit_permission,
+               u.is_admin, u.is_weekly_admin, u.is_monthly_admin,
+               d.dept_name
+        FROM sys_user u
+        LEFT JOIN sys_dept d ON u.dept_id = d.id
+        WHERE u.username = #{username} AND u.deleted = 0
+    </select>
+
+    <!-- 检查用户名是否存在 -->
+    <select id="checkUsernameExists" resultType="int">
+        SELECT COUNT(1)
+        FROM sys_user
+        WHERE username = #{username} AND deleted = 0
+        <if test="excludeId != null">
+            AND id != #{excludeId}
+        </if>
+    </select>
+
+    <!-- 更新最后登录时间 -->
+    <update id="updateLastLoginTime">
+        UPDATE sys_user
+        SET last_login_time = #{lastLoginTime}, update_time = NOW()
+        WHERE id = #{userId}
+    </update>
+
+    <!-- 查询用户列表（包含部门名称） -->
+    <select id="selectUserListWithDept" resultMap="BaseResultMap">
+        SELECT u.id, u.username, u.password, u.real_name, u.phone, u.email,
+               u.department, u.dept_id, u.position, u.role, u.status,
+               u.last_login_time, u.create_time, u.update_time, u.deleted,
+               u.weekly_permission, u.monthly_permission, u.audit_permission,
+               u.is_admin, u.is_weekly_admin, u.is_monthly_admin,
+               d.dept_name
+        FROM sys_user u
+        LEFT JOIN sys_dept d ON u.dept_id = d.id
+        WHERE u.deleted = 0
+        ORDER BY u.create_time DESC
+    </select>
+
+    <!-- 分页查询用户列表（包含部门名称） -->
+    <select id="selectUserPageWithDept" resultMap="BaseResultMap">
+        SELECT u.id, u.username, u.password, u.real_name, u.phone, u.email,
+               u.department, u.dept_id, u.position, u.role, u.status,
+               u.last_login_time, u.create_time, u.update_time, u.deleted,
+               u.weekly_permission, u.monthly_permission, u.audit_permission,
+               u.is_admin, u.is_weekly_admin, u.is_monthly_admin,
+               d.dept_name
+        FROM sys_user u
+        LEFT JOIN sys_dept d ON u.dept_id = d.id
+        WHERE u.deleted = 0
+        <if test="username != null and username != ''">
+            AND u.username LIKE CONCAT('%', #{username}, '%')
+        </if>
+        <if test="realName != null and realName != ''">
+            AND u.real_name LIKE CONCAT('%', #{realName}, '%')
+        </if>
+        <if test="department != null and department != ''">
+            AND u.department = #{department}
+        </if>
+        <if test="deptId != null">
+            AND u.dept_id = #{deptId}
+        </if>
+        <if test="role != null and role != ''">
+            AND u.role = #{role}
+        </if>
+        <if test="status != null">
+            AND u.status = #{status}
+        </if>
+        ORDER BY u.create_time DESC
+    </select>
+
+</mapper>

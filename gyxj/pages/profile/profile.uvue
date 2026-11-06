@@ -1,0 +1,840 @@
+<template>
+	<view class="container">
+		<!-- 用户信息区域 -->
+		<view class="user-section">
+			<view class="user-avatar" @click="showAvatarOptions">
+				<image class="user-avatar-img" :src="(userInfo.getString('avatar') ?? '') != '' ? (userInfo.getString('avatar') ?? '') : '/static/default-avatar.svg'" mode="aspectFit"></image>
+			</view>
+			<view class="user-info">
+				<text class="user-name">{{(userInfo.getString('realName') ?? '') != '' ? (userInfo.getString('realName') ?? '') : '未设置'}}</text>
+			<text class="user-phone">{{(userInfo.getString('phone') ?? '') != '' ? (userInfo.getString('phone') ?? '') : '未绑定手机'}}</text>
+			</view>
+		</view>
+		
+
+		
+
+		
+		<!-- 退出登录按钮 -->
+		<view class="logout-section">
+			<view class="logout-btn" @click="logout">
+				<text class="logout-btn-text">退出登录</text>
+			</view>
+		</view>
+		
+		<!-- 头像选项弹窗 -->
+		<view class="modal" v-if="showAvatarModal" @click="closeAvatarModal">
+			<view class="modal-content avatar-options" @click.stop>
+				<view class="option-item option-item-first" @click="editProfile">
+					<text class="option-text">编辑资料</text>
+				</view>
+				<view class="option-item option-item-last" @click="changeAvatar">
+					<text class="option-text">修改头像</text>
+				</view>
+			</view>
+		</view>
+		
+		<!-- 编辑资料弹窗 -->
+		<view class="modal" v-if="showEditModal" @click="closeEditModal">
+			<view class="modal-content" @click.stop>
+					<view class="form-item">
+						<text class="form-label">真实姓名</text>
+						<input 
+							class="form-input" 
+							v-model="editForm.realName" 
+							placeholder="请输入真实姓名"
+						/>
+					</view>
+					<view class="form-item">
+						<text class="form-label">手机号码</text>
+						<input 
+							class="form-input" 
+							v-model="editForm.phone" 
+							placeholder="请输入手机号码"
+							type="number"
+						/>
+					</view>
+				<view class="modal-footer">
+					<view class="btn-cancel" @click="closeEditModal">
+						<text class="btn-cancel-text">取消</text>
+					</view>
+					<view class="btn-confirm" @click="saveProfile">
+						<text class="btn-confirm-text">保存</text>
+					</view>
+				</view>
+			</view>
+		</view>
+	</view>
+</template>
+
+<script lang="uts">
+	import { getApiUrl, apiConfig } from '@/config/api.uts'
+	
+	type EditForm = {
+		realName: string
+		phone: string
+	}
+	
+	export default {
+		data() {
+			return {
+				userInfo: {} as UTSJSONObject,
+				userStats: {} as UTSJSONObject,
+				showEditModal: false,
+				showAvatarModal: false,
+				editForm: {
+					realName: '',
+					phone: ''
+				} as EditForm,
+				loading: false
+			}
+		},
+		onLoad() {
+			this.checkLogin()
+			this.loadUserInfo()
+			this.loadUserStats()
+		},
+		methods: {
+			checkLogin() {
+			const token = uni.getStorageSync('token')
+			if (token == null || token == '') {
+				uni.reLaunch({
+					url: '/pages/login/login'
+				})
+			}
+		},
+			
+			loadUserInfo() {
+			const userInfoStr = uni.getStorageSync('userInfo') as string
+			console.log('从本地存储获取的用户信息字符串:', userInfoStr)
+			
+			if (userInfoStr != null && userInfoStr != '') {
+				const userInfo = JSON.parse(userInfoStr) as UTSJSONObject
+			console.log('解析后的用户信息:', userInfo)
+			console.log('用户ID字段:', userInfo.getString('id'))
+			console.log('用户信息JSON字符串:', JSON.stringify(userInfo))
+				
+				this.userInfo = userInfo
+				this.editForm.realName = userInfo.getString('realName') ?? ''
+				this.editForm.phone = userInfo.getString('phone') ?? ''
+			} else {
+				console.log('本地存储中没有用户信息')
+			}
+		},
+			
+			loadUserStats() {
+				const token = uni.getStorageSync('token')
+				uni.request({
+					url: getApiUrl('/user/stats'),
+					method: 'GET',
+					header: {
+						'Authorization': `Bearer ${token}`
+					},
+					success: (res) => {
+				const data = res.data as UTSJSONObject
+				if (res.statusCode == 200 && (data.getNumber('code') ?? 0) == 200) {
+					this.userStats = data.getJSON('data') as UTSJSONObject
+				}
+			},
+			fail: (error) => {
+				console.log('加载用户统计失败:', error)
+			}
+				})
+			},
+			
+			getRoleText(role: number): string {
+				if (role == 1) {
+					return '管理员'
+				} else if (role == 2) {
+					return '超级管理员'
+				} else {
+					return '普通用户'
+				}
+		},
+			
+			showAvatarOptions() {
+				this.showAvatarModal = true
+			},
+			
+			closeAvatarModal() {
+				this.showAvatarModal = false
+			},
+			
+			changeAvatar() {
+				this.closeAvatarModal()
+				uni.chooseImage({
+					count: 1,
+					sizeType: ['compressed'],
+					sourceType: ['album', 'camera'],
+					success: (res) => {
+						const tempFilePath = res.tempFilePaths[0]
+						this.uploadAvatar(tempFilePath)
+					},
+					fail: (error) => {
+						console.log('选择图片失败:', error)
+					}
+				})
+			},
+			
+			uploadAvatar(filePath: string) {
+				const token = uni.getStorageSync('token')
+				// 先上传图片文件获取URL
+				uni.uploadFile({
+					url: getApiUrl('/upload/image'),
+					filePath: filePath,
+					name: 'file',
+					header: {
+						'Authorization': `Bearer ${token}`
+					},
+					success: (res) => {
+						// 调试：打印上传响应
+						console.log('上传图片响应:', res)
+						console.log('上传图片响应数据:', res.data)
+						
+						const data = JSON.parse(res.data) as UTSJSONObject
+						console.log('解析后的数据:', data)
+						
+						if (res.statusCode === 200 && data.getNumber('code') === 200) {
+							const dataObj = data.getJSON('data')
+							const imageUrl = dataObj?.getString('filePath') ?? ''
+							console.log('获取到的图片URL:', imageUrl)
+							
+							if (imageUrl == null || imageUrl == '') {
+								console.log('警告：图片URL为空')
+								uni.showToast({
+									title: '上传成功但未获取到图片URL',
+									icon: 'none'
+								})
+								return
+							}
+							
+							// 调用设置头像接口更新数据库
+							this.updateUserAvatar(imageUrl)
+						} else {
+							console.log('上传失败，状态码:', res.statusCode, '错误码:', data.getNumber('code'))
+							uni.showToast({
+								title: data.getString('message') ?? '上传失败',
+								icon: 'none'
+							})
+						}
+					},
+					fail: (error) => {
+						console.log('上传头像失败:', error)
+						uni.showToast({
+							title: '上传失败',
+							icon: 'none'
+						})
+					}
+				})
+			},
+			
+			updateUserAvatar(imageUrl: string) {
+				const token = uni.getStorageSync('token')
+				
+				// 调试：打印用户信息
+				console.log('用户信息调试:', this.userInfo)
+				console.log('用户信息类型:', typeof this.userInfo)
+				console.log('用户信息字符串:', JSON.stringify(this.userInfo))
+				
+				const username = this.userInfo.getString('username') ?? ''
+				console.log('获取到的用户名:', username)
+				
+				if (username == null || username == '') {
+					uni.showToast({
+						title: '用户信息异常',
+						icon: 'none'
+					})
+					return
+				}
+				
+				uni.request({
+					url: getApiUrl(`/user/${username}/update-avatar`),
+					method: 'PUT',
+					header: {
+						'Authorization': `Bearer ${token}`,
+						'Content-Type': 'application/json'
+					},
+					data: {
+						imageUrl: imageUrl
+					},
+					success: (res) => {
+						const data = res.data as UTSJSONObject
+						if (res.statusCode === 200 && data.getNumber('code') === 200) {
+							// 将物理路径转换为HTTP访问路径
+							const httpImageUrl = this.convertToHttpUrl(imageUrl)
+							// 更新本地用户信息
+							this.userInfo.set('avatar', httpImageUrl)
+							uni.setStorageSync('userInfo', JSON.stringify(this.userInfo))
+							uni.showToast({
+								title: '头像更新成功',
+								icon: 'success'
+							})
+						} else {
+							uni.showToast({
+								title: data.getString('message') ?? '设置头像失败',
+								icon: 'none'
+							})
+						}
+					},
+					fail: (error) => {
+						console.log('设置头像失败:', error)
+						uni.showToast({
+							title: '设置头像失败',
+							icon: 'none'
+						})
+					}
+				})
+			},
+			
+			editProfile() {
+				this.closeAvatarModal()
+				this.showEditModal = true
+			},
+			
+			closeEditModal() {
+				this.showEditModal = false
+				// 重置表单
+				const realName = this.userInfo.getString('realName') ?? ''
+				const phone = this.userInfo.getString('phone') ?? ''
+				this.editForm.realName = realName != '' ? realName : ''
+				this.editForm.phone = phone != '' ? phone : ''
+			},
+			
+			async saveProfile() {
+				if (this.editForm.realName.trim() == '') {
+					uni.showToast({
+						title: '请输入真实姓名',
+						icon: 'none'
+					})
+					return
+				}
+				
+				if (this.editForm.phone != '' && !/^1[3-9]\d{9}$/.test(this.editForm.phone)) {
+					uni.showToast({
+						title: '请输入正确的手机号',
+						icon: 'none'
+					})
+					return
+				}
+				
+				if (this.loading) return
+				
+				this.loading = true
+				
+				const token = uni.getStorageSync('token')
+				uni.request({
+					url: getApiUrl('/user/profile'),
+					method: 'PUT',
+					header: {
+						'Authorization': `Bearer ${token}`,
+						'Content-Type': 'application/json'
+					},
+					data: {
+						realName: this.editForm.realName,
+						phone: this.editForm.phone
+					},
+					success: (res) => {
+						const data = res.data as UTSJSONObject
+						if (res.statusCode === 200 && data.getNumber('code') === 200) {
+						// 更新本地用户信息
+						this.userInfo.set('realName', this.editForm.realName)
+						this.userInfo.set('phone', this.editForm.phone)
+						uni.setStorageSync('userInfo', JSON.stringify(this.userInfo))
+						
+						uni.showToast({
+							title: '保存成功',
+							icon: 'success'
+						})
+						
+						this.closeEditModal()
+					} else {
+						const message = data.getString('message') ?? '保存失败'
+						uni.showToast({
+							title: message,
+							icon: 'none'
+						})
+					}
+					this.loading = false
+				},
+				fail: (error) => {
+					console.error('保存用户信息失败:', error)
+					uni.showToast({
+						title: '保存失败',
+						icon: 'none'
+					})
+					this.loading = false
+				}
+			})
+			},
+			
+			goToMyRecords() {
+				uni.navigateTo({
+					url: '/pages/record/record?userId=' + (this.userInfo.getString('id') ?? '')
+				})
+			},
+			
+			goToMyTasks() {
+				uni.navigateTo({
+					url: '/pages/task/task?assigneeId=' + (this.userInfo.getString('id') ?? '')
+				})
+			},
+			
+			showSettings() {
+				uni.showToast({
+					title: '功能开发中',
+					icon: 'none'
+				})
+			},
+			
+			showHelp() {
+				uni.showModal({
+					title: '帮助与反馈',
+					content: '如有问题请联系管理员\n电话：400-123-4567\n邮箱：support@example.com',
+					showCancel: false
+				})
+			},
+			
+			showAbout() {
+				uni.showModal({
+					title: '关于我们',
+					content: '工业巡检系统 v1.0.0\n\n专业的工业设备巡检管理平台，提供任务管理、记录跟踪、数据分析等功能。',
+					showCancel: false
+				})
+			},
+			
+			// 将相对路径转换为HTTP访问路径
+			convertToHttpUrl(relativePath: string): string {
+				console.log('相对路径:', relativePath)
+				// 如果已经是HTTP路径，直接返回
+				if (relativePath.startsWith('http://') || relativePath.startsWith('https://')) {
+					return relativePath
+				}
+				
+				// 直接拼接完整的HTTP URL
+				// 后端已返回相对路径，如: /files/images/20250818/xxx.jpg
+				const httpUrl = `${apiConfig.baseUrl}/api${relativePath}`
+				console.log('转换后的HTTP URL:', httpUrl)
+				return httpUrl
+			},
+			
+			logout() {
+				uni.showModal({
+					title: '确认退出',
+					content: '确定要退出登录吗？',
+					success: (res) => {
+						if (res.confirm) {
+							// 清除本地存储
+							uni.removeStorageSync('token')
+							uni.removeStorageSync('userInfo')
+							
+							// 跳转到登录页
+							uni.reLaunch({
+								url: '/pages/login/login'
+							})
+						}
+					}
+				})
+			}
+		}
+	}
+</script>
+
+<style>
+	.container {
+		padding: 20rpx;
+		background-color: #f1f5f9;
+		min-height: 1200rpx;
+	}
+
+	.user-section {
+		background: #fff;
+		border-radius: 24rpx;
+		padding: 25rpx 20rpx;
+		margin-bottom: 20rpx;
+		display: flex;
+		align-items: center;
+		box-shadow: 0 8rpx 24rpx rgba(30, 64, 175, 0.08);
+		border: 1rpx solid #dbeafe;
+	}
+
+	.user-avatar {
+		width: 70rpx;
+		height: 70rpx;
+		border-radius: 35rpx;
+		overflow: hidden;
+		margin-right: 15rpx;
+		background: #eff6ff;
+		border: 2rpx solid #2563eb;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.user-avatar-img {
+		width: 100%;
+		height: 100%;
+		border-radius: 35rpx;
+	}
+
+	.user-info {
+		flex: 1;
+	}
+
+	.user-name {
+		font-size: 18rpx;
+		font-weight: bold;
+		color: #0f172a;
+		margin-bottom: 5rpx;
+	}
+
+	.user-role {
+		font-size: 14rpx;
+		color: #2563eb;
+		margin-bottom: 3rpx;
+	}
+
+	.user-phone {
+		font-size: 12rpx;
+		color: #94a3b8;
+	}
+
+
+
+	.stats-section {
+		background: #fff;
+		border-radius: 24rpx;
+		padding: 20rpx;
+		margin-bottom: 20rpx;
+		display: flex;
+		justify-content: space-around;
+		box-shadow: 0 8rpx 24rpx rgba(30, 64, 175, 0.08);
+		border: 1rpx solid #dbeafe;
+	}
+
+	.stats-item {
+		text-align: center;
+	}
+
+	.stats-number {
+		font-size: 24rpx;
+		font-weight: bold;
+		color: #1e40af;
+		margin-bottom: 5rpx;
+	}
+
+	.stats-label {
+		font-size: 12rpx;
+		color: #475569;
+	}
+
+	.menu-section {
+
+	}
+
+	.menu-group {
+		background: #fff;
+		border-radius: 24rpx;
+		margin-bottom: 15rpx;
+		overflow: hidden;
+		box-shadow: 0 8rpx 24rpx rgba(30, 64, 175, 0.08);
+		border: 1rpx solid #dbeafe;
+	}
+
+	.menu-item {
+		display: flex;
+		align-items: center;
+		padding: 18rpx 20rpx;
+		border-bottom: 1rpx solid #eff6ff;
+	}
+
+	.menu-item:last-child {
+		border-bottom: none;
+	}
+
+	.menu-icon {
+		width: 24rpx;
+		height: 24rpx;
+		margin-right: 15rpx;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.menu-icon-text {
+		font-size: 18rpx;
+		color: #2563eb;
+	}
+
+	.menu-title {
+		flex: 1;
+		font-size: 16rpx;
+		color: #0f172a;
+	}
+
+	.menu-arrow {
+		font-size: 16rpx;
+		color: #94a3b8;
+	}
+
+	.logout-section {
+		margin-top: 30rpx;
+	}
+
+	.logout-btn {
+		background: #fff;
+		border-radius: 24rpx;
+		padding: 18rpx;
+		text-align: center;
+		box-shadow: 0 8rpx 24rpx rgba(30, 64, 175, 0.08);
+		border: 1rpx solid #dbeafe;
+	}
+
+	.logout-btn-text {
+		font-size: 16rpx;
+		color: #dc2626;
+		font-weight: bold;
+	}
+
+	.modal {
+		position: fixed;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		background: rgba(15, 23, 42, 0.5);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		z-index: 1000;
+	}
+
+	.modal-content {
+		background: #fff;
+		border-radius: 24rpx;
+		width: 80%;
+		max-width: 400rpx;
+		max-height: 800rpx;
+		overflow: hidden;
+	}
+
+	.modal-header {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		padding: 20rpx;
+		border-bottom: 1rpx solid #eff6ff;
+	}
+
+	.modal-title {
+		font-size: 18rpx;
+		font-weight: bold;
+		color: #0f172a;
+	}
+
+	.modal-close {
+		font-size: 24rpx;
+		color: #94a3b8;
+		width: 30rpx;
+		height: 30rpx;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	/* 编辑资料弹窗美化样式 */
+	.modal-content {
+		padding: 25rpx;
+		border-radius: 32rpx;
+		box-shadow: 0 24rpx 80rpx rgba(30, 64, 175, 0.18);
+		background: linear-gradient(135deg, #ffffff 0%, #eff6ff 100%);
+	}
+
+	.form-item {
+		margin-bottom: 24rpx;
+		position: relative;
+	}
+
+	.form-label {
+		font-size: 15rpx;
+		color: #0f172a;
+		margin-bottom: 10rpx;
+		font-weight: 600;
+	}
+
+	.form-input {
+		width: 100%;
+		height: 50rpx;
+		padding: 0 18rpx;
+		border: 2rpx solid #dbeafe;
+		border-radius: 24rpx;
+		font-size: 16rpx;
+		box-sizing: border-box;
+		background: #ffffff;
+		transition: all 0.3s ease;
+		box-shadow: 0 4rpx 16rpx rgba(30, 64, 175, 0.04);
+	}
+
+	.form-input:focus {
+		border-color: #2563eb;
+		box-shadow: 0 0 0 6rpx rgba(37, 99, 235, 0.12);
+		outline: none;
+		transform: translateY(-1rpx);
+	}
+
+	.form-input::placeholder {
+		color: #94a3b8;
+		font-size: 15rpx;
+	}
+
+	.modal-footer {
+		flex-direction: row;
+		padding: 25rpx 0 0 0;
+		border-top: none;
+	}
+
+	.btn-cancel {
+		margin-right: 15rpx;
+	}
+
+	.btn-cancel, .btn-confirm {
+		flex: 1;
+		height: 50rpx;
+		border-radius: 24rpx;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		transition: all 0.3s ease;
+		box-shadow: 0 8rpx 24rpx rgba(30, 64, 175, 0.08);
+		position: relative;
+		overflow: hidden;
+	}
+
+	.btn-cancel {
+		background: linear-gradient(135deg, #f1f5f9 0%, #dbeafe 100%);
+		border: 2rpx solid #dbeafe;
+	}
+
+	.btn-cancel:active {
+		transform: translateY(1rpx) scale(0.98);
+		box-shadow: 0 4rpx 12rpx rgba(30, 64, 175, 0.12);
+	}
+
+	.btn-cancel-text {
+		color: #475569;
+		font-size: 16rpx;
+		font-weight: 600;
+	}
+
+	.btn-confirm {
+		background: linear-gradient(135deg, #1e40af 0%, #2563eb 50%, #0ea5e9 100%);
+		border: 2rpx solid transparent;
+	}
+
+	.btn-confirm:active {
+		transform: translateY(1rpx) scale(0.98);
+		box-shadow: 0 4rpx 12rpx rgba(30, 64, 175, 0.3);
+	}
+
+	.btn-confirm-text {
+		color: #fff;
+		font-size: 16rpx;
+		font-weight: 600;
+	}
+
+	/* 头像选项弹窗样式 */
+	.avatar-options {
+		width: 75%;
+		max-width: 320rpx;
+		border-radius: 32rpx;
+		overflow: hidden;
+		box-shadow: 0 16rpx 64rpx rgba(30, 64, 175, 0.18);
+		background: #fff;
+		position: relative;
+		padding: 20rpx;
+	}
+
+	.option-item {
+		padding: 16rpx 24rpx;
+		margin-bottom: 15rpx;
+		border-radius: 24rpx;
+		background: #eff6ff;
+		border: 2rpx solid transparent;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		transition: all 0.3s ease;
+		position: relative;
+		box-shadow: 0 4rpx 16rpx rgba(30, 64, 175, 0.06);
+	}
+
+	.option-item:last-child {
+		margin-bottom: 0;
+	}
+
+	.option-item:active {
+		transform: translateY(1rpx) scale(0.98);
+		box-shadow: 0 2rpx 8rpx rgba(30, 64, 175, 0.12);
+	}
+
+	.option-item-first {
+		background: linear-gradient(135deg, #dbeafe 0%, #eff6ff 100%);
+		border-color: #2563eb;
+	}
+
+	.option-item-first:active {
+		background: linear-gradient(135deg, #2563eb 0%, #38bdf8 100%);
+	}
+
+	.option-item-last {
+		background: linear-gradient(135deg, #f59e0b 0%, #fcd34d 100%);
+		border-color: #f59e0b;
+	}
+
+	.option-item-last:active {
+		background: linear-gradient(135deg, #f59e0b 0%, #f97316 100%);
+	}
+
+	.option-text {
+		font-size: 16rpx;
+		color: #0f172a;
+		font-weight: 600;
+		transition: color 0.3s ease;
+	}
+
+	.option-item-first .option-text {
+		color: #2563eb;
+	}
+
+	.option-item-last .option-text {
+		color: #f59e0b;
+	}
+
+	/* 头像点击效果 */
+	.user-avatar {
+		cursor: pointer;
+		transition: all 0.3s ease;
+		position: relative;
+	}
+
+	.user-avatar::after {
+		content: '';
+		position: absolute;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		border-radius: 50%;
+		background: linear-gradient(135deg, rgba(37, 99, 235, 0.12) 0%, rgba(56, 189, 248, 0.12) 100%);
+		opacity: 0;
+		transition: opacity 0.3s ease;
+	}
+
+	.user-avatar:active {
+		transform: scale(0.95);
+		box-shadow: 0 8rpx 40rpx rgba(30, 64, 175, 0.3);
+	}
+
+	.user-avatar:active::after {
+		opacity: 1;
+	}
+</style>

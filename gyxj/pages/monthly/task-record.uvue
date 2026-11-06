@@ -1,0 +1,3247 @@
+<template>
+	<scroll-view class="container" scroll-y="true" :scroll-top="scrollTop" :style="{height: containerHeight + 'px'}" enable-back-to-top="true">
+		<!-- 头部 -->
+		<view class="header">
+			<view class="header-left" @click="goBack">
+				
+			</view>
+			<text class="header-title">{{isEditMode ? '月检记录编辑' : '月检任务录入'}}</text>
+			<view class="header-right">
+				<!-- 保存按钮已移至页面底部 -->
+			</view>
+		</view>
+		
+		<!-- 任务信息 -->
+		<view class="task-info">
+			<view class="info-item">
+				<text class="info-label">任务名称:</text>
+				<text class="info-value">{{taskInfo != null ? taskInfo.taskName : ''}}</text>
+			</view>
+			<view class="info-item">
+				<text class="info-label">任务编号:</text>
+				<text class="info-value">{{taskInfo != null ? taskInfo.taskNumber : ''}}</text>
+			</view>
+			<view class="info-item">
+				<text class="info-label">月检时间:</text>
+				<text class="info-value">{{taskInfo != null ? taskInfo.inspectionDate : ''}}</text>
+			</view>
+			<view class="info-item">
+				<text class="info-label">公示时间:</text>
+				<text class="info-value">{{taskInfo != null ? taskInfo.publicityDate : ''}}</text>
+			</view>
+		</view>
+
+		<!-- V3:编辑模式下展示上一次的 modification_snapshot（只读） -->
+		<view v-if="isEditMode && originalSnapshot != ''" class="snapshot-panel">
+			<view class="snapshot-title-row">
+				<text class="snapshot-title">上次修改对比（仅参考）</text>
+				<text class="snapshot-edit-badge">编辑模式</text>
+			</view>
+			<text class="snapshot-content">{{originalSnapshot}}</text>
+		</view>
+
+		<!-- 问题录入表单 -->
+		<view class="form-section">
+			<view class="section-title">
+				<text class="title-text">问题录入</text>
+				<text class="required-mark">*</text>
+			</view>
+			
+			<!-- 问题照片 -->
+			<view class="form-item">
+				<text class="form-label">问题照片</text>
+				<view class="photo-upload">
+					<view v-for="(photo, index) in formData.photos" :key="index" class="photo-item">
+						<image :src="convertToHttpUrl(photo)" class="photo-preview" @click="previewPhoto(photo)"></image>
+						<view class="photo-delete" @click="deletePhoto(index)">
+							<text class="delete-icon">×</text>
+						</view>
+					</view>
+					<view v-if="formData.photos.length < 3" class="photo-add" @click="addPhoto">
+						<text class="add-icon">+</text>
+						<text class="add-text">添加照片</text>
+					</view>
+				</view>
+				<text class="photo-tip">最多可上传3张照片，单张不超过5MB</text>
+			</view>
+
+			<!-- 受检单位（运行部门下拉，存 id）——变更时按标准组重载岗检标准级联 -->
+			<view class="form-item">
+				<text class="form-label-left">受检单位</text>
+				<view class="custom-picker-full" @click="showInspectedUnitPicker" :class="{disabled: deptOptions.length === 0}">
+					<text class="picker-text-full" :class="{placeholder: formData.departmentId === ''}">
+						{{selectedInspectedUnitName !== '' ? selectedInspectedUnitName : '请选择受检单位'}}
+					</text>
+				</view>
+			</view>
+
+			<!-- 发现位置 -->
+			<view class="form-item">
+				<text class="form-label-left">发现位置</text>
+				<input class="form-input" v-model="formData.location" placeholder="请输入问题发现的具体位置" />
+			</view>
+
+			<!-- 问题描述 -->
+			<view class="form-item">
+				<text class="form-label">问题描述</text>
+				<textarea class="textarea-input" v-model="formData.problemDescription" placeholder="请详细描述发现的问题" maxlength="500"></textarea>
+				<text class="char-count">{{formData.problemDescription.length}}/500</text>
+			</view>
+
+			<!-- 专业类别（第1级联选择框） -->
+			<view class="form-item">
+				<text class="form-label-left">专业类别</text>
+				<view class="custom-picker-full" @click="showTypePicker" :class="{disabled: typeOptions.length === 0}">
+					<text class="picker-text-full" :class="{placeholder: selectedTypeIndex === -1}">
+						{{selectedTypeIndex === -1 ? '请选择专业类别' : (selectedTypeIndex < typeOptions.length ? (typeOptions[selectedTypeIndex] as OptionItem).name : '请选择专业类别')}}
+					</text>
+				</view>
+			</view>
+			
+			<!-- 模块（第2级联选择框） -->
+			<view class="form-item">
+				<text class="form-label-left">基本模块</text>
+				<view class="custom-picker-full" @click="showModulePicker" :class="{disabled: moduleOptions.length === 0}">
+					<text class="picker-text-full" :class="{placeholder: selectedModuleIndex === -1}">
+						{{selectedModuleIndex === -1 ? '请选择基本模块' : (selectedModuleIndex < moduleOptions.length ? (moduleOptions[selectedModuleIndex] as OptionItem).name : '请选择基本模块')}}
+					</text>
+				</view>
+			</view>
+
+			<!-- 责任（第3级联选择框） -->
+			<view class="form-item">
+				<text class="form-label-left">责任要素</text>
+				<view class="custom-picker-full" @click="showResponsibilityPicker" :class="{disabled: responsibilityOptions.length === 0}">
+					<text class="picker-text-full" :class="{placeholder: selectedResponsibilityIndex === -1}">
+						{{selectedResponsibilityIndex === -1 ? '请选择责任要素' : (selectedResponsibilityIndex < responsibilityOptions.length ? (responsibilityOptions[selectedResponsibilityIndex] as OptionItem).name : '请选择责任要素')}}
+					</text>
+				</view>
+			</view>
+
+			<!-- 问题（第4级联选择框） -->
+			<view class="form-item">
+				<text class="form-label-left">检查内容</text>
+				<view class="custom-picker-full" @click="showIssuePicker" :class="{disabled: issueOptions.length === 0}">
+					<text class="picker-text-full" :class="{placeholder: selectedIssueIndex === -1}">
+						{{selectedIssueIndex === -1 ? '请选择检查内容' : (selectedIssueIndex < issueOptions.length ? (issueOptions[selectedIssueIndex] as OptionItem).name : '请选择检查内容')}}
+					</text>
+				</view>
+			</view>
+			
+			<!-- 性质界定 -->
+			<view class="form-item">
+				<text class="form-label-left">性质界定</text>
+				<view class="custom-picker-full" @click="showQualityPicker" :class="{disabled: qualityOptions.length === 0}">
+					<text class="picker-text-full" :class="{placeholder: selectedQualityIndex === -1}">
+						{{selectedQualityIndex === -1 ? '请选择性质界定' : (selectedQualityIndex < qualityOptions.length ? (qualityOptions[selectedQualityIndex] as OptionItem).name : '请选择性质界定')}}
+					</text>
+				</view>
+			</view>
+
+			<!-- 性质界定是否人工修改（对齐 web AddDialog.vue：natureModified===1 → "是(已修改)"） -->
+			<view class="form-item">
+				<text class="form-label-left">是否人工修改</text>
+				<view class="custom-picker-full readonly-display">
+					<text class="picker-text-full" :class="{'nature-modified-yes': formData.natureModified === 1}">
+						{{formData.natureModified === 1 ? '是(已修改)' : '否(未修改)'}}
+					</text>
+				</view>
+			</view>
+
+			<!-- 扣分值（根据性质界定自动显示，不入库） -->
+			<view class="form-item">
+				<text class="form-label-left">扣分值</text>
+				<view class="custom-picker-full readonly-display" :class="{placeholder: selectedQualityIndex === -1}">
+					<text class="picker-text-full" :class="{placeholder: selectedQualityIndex === -1}">
+						{{selectedQualityIndex === -1 ? '选择性质界定后自动显示' : (selectedQualityIndex < qualityOptions.length ? ((qualityOptions[selectedQualityIndex] as OptionItem).score ?? '') : '选择性质界定后自动显示')}}
+					</text>
+				</view>
+			</view>
+
+			<!-- 检查单位(管理部门)——只读,锁定为当前用户所属部门 -->
+			<view class="form-item">
+				<text class="form-label-left">检查单位</text>
+				<view class="custom-picker-full readonly-display">
+					<text class="picker-text-full" :class="{placeholder: formData.checkUnitName === ''}">
+						{{formData.checkUnitName !== '' ? formData.checkUnitName : '当前用户部门未设置'}}
+					</text>
+				</view>
+			</view>
+
+			<!-- 检查人（可多选） -->
+			<view class="form-item">
+				<text class="form-label-left">检查人</text>
+				<view class="custom-picker-full" @click="showInspectorPicker" :class="{disabled: inspectorOptions.length === 0}">
+					<text class="picker-text-full" :class="{placeholder: formData.inspector.length === 0}">
+						{{formData.inspector.length > 0 ? formData.inspector.join('、') : '请选择检查人（可多选）'}}
+					</text>
+				</view>
+			</view>
+
+			<!-- 责任人（从用户列表取值，可多选） -->
+			<view class="form-item">
+				<text class="form-label-left">责任人</text>
+				<view class="custom-picker-full" @click="showResponsiblePersonPicker" :class="{disabled: inspectorOptions.length === 0}">
+					<text class="picker-text-full" :class="{placeholder: formData.responsiblePerson.length === 0}">
+						{{formData.responsiblePerson.length > 0 ? formData.responsiblePerson.join('、') : '请选择责任人（可多选）'}}
+					</text>
+				</view>
+			</view>
+
+			<!-- 责任单位（从部门字典取值，可多选） -->
+			<view class="form-item">
+				<text class="form-label-left">责任单位</text>
+				<view class="custom-picker-full" @click="showResponsibleUnitPicker" :class="{disabled: deptOptions.length === 0}">
+					<text class="picker-text-full" :class="{placeholder: formData.responsibleUnit.length === 0}">
+						{{formData.responsibleUnit.length > 0 ? formData.responsibleUnit.join('、') : '请选择责任单位（可多选）'}}
+					</text>
+				</view>
+			</view>
+			
+			<!-- 整改期限 -->
+			<view class="form-item">
+				<text class="form-label-left">整改期限</text>
+				<view class="picker-container" @click="showDatePicker">
+					<text class="picker-text-full" :class="{placeholder: formData.rectificationDate === ''}">
+						{{formData.rectificationDate !== '' ? formData.rectificationDate : '请选择整改期限'}}
+					</text>
+				</view>
+				<!-- 日期选择器弹窗 -->
+				<view v-if="datePickerVisible" class="date-picker-modal" @click="hideDatePicker">
+					<view class="date-picker-content" @click.stop>
+						<view class="date-picker-header">
+							<text class="date-picker-cancel" @click="hideDatePicker">取消</text>
+							<text class="date-picker-title">选择日期</text>
+							<text class="date-picker-confirm" @click="confirmDatePicker">确定</text>
+						</view>
+						<picker-view class="date-picker-view" :value="pickerValue" @change="onPickerChange" indicator-style="height: 70px; top: 20%; margin-top: -20px;">
+							<picker-view-column>
+								<view v-for="(year, index) in years" :key="index" class="picker-item" :class="{selected: index === pickerValue[0]}">
+									{{year}}年
+								</view>
+							</picker-view-column>
+							<picker-view-column>
+								<view v-for="(month, index) in months" :key="index" class="picker-item" :class="{selected: index === pickerValue[1]}">
+									{{month}}月
+								</view>
+							</picker-view-column>
+							<picker-view-column>
+								<view v-for="(day, index) in days" :key="index" class="picker-item" :class="{selected: index === pickerValue[2]}">
+									{{day}}日
+								</view>
+								<!-- 添加空白项目，让最后的日期可以滚动到选择区域 -->
+								<view v-for="i in 2" :key="'empty-day-' + i" class="picker-item picker-item-spacer"></view>
+							</picker-view-column>
+						</picker-view>
+					</view>
+				</view>
+			</view>
+
+		</view>
+		
+		<!-- 底部保存按钮 -->
+		<view class="bottom-save-container">
+			<view class="bottom-save-btn" @click="saveRecord">
+				<text class="bottom-save-text">保存</text>
+			</view>
+		</view>
+		
+		<!-- 问题类型选择器 -->
+		<view v-if="showProblemTypeModal" class="picker-modal" @click="hideProblemTypePicker">
+			<view class="picker-content" @click.stop>
+				<view class="picker-header">
+					<text class="picker-cancel" @click="hideProblemTypePicker">取消</text>
+					<text class="picker-title">选择问题类型</text>
+					<text class="picker-confirm" @click="confirmProblemType">确定</text>
+				</view>
+				<view class="picker-list">
+					<view v-for="(type, index) in problemTypes" :key="index" 
+						  class="picker-item" 
+						  :class="{selected: selectedProblemType === type}"
+						  @click="selectProblemType(type)">
+						<text class="picker-item-text">{{type}}</text>
+						<text v-if="selectedProblemType === type" class="picker-check">✓</text>
+					</view>
+				</view>
+			</view>
+		</view>
+		
+
+		
+		<!-- 专业类别选择弹窗 -->
+		<view v-if="showTypePopup" class="popup-overlay" @click="hideTypePicker">
+			<view class="popup-content" @click.stop>
+				<view class="popup-header">
+					<text class="popup-title">选择专业类别</text>
+					<text class="popup-close" @click="hideTypePicker">×</text>
+				</view>
+				<view class="popup-search">
+					<input class="search-input" v-model="typeSearchKeyword" placeholder="搜索专业类别..." />
+				</view>
+				<scroll-view class="popup-list" scroll-y="true">
+					<view v-if="filteredTypeOptions.length === 0" class="popup-empty">
+						<text class="empty-text">暂无匹配的专业类别</text>
+					</view>
+					<view v-else v-for="(item, index) in filteredTypeOptions" :key="(item as OptionItem).id" 
+					  :class="['popup-item', selectedTypeIndex >= 0 && typeOptions[selectedTypeIndex] != null && typeOptions[selectedTypeIndex].id === (item as OptionItem).id ? 'popup-item-selected' : '']" 
+					  @click="selectTypeFromFiltered(item)">
+						<text class="popup-item-text">{{(item as OptionItem).name}}</text>
+        <text v-if="selectedTypeIndex >= 0 && typeOptions[selectedTypeIndex] != null && typeOptions[selectedTypeIndex].id === (item as OptionItem).id" class="popup-item-check">✓</text>
+					</view>
+				</scroll-view>
+			</view>
+		</view>
+		
+		<!-- 模块选择弹窗 -->
+		<view v-if="showModulePopup" class="popup-overlay" @click="hideModulePicker">
+			<view class="popup-content" @click.stop>
+				<view class="popup-header">
+					<text class="popup-title">选择基本模块</text>
+					<text class="popup-close" @click="hideModulePicker">×</text>
+				</view>
+				<view class="popup-search">
+					<input class="search-input" v-model="moduleSearchKeyword" placeholder="搜索模块..." />
+				</view>
+				<scroll-view class="popup-list" scroll-y="true">
+					<view v-if="moduleOptions.length === 0" class="popup-loading">
+						<text class="loading-text">加载中...</text>
+					</view>
+					<view v-else-if="filteredModuleOptions.length === 0" class="popup-empty">
+						<text class="empty-text">暂无匹配的模块</text>
+					</view>
+					<view v-else v-for="(item, index) in filteredModuleOptions" :key="(item as OptionItem).id" 
+         :class="['popup-item', selectedModuleIndex >= 0 && moduleOptions[selectedModuleIndex] != null && moduleOptions[selectedModuleIndex].id === (item as OptionItem).id ? 'popup-item-selected' : '']" 
+					  @click="selectModuleFromFiltered(item)">
+					<text class="popup-item-text">{{(item as OptionItem).name}}</text>
+       <text v-if="selectedModuleIndex >= 0 && moduleOptions[selectedModuleIndex] != null && moduleOptions[selectedModuleIndex].id === (item as OptionItem).id" class="popup-item-check">✓</text>
+				</view>
+				</scroll-view>
+			</view>
+		</view>
+		
+		<!-- 责任选择弹窗 -->
+		<view v-if="showResponsibilityPopup" class="popup-overlay" @click="hideResponsibilityPicker">
+			<view class="popup-content" @click.stop>
+				<view class="popup-header">
+					<text class="popup-title">选择责任要素</text>
+					<text class="popup-close" @click="hideResponsibilityPicker">×</text>
+				</view>
+				<view class="popup-search">
+					<input class="search-input" v-model="responsibilitySearchKeyword" placeholder="搜索责任部门..." />
+				</view>
+				<scroll-view class="popup-list" scroll-y="true">
+					<view v-if="responsibilityOptions.length === 0" class="popup-loading">
+						<text class="loading-text">加载中...</text>
+					</view>
+					<view v-else-if="filteredResponsibilityOptions.length === 0" class="popup-empty">
+						<text class="empty-text">暂无匹配的责任部门</text>
+					</view>
+					<view v-else v-for="(item, index) in filteredResponsibilityOptions" :key="(item as OptionItem).id" 
+         :class="['popup-item', selectedResponsibilityIndex >= 0 && responsibilityOptions[selectedResponsibilityIndex] != null && responsibilityOptions[selectedResponsibilityIndex].id === (item as OptionItem).id ? 'popup-item-selected' : '']" 
+					  @click="selectResponsibilityFromFiltered(item)">
+					<text class="popup-item-text">{{(item as OptionItem).name}}</text>
+       <text v-if="selectedResponsibilityIndex >= 0 && responsibilityOptions[selectedResponsibilityIndex] != null && responsibilityOptions[selectedResponsibilityIndex].id === (item as OptionItem).id" class="popup-item-check">✓</text>
+				</view>
+				</scroll-view>
+			</view>
+		</view>
+		
+		<!-- 问题选择弹窗 -->
+		<view v-if="showIssuePopup" class="popup-overlay" @click="hideIssuePicker">
+			<view class="popup-content" @click.stop>
+				<view class="popup-header">
+					<text class="popup-title">选择检查内容</text>
+					<text class="popup-close" @click="hideIssuePicker">×</text>
+				</view>
+				<view class="popup-search">
+					<input class="search-input" v-model="issueSearchKeyword" placeholder="搜索问题..." />
+				</view>
+				<scroll-view class="popup-list" scroll-y="true">
+					<view v-if="issueOptions.length === 0" class="popup-loading">
+						<text class="loading-text">加载中...</text>
+					</view>
+					<view v-else-if="filteredIssueOptions.length === 0" class="popup-empty">
+						<text class="empty-text">暂无匹配的问题</text>
+					</view>
+      <view v-else v-for="(item, index) in filteredIssueOptions" :key="(item as OptionItem).id" 
+        :class="['popup-item', selectedIssueIndex !== -1 && issueOptions[selectedIssueIndex] != null && issueOptions[selectedIssueIndex].id === (item as OptionItem).id ? 'popup-item-selected' : '']" 
+        @click="selectIssueFromFiltered(item)">
+      <text class="popup-item-text">{{(item as OptionItem).name}}</text>
+      <text v-if="selectedIssueIndex !== -1 && issueOptions[selectedIssueIndex] != null && issueOptions[selectedIssueIndex].id === (item as OptionItem).id" class="popup-item-check">✓</text>
+				</view>
+				</scroll-view>
+			</view>
+		</view>
+		
+		<!-- 性质界定选择弹窗 -->
+		<view v-if="showQualityPopup" class="popup-overlay" @click="hideQualityPicker">
+			<view class="popup-content" @click.stop>
+				<view class="popup-header">
+					<text class="popup-title">选择性质界定</text>
+					<text class="popup-close" @click="hideQualityPicker">×</text>
+				</view>
+				<view class="popup-search">
+					<input class="search-input" v-model="qualitySearchKeyword" placeholder="搜索性质界定..." />
+				</view>
+				<scroll-view class="popup-list" scroll-y="true">
+					<view v-if="qualityOptions.length === 0" class="popup-loading">
+						<text class="loading-text">加载中...</text>
+					</view>
+					<view v-else-if="filteredQualityOptions.length === 0" class="popup-empty">
+						<text class="empty-text">暂无匹配的性质界定</text>
+					</view>
+      <view v-else v-for="(item, index) in filteredQualityOptions" :key="(item as OptionItem).id"
+        :class="['popup-item', selectedQualityIndex !== -1 && qualityOptions[selectedQualityIndex] != null && qualityOptions[selectedQualityIndex].id === (item as OptionItem).id ? 'popup-item-selected' : '']"
+        @click="selectQualityFromFiltered(item)">
+      <text class="popup-item-text">{{(item as OptionItem).name}}</text>
+      <text v-if="selectedQualityIndex !== -1 && qualityOptions[selectedQualityIndex] != null && qualityOptions[selectedQualityIndex].id === (item as OptionItem).id" class="popup-item-check">✓</text>
+				</view>
+				</scroll-view>
+			</view>
+		</view>
+
+		<!-- 检查人选择弹窗（多选） -->
+		<view v-if="showInspectorPopup" class="popup-overlay" @click="hideInspectorPicker">
+			<view class="popup-content" @click.stop>
+				<view class="popup-header">
+					<text class="popup-title">选择检查人（可多选）</text>
+					<text class="popup-close" @click="hideInspectorPicker">×</text>
+				</view>
+				<view class="popup-search">
+					<input class="search-input" v-model="inspectorSearchKeyword" placeholder="搜索检查人..." />
+				</view>
+				<scroll-view class="popup-list" scroll-y="true">
+					<view v-if="inspectorOptions.length === 0" class="popup-loading">
+						<text class="loading-text">加载中...</text>
+					</view>
+					<view v-else-if="filteredInspectorOptions.length === 0" class="popup-empty">
+						<text class="empty-text">暂无匹配的人员</text>
+					</view>
+					<view v-else v-for="(item, index) in filteredInspectorOptions" :key="(item as OptionItem).id"
+						:class="['popup-item', formData.inspector.indexOf((item as OptionItem).displayName ?? (item as OptionItem).name) !== -1 ? 'popup-item-selected' : '']"
+						@click="toggleInspectorFromFiltered(item)">
+						<text class="popup-item-text">{{(item as OptionItem).displayName ?? (item as OptionItem).name}}</text>
+						<text v-if="formData.inspector.indexOf((item as OptionItem).displayName ?? (item as OptionItem).name) !== -1" class="popup-item-check">✓</text>
+					</view>
+				</scroll-view>
+				<view class="popup-footer">
+					<text class="popup-btn popup-btn-cancel" @click="hideInspectorPicker">取消</text>
+					<text class="popup-btn popup-btn-confirm" @click="confirmInspectorPicker">确定（{{formData.inspector.length}}）</text>
+				</view>
+			</view>
+		</view>
+
+		<!-- 责任人选择弹窗（多选） -->
+		<view v-if="showResponsiblePersonPopup" class="popup-overlay" @click="hideResponsiblePersonPicker">
+			<view class="popup-content" @click.stop>
+				<view class="popup-header">
+					<text class="popup-title">选择责任人（可多选）</text>
+					<text class="popup-close" @click="hideResponsiblePersonPicker">×</text>
+				</view>
+				<view class="popup-search">
+					<input class="search-input" v-model="inspectorSearchKeyword" placeholder="搜索责任人..." />
+				</view>
+				<scroll-view class="popup-list" scroll-y="true">
+					<view v-if="inspectorOptions.length === 0" class="popup-loading">
+						<text class="loading-text">加载中...</text>
+					</view>
+					<view v-else-if="filteredResponsiblePersonOptions.length === 0" class="popup-empty">
+						<text class="empty-text">暂无匹配的人员</text>
+					</view>
+					<view v-else v-for="(item, index) in filteredResponsiblePersonOptions" :key="(item as OptionItem).id"
+						:class="['popup-item', formData.responsiblePerson.indexOf((item as OptionItem).displayName ?? (item as OptionItem).name) !== -1 ? 'popup-item-selected' : '']"
+						@click="toggleResponsiblePersonFromFiltered(item)">
+						<text class="popup-item-text">{{(item as OptionItem).displayName ?? (item as OptionItem).name}}</text>
+						<text v-if="formData.responsiblePerson.indexOf((item as OptionItem).displayName ?? (item as OptionItem).name) !== -1" class="popup-item-check">✓</text>
+					</view>
+				</scroll-view>
+				<view class="popup-footer">
+					<text class="popup-btn popup-btn-cancel" @click="hideResponsiblePersonPicker">取消</text>
+					<text class="popup-btn popup-btn-confirm" @click="confirmResponsiblePersonPicker">确定（{{formData.responsiblePerson.length}}）</text>
+				</view>
+			</view>
+		</view>
+
+		<!-- 受检单位选择弹窗 -->
+		<view v-if="showInspectedUnitPopup" class="popup-overlay" @click="hideInspectedUnitPicker">
+			<view class="popup-content" @click.stop>
+				<view class="popup-header">
+					<text class="popup-title">选择受检单位</text>
+					<text class="popup-close" @click="hideInspectedUnitPicker">×</text>
+				</view>
+				<view class="popup-search">
+					<input class="search-input" v-model="deptSearchKeyword" placeholder="搜索部门..." />
+				</view>
+				<scroll-view class="popup-list" scroll-y="true">
+					<view v-if="deptOptions.length === 0" class="popup-loading">
+						<text class="loading-text">加载中...</text>
+					</view>
+					<view v-else-if="filteredDeptOptions.length === 0" class="popup-empty">
+						<text class="empty-text">暂无匹配的部门</text>
+					</view>
+					<view v-else v-for="(item, index) in filteredDeptOptions" :key="(item as OptionItem).id"
+						:class="['popup-item', selectedDeptIndex !== -1 && deptOptions[selectedDeptIndex] != null && deptOptions[selectedDeptIndex].id === (item as OptionItem).id ? 'popup-item-selected' : '']"
+						@click="selectInspectedUnitFromFiltered(item)">
+						<text class="popup-item-text">{{(item as OptionItem).name}}</text>
+						<text v-if="selectedDeptIndex !== -1 && deptOptions[selectedDeptIndex] != null && deptOptions[selectedDeptIndex].id === (item as OptionItem).id" class="popup-item-check">✓</text>
+					</view>
+				</scroll-view>
+			</view>
+		</view>
+
+		<!-- 责任单位选择弹窗（多选） -->
+		<view v-if="showResponsibleUnitPopup" class="popup-overlay" @click="hideResponsibleUnitPicker">
+			<view class="popup-content" @click.stop>
+				<view class="popup-header">
+					<text class="popup-title">选择责任单位（可多选）</text>
+					<text class="popup-close" @click="hideResponsibleUnitPicker">×</text>
+				</view>
+				<view class="popup-search">
+					<input class="search-input" v-model="responsibleUnitSearchKeyword" placeholder="搜索部门..." />
+				</view>
+				<scroll-view class="popup-list" scroll-y="true">
+					<view v-if="deptOptions.length === 0" class="popup-loading">
+						<text class="loading-text">加载中...</text>
+					</view>
+					<view v-else-if="filteredResponsibleUnitOptions.length === 0" class="popup-empty">
+						<text class="empty-text">暂无匹配的部门</text>
+					</view>
+					<view v-else v-for="(item, index) in filteredResponsibleUnitOptions" :key="(item as OptionItem).id"
+						:class="['popup-item', formData.responsibleUnit.indexOf((item as OptionItem).name) !== -1 ? 'popup-item-selected' : '']"
+						@click="toggleResponsibleUnitFromFiltered(item)">
+						<text class="popup-item-text">{{(item as OptionItem).name}}</text>
+						<text v-if="formData.responsibleUnit.indexOf((item as OptionItem).name) !== -1" class="popup-item-check">✓</text>
+					</view>
+				</scroll-view>
+				<view class="popup-footer">
+					<text class="popup-btn popup-btn-cancel" @click="hideResponsibleUnitPicker">取消</text>
+					<text class="popup-btn popup-btn-confirm" @click="confirmResponsibleUnitPicker">确定（{{formData.responsibleUnit.length}}）</text>
+				</view>
+			</view>
+		</view>
+	</scroll-view>
+</template>
+
+<script lang="uts">
+	import { getApiUrl, apiConfig } from '@/config/api.uts'
+	import { isMonthlyAdmin } from '@/utils/permission.uts'
+	import { resolveCurrentDept, getCachedUserInfo, CurrentDept } from '@/utils/user.uts'
+	
+type TaskInfo = {
+    taskId: string
+    taskNumber: string
+    taskName: string
+    inspectionDate: string
+    publicityDate: string
+    // 原始 ISO 时间戳,用于提交前校验录入期,与 web 端 handleTaskSelectConfirm 一致
+    inspectionStartTime: string
+    inspectionEndTime: string
+}
+
+type IssueQualityMap = Map<string, string>
+	
+  type FormData = {
+		problemType: string
+		problemDescription: string
+		location: string
+		photos: string[]
+		safetyScore: string
+		rectificationDate: string
+		module: string
+		responsibility: string
+		issue: string
+    quality: string
+    inspector: string[]
+    responsibleUnit: string[]
+    responsiblePerson: string[]
+    departmentId: string
+    // V3:检查单位(管理部门)信息 — 锁定为当前用户所属部门
+    checkUnitId: string
+    checkUnitName: string
+    // V3:性质界定是否被人工改动(0=否 1=是),由前端 watch qualityId 维护
+    natureModified: number
+  }
+
+  type CurrentUser = {
+    id: string
+    realName: string
+    deptId: string
+    deptName: string
+    deptType: number  // 0=运行部门 1=管理部门
+    isMonthlyAdmin: boolean
+  }
+	
+	type OptionItem = {
+		id: string
+		name: string
+		value?: string
+		code?: string
+		score?: string
+		displayName?: string
+	}
+
+	// 性质界定字典码→中文标签的兜底映射（仅当 dictValue 仍是旧的 1/2/3 数字码时用）
+	// 注意：字典数据现已调整为 dictValue 存中文(观察/一般/重要)、dictLabel 存数字码，
+	// 显示值必须直接取接口的 dictValue，否则会把 dictLabel 的数字码当成名称显示。
+	const QUALITY_LABEL_MAP: Map<string, string> = new Map<string, string>([
+		['1', '观察'],
+		['2', '一般'],
+		['3', '重要']
+	])
+	function resolveQualityLabel(dictValue: string, dictLabel: string): string {
+		// 与 web 端 AddDialog.vue 保持一致：dictValue 优先。
+		// 现在接口返回的 dictValue 就是中文，直接取值；
+		// 若 dictValue 是旧的数字码(1/2/3)则翻译成中文；两者都没有才回退 dictLabel
+		if (dictValue != '') {
+			const mapped = QUALITY_LABEL_MAP.get(dictValue)
+			if (mapped != null) return mapped
+			return dictValue
+		}
+		return dictLabel
+	}
+
+	// UTS 严格模式下 String.trim() 不可用,自行实现首尾空白去除
+	function stripOuterWhitespace(s: string): string {
+		return s.replace(/^\s+|\s+$/g, '')
+	}
+
+	// 性质界定中文名→扣分值(观察1/一般3/重要5),与 web AddDialog.vue 一致。
+	// 构建 qualityOptions 时就把分值预存进选项的 score 字段,
+	// 让模板能像「性质界定」那样直接读 qualityOptions[idx].score(直接数据路径,uvue 下可响应式刷新)。
+	function qualityScoreOf(label: string): string {
+		const n = stripOuterWhitespace(label)
+		if (n.indexOf('观察') !== -1) return '1'
+		if (n.indexOf('一般') !== -1) return '3'
+		if (n.indexOf('重要') !== -1) return '5'
+		return ''
+	}
+	
+	export default {
+		data() {
+			// 计算默认整改时间（当前日期往后推7天）
+			const defaultDate = new Date()
+			defaultDate.setDate(defaultDate.getDate() + 7)
+			const defaultDateStr = `${defaultDate.getFullYear()}-${(defaultDate.getMonth() + 1).toString().padStart(2, '0')}-${defaultDate.getDate().toString().padStart(2, '0')}`
+			
+        return {
+            taskInfo: {
+                taskId: '',
+                taskNumber: '',
+                taskName: '',
+                inspectionDate: '',
+                publicityDate: '',
+                inspectionStartTime: '',
+                inspectionEndTime: ''
+            } as TaskInfo,
+          formData: {
+			problemType: '',
+			problemDescription: '',
+			location: '',
+			photos: [],
+			rectificationDate: defaultDateStr,
+			module: '',
+			responsibility: '',
+			issue: '',
+            quality: '',
+            inspector: [],
+            responsibleUnit: [],
+            responsiblePerson: [],
+            departmentId: '',
+            checkUnitId: '',
+            checkUnitName: '',
+            natureModified: 0,
+            safetyScore: ''
+          } as FormData,
+				containerHeight: 0,
+				scrollTop: 0,
+				showProblemTypeModal: false,
+			selectedProblemType: '',
+				problemTypes: [
+					'安全隐患',
+					'设备故障',
+					'环境问题',
+					'操作违规',
+					'制度缺失',
+					'其他问题'
+			],
+				// 级联选择器相关
+				showTypePopup: false,
+				showModulePopup: false,
+				showResponsibilityPopup: false,
+				showIssuePopup: false,
+				showQualityPopup: false,
+				showInspectorPopup: false,
+				showResponsiblePersonPopup: false,
+				typeOptions: [] as OptionItem[],
+				moduleOptions: [] as OptionItem[],
+				responsibilityOptions: [] as OptionItem[],
+				issueOptions: [] as OptionItem[],
+				qualityOptions: [] as OptionItem[],
+				inspectorOptions: [] as OptionItem[],
+				// 受检单位（部门字典）选项与弹窗
+				deptOptions: [] as OptionItem[],
+				showDeptPopup: false,
+				showInspectedUnitPopup: false,
+				showResponsibleUnitPopup: false,
+				selectedDeptIndex: -1,
+				deptSearchKeyword: '',
+				responsibleUnitSearchKeyword: '',
+				selectedTypeIndex: -1,
+				selectedModuleIndex: -1,
+				selectedResponsibilityIndex: -1,
+				selectedIssueIndex: -1,
+				selectedQualityIndex: -1,
+				// 搜索关键字初始值
+				typeSearchKeyword: '',
+				moduleSearchKeyword: '',
+				responsibilitySearchKeyword: '',
+				issueSearchKeyword: '',
+				qualitySearchKeyword: '',
+				// 性质界定已选项（中文名，提到顶层；扣分值由 syncDeductionScore 显式回写）
+				selectedQualityName: '',
+				// 扣分值显示文本（不入库）：由 syncDeductionScore 显式赋值，规避 uvue computed 在异步回调中不刷新
+				deductionScoreDisplay: '',
+				inspectorSearchKeyword: '',
+				// 日期选择器相关
+				datePickerVisible: false,
+				pickerValue: [0, 0, 0],
+				years: [] as number[],
+				months: [] as number[],
+				days: [] as number[],
+				selectedYear: (() => {
+					const tempDate = new Date()
+					tempDate.setDate(tempDate.getDate() + 7)
+					return tempDate.getFullYear()
+				})() as number,
+				selectedMonth: (() => {
+					const tempDate = new Date()
+					tempDate.setDate(tempDate.getDate() + 7)
+					return tempDate.getMonth() + 1
+				})() as number,
+				selectedDay: (() => {
+					const tempDate = new Date()
+					tempDate.setDate(tempDate.getDate() + 7)
+					return tempDate.getDate()
+				})() as number,
+				// 防抖定时器
+				pickerDebounceTimer: null as number | null,
+				// 检查内容 -> 性质界定 映射
+				issueQualityMap: new Map<string, string>() as IssueQualityMap,
+				// Map 对应的键数组,UTS 严格模式下 Array.from(map.keys()) 类型退化成 MutableSet,
+				// 用单独的 string[] 做遍历以绕过类型限制
+				issueQualityKeys: [] as string[],
+				// V3:当前登录用户(含 deptId / deptType),用于判断录入权限和锁定检查单位
+				currentUser: {
+					id: '',
+					realName: '',
+					deptId: '',
+					deptName: '',
+					deptType: 0,
+					isMonthlyAdmin: false
+				} as CurrentUser,
+				// V3:自动带出的性质界定 ID(后台根据 issue 计算),用户改了 → nature_modified=1
+				autoFilledQualityId: '',
+				// V3:编辑模式(recordId 触发)— 来自 record.uvue 长按菜单「编辑」
+				isEditMode: false,
+				recordId: '',
+				// V3:从后端拉回来的 modification_snapshot,顶部 readonly 展示
+				originalSnapshot: ''
+			}
+		},
+		
+
+	
+
+	onLoad(options: UTSJSONObject) {
+			const taskId = options.getString('taskId') ?? ''
+			const recordId = options.getString('recordId') ?? ''
+			const mode = options.getString('mode') ?? ''
+			console.log('task-record onLoad: taskId=', taskId, ' recordId=', recordId, ' mode=', mode)
+
+			// V3:加载当前用户(用于权限判定 + 锁定检查单位)
+			this.loadCurrentUser().then(() => {
+				// 运行部门(0)用户没有录入/编辑权限,toast 提示并返回
+				if (!this.currentUser.isMonthlyAdmin && this.currentUser.deptType === 0) {
+					uni.showToast({ title: '您的部门为运行部门，无录入权限', icon: 'none', duration: 2000 })
+					setTimeout(() => {
+						uni.navigateBack()
+					}, 1800)
+					return
+				}
+				// 管理部门(1):默认检查单位 = 当前用户所属部门
+				this.formData.checkUnitId = this.currentUser.deptId
+				this.formData.checkUnitName = this.currentUser.deptName
+
+				// 初始化级联选择器数据 + 字典(无论新增/编辑都得用,先加载)
+				this.loadTypeOptions()
+				this.loadInspectorOptions()
+				this.loadDeptOptions()
+				this.loadIssueQualityMap()
+				this.initDateArrays()
+
+				// V3:编辑模式:从 record.uvue 长按菜单「编辑」传来
+				if (recordId != '' && mode === 'edit') {
+					this.isEditMode = true
+					this.recordId = recordId
+					// 编辑模式跳过录入期校验,在 PUT 时服务端再校验
+					this.loadRecordForEdit(recordId)
+					return
+				}
+
+				if (taskId != null && taskId != '') {
+					this.loadTaskInfo(taskId)
+				}
+			})
+		},
+
+		onReady() {
+			this.initContainerHeight()
+		},
+		// 页面卸载时清理未触发的防抖定时器,避免 setTimeout 闭包持有页面实例导致内存泄漏
+		onUnload() {
+			const timer = this.pickerDebounceTimer
+			if (timer !== null) {
+				clearTimeout(timer)
+				this.pickerDebounceTimer = null
+			}
+		},
+		computed: {
+			// 过滤后的专业类别选项
+			filteredTypeOptions(): OptionItem[] {
+     if (this.typeSearchKeyword == '') {
+					return this.typeOptions
+				}
+				return this.typeOptions.filter(item => 
+					item.name.toLowerCase().includes(this.typeSearchKeyword.toLowerCase())
+				)
+			},
+			// 过滤后的模块选项
+     filteredModuleOptions(): OptionItem[] {
+      if (this.moduleSearchKeyword == '') {
+       return this.moduleOptions
+      }
+				return this.moduleOptions.filter(item => 
+					item.name.toLowerCase().includes(this.moduleSearchKeyword.toLowerCase())
+				)
+			},
+			// 过滤后的责任选项
+     filteredResponsibilityOptions(): OptionItem[] {
+      if (this.responsibilitySearchKeyword == '') {
+       return this.responsibilityOptions
+      }
+				return this.responsibilityOptions.filter(item => 
+					item.name.toLowerCase().includes(this.responsibilitySearchKeyword.toLowerCase())
+				)
+			},
+			// 过滤后的问题选项
+     filteredIssueOptions(): OptionItem[] {
+      if (this.issueSearchKeyword == '') {
+       return this.issueOptions
+      }
+				return this.issueOptions.filter(item => 
+					item.name.toLowerCase().includes(this.issueSearchKeyword.toLowerCase())
+				)
+			},
+			// 过滤后的性质界定选项
+     filteredQualityOptions(): OptionItem[] {
+      if (this.qualitySearchKeyword == '') {
+       return this.qualityOptions
+      }
+				return this.qualityOptions.filter(item =>
+					item.name.toLowerCase().includes(this.qualitySearchKeyword.toLowerCase())
+				)
+			},
+     // 过滤后的检查人选项
+     filteredInspectorOptions(): OptionItem[] {
+      if (this.inspectorSearchKeyword == '') {
+       return this.inspectorOptions
+      }
+				const kw = this.inspectorSearchKeyword.toLowerCase()
+				return this.inspectorOptions.filter(item =>
+					item.name.toLowerCase().includes(kw) || ((item.displayName ?? '').toLowerCase().includes(kw))
+				)
+			},
+			// 过滤后的责任人选项（支持按昵称或用户名匹配）
+			filteredResponsiblePersonOptions(): OptionItem[] {
+				if (this.inspectorSearchKeyword == '') {
+					return this.inspectorOptions
+				}
+				const kw = this.inspectorSearchKeyword.toLowerCase()
+				return this.inspectorOptions.filter(item =>
+					item.name.toLowerCase().includes(kw) || ((item.displayName ?? '').toLowerCase().includes(kw))
+				)
+			},
+			// 过滤后的部门选项
+			filteredDeptOptions(): OptionItem[] {
+				if (this.deptSearchKeyword == '') {
+					return this.deptOptions
+				}
+				return this.deptOptions.filter(item =>
+					item.name.toLowerCase().includes(this.deptSearchKeyword.toLowerCase())
+				)
+			},
+			// 过滤后的责任单位（按部门名）选项
+			filteredResponsibleUnitOptions(): OptionItem[] {
+				if (this.responsibleUnitSearchKeyword == '') {
+					return this.deptOptions
+				}
+				return this.deptOptions.filter(item =>
+					item.name.toLowerCase().includes(this.responsibleUnitSearchKeyword.toLowerCase())
+				)
+			},
+			// 当前选中的受检单位名称
+			selectedInspectedUnitName(): string {
+				if (this.selectedDeptIndex === -1) return ''
+				const opt = this.deptOptions[this.selectedDeptIndex]
+				return opt != null ? opt.name : ''
+			},
+		},
+		methods: {
+			// 扣分值同步（不入库）：根据性质界定中文名显式回写到 deductionScoreDisplay 数据字段。
+			// 规避 uvue 中 computed 依赖在 uni.request 异步回调里被赋值时不重新求值的问题
+			// （现象：性质界定自动回写成功、扣分值却仍为空）。观察→1 一般→3 重要→5，与 web AddDialog.vue 一致。
+			syncDeductionScore() {
+				// 直接取「性质界定选择框显示所用的同一数据源」qualityOptions[selectedQualityIndex].name：
+				// 既然该处能正常显示出中文名,这里就能拿到同样的值,避免 selectedQualityName 未同步导致漏判。
+				let name = ''
+				if (this.selectedQualityIndex !== -1 && this.selectedQualityIndex < this.qualityOptions.length) {
+					const opt = this.qualityOptions[this.selectedQualityIndex] as OptionItem
+					name = opt.name
+				}
+				if (name === '') {
+					name = this.selectedQualityName
+				}
+				// 归一:数字码(1/2/3)翻译成中文;再用包含匹配兼容「一般问题」等带后缀写法
+				const trimmed = stripOuterWhitespace(name)
+				const normalized = resolveQualityLabel(trimmed, trimmed)
+				if (normalized.indexOf('观察') !== -1) {
+					this.deductionScoreDisplay = '1'
+				} else if (normalized.indexOf('一般') !== -1) {
+					this.deductionScoreDisplay = '3'
+				} else if (normalized.indexOf('重要') !== -1) {
+					this.deductionScoreDisplay = '5'
+				} else {
+					this.deductionScoreDisplay = ''
+				}
+				const optScore = (this.selectedQualityIndex !== -1 && this.selectedQualityIndex < this.qualityOptions.length) ? ((this.qualityOptions[this.selectedQualityIndex] as OptionItem).score ?? '<null>') : '<no-index>'
+				console.log('syncDeductionScore: name=[' + name + '] normalized=[' + normalized + '] display=[' + this.deductionScoreDisplay + '] optScore=[' + optScore + '] optsLen=' + this.qualityOptions.length)
+			},
+			// V3:编辑模式 — GET 单条记录,回填表单 + 顶部 readonly 显示 modification_snapshot
+			loadRecordForEdit(recordId: string) {
+				const token = uni.getStorageSync('token')
+				uni.request({
+					url: getApiUrl(`/monthly-inspection-record/${recordId}`),
+					method: 'GET',
+					header: { 'Authorization': `Bearer ${token}` },
+					success: (res) => {
+						const body = res.data as UTSJSONObject
+						if (res.statusCode !== 200 || (body.getNumber('code') ?? 0) !== 200) {
+							uni.showToast({ title: body.getString('message') ?? '加载记录失败', icon: 'none' })
+							setTimeout(() => { uni.navigateBack() }, 1500)
+							return
+						}
+						const d = body.getJSON('data')
+						if (d == null) {
+							uni.showToast({ title: '记录不存在', icon: 'none' })
+							setTimeout(() => { uni.navigateBack() }, 1500)
+							return
+						}
+						const dObj = d as UTSJSONObject
+						// modification_snapshot 字段(若后端已支持)— 顶部 readonly 展示
+						const snap = dObj.getString('modificationSnapshot') ?? ''
+						this.originalSnapshot = snap
+						// 回填表单字段
+						this.formData.problemDescription = dObj.getString('problemDescription') ?? ''
+						this.formData.location = dObj.getString('location') ?? ''
+						const photos = dObj.getString('photos') ?? ''
+						if (photos != '' && photos != null) {
+							const photoArr = photos.split(',').map(s => stripOuterWhitespace(s)).filter(s => s != '')
+							this.formData.photos = photoArr
+						}
+						const rectDate = dObj.getString('rectificationDate') ?? dObj.getString('rectificationDeadline') ?? ''
+						if (rectDate != '' && rectDate != null) {
+							const norm = rectDate.length >= 10 ? rectDate.substring(0, 10) : rectDate
+							this.formData.rectificationDate = norm
+						}
+						const insp = dObj.getString('inspector') ?? ''
+						if (insp != '' && insp != null) {
+							const parts = insp.split(/[、,]/).map(s => stripOuterWhitespace(s)).filter(s => s != '')
+							this.formData.inspector = parts
+						}
+						const ru = dObj.getString('responsibleUnit') ?? ''
+						if (ru != '' && ru != null) {
+							const parts = ru.split(/[、,]/).map(s => stripOuterWhitespace(s)).filter(s => s != '')
+							this.formData.responsibleUnit = parts
+						}
+						const rp = dObj.getString('responsiblePerson') ?? ''
+						if (rp != '' && rp != null) {
+							const parts = rp.split(/[、,]/).map(s => stripOuterWhitespace(s)).filter(s => s != '')
+							this.formData.responsiblePerson = parts
+						}
+						this.formData.departmentId = dObj.getString('departmentId') ?? ''
+						this.formData.checkUnitId = dObj.getString('checkUnitId') ?? this.currentUser.deptId
+						this.formData.checkUnitName = dObj.getString('checkUnitName') ?? this.currentUser.deptName
+						// 级联 id 直接存的就是 name(与现有约定一致)— 等字典加载完后用 watch 同步索引
+						this.formData.problemType = dObj.getString('professionalTypeName') ?? dObj.getString('professionalCategory') ?? ''
+						this.formData.module = dObj.getString('moduleName') ?? ''
+						this.formData.responsibility = dObj.getString('responsibilityName') ?? ''
+						this.formData.issue = dObj.getString('issueName') ?? ''
+						this.formData.quality = dObj.getString('qualityName') ?? ''
+						this.formData.safetyScore = ''
+						this.formData.natureModified = (dObj.getNumber('natureModified') ?? 0) as number
+						this.taskInfo.taskId = dObj.getString('taskId') ?? ''
+						uni.showToast({ title: '已进入编辑模式', icon: 'none', duration: 1500 })
+					},
+					fail: () => {
+						uni.showToast({ title: '网络错误', icon: 'none' })
+						setTimeout(() => { uni.navigateBack() }, 1500)
+					}
+				})
+			},
+			// V3:加载当前登录用户(含 deptType),用于权限判定
+			// resolveCurrentDept 先刷新服务端 userInfo 再取部门类型，避免用登录时的旧 deptId 快照判定角色
+			loadCurrentUser(): Promise<void> {
+				return new Promise<void>((resolve) => {
+					resolveCurrentDept().then((dept: CurrentDept) => {
+						const info = getCachedUserInfo()
+						// 月检管理员判断必须放在刷新之后，isMonthlyAdmin() 读的是刷新后的本地快照
+						const admin = isMonthlyAdmin()
+						this.currentUser = {
+							id: info.getString('id') ?? '',
+							realName: info.getString('realName') ?? info.getString('username') ?? '',
+							deptId: dept.deptId,
+							deptName: dept.deptName,
+							deptType: dept.deptType ?? 0,
+							isMonthlyAdmin: admin
+						} as CurrentUser
+						resolve()
+					})
+				})
+			},
+
+// 预览照片
+			previewPhoto(photo: string) {
+				uni.previewImage({
+					current: this.convertToHttpUrl(photo),
+					urls: this.formData.photos.map((p: string) => this.convertToHttpUrl(p)) as string[]
+				})
+			},
+			// 获取默认整改期限（当前日期往后推三个月）
+			getDefaultRectificationDate(): string {
+				const now = new Date()
+				const year = now.getFullYear()
+				const month = (now.getMonth() + 1).toString()
+				const day = now.getDate().toString()
+				// 手动补零
+				const padZero = (num: string): string => {
+					return num.length < 2 ? `0${num}` : num
+				}
+				return `${year}-${padZero(month)}-${padZero(day)}`
+			},
+			// 将相对路径转换为HTTP访问路径
+			convertToHttpUrl(relativePath: string): string {
+				console.log('相对路径:', relativePath)
+				// 如果已经是HTTP路径，直接返回
+				if (relativePath.startsWith('http://') || relativePath.startsWith('https://')) {
+					return relativePath
+				}
+				
+				// 直接拼接完整的HTTP URL
+				// 后端已返回相对路径，如: /files/images/20250818/xxx.jpg
+				const httpUrl = `${apiConfig.baseUrl}/api${relativePath}`
+				console.log('转换后的HTTP URL:', httpUrl)
+				return httpUrl
+			},
+			// 初始化容器高度
+			initContainerHeight() {
+				const systemInfo = uni.getSystemInfoSync()
+				this.containerHeight = systemInfo.windowHeight
+			},
+			
+			// 加载任务信息
+			loadTaskInfo(taskId: string) {
+				try {
+					const token = uni.getStorageSync('token')
+					console.log('接收到的taskId参数:', taskId)
+					// 使用task-no接口根据任务编号获取任务详情
+					uni.request({
+						url: getApiUrl(`/monthly-inspection-task/task-no/${taskId}`),
+						method: 'GET',
+						header: {
+							'Authorization': `Bearer ${token}`
+						},
+						success: (res) => {
+							const respdata=res.data as UTSJSONObject;
+                            if ( respdata.getNumber('code')=== 200) {
+                                const taskInfo = respdata.getJSON('data')
+                                console.log("获取到的任务数据:",taskInfo)
+                                if (taskInfo != null) {
+                                    // 后端字段是 inspectionStartTime/inspectionEndTime/publicityStartTime/publicityEndTime
+                                    // 显示形如 "2026-08-01 ~ 2026-08-31"
+                                    const startStr = taskInfo.getString('inspectionStartTime') ?? ''
+                                    const endStr = taskInfo.getString('inspectionEndTime') ?? ''
+                                    const pStartStr = taskInfo.getString('publicityStartTime') ?? ''
+                                    const pEndStr = taskInfo.getString('publicityEndTime') ?? ''
+                                    const joinDateRange = (a: string, b: string): string => {
+                                        if (a == '' && b == '') return ''
+                                        if (a == '') return b
+                                        if (b == '' || a == b) return a
+                                        return `${a} ~ ${b}`
+                                    }
+                                    this.taskInfo = {
+                                        taskId: taskInfo.getString('id') ?? '',
+                                        taskNumber: taskInfo.getString('taskNo') ?? '',
+                                        taskName: taskInfo.getString('taskName') ?? '',
+                                        inspectionDate: joinDateRange(startStr, endStr),
+                                        publicityDate: joinDateRange(pStartStr, pEndStr),
+                                        inspectionStartTime: startStr,
+                                        inspectionEndTime: endStr
+                                    }
+									// 自动填充性质界定
+									this.autoFillProfession()
+								}
+							}
+						},
+						fail: (error) => {
+							console.error('加载任务信息失败:', error)
+							// 模拟数据
+                        this.taskInfo = {
+                            taskId: '',
+                            taskNumber: 'YJ202401001',
+                            taskName: '示例月检任务',
+                            inspectionDate: '2024年1月',
+                            publicityDate: '2024年1月',
+                            inspectionStartTime: '',
+                            inspectionEndTime: ''
+                        }
+						}
+					})
+				} catch (error) {
+					console.error('加载任务信息失败:', error)
+					// 模拟数据
+                    this.taskInfo = {
+                        taskId: '',
+                        taskNumber: 'YJ202401001',
+                        taskName: '示例月检任务',
+                        inspectionDate: '2024年1月',
+                        publicityDate: '2024年1月',
+                        inspectionStartTime: '',
+                        inspectionEndTime: ''
+                    }
+				}
+			},
+			
+			// 返回上一页
+			goBack() {
+				uni.navigateBack()
+			},
+			
+			// 显示问题类型选择器
+			showProblemTypePicker() {
+				this.selectedProblemType = this.formData.problemType
+				this.showProblemTypeModal = true
+			},
+			
+			// 隐藏问题类型选择器
+			hideProblemTypePicker() {
+				this.showProblemTypeModal = false
+			},
+			
+			// 选择问题类型
+			selectProblemType(type: string) {
+				this.selectedProblemType = type
+			},
+			
+            // 已废弃：旧字段关联的专业/部门/组长均已下线，保留空方法以避免引用错误
+            autoFillProfession() {
+				console.log('autoFillProfession 已下线，无需自动填充')
+			},
+			
+			// 加载专业类别选项
+			loadTypeOptions() {
+				const token = uni.getStorageSync('token')
+				uni.request({
+					url: getApiUrl('/gjbz-data/options/types' + (this.formData.departmentId != '' ? '?departmentId=' + encodeURIComponent(this.formData.departmentId) : '')),
+					method: 'GET',
+					header: {
+						'Authorization': `Bearer ${token}`
+					},
+					success: (res) => {
+						const respdata = res.data as UTSJSONObject
+						if (respdata.getNumber('code') === 200) {
+							const data = respdata.getArray('data')
+							console.log("获取到的专业类别数据",data)
+							if (data != null) {
+								const options: OptionItem[] = []
+								for (let i = 0; i < data.length; i++) {
+           const item = data[i] as string
+           options.push({
+            id: (i + 1).toString(),
+            name: item
+           } as OptionItem)
+								}
+								this.typeOptions = options
+								console.log("专业类别选项已加载:", this.typeOptions)
+								// 自动填充专业类别
+								this.autoFillProfession()
+							}
+						} else {
+						console.error('加载专业类别失败:', respdata.getString('message'))
+						this.loadFallbackTypeOptions()
+					}
+				},
+				fail: (error) => {
+					console.error('加载专业类别失败:', error)
+					this.loadFallbackTypeOptions()
+				}
+			})
+		},
+		
+		// 加载备用专业类别数据
+		loadFallbackTypeOptions() {
+			this.typeOptions = [
+				{ id: '1', name: '电气专业' },
+				{ id: '2', name: '机械专业' },
+				{ id: '3', name: '仪表专业' },
+				{ id: '4', name: '安全专业' },
+				{ id: '5', name: '环保专业' }
+			]
+			console.log("使用备用专业类别数据:", this.typeOptions)
+			// 自动填充专业类别
+		this.autoFillProfession()
+		},
+		
+
+		
+		// 已废弃：岗检标准不再通过任务专业字段联动，该方法保留为 no-op
+			loadGjbzDataByProfession() {
+				console.log('loadGjbzDataByProfession 已下线')
+			},
+			
+			// 确认问题类型
+			confirmProblemType() {
+				this.formData.problemType = this.selectedProblemType
+				this.hideProblemTypePicker()
+			},
+			
+
+			
+
+			
+			// 专业类别选择器方法
+			showTypePicker() {
+				this.showTypePopup = true
+			},
+			hideTypePicker() {
+				this.showTypePopup = false
+				this.typeSearchKeyword = ''
+			},
+            selectType(index: number) {
+				this.selectedTypeIndex = index
+				this.hideTypePicker()
+				// 重置下级选择
+				this.selectedModuleIndex = -1
+				this.selectedResponsibilityIndex = -1
+				this.selectedIssueIndex = -1
+				this.moduleOptions = []
+				this.responsibilityOptions = []
+				this.issueOptions = []
+                // 加载模块选项（按专业名称过滤）
+                this.loadModuleOptions((this.typeOptions[index] as OptionItem).name)
+			},
+			selectTypeFromFiltered(item: OptionItem) {
+				// 找到原始数组中的索引
+				const index = this.typeOptions.findIndex(option => option.id === item.id)
+				if (index !== -1) {
+					this.selectType(index)
+				}
+			},
+			
+			// 模块选择器方法
+			showModulePicker() {
+				if (this.selectedTypeIndex === -1) {
+					uni.showToast({ title: '请先选择专业类别', icon: 'none' })
+					return
+				}
+				this.showModulePopup = true
+			},
+			hideModulePicker() {
+				this.showModulePopup = false
+				this.moduleSearchKeyword = ''
+			},
+			selectModule(index: number) {
+				this.selectedModuleIndex = index
+				// 回写选中的值到表单数据
+				this.formData.module = (this.moduleOptions[index] as OptionItem).name
+				this.hideModulePicker()
+				// 重置下级选择
+				this.selectedResponsibilityIndex = -1
+				this.selectedIssueIndex = -1
+				this.formData.responsibility = ''
+				this.formData.issue = ''
+				this.responsibilityOptions = []
+				this.issueOptions = []
+				// 加载责任选项（按模块名称）
+				this.loadResponsibilityOptions((this.moduleOptions[index] as OptionItem).name)
+			},
+			selectModuleFromFiltered(item: OptionItem) {
+				// 找到原始数组中的索引
+				const index = this.moduleOptions.findIndex(option => option.id === item.id)
+				if (index !== -1) {
+					this.selectModule(index)
+				}
+			},
+			
+			// 责任选择器方法
+			showResponsibilityPicker() {
+				if (this.selectedModuleIndex === -1) {
+					uni.showToast({ title: '请先选择基本模块', icon: 'none' })
+					return
+				}
+				this.showResponsibilityPopup = true
+			},
+			hideResponsibilityPicker() {
+				this.showResponsibilityPopup = false
+				this.responsibilitySearchKeyword = ''
+			},
+			selectResponsibility(index: number) {
+				this.selectedResponsibilityIndex = index
+				// 回写选中的值到表单数据
+				this.formData.responsibility = (this.responsibilityOptions[index] as OptionItem).name
+				this.hideResponsibilityPicker()
+				// 重置下级选择
+				this.selectedIssueIndex = -1
+				this.formData.issue = ''
+				this.issueOptions = []
+				// 加载问题选项（按责任名称）
+				this.loadIssueOptions((this.responsibilityOptions[index] as OptionItem).name)
+			},
+			selectResponsibilityFromFiltered(item: OptionItem) {
+				// 找到原始数组中的索引
+				const index = this.responsibilityOptions.findIndex(option => option.id === item.id)
+				if (index !== -1) {
+					this.selectResponsibility(index)
+				}
+			},
+			
+			// 问题选择器方法
+			showIssuePicker() {
+				if (this.selectedResponsibilityIndex === -1) {
+					uni.showToast({ title: '请先选择责任要素', icon: 'none' })
+					return
+				}
+				this.showIssuePopup = true
+			},
+			hideIssuePicker() {
+				this.showIssuePopup = false
+				this.issueSearchKeyword = ''
+			},
+			selectIssue(index: number) {
+				this.selectedIssueIndex = index
+				// 回写选中的值到表单数据
+				const issueName = (this.issueOptions[index] as OptionItem).name
+				this.formData.issue = issueName
+				this.hideIssuePicker()
+				console.log('selectIssue: issueName=', issueName, 'mapSize=', this.issueQualityMap.size, 'qualityOpts=', this.qualityOptions.length)
+				// 按 检查内容 -> 性质界定 映射自动带出性质界定
+				this.autoFillQualityByIssue(issueName)
+			},
+			selectIssueFromFiltered(item: OptionItem) {
+				// 找到原始数组中的索引
+				const index = this.issueOptions.findIndex(option => option.id === item.id)
+				if (index !== -1) {
+					this.selectIssue(index)
+				}
+			},
+			
+			// 性质界定选择器方法
+			showQualityPicker() {
+				this.loadQualityOptions()
+				this.showQualityPopup = true
+			},
+			hideQualityPicker() {
+				this.showQualityPopup = false
+				this.qualitySearchKeyword = ''
+			},
+			selectQuality(index: number) {
+				this.selectedQualityIndex = index
+				// 回写选中的值到表单数据,同时同步顶层 selectedQualityName
+				const picked = this.qualityOptions[index] as OptionItem
+				this.selectedQualityName = picked.name
+				this.formData.quality = this.selectedQualityName
+				// 显式回写扣分值（规避 computed 不刷新）
+				this.syncDeductionScore()
+				// V3:用户手动改了性质界定 → nature_modified=1(若与自动带出的不同)
+				if (this.autoFilledQualityId != '' && picked.id !== this.autoFilledQualityId) {
+					this.formData.natureModified = 1
+				} else if (this.autoFilledQualityId == '' && picked.id != '') {
+					// 无自动带出但用户主动选了 → 视作主动设置
+					this.formData.natureModified = 1
+				}
+				this.hideQualityPicker()
+			},
+			selectQualityFromFiltered(item: OptionItem) {
+				// 找到原始数组中的索引
+				const index = this.qualityOptions.findIndex(option => option.id === item.id)
+				if (index !== -1) {
+					this.selectQuality(index)
+				}
+			},
+			
+            // 加载模块选项（按专业类型精确过滤）
+            loadModuleOptions(typeName: string) {
+                const token = uni.getStorageSync('token')
+                uni.request({
+                    url: getApiUrl(`/gjbz-data/modules/by-type/${encodeURIComponent(typeName)}` + (this.formData.departmentId != '' ? '?departmentId=' + encodeURIComponent(this.formData.departmentId) : '')),
+                    method: 'GET',
+                    header: {
+                        'Authorization': `Bearer ${token}`
+                    },
+                    success: (res) => {
+                        const respdata = res.data as UTSJSONObject
+                        if (respdata.getNumber('code') === 200) {
+                            const modules = respdata.getArray('data') as string[]
+                            const unique = [] as string[]
+                            if (modules != null) {
+                                for (let i = 0; i < modules.length; i++) {
+                                    const m = modules[i]
+                                    if (m != null && m != '' && unique.indexOf(m) === -1) unique.push(m)
+                                }
+                            }
+                            this.moduleOptions = unique.map((m, idx) => ({ id: (idx + 1).toString(), name: m } as OptionItem))
+                        }
+                    },
+                    fail: (error) => {
+                        console.error('按专业加载模块失败:', error)
+                        this.moduleOptions = [] as OptionItem[]
+                    }
+                })
+            },
+			
+			// 加载责任选项
+            loadResponsibilityOptions(moduleId: string) {
+                const token = uni.getStorageSync('token')
+                uni.request({
+                    url: getApiUrl(`/gjbz-data/options/responsibilities/by-module/${encodeURIComponent(moduleId)}` + (this.formData.departmentId != '' ? '?departmentId=' + encodeURIComponent(this.formData.departmentId) : '')),
+                    method: 'GET',
+                    header: {
+                        'Authorization': `Bearer ${token}`
+                    },
+                    success: (res) => {
+                        const respdata = res.data as UTSJSONObject
+                        if (respdata.getNumber('code') === 200) {
+                            const data = respdata.getArray('data')
+                            if (data != null) {
+                                const options: OptionItem[] = []
+                                for (let i = 0; i < data.length; i++) {
+                                    const item = data[i] as string
+                                    options.push({
+                                        id: (i + 1).toString(),
+                                        name: item
+                                    } as OptionItem)
+                                }
+                                this.responsibilityOptions = options
+                            }
+                        }
+                    },
+                    fail: (error) => {
+                        console.error('加载责任选项失败:', error)
+                        this.responsibilityOptions = [
+                            { id: 'resp1', name: '责任1' },
+                            { id: 'resp2', name: '责任2' },
+                            { id: 'resp3', name: '责任3' }
+                        ] as OptionItem[]
+                    }
+                })
+            },
+			
+			// 加载问题选项
+            loadIssueOptions(responsibilityId: string) {
+                const token = uni.getStorageSync('token')
+                uni.request({
+                    url: getApiUrl(`/gjbz-data/options/issues/by-responsibility/${encodeURIComponent(responsibilityId)}` + (this.formData.departmentId != '' ? '?departmentId=' + encodeURIComponent(this.formData.departmentId) : '')),
+                    method: 'GET',
+                    header: {
+                        'Authorization': `Bearer ${token}`
+                    },
+                    success: (res) => {
+                        const respdata = res.data as UTSJSONObject
+                        if (respdata.getNumber('code') === 200) {
+                            const data = respdata.getArray('data')
+                            if (data != null) {
+                                const options: OptionItem[] = []
+                                for (let i = 0; i < data.length; i++) {
+                                    const item = data[i] as string
+                                    options.push({
+                                        id: (i + 1).toString(),
+                                        name: item
+                                    } as OptionItem)
+                                }
+                                this.issueOptions = options
+                            }
+                        }
+                    },
+                    fail: (error) => {
+                        console.error('加载问题选项失败:', error)
+                        this.issueOptions = [
+                            { id: 'issue1', name: '问题1' },
+                            { id: 'issue2', name: '问题2' },
+                            { id: 'issue3', name: '问题3' }
+                        ] as OptionItem[]
+                    }
+                })
+            },
+			
+			// 加载性质界定选项
+			loadQualityOptions() {
+				const token = uni.getStorageSync('token')
+				uni.request({
+					url: getApiUrl('/dictionary/type/性质界定'),
+					method: 'GET',
+					header: {
+						'Authorization': `Bearer ${token}`,
+						'Content-Type': 'application/json'
+					},
+					success: (res) => {
+						const data = res.data as UTSJSONObject
+						const code = data.getNumber('code')
+						if (res.statusCode === 200 && code === 200) {
+							// 将API返回的字典数据转换为选择器需要的格式
+							const dataArray = data.getArray('data')
+							if (dataArray != null) {
+								this.qualityOptions = []
+								for (let i = 0; i < dataArray.length; i++) {
+									const item = dataArray[i] as UTSJSONObject
+									const id = item.getString('id') ?? ''
+									const dictValue = item.getString('dictValue') ?? ''
+									const dictLabel = item.getString('dictLabel') ?? ''
+									// 字典接口现返回 dictValue=中文(观察/一般/重要)、dictLabel=数字码,
+									// resolveQualityLabel 内部 dictValue 优先,直接取接口值作为显示名称
+									const label = resolveQualityLabel(dictValue, dictLabel)
+									this.qualityOptions.push({ id: id, name: label, value: label, code: dictValue, score: qualityScoreOf(label) } as OptionItem)
+								}
+							}
+							console.log('性质界定选项加载完成:', this.qualityOptions)
+						} else {
+							const message = data.getString('message') ?? '未知错误'
+							console.error('获取性质界定数据失败:', message)
+							// 使用默认数据作为备选
+							this.qualityOptions = [
+								{ id: '1', name: '观察', value: '观察', score: '1' },
+								{ id: '2', name: '一般', value: '一般', score: '3' },
+								{ id: '3', name: '重要', value: '重要', score: '5' }
+							] as OptionItem[]
+						}
+					},
+					fail: (error) => {
+						console.error('请求性质界定数据失败:', error)
+						// 使用默认数据作为备选
+						this.qualityOptions = [
+							{ id: '1', name: '观察', value: '观察', score: '1' },
+							{ id: '2', name: '一般', value: '一般', score: '3' },
+							{ id: '3', name: '重要', value: '重要', score: '5' }
+						] as OptionItem[]
+					}
+				})
+			},
+			
+			// 加载性质界定详情（已废弃：安全记分字段移除）
+			loadQualityDetails(qualityId: string) {
+				console.log('loadQualityDetails 已下线')
+			},
+
+			// 加载检查人列表（用户全量接口），并将当前登录人作为默认值
+			loadInspectorOptions() {
+				const token = uni.getStorageSync('token')
+				uni.request({
+					url: getApiUrl('/user/list'),
+					method: 'GET',
+					header: {
+						'Authorization': `Bearer ${token}`
+					},
+					success: (res) => {
+						const respdata = res.data as UTSJSONObject
+						if (respdata.getNumber('code') === 200) {
+							const records = respdata.getArray('data') as UTSJSONObject[] | null
+							const options: OptionItem[] = []
+							if (records != null) {
+								for (let i = 0; i < records.length; i++) {
+									const u = records[i]
+									const realName = (u != null ? (u.getString('realName') ?? '') : '')
+									const username = (u != null ? (u.getString('username') ?? '') : '')
+									const name = realName != '' ? realName : username
+									if (name != '') {
+										// 下拉显示格式：昵称(用户名)；无用户名或与昵称相同时仅显示昵称
+										const displayName = (username != '' && username != name) ? (name + '(' + username + ')') : name
+										options.push({ id: (i + 1).toString(), name: name, displayName: displayName } as OptionItem)
+									}
+								}
+							}
+							this.inspectorOptions = options
+							// 默认选中当前登录人（仅在尚未选择时覆盖）
+							if (this.formData.inspector.length === 0) {
+								const userInfoStr = uni.getStorageSync('userInfo') as string
+								if (userInfoStr != null && userInfoStr != '') {
+									try {
+										const userInfo = JSON.parse(userInfoStr) as UTSJSONObject
+										const currentName = userInfo.getString('realName') ?? userInfo.getString('username') ?? ''
+										if (currentName != '' && options.findIndex(o => o.name === currentName) !== -1) {
+											const defOpt = options.find(o => o.name === currentName)
+											this.formData.inspector = [(defOpt != null ? (defOpt.displayName ?? defOpt.name) : currentName)]
+										}
+									} catch (e) {
+										console.error('解析当前用户失败:', e)
+									}
+								}
+							}
+						}
+					},
+					fail: (error) => {
+						console.error('加载检查人列表失败:', error)
+					}
+				})
+			},
+
+			showInspectorPicker() {
+				if (this.inspectorOptions.length === 0) {
+					this.loadInspectorOptions()
+				}
+				this.showInspectorPopup = true
+			},
+			hideInspectorPicker() {
+				this.showInspectorPopup = false
+				this.inspectorSearchKeyword = ''
+			},
+			toggleInspectorFromFiltered(item: OptionItem) {
+				const val = item.displayName ?? item.name
+				const idx = this.formData.inspector.indexOf(val)
+				if (idx === -1) {
+					this.formData.inspector.push(val)
+				} else {
+					this.formData.inspector.splice(idx, 1)
+				}
+			},
+			confirmInspectorPicker() {
+				this.hideInspectorPicker()
+			},
+
+			showResponsiblePersonPicker() {
+				if (this.inspectorOptions.length === 0) {
+					this.loadInspectorOptions()
+				}
+				this.showResponsiblePersonPopup = true
+			},
+			hideResponsiblePersonPicker() {
+				this.showResponsiblePersonPopup = false
+				this.inspectorSearchKeyword = ''
+			},
+			toggleResponsiblePersonFromFiltered(item: OptionItem) {
+				const val = item.displayName ?? item.name
+				const idx = this.formData.responsiblePerson.indexOf(val)
+				if (idx === -1) {
+					this.formData.responsiblePerson.push(val)
+				} else {
+					this.formData.responsiblePerson.splice(idx, 1)
+				}
+			},
+			confirmResponsiblePersonPicker() {
+				this.hideResponsiblePersonPicker()
+			},
+
+			// V3:加载受检单位列表(运行部门),后端按 ?deptType=0 过滤
+			loadDeptOptions() {
+				const token = uni.getStorageSync('token')
+				uni.request({
+					url: getApiUrl('/dept/list?deptType=0'),
+					method: 'GET',
+					header: {
+						'Authorization': `Bearer ${token}`
+					},
+					success: (res) => {
+						const respdata = res.data as UTSJSONObject
+						if (respdata.getNumber('code') === 200) {
+							const list = respdata.getArray('data') as UTSJSONObject[] | null
+							const options: OptionItem[] = []
+							if (list != null) {
+								for (let i = 0; i < list.length; i++) {
+									const d = list[i]
+									const id = d != null ? (d.getString('id') ?? '') : ''
+									const name = d != null ? (d.getString('deptName') ?? '') : ''
+									if (id != '' && name != '') {
+										options.push({ id: id, name: name } as OptionItem)
+									}
+								}
+							}
+							this.deptOptions = options
+							// V3 修正：受检单位由用户在下拉中手动选择 ——
+							// 不再默认回填为当前登录用户部门,因为管理部门(检查单位)≠受检单位(运行部门)。
+							// 编辑回显：若已有 departmentId，按 id 匹配选中
+							if (this.formData.departmentId != '') {
+								const idx = options.findIndex(o => o.id === this.formData.departmentId)
+								if (idx !== -1) {
+									this.selectedDeptIndex = idx
+								}
+							} else {
+								this.selectedDeptIndex = -1
+							}
+							// 编辑回显：responsibleUnit 已声明为 string[]，无需兼容旧字符串
+						}
+					},
+					fail: (error) => {
+						console.error('加载部门字典失败:', error)
+					}
+				})
+			},
+
+			showInspectedUnitPicker() {
+				if (this.deptOptions.length === 0) {
+					this.loadDeptOptions()
+				}
+				this.showInspectedUnitPopup = true
+			},
+			hideInspectedUnitPicker() {
+				this.showInspectedUnitPopup = false
+				this.deptSearchKeyword = ''
+			},
+			selectInspectedUnitFromFiltered(item: OptionItem) {
+				const newIndex = this.deptOptions.findIndex(o => o.id === item.id)
+				const deptChanged = this.formData.departmentId !== item.id
+				this.selectedDeptIndex = newIndex
+				this.formData.departmentId = item.id
+				this.hideInspectedUnitPicker()
+				// 受检单位变更：清空岗检标准级联(专业类别/基本模块/责任要素/检查内容)与性质界定，
+				// 再按新受检单位对应的标准组重新加载专业类别与 issue->quality 映射（与 web AddDialog.handleDepartmentChange 一致）
+				if (deptChanged) {
+					this.selectedTypeIndex = -1
+					this.selectedModuleIndex = -1
+					this.selectedResponsibilityIndex = -1
+					this.selectedIssueIndex = -1
+					this.selectedQualityIndex = -1
+					this.selectedQualityName = ''
+					this.deductionScoreDisplay = ''
+					this.formData.problemType = ''
+					this.formData.module = ''
+					this.formData.responsibility = ''
+					this.formData.issue = ''
+					this.formData.quality = ''
+					this.formData.natureModified = 0
+					this.autoFilledQualityId = ''
+					this.typeOptions = [] as OptionItem[]
+					this.moduleOptions = [] as OptionItem[]
+					this.responsibilityOptions = [] as OptionItem[]
+					this.issueOptions = [] as OptionItem[]
+					this.loadTypeOptions()
+					this.loadIssueQualityMap()
+				}
+			},
+			showResponsibleUnitPicker() {
+				if (this.deptOptions.length === 0) {
+					this.loadDeptOptions()
+				}
+				this.showResponsibleUnitPopup = true
+			},
+			hideResponsibleUnitPicker() {
+				this.showResponsibleUnitPopup = false
+				this.responsibleUnitSearchKeyword = ''
+			},
+			toggleResponsibleUnitFromFiltered(item: OptionItem) {
+				const idx = this.formData.responsibleUnit.indexOf(item.name)
+				if (idx === -1) {
+					this.formData.responsibleUnit.push(item.name)
+				} else {
+					this.formData.responsibleUnit.splice(idx, 1)
+				}
+			},
+			confirmResponsibleUnitPicker() {
+				this.hideResponsibleUnitPicker()
+			},
+			
+			// 加载 检查内容 -> 性质界定 的真实映射（来自 gjbz_data 表）
+			loadIssueQualityMap() {
+				const token = uni.getStorageSync('token')
+				uni.request({
+					url: getApiUrl('/gjbz-data/options/issues-with-quality' + (this.formData.departmentId != '' ? '?departmentId=' + encodeURIComponent(this.formData.departmentId) : '')),
+					method: 'GET',
+					header: {
+						'Authorization': `Bearer ${token}`
+					},
+					success: (res) => {
+						const respdata = res.data as UTSJSONObject
+						if (respdata.getNumber('code') === 200) {
+							const list = respdata.getArray('data')
+							const map = new Map<string, string>() as IssueQualityMap
+							const keys: string[] = []
+							if (list != null) {
+								for (let i = 0; i < list.length; i++) {
+									const item = list[i] as UTSJSONObject
+									const issueName = item.getString('issue') ?? ''
+									const qualityName = item.getString('quality') ?? ''
+									if (issueName != '' && qualityName != '' && map.get(issueName) == null) {
+										map.set(issueName, qualityName)
+										keys.push(issueName)
+									}
+								}
+							}
+							this.issueQualityMap = map
+							this.issueQualityKeys = keys
+							console.log('检查内容->性质界定映射已加载, 条数:', map.size)
+						}
+					},
+					fail: (error) => {
+						console.error('加载检查内容映射失败:', error)
+					}
+				})
+			},
+
+			// 选择检查内容后自动带出性质界定
+			autoFillQualityByIssue(issueName: string) {
+				if (issueName == '') return
+				const trimmedKey = stripOuterWhitespace(issueName)
+				// 先按精确名查,再按 trim 后匹配,最后大小写无关兜底
+				let qualityName = this.issueQualityMap.get(trimmedKey)
+				if (qualityName == null) {
+					// UTS: 严格模式下 Array.from(map.keys()) 返回 MutableSet 且迭代语义不明,
+					// 用 data 中维护的 keys 数组做 trim 匹配
+					for (let i = 0; i < this.issueQualityKeys.length; i++) {
+						const k = this.issueQualityKeys[i]
+						if (stripOuterWhitespace(k) == trimmedKey) {
+							qualityName = this.issueQualityMap.get(k)
+							break
+						}
+					}
+				}
+				if (qualityName == null) {
+					const lk = trimmedKey.toLowerCase()
+					for (let i = 0; i < this.issueQualityKeys.length; i++) {
+						const k = this.issueQualityKeys[i]
+						if (stripOuterWhitespace(k).toLowerCase() == lk) {
+							qualityName = this.issueQualityMap.get(k)
+							break
+						}
+					}
+				}
+				console.log('autoFillQualityByIssue:', issueName, '->', qualityName, 'mapSize:', this.issueQualityMap.size, 'qualityOpts:', this.qualityOptions.length)
+				if (qualityName == null || qualityName == '') {
+					console.log('该检查内容未配置性质界定:', issueName)
+					return
+				}
+				if (this.qualityOptions.length === 0) {
+					this.loadQualityOptionsAndApply(qualityName)
+					return
+				}
+				this.applyQualityByName(qualityName)
+			},
+
+			loadQualityOptionsAndApply(qualityName: string) {
+				const token = uni.getStorageSync('token')
+				uni.request({
+					url: getApiUrl('/dictionary/type/性质界定'),
+					method: 'GET',
+					header: {
+						'Authorization': `Bearer ${token}`,
+						'Content-Type': 'application/json'
+					},
+					success: (res) => {
+						const data = res.data as UTSJSONObject
+						const code = data.getNumber('code')
+						if (res.statusCode === 200 && code === 200) {
+							const dataArray = data.getArray('data')
+							if (dataArray != null) {
+								this.qualityOptions = []
+								for (let i = 0; i < dataArray.length; i++) {
+									const item = dataArray[i] as UTSJSONObject
+									const id = item.getString('id') ?? ''
+									const dictValue = item.getString('dictValue') ?? ''
+									const dictLabel = item.getString('dictLabel') ?? ''
+									// 字典接口现返回 dictValue=中文(观察/一般/重要)、dictLabel=数字码,
+									// resolveQualityLabel 内部 dictValue 优先,直接取接口值作为显示名称
+									const label = resolveQualityLabel(dictValue, dictLabel)
+									this.qualityOptions.push({ id: id, name: label, value: label, code: dictValue, score: qualityScoreOf(label) } as OptionItem)
+								}
+								this.applyQualityByName(qualityName)
+							}
+						} else {
+							console.error('加载性质界定失败:', data.getString('message') ?? '未知错误')
+						}
+					},
+					fail: (error) => {
+						console.error('请求性质界定失败:', error)
+					}
+				})
+			},
+
+			applyQualityByName(qualityName: string) {
+				if (qualityName == '') return
+				// gjbz_data.quality 存的可能是中文标签(dictLabel)、字典码(dictValue)或字典 id,
+				// 逐个字段做去空白 + 大小写无关匹配
+				const lq = stripOuterWhitespace(qualityName).toLowerCase()
+				let idx = -1
+				for (let i = 0; i < this.qualityOptions.length; i++) {
+					const o = this.qualityOptions[i] as OptionItem
+					const nameKey = stripOuterWhitespace(o.name).toLowerCase()
+					const valueKey = stripOuterWhitespace(o.value ?? '').toLowerCase()
+					const idKey = stripOuterWhitespace(o.id).toLowerCase()
+					if (nameKey == lq || valueKey == lq || idKey == lq) {
+						idx = i
+						break
+					}
+				}
+				if (idx === -1) {
+					const dump = this.qualityOptions.map((o: OptionItem) => `${o.id}|${o.name}|${o.value ?? ''}`).join(',')
+					console.log('性质界定未匹配:', qualityName, '可用选项:', dump)
+					return
+				}
+				this.selectedQualityIndex = idx
+				this.selectedQualityName = (this.qualityOptions[idx] as OptionItem).name
+				this.formData.quality = this.selectedQualityName
+				// 显式回写扣分值（规避 computed 在异步回调中不刷新）
+				this.syncDeductionScore()
+				// V3:记录自动带出的 qualityId,后续用户改了 → nature_modified=1
+				this.autoFilledQualityId = (this.qualityOptions[idx] as OptionItem).id
+				this.formData.natureModified = 0
+				uni.showToast({ title: `已自动选中：${qualityName}`, icon: 'none', duration: 1500 })
+			},
+
+			// 旧方法已下线，保留空方法避免外部调用报错
+			autoFillIssueDetails(issueId: string, issueName: string) {
+				console.log('autoFillIssueDetails 已下线，改用 autoFillQualityByIssue')
+			},
+
+			// 添加照片
+			addPhoto() {
+				uni.chooseImage({
+					count: 3 - this.formData.photos.length,
+					sizeType: ['compressed'],
+					sourceType: ['camera', 'album'],
+					success: (res) => {
+						// 逐个上传选择的图片
+						res.tempFilePaths.forEach(tempPath => {
+							this.uploadImage(tempPath)
+						})
+					}
+				})
+			},
+			
+			// 上传图片到服务器
+			uploadImage(imagePath: string) {
+				console.log('=== 移动端图片上传调试信息 ===')
+				console.log('选择的图片路径:', imagePath)
+				
+				uni.showLoading({
+					title: '上传中...'
+				})
+				
+				uni.uploadFile({
+					url: getApiUrl('/upload/image'),
+					filePath: imagePath,
+					name: 'file',
+					header: {
+						'Authorization': uni.getStorageSync('token') != null ? 'Bearer ' + uni.getStorageSync('token') as string : ''
+					},
+					success: (uploadRes) => {
+						uni.hideLoading()
+						console.log('上传响应状态码:', uploadRes.statusCode)
+						console.log('上传响应数据:', uploadRes.data)
+						
+						try {
+							const result = JSON.parse(uploadRes.data) as UTSJSONObject
+							console.log('解析后的响应数据:', result)
+							
+							const code = result.getNumber('code')
+							if (code === 200) {
+								// 上传成功，将服务器返回的URL添加到photos数组
+								const data = result.getJSON('data')
+								if (data != null) {
+									// 后端统一返回 filePath 字段；保留 url 作为向后兼容
+									const url = data.getString('filePath') ?? data.getString('url') ?? ''
+									console.log('服务器返回的图片URL:', url)
+									if (url != null && url != '') {
+										this.formData.photos.push(url)
+										console.log('当前photos数组:', this.formData.photos)
+									}
+								}
+							} else {
+								let message = result.getString('message')
+								if (message == null) {
+									message = '上传失败'
+								}
+								console.error('上传失败，服务器响应:', result)
+								uni.showToast({
+									title: message,
+									icon: 'none'
+								})
+							}
+						} catch (e) {
+							console.error('解析响应数据失败:', e)
+							console.error('原始响应数据:', uploadRes.data)
+							uni.showToast({
+								title: '上传失败',
+								icon: 'none'
+							})
+						}
+						console.log('=== 移动端图片上传调试信息结束 ===')
+					},
+					fail: (error) => {
+						uni.hideLoading()
+						console.error('图片上传失败:', error)
+						uni.showToast({
+							title: '上传失败',
+							icon: 'none'
+						})
+					}
+				})
+			},
+			
+			// 删除照片
+			deletePhoto(index: number) {
+				this.formData.photos.splice(index, 1)
+			},
+			
+			
+			// 保存记录
+			saveRecord() {
+				// 表单验证
+				if (this.selectedTypeIndex === -1) {
+					uni.showToast({ title: '请选择专业类别', icon: 'none' })
+					return
+				}
+				
+				if (this.selectedModuleIndex === -1) {
+					uni.showToast({ title: '请选择基本模块', icon: 'none' })
+					return
+				}
+				
+				if (this.selectedResponsibilityIndex === -1) {
+					uni.showToast({ title: '请选择责任要素', icon: 'none' })
+					return
+				}
+				
+				if (this.selectedIssueIndex === -1) {
+					uni.showToast({ title: '请选择检查内容', icon: 'none' })
+					return
+				}
+				
+				if (this.selectedQualityIndex === -1) {
+					uni.showToast({ title: '请选择性质界定', icon: 'none' })
+					return
+				}
+				
+				if (this.formData.problemDescription.trim() == '') {
+					uni.showToast({ title: '请输入问题描述', icon: 'none' })
+					return
+				}
+				
+				if (this.formData.location.trim() == '') {
+					uni.showToast({ title: '请输入发现位置', icon: 'none' })
+					return
+				}
+				
+        if (this.formData.rectificationDate == '') {
+          uni.showToast({ title: '请选择整改期限', icon: 'none' })
+          return
+        }
+
+        // 责任单位非必填
+
+        // 责任人非必填
+
+				if (this.formData.inspector.length === 0) {
+					uni.showToast({ title: '请选择检查人', icon: 'none' })
+					return
+				}
+
+				if (this.formData.departmentId == '') {
+					uni.showToast({ title: '请选择受检单位', icon: 'none' })
+					return
+				}
+
+				// V3:检查单位(checkUnitId)必填,未填写时兜底为当前用户部门
+				if (this.formData.checkUnitId == '') {
+					if (this.currentUser.deptId != '') {
+						this.formData.checkUnitId = this.currentUser.deptId
+						this.formData.checkUnitName = this.currentUser.deptName
+					} else {
+						uni.showToast({ title: '检查单位未设置,请确认当前用户所属部门', icon: 'none' })
+						return
+					}
+				}
+
+				// 录入期校验（与 web handleTaskSelectConfirm 一致）— 编辑模式跳过
+				if (!this.isEditMode) {
+					if (this.taskInfo.inspectionStartTime == '' || this.taskInfo.inspectionEndTime == '') {
+						uni.showToast({ title: '当前任务不在月检录入期内，无法新增记录', icon: 'none' })
+						return
+					}
+					const parseLocalDate = (s: string): Date => new Date(s.replace(' ', 'T'))
+					const start = parseLocalDate(this.taskInfo.inspectionStartTime)
+					const end = parseLocalDate(this.taskInfo.inspectionEndTime)
+					const now = new Date()
+					if (now < start || now > end) {
+						uni.showToast({ title: '当前任务不在月检录入期内，无法新增记录', icon: 'none' })
+						return
+					}
+				}
+				
+				try {
+					uni.showLoading({ title: '保存中...' })
+					
+					// 获取用户信息
+					const userInfoStr = uni.getStorageSync('userInfo') as string
+					let userId = ''
+					if (userInfoStr != null && userInfoStr != '') {
+						try {
+							const userInfo = JSON.parse(userInfoStr) as UTSJSONObject
+							userId = userInfo.getString('id') ?? ''
+						} catch (e) {
+							console.error('解析用户信息失败:', e)
+						}
+					}
+					
+					if (userId == '') {
+						uni.hideLoading()
+						uni.showToast({ title: '获取用户信息失败，请重新登录', icon: 'none' })
+						return
+					}
+					
+					// 构建保存数据
+                const selectedType = this.selectedTypeIndex !== -1 && this.typeOptions[this.selectedTypeIndex] != null ? this.typeOptions[this.selectedTypeIndex] as OptionItem : null
+        const selectedModule = this.selectedModuleIndex !== -1 && this.moduleOptions[this.selectedModuleIndex] != null ? this.moduleOptions[this.selectedModuleIndex] as OptionItem : null
+        const selectedResp = this.selectedResponsibilityIndex !== -1 && this.responsibilityOptions[this.selectedResponsibilityIndex] != null ? this.responsibilityOptions[this.selectedResponsibilityIndex] as OptionItem : null
+        const selectedIssue = this.selectedIssueIndex !== -1 && this.issueOptions[this.selectedIssueIndex] != null ? this.issueOptions[this.selectedIssueIndex] as OptionItem : null
+        const selectedQuality = this.selectedQualityIndex !== -1 && this.qualityOptions[this.selectedQualityIndex] != null ? this.qualityOptions[this.selectedQualityIndex] as OptionItem : null
+        // 与 web 端 handleSubmit 行为一致:同时存 *Id + *Name
+        // 注意:级联 id 统一用名称(与 web 端专业类别 id=name 的约定一致),
+        // 不能用本地 picker 的 1/2/3 数字序号,否则 web 端回写时下拉框匹配不到选项会直接显示数字
+        const saveData = {
+        taskId: this.taskInfo.taskId,
+        professionalTypeId: selectedType != null ? selectedType.name : '',
+        professionalCategory: selectedType != null ? selectedType.name : '',
+        moduleId: selectedModule != null ? selectedModule.name : '',
+        module: selectedModule != null ? selectedModule.name : '',
+        responsibilityId: selectedResp != null ? selectedResp.name : '',
+        responsibility: selectedResp != null ? selectedResp.name : '',
+        issueId: selectedIssue != null ? selectedIssue.name : '',
+        issue: selectedIssue != null ? selectedIssue.name : '',
+        qualityId: selectedQuality != null ? selectedQuality.id : '',
+        qualityDetermination: selectedQuality != null ? selectedQuality.name : '',
+            problemDescription: this.formData.problemDescription,
+            location: this.formData.location,
+            rectificationDate: this.formData.rectificationDate,
+            inspector: this.formData.inspector.join('、'),
+            photos: this.formData.photos,
+            responsibleUnit: this.formData.responsibleUnit.join('、'),
+            responsiblePerson: this.formData.responsiblePerson.join('、'),
+            departmentId: this.formData.departmentId,
+            // V3:检查单位(管理部门)=当前用户所属部门,锁定不可改
+            checkUnitId: this.formData.checkUnitId,
+            checkUnitName: this.formData.checkUnitName,
+            // V3:性质界定是否被人工改动(0/1)
+            natureModified: this.formData.natureModified
+        }
+					
+					// 调用月检记录保存接口 — 编辑模式走 PUT,新增模式走 POST
+					// 后端 @PutMapping 是空路径,接收 body 里的 MonthlyInspectionRecord(含 id)
+					const reqUrl = getApiUrl('/monthly-inspection-record')
+					const reqMethod = this.isEditMode ? 'PUT' : 'POST'
+					uni.request({
+						url: reqUrl,
+						method: reqMethod,
+						header: {
+							'Content-Type': 'application/json',
+							'Authorization': uni.getStorageSync('token') != null ? 'Bearer ' + uni.getStorageSync('token') as string : '',
+							'userId': userId
+						},
+						data: {
+							...saveData,
+							// 编辑模式把 recordId 放进 body(后端 updateRecord 据此查旧值生成 modification_snapshot)
+							id: this.isEditMode ? this.recordId : '',
+							photos: this.formData.photos.join(',') // 将数组转换为逗号分隔的字符串
+						},
+						success: (res) => {
+							uni.hideLoading()
+							const respdate=res.data as UTSJSONObject
+						console.log('保存响应 status=', res.statusCode, 'body=', JSON.stringify(res.data))
+							if (respdate.getNumber('code') == 200) {
+								uni.showToast({ title: this.isEditMode ? '修改成功' : '保存成功', icon: 'success' })
+								setTimeout(() => {
+									uni.navigateBack()
+								}, 1500)
+							} else {
+								const msg = respdate.getString('message')
+								uni.showToast({ title: msg != null ? msg : '保存失败', icon: 'none' })
+							}
+						},
+						fail: (error) => {
+							uni.hideLoading()
+							console.error('保存失败:', error)
+							uni.showToast({ title: '保存失败', icon: 'none' })
+						}
+					})
+				} catch (error) {
+					uni.hideLoading()
+					console.error('保存失败:', error)
+					uni.showToast({ title: '保存失败', icon: 'none' })
+				}
+			},
+			
+			// 初始化日期数组
+			initDateArrays() {
+				// 生成年份数组（当前年份到未来2年）
+				const currentYear = new Date().getFullYear()
+				this.years = []
+				for (let i = currentYear; i <= currentYear + 2; i++) {
+					this.years.push(i)
+				}
+				
+				// 生成月份数组
+				this.months = []
+				for (let i = 1; i <= 12; i++) {
+					this.months.push(i)
+				}
+				
+				// 生成日期数组
+				this.updateDays()
+				
+				// 设置默认选择值
+				const yearIndex = this.years.findIndex(year => year === this.selectedYear)
+				const monthIndex = (this.selectedMonth as number) - 1
+				const dayIndex = this.days.findIndex(day => day === this.selectedDay)
+				this.pickerValue = [yearIndex >= 0 ? yearIndex : 0, monthIndex, dayIndex >= 0 ? dayIndex : 0]
+				
+				console.log('初始化日期数组:', {
+					selectedYear: this.selectedYear,
+					selectedMonth: this.selectedMonth,
+					selectedDay: this.selectedDay,
+					yearIndex, monthIndex, dayIndex,
+					pickerValue: this.pickerValue,
+					daysArray: this.days
+				})
+			},
+			
+			// 更新日期数组
+			updateDays() {
+				const daysInMonth = new Date(this.selectedYear, this.selectedMonth, 0).getDate()
+				this.days = []
+				for (let i = 1; i <= daysInMonth; i++) {
+					this.days.push(i)
+				}
+			},
+			
+			// 显示日期选择器
+			showDatePicker() {
+				// 如果当前有设置的日期，使用该日期作为选择器的默认值
+				if (this.formData.rectificationDate !== '') {
+					const dateParts = this.formData.rectificationDate.split('-')
+					if (dateParts.length === 3) {
+						this.selectedYear = parseInt(dateParts[0])
+						this.selectedMonth = parseInt(dateParts[1])
+						this.selectedDay = parseInt(dateParts[2])
+					}
+				}
+				
+				// 更新日期数组
+				this.updateDays()
+				
+				// 设置picker的默认选择值
+				const yearIndex = this.years.findIndex(year => year === this.selectedYear)
+				const monthIndex = this.selectedMonth - 1
+				let dayIndex = this.days.findIndex(day => day === this.selectedDay)
+				
+				// 如果找不到对应的日期（比如选择了31号但当前月只有30天），则选择最后一天
+				if (dayIndex < 0) {
+					dayIndex = (this.days.length - 1) as Int
+					this.selectedDay = this.days[dayIndex]
+					console.log('日期不存在，调整为月末:', this.selectedDay)
+				}
+				
+				this.pickerValue = [yearIndex >= 0 ? yearIndex : 0, monthIndex, dayIndex]
+				
+				console.log('显示日期选择器:', {
+					selectedDate: this.formData.rectificationDate,
+					selectedYear: this.selectedYear,
+					selectedMonth: this.selectedMonth,
+					selectedDay: this.selectedDay,
+					yearIndex, monthIndex, dayIndex,
+					pickerValue: this.pickerValue
+				})
+				
+				this.datePickerVisible = true
+			},
+			
+			// 隐藏日期选择器
+			hideDatePicker() {
+				this.datePickerVisible = false
+			},
+			
+			// picker-view变化事件
+			onPickerChange(e: UniPickerViewChangeEvent) {
+				const value = e.detail.value as number[]
+				const oldDaysLength = this.days.length
+				
+				console.log('picker原始变化事件:', {
+					value: value,
+					oldSelectedYear: this.selectedYear,
+					oldSelectedMonth: this.selectedMonth,
+					oldSelectedDay: this.selectedDay,
+					oldDaysLength: oldDaysLength
+				})
+				
+				// 更新选择的年月日
+				this.selectedYear = this.years[value[0]]
+				this.selectedMonth = value[1] + 1  // 月份索引从0开始，实际月份从1开始
+				
+				// 更新日期数组（因为年月变化可能影响该月的天数）
+				this.updateDays()
+				
+				// 处理日期变化
+				let newDayIndex = value[2]
+				if (newDayIndex >= this.days.length) {
+					// 如果选择的日期超出了当前月的天数，调整为月末
+					newDayIndex = this.days.length - 1
+					console.log('日期超出范围，调整为月末:', this.days[newDayIndex])
+				}
+				
+				this.selectedDay = this.days[newDayIndex]
+				
+				// 如果天数数组长度发生变化，需要延迟更新pickerValue以避免冲突
+				if (oldDaysLength !== this.days.length) {
+					// 使用防抖机制，避免频繁更新
+					const timer = this.pickerDebounceTimer
+					if (timer !== null) {
+						clearTimeout(timer)
+					}
+					
+					this.pickerDebounceTimer = setTimeout(() => {
+						this.pickerValue = [value[0], value[1], newDayIndex]
+						console.log('延迟更新pickerValue:', {
+							newPickerValue: this.pickerValue,
+							selectedYear: this.selectedYear,
+							selectedMonth: this.selectedMonth,
+							selectedDay: this.selectedDay
+						})
+					}, 50) // 50ms延迟，提供更快速的平滑视觉效果
+				} else {
+					// 直接更新
+					this.pickerValue = [value[0], value[1], newDayIndex]
+					console.log('直接更新pickerValue:', {
+						newPickerValue: this.pickerValue,
+						selectedYear: this.selectedYear,
+						selectedMonth: this.selectedMonth,
+						selectedDay: this.selectedDay
+					})
+				}
+			},
+			
+			// 确认日期选择
+			confirmDatePicker() {
+				// 直接从pickerValue索引获取实际选择的值
+				const selectedYear = this.years[this.pickerValue[0]]
+				const selectedMonth = this.pickerValue[1] + 1  // 月份索引从0开始，实际月份从1开始
+				const selectedDay = this.days[this.pickerValue[2]]
+				
+				const year = selectedYear.toString().padStart(4, '0')
+				const month = selectedMonth.toString().padStart(2, '0')
+				const day = selectedDay.toString().padStart(2, '0')
+				const newDate = `${year}-${month}-${day}`
+				
+				console.log('确认日期选择:', {
+					pickerValue: this.pickerValue,
+					yearsArray: this.years,
+					monthsArray: this.months,
+					daysArray: this.days,
+					selectedYear: selectedYear,
+					selectedMonth: selectedMonth,
+					selectedDay: selectedDay,
+					formattedDate: newDate
+				})
+				
+				this.formData.rectificationDate = newDate
+				this.hideDatePicker()
+			}
+		}
+	}
+</script>
+
+<style scoped>
+	.container {
+		min-height: 1500rpx;
+		background: linear-gradient(180deg, #eff6ff 0%, #dbeafe 100%);
+		position: relative;
+		z-index: 1;
+		padding-bottom: 180rpx;
+	}
+
+	/* 头部样式 */
+	.header {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		padding: 32rpx 40rpx;
+		background: linear-gradient(135deg, #0a2540 0%, #1e40af 55%, #0ea5e9 100%);
+		border-bottom: none;
+		box-shadow: 0 8rpx 24rpx rgba(30, 64, 175, 0.25);
+	}
+
+	.header-left {
+		display: flex;
+		align-items: center;
+	}
+
+	.back-icon {
+		font-size: 40rpx;
+		color: #ffffff;
+	}
+
+	.back-text {
+		font-size: 28rpx;
+		color: #ffffff;
+	}
+
+	.header-title {
+		font-size: 34rpx;
+		font-weight: 700;
+		color: #ffffff;
+		letter-spacing: 1rpx;
+	}
+
+	.header-right {
+		display: flex;
+		align-items: center;
+	}
+
+	.save-btn {
+		font-size: 28rpx;
+		color: #ffffff;
+		font-weight: 500;
+	}
+
+	/* 任务信息样式 */
+	.task-info {
+		background: linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%);
+		margin: 20rpx 30rpx;
+		border-radius: 20rpx;
+		padding: 32rpx;
+		box-shadow: 0 8rpx 24rpx rgba(30, 64, 175, 0.08);
+	}
+
+	.task-info::before {
+		content: '';
+		display: block;
+		height: 4rpx;
+		background: linear-gradient(90deg, #1e40af, #0ea5e9);
+		margin: -16rpx -32rpx 24rpx;
+		border-radius: 4rpx;
+	}
+
+	.info-item {
+		display: flex;
+		align-items: flex-start;
+		padding: 20rpx 0;
+		border-bottom: 2rpx solid #f1f5f9;
+	}
+
+	.info-item:last-child {
+		border-bottom: none;
+	}
+
+	.info-label {
+		font-size: 26rpx;
+		color: #64748b;
+		width: 160rpx;
+		flex-shrink: 0;
+		text-align: left;
+		margin-right: 20rpx;
+	}
+
+	.info-value {
+		font-size: 28rpx;
+		color: #0f172a;
+		font-weight: 600;
+		flex: 1;
+		text-align: left;
+	}
+
+	/* V3:编辑模式 modification_snapshot readonly 面板 */
+	.snapshot-panel {
+		background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+		margin: 20rpx 30rpx;
+		border-radius: 20rpx;
+		padding: 28rpx 32rpx;
+		box-shadow: 0 8rpx 24rpx rgba(30, 64, 175, 0.08);
+		border-top: 4rpx solid #1e40af;
+	}
+
+	.snapshot-title-row {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		margin-bottom: 16rpx;
+	}
+
+	.snapshot-title {
+		font-size: 30rpx;
+		font-weight: 600;
+		color: #1e40af;
+		padding-left: 16rpx;
+		border-left: 6rpx solid #2563eb;
+	}
+
+	.snapshot-edit-badge {
+		font-size: 22rpx;
+		color: #ffffff;
+		background: #1e40af;
+		padding: 4rpx 16rpx;
+		border-radius: 16rpx;
+		font-weight: 500;
+	}
+
+	.snapshot-content {
+		font-size: 24rpx;
+		color: #1e3a8a;
+		line-height: 1.6;
+		word-break: break-all;
+		white-space: pre-wrap;
+		background: #ffffff;
+		padding: 20rpx;
+		border-radius: 12rpx;
+		border: 2rpx solid #bfdbfe;
+	}
+
+	/* 表单样式 */
+	.form-section {
+		background: linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%);
+		margin: 20rpx 30rpx;
+		border-radius: 20rpx;
+		padding: 32rpx;
+		box-shadow: 0 8rpx 24rpx rgba(30, 64, 175, 0.08);
+	}
+
+	.section-title {
+		display: flex;
+		align-items: center;
+		margin-bottom: 32rpx;
+		padding-bottom: 20rpx;
+		border-bottom: 2rpx solid #e2e8f0;
+	}
+
+	.title-text {
+		font-size: 32rpx;
+		font-weight: 700;
+		color: #0f172a;
+		letter-spacing: 1rpx;
+	}
+
+	.required-mark {
+		font-size: 30rpx;
+		color: #dc2626;
+		margin-left: 6rpx;
+	}
+
+	.form-item {
+		margin-bottom: 32rpx;
+	}
+
+	.form-item:last-child {
+		margin-bottom: 0;
+	}
+
+	.form-item-inline {
+		margin-bottom: 32rpx;
+		display: flex;
+		flex-direction: column;
+		gap: 12rpx;
+		padding: 0 30rpx;
+	}
+
+	.form-label {
+		font-size: 28rpx;
+		color: #0f172a;
+		margin-bottom: 12rpx;
+	}
+
+	.form-label-inline {
+		font-size: 28rpx;
+		color: #0f172a;
+		font-weight: 600;
+		margin-bottom: 0;
+	}
+
+	.picker-wrapper {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		padding: 20rpx 24rpx;
+		border: 2rpx solid #e2e8f0;
+		border-radius: 12rpx;
+		background-color: #ffffff;
+	}
+
+	.picker-wrapper-inline {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		padding: 20rpx 24rpx;
+		border: 2rpx solid #e2e8f0;
+		border-radius: 12rpx;
+		background-color: #ffffff;
+		width: 100%;
+		transition: all 0.2s ease;
+		cursor: pointer;
+	}
+
+	.picker-wrapper-inline:hover {
+		border-color: #1e40af;
+		box-shadow: 0 0 0 4rpx rgba(30, 64, 175, 0.08);
+	}
+
+	.picker-wrapper-inline:active {
+		transform: scale(0.98);
+	}
+
+	.picker-wrapper-inline.disabled {
+		background-color: #f1f5f9;
+		color: #94a3b8;
+		cursor: not-allowed;
+		opacity: 0.6;
+	}
+
+	.picker-wrapper-inline.disabled:hover {
+		border-color: #e2e8f0;
+		box-shadow: none;
+	}
+
+	.text-input-inline {
+		padding: 20rpx 24rpx;
+		border: 2rpx solid #e2e8f0;
+		border-radius: 12rpx;
+		font-size: 28rpx;
+		color: #0f172a;
+		background-color: #ffffff;
+		flex: 1;
+	}
+
+	.bottom-save-container {
+		position: fixed;
+		bottom: 0;
+		left: 0;
+		right: 0;
+		padding: 24rpx 40rpx 56rpx;
+		background: linear-gradient(to top, rgba(255, 255, 255, 0.98) 0%, rgba(255, 255, 255, 0.85) 100%);
+		backdrop-filter: blur(20rpx);
+		border-top: 2rpx solid rgba(30, 64, 175, 0.08);
+		z-index: 999;
+	}
+
+	.bottom-save-btn {
+		width: 100%;
+		height: 96rpx;
+		background-color: #1e40af;
+		border-radius: 48rpx;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		box-shadow: 0 12rpx 32rpx rgba(37, 99, 235, 0.4);
+		transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+		position: relative;
+		overflow: hidden;
+	}
+
+	.bottom-save-btn:active {
+		transform: translateY(2rpx) scale(0.98);
+		box-shadow: 0 8rpx 24rpx rgba(37, 99, 235, 0.3);
+	}
+
+	.bottom-save-text {
+		color: #ffffff;
+		font-size: 34rpx;
+		font-weight: 700;
+		letter-spacing: 6rpx;
+	}
+
+	.picker-text {
+		font-size: 28rpx;
+		color: #0f172a;
+	}
+
+	.picker-text.placeholder {
+		color: #94a3b8;
+	}
+
+	.picker-arrow {
+		font-size: 28rpx;
+		color: #cbd5e1;
+	}
+
+	.text-input {
+		padding: 20rpx 24rpx;
+		border: 2rpx solid #e2e8f0;
+		border-radius: 12rpx;
+		font-size: 28rpx;
+		color: #0f172a;
+		background-color: #ffffff;
+	}
+
+	.textarea-input {
+		padding: 20rpx 24rpx;
+		border: 2rpx solid #e2e8f0;
+		border-radius: 12rpx;
+		font-size: 28rpx;
+		color: #0f172a;
+		background-color: #ffffff;
+		min-height: 160rpx;
+		resize: none;
+	}
+
+	.char-count {
+		font-size: 22rpx;
+		color: #94a3b8;
+		text-align: right;
+		margin-top: 8rpx;
+	}
+
+	/* 照片上传样式 */
+	.photo-upload {
+		display: flex;
+		flex-wrap: wrap;
+		margin-bottom: 5px;
+	}
+
+	.photo-upload .photo-item { margin: 5px; }
+	.photo-upload .photo-add { margin: 5px; }
+	
+	.photo-item {
+		position: relative;
+		width: 160rpx;
+		height: 160rpx;
+	}
+
+	.photo-preview {
+		width: 100%;
+		height: 100%;
+		border-radius: 12rpx;
+	}
+
+	.photo-delete {
+		position: absolute;
+		top: -10rpx;
+		right: -10rpx;
+		width: 40rpx;
+		height: 40rpx;
+		background-color: #dc2626;
+		border-radius: 20rpx;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.delete-icon {
+		font-size: 24rpx;
+		color: #fff;
+		font-weight: bold;
+	}
+
+	.photo-add {
+		width: 160rpx;
+		height: 160rpx;
+		border: 2rpx dashed #93c5fd;
+		border-radius: 12rpx;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		background: #eff6ff;
+	}
+
+	.add-icon {
+		font-size: 48rpx;
+		color: #1e40af;
+		margin-bottom: 8rpx;
+	}
+
+	.add-text {
+		font-size: 22rpx;
+		color: #1e40af;
+	}
+
+	.photo-tip {
+		font-size: 22rpx;
+		color: #94a3b8;
+		margin-top: 8rpx;
+	}
+
+	/* 选择器弹窗样式 */
+	.popup-overlay {
+		position: fixed !important;
+		top: 0 !important;
+		left: 0 !important;
+		width: 100% !important;
+		height: 100% !important;
+		background-color: rgba(10, 37, 64, 0.55);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		z-index: 9999 !important;
+		animation: fadeIn 0.3s ease;
+		pointer-events: auto;
+	}
+
+	.picker-modal {
+		position: fixed !important;
+		top: 0 !important;
+		left: 0 !important;
+		width: 100% !important;
+		height: 100% !important;
+		background-color: rgba(10, 37, 64, 0.55);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		z-index: 9999 !important;
+		pointer-events: auto;
+	}
+
+	.popup-content {
+		width: 90% !important;
+		max-width: 600rpx;
+		max-height: 900rpx;
+		background-color: #ffffff;
+		border-radius: 24rpx;
+		overflow: hidden;
+		box-shadow: 0 24rpx 64rpx rgba(10, 37, 64, 0.35);
+		position: relative;
+		z-index: 10000;
+	}
+
+	.picker-content {
+		width: 90% !important;
+		max-width: 600rpx;
+		max-height: 900rpx;
+		background-color: #ffffff;
+		border-radius: 24rpx;
+		overflow: hidden;
+		box-shadow: 0 24rpx 64rpx rgba(10, 37, 64, 0.35);
+		position: relative;
+		z-index: 10000;
+	}
+
+	.popup-header {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		padding: 28rpx 32rpx;
+		border-bottom: 2rpx solid #e2e8f0;
+		background: linear-gradient(135deg, #0a2540 0%, #1e40af 100%);
+		position: relative;
+		color: #ffffff;
+	}
+
+	.picker-header {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		padding: 28rpx 32rpx;
+		border-bottom: 2rpx solid #e2e8f0;
+		background: linear-gradient(135deg, #0a2540 0%, #1e40af 100%);
+		position: relative;
+		color: #ffffff;
+	}
+
+	.picker-header::after {
+		content: '';
+		position: absolute;
+		bottom: 0;
+		left: 50%;
+		transform: translateX(-50%);
+		width: 60rpx;
+		height: 6rpx;
+		background-color: rgba(255, 255, 255, 0.3);
+		border-radius: 4rpx;
+	}
+
+	.picker-cancel {
+		font-size: 28rpx;
+		color: rgba(255, 255, 255, 0.85);
+		font-weight: 500;
+	}
+
+	.picker-title {
+		font-size: 30rpx;
+		font-weight: 700;
+		color: #ffffff;
+		letter-spacing: 1rpx;
+	}
+
+	.picker-confirm {
+		font-size: 26rpx;
+		color: #ffffff;
+		font-weight: 600;
+		background-color: rgba(255, 255, 255, 0.22);
+		padding: 10rpx 20rpx;
+		border-radius: 30rpx;
+		transition: all 0.2s ease;
+	}
+
+	.picker-confirm:active {
+		background-color: rgba(255, 255, 255, 0.35);
+		transform: scale(0.95);
+	}
+
+	.popup-title {
+		font-size: 30rpx;
+		font-weight: 700;
+		color: #ffffff;
+		letter-spacing: 1rpx;
+	}
+
+	.popup-close {
+		font-size: 44rpx;
+		color: rgba(255, 255, 255, 0.85);
+		font-weight: 300;
+		width: 60rpx;
+		height: 60rpx;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		border-radius: 30rpx;
+		transition: all 0.2s ease;
+	}
+
+	.popup-close:active {
+		background-color: rgba(255, 255, 255, 0.22);
+		transform: scale(0.9);
+	}
+
+	.popup-search {
+		padding: 24rpx 32rpx;
+		border-bottom: 2rpx solid #e2e8f0;
+		background-color: #f8fafc;
+	}
+
+	.search-input {
+		width: 100%;
+		height: 72rpx;
+		padding: 0 24rpx;
+		border: 2rpx solid #dbeafe;
+		border-radius: 36rpx;
+		font-size: 28rpx;
+		background-color: #ffffff;
+		outline: none;
+		transition: all 0.2s ease;
+		color: #0f172a;
+	}
+
+	.search-input:focus {
+		border-color: #1e40af;
+		box-shadow: 0 0 0 4rpx rgba(30, 64, 175, 0.12);
+	}
+
+	.popup-list {
+		/* 必须预留出 header(~118)+search(~122)+footer(~98) 的高度,
+		   否则在 .popup-content(max-height:900rpx; overflow:hidden) 下,
+		   长列表(如检查人最多 500 人)会把 footer 挤出并被裁剪 → 确定按钮消失、弹框无法关闭。
+		   900 - 338 ≈ 562rpx 可用,取 520rpx 留安全余量。 */
+		max-height: 520rpx;
+		overflow-y: auto;
+	}
+
+	.popup-empty {
+		padding: 80rpx 32rpx;
+		text-align: center;
+	}
+
+	.empty-text {
+		font-size: 28rpx;
+		color: #94a3b8;
+	}
+
+	.picker-list {
+		max-height: 600rpx;
+		overflow-y: auto;
+	}
+
+	.picker-item {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		padding: 28rpx 32rpx;
+		border-bottom: 2rpx solid #f1f5f9;
+		transition: all 0.2s ease;
+		cursor: pointer;
+		position: relative;
+	}
+
+	.picker-item:hover {
+		background-color: #eff6ff;
+		color: #1e40af;
+	}
+
+	.picker-item:active {
+		background-color: #dbeafe;
+		transform: scale(0.98);
+	}
+
+	.picker-item:last-child {
+		border-bottom: none;
+	}
+
+	.picker-item.selected {
+		background-color: #eff6ff;
+	}
+
+	.popup-item {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		padding: 28rpx 32rpx;
+		border-bottom: 2rpx solid #f1f5f9;
+		transition: all 0.2s ease;
+		cursor: pointer;
+	}
+
+	.popup-item:hover {
+		background-color: #eff6ff;
+	}
+
+	.popup-item-selected {
+		background-color: #dbeafe;
+		border-left: 8rpx solid #1e40af;
+		padding-left: 24rpx;
+	}
+
+	.popup-item-selected:hover {
+		background-color: #bfdbfe;
+	}
+
+	.popup-item-text {
+		font-size: 28rpx;
+		color: #0f172a;
+		font-weight: 500;
+	}
+
+	.picker-item-text {
+		font-size: 28rpx;
+		color: #0f172a;
+	}
+
+	.level-item {
+		flex: 1;
+	}
+
+	.level-name {
+		font-size: 28rpx;
+		color: #0f172a;
+		margin-bottom: 6rpx;
+	}
+
+	.level-desc {
+		font-size: 22rpx;
+		color: #94a3b8;
+	}
+
+	.popup-item-check {
+		font-size: 36rpx;
+		color: #1e40af;
+		font-weight: bold;
+	}
+
+	.popup-footer {
+		display: flex;
+		border-top: 2rpx solid #e2e8f0;
+		background-color: #f8fafc;
+	}
+
+	.popup-btn {
+		flex: 1;
+		padding: 28rpx 0;
+		text-align: center;
+		font-size: 28rpx;
+		font-weight: 500;
+	}
+
+	.popup-btn-cancel {
+		color: #475569;
+		border-right: 2rpx solid #e2e8f0;
+	}
+
+	.popup-btn-confirm {
+		color: #1e40af;
+		font-weight: 700;
+	}
+
+	.popup-loading {
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		padding: 80rpx 32rpx;
+	}
+
+	.loading-text {
+		font-size: 28rpx;
+		color: #94a3b8;
+	}
+
+	/* 新增样式 - 参考add.uvue页面 */
+	.form-label-left {
+		font-size: 28rpx;
+		color: #0f172a;
+		margin-bottom: 16rpx;
+		font-weight: 600;
+		text-align: left;
+	}
+
+	.custom-picker-full {
+		width: 100%;
+		padding: 24rpx;
+		border: 2rpx solid #e2e8f0;
+		border-radius: 12rpx;
+		background-color: #ffffff;
+		min-height: 88rpx;
+		display: flex;
+		align-items: center;
+		transition: border-color 0.2s ease;
+	}
+
+	.custom-picker-full:hover {
+		border-color: #1e40af;
+	}
+
+	.custom-picker-full.disabled {
+		background: #f1f5f9;
+		border-color: #e2e8f0;
+		opacity: 0.6;
+	}
+
+	/* picker容器样式 */
+	.picker-container {
+		width: 100%;
+		padding: 24rpx;
+		border: 2rpx solid #e2e8f0;
+		border-radius: 12rpx;
+		background-color: #ffffff;
+		min-height: 88rpx;
+		display: flex;
+		align-items: center;
+	}
+
+	.picker-text-full {
+		font-size: 28rpx;
+		color: #0f172a;
+		width: 100%;
+		text-align: left;
+	}
+
+	.picker-text-full.placeholder {
+		color: #94a3b8;
+	}
+
+	/* 性质界定被人工修改时的告警色（对齐 web AddDialog 的 warning tag） */
+	.picker-text-full.nature-modified-yes {
+		color: #e6a23c;
+	}
+
+	/* 日期选择器弹窗样式 */
+	.date-picker-modal {
+		position: fixed;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		background-color: rgba(10, 37, 64, 0.55);
+		display: flex;
+		align-items: flex-end;
+		z-index: 1000;
+	}
+
+	.date-picker-content {
+		width: 100%;
+		background-color: #ffffff;
+		border-radius: 32rpx 32rpx 0 0;
+		padding-bottom: env(safe-area-inset-bottom);
+	}
+
+	.date-picker-header {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		padding: 28rpx 32rpx;
+		border-bottom: 2rpx solid #e2e8f0;
+	}
+
+	.date-picker-cancel {
+		font-size: 28rpx;
+		color: #94a3b8;
+	}
+
+	.date-picker-title {
+		font-size: 32rpx;
+		font-weight: 700;
+		color: #0f172a;
+	}
+
+	.date-picker-confirm {
+		font-size: 28rpx;
+		color: #1e40af;
+		font-weight: 700;
+	}
+
+	.date-picker-view {
+		height: 600rpx;
+		padding: 0 32rpx 32rpx;
+		position: relative;
+	}
+
+	/* picker选中状态样式 - 重新定义以覆盖之前的样式 */
+	.picker-item {
+		height: 110rpx;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		font-size: 30rpx;
+		color: #475569;
+		transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+		border-radius: 12rpx;
+		margin: 6rpx 12rpx;
+		position: relative;
+		z-index: 2;
+		opacity: 0.6;
+		background-color: rgba(30, 64, 175, 0.04);
+	}
+
+	/* picker选中状态样式 */
+	.picker-item.selected {
+		background: linear-gradient(135deg, #1e40af 0%, #0ea5e9 100%);
+		color: #fff;
+		font-weight: 700;
+		box-shadow: 0 8rpx 20rpx rgba(30, 64, 175, 0.35), inset 0 2rpx 0 rgba(255, 255, 255, 0.2);
+		transform: scale(1.05);
+		z-index: 3;
+		opacity: 1;
+		font-size: 34rpx;
+		border: 2rpx solid #ffffff;
+		text-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.18);
+	}
+
+	/* picker悬停状态样式 */
+	.picker-item:hover {
+		background-color: #eff6ff;
+		color: #1e40af;
+	}
+
+	/* 空白占位项目样式 */
+	.picker-item-spacer {
+		pointer-events: none;
+		opacity: 0;
+		background: transparent !important;
+	}
+
+	.form-input {
+		flex: 1;
+		padding: 20rpx 24rpx;
+		background: #f8fafc;
+		border-radius: 12rpx;
+		border: 2rpx solid #e2e8f0;
+		font-size: 28rpx;
+		color: #0f172a;
+		box-sizing: border-box;
+		width: 100%;
+	}
+</style>

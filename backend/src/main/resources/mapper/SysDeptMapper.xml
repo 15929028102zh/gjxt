@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gjxt.inspection.mapper.SysDeptMapper">
+
+    <!-- 结果映射 -->
+    <resultMap id="BaseResultMap" type="com.gjxt.inspection.entity.SysDept">
+        <id column="id" property="id" />
+        <result column="dept_name" property="deptName" />
+        <result column="description" property="description" />
+        <result column="parent_id" property="parentId" />
+        <result column="sort_order" property="sortOrder" />
+        <result column="status" property="status" />
+        <result column="create_time" property="createTime" />
+        <result column="update_time" property="updateTime" />
+        <result column="deleted" property="deleted" />
+    </resultMap>
+
+    <!-- 基础字段 -->
+    <sql id="Base_Column_List">
+        id, dept_name, description, parent_id, sort_order, status, create_time, update_time, deleted
+    </sql>
+
+    <!-- 查询所有部门列表 -->
+    <select id="selectDeptList" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List" />
+        FROM sys_dept
+        WHERE deleted = 0
+        ORDER BY sort_order ASC, id ASC
+    </select>
+
+    <!-- 根据父部门ID查询子部门 -->
+    <select id="selectByParentId" parameterType="string" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List" />
+        FROM sys_dept
+        WHERE parent_id = #{parentId} AND deleted = 0
+        ORDER BY sort_order ASC, id ASC
+    </select>
+
+    <!-- 检查部门名称是否存在 -->
+    <select id="checkDeptNameExists" resultType="int">
+        SELECT COUNT(1)
+        FROM sys_dept
+        WHERE dept_name = #{deptName} AND deleted = 0
+        <if test="excludeId != null">
+            AND id != #{excludeId}
+        </if>
+    </select>
+
+    <!-- 查询部门是否有子部门 -->
+    <select id="hasChildByDeptId" parameterType="string" resultType="int">
+        SELECT COUNT(1)
+        FROM sys_dept
+        WHERE parent_id = #{deptId} AND deleted = 0
+    </select>
+
+</mapper>
